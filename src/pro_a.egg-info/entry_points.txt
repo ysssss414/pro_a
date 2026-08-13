@@ -1,0 +1,2 @@
+[console_scripts]
+pro-a = pro_a.cli:main

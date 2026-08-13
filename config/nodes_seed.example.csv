@@ -1,0 +1,42 @@
+canonical_name,primary_type,aliases,description
+半导体,Industry,,半导体产业
+算力,Industry,,计算基础设施产业
+通信,Industry,,通信产业
+AI应用,Industry,,人工智能应用产业
+医药,Industry,,医药产业
+机器人,Industry,,机器人产业
+商业航天,Industry,,商业航天产业
+智能电网,Industry,,智能电网产业
+半导体材料,Segment,,半导体材料环节
+半导体设备,Segment,,半导体设备环节
+封装,Segment,,半导体封装环节
+算力租赁,Segment,,算力租赁商业环节
+液冷,Segment,,数据中心液冷环节
+数据中心,Segment,IDC,数据中心基础设施
+光模块,Segment,,光通信光模块环节
+光纤,Segment,,光纤环节
+PCB,Segment,印制电路板,PCB产业环节
+CRO,Segment,,医药研发外包
+CDMO,Segment,,医药研发生产外包
+创新药,Segment,,创新药产业环节
+CoWoS,Technology,,先进封装技术
+EML,Technology,电吸收调制激光器,高速光芯片技术
+CPO,Technology,Co-Packaged Optics|共封装光学,共封装光学技术
+NPO,Technology,Near-Packaged Optics,近封装光学技术
+硅光,Technology,Silicon Photonics,硅光技术
+薄膜铌酸锂,Technology,TFLN,薄膜铌酸锂光子技术
+Rubin,Product,NVIDIA Rubin,NVIDIA GPU平台/产品代际
+1.6T光模块,Product,1.6T Optical Module|1.6T模块,1.6T高速光模块
+交换机,Product,,网络交换设备
+OCS交换机,Product,Optical Circuit Switch,光路交换设备
+MPO,Product,MPO连接器,多芯光纤连接器/接口
+丝杠,Product,,机器人传动部件
+灵巧手,Product,,机器人末端执行器
+减速器,Product,,机器人传动部件
+电子布,Material,,覆铜板上游增强材料
+覆铜板,Material,CCL,PCB上游核心材料
+中际旭创,Entity,,上市公司
+长光华芯,Entity,,上市公司
+国产替代,Theme,,国产化替代投资主题
+AI算力,Theme,,AI算力投资主题
+FCC规则变化,Event,,FCC监管规则变化事件

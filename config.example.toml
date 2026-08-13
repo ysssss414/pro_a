@@ -1,0 +1,33 @@
+[workspace]
+root = "./workspace"
+settle_seconds = 2
+
+[llm]
+enabled = false
+base_url = "https://api.deepseek.com"
+api_key_env = "PROA_LLM_API_KEY"
+model = "deepseek-chat"
+timeout_seconds = 120
+temperature = 0.1
+max_chunk_chars = 22000
+max_nodes_in_prompt = 500
+
+[ima]
+enabled = false
+base_url = "https://ima.qq.com"
+client_id_env = "IMA_OPENAPI_CLIENTID"
+api_key_env = "IMA_OPENAPI_APIKEY"
+source_kb_id = ""
+source_folder_id = ""
+output_kb_id = ""
+output_folder_id = ""
+upload_originals = true
+upload_current_views = true
+skip_same_name = true
+
+[pipeline]
+archive_originals = true
+write_receipts = true
+create_gaps_automatically = true
+require_confirmation_for_new_node = true
+require_confirmation_for_any_current_view_change = true
