@@ -70,6 +70,14 @@ def mlcc_evidence(db, node_id: str) -> list[str]:
                 "structured": {"company": "昀冢科技", "metric": "MLCC价格"},
             },
             {
+                "claim_id": "CLM_REVENUE",
+                "statement": "昀冢科技披露其6月单月MLCC营收较4月单月接近翻倍",
+                "nature": "data",
+                "attributed_to": "昀冢科技业绩说明会",
+                "scope": "昀冢科技",
+                "structured": {"company": "昀冢科技", "metric": "MLCC营收"},
+            },
+            {
                 "claim_id": "CLM_GUIDANCE",
                 "statement": "昀冢科技认为AI和存储需求叠加高容产品产能挤兑，本轮周期可能更长",
                 "nature": "company_guidance",
@@ -96,7 +104,7 @@ def valid_initial_result(claim_ids: list[str]) -> dict:
         "scope_normalization_notes": ["当前仅有昀冢科技单一公司、单一底层来源样本"],
         "evidence_sufficiency": {
             "sufficient": True,
-            "reason": "三条 Claim 相互独立并共同确认行业长周期",
+            "reason": "四条 Claim 相互独立并共同确认行业长周期",
         },
         "proposed_current_view": {
             "one_line_conclusion": (
@@ -382,6 +390,11 @@ def test_impact_context_exposes_required_claim_attributions(tmp_path: Path):
             "attributed_to": "昀冢科技业绩说明会",
             "required_subject": "昀冢科技",
         },
+        "CLM_REVENUE": {
+            "nature": "data",
+            "attributed_to": "昀冢科技业绩说明会",
+            "required_subject": "昀冢科技",
+        },
         "CLM_GUIDANCE": {
             "nature": "company_guidance",
             "attributed_to": "昀冢科技业绩说明会",
@@ -507,13 +520,13 @@ def test_supply_capacity_cannot_drop_paired_future_guidance(tmp_path: Path):
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
 
-def test_revenue_or_price_claim_cannot_infer_major_supplier_identity(tmp_path: Path):
-    def infer_supplier_from_price(result):
+def test_mlcc_revenue_claim_cannot_infer_major_supplier_identity(tmp_path: Path):
+    def infer_supplier_from_revenue(result):
         result["proposed_current_view"]["type_specific"]["major_suppliers"] = [
-            "昀冢科技（CLM_PRICE）。"
+            "昀冢科技（CLM_REVENUE）。"
         ]
 
-    db, reviewed = evaluate(tmp_path, infer_supplier_from_price)
+    db, reviewed = evaluate(tmp_path, infer_supplier_from_revenue)
 
     assert reviewed["status"] == "retry"
     assert "lacks explicit supplier identity Evidence" in reviewed["error"]
