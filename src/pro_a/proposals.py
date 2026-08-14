@@ -102,8 +102,9 @@ class ProposalManager:
         source_id = p.get("source_id", "")
         if source_id:
             self.db.execute(
-                "INSERT OR IGNORE INTO source_node_links(source_id,node_id,role,confidence) VALUES(?,?,?,?)",
-                (source_id, node_id, "related", p.get("confidence")),
+                """INSERT OR IGNORE INTO source_node_links(
+                   source_id,node_id,role,confidence,link_origin) VALUES(?,?,?,?,?)""",
+                (source_id, node_id, "related", p.get("confidence"), "candidate"),
             )
         claim_ids = p.get("related_claim_ids") or []
         for cid in claim_ids:

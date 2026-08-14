@@ -55,7 +55,8 @@ class Database:
         with self.connect() as conn:
             conn.executescript(schema)
             self._migrate_0_1_to_0_1_1(conn)
-            conn.execute("INSERT OR REPLACE INTO meta(key,value) VALUES('schema_version','0.1.1')")
+            self._migrate_0_2_to_0_2_1(conn)
+            conn.execute("INSERT OR REPLACE INTO meta(key,value) VALUES('schema_version','0.2.1')")
 
     @staticmethod
     def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
@@ -158,6 +159,13 @@ class Database:
             ON side_effect_jobs(status, created_at);
             """
         )
+
+    def _migrate_0_2_to_0_2_1(self, conn: sqlite3.Connection) -> None:
+        self._add_column(conn, "claims", "attributed_to TEXT NOT NULL DEFAULT ''")
+        self._add_column(conn, "source_node_links", "link_origin TEXT NOT NULL DEFAULT 'legacy'")
+        self._add_column(conn, "source_node_links", "derived_from_node_id TEXT NOT NULL DEFAULT ''")
+        self._add_column(conn, "source_node_links", "evidence_excerpt TEXT NOT NULL DEFAULT ''")
+        self._add_column(conn, "source_node_links", "evidence_validation_json TEXT NOT NULL DEFAULT '{}'")
 
     def one(self, sql: str, params: Iterable[Any] = ()) -> dict[str, Any] | None:
         with self.connect() as conn:

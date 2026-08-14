@@ -64,7 +64,7 @@ def test_v0_1_database_is_migrated_in_place(tmp_path: Path):
     db = Database(path)
     db.init_schema()
 
-    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.1.1"
+    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.2.1"
     source = db.one("SELECT ingestion_mode,analysis_mode,underlying_source_id FROM sources WHERE source_id='SRC_1'")
     assert source == {"ingestion_mode": "standard", "analysis_mode": "standard", "underlying_source_id": ""}
     view = db.one("SELECT revision_date,revision_seq FROM current_views WHERE view_id='VIEW_1'")
@@ -72,6 +72,10 @@ def test_v0_1_database_is_migrated_in_place(tmp_path: Path):
     impact = db.one("SELECT target_view_version,attempts,last_error FROM impact_reviews WHERE impact_id='IMP_1'")
     assert impact == {"target_view_version": "<none>", "attempts": 0, "last_error": ""}
     assert db.one("SELECT name FROM sqlite_master WHERE type='table' AND name='side_effect_jobs'")
+    assert "attributed_to" in {row["name"] for row in db.all("PRAGMA table_info(claims)")}
+    assert {
+        "link_origin", "derived_from_node_id", "evidence_excerpt", "evidence_validation_json",
+    } <= {row["name"] for row in db.all("PRAGMA table_info(source_node_links)")}
 
     db.execute("UPDATE sources SET ingestion_mode='deep',analysis_mode='standard' WHERE source_id='SRC_1'")
     db.init_schema()

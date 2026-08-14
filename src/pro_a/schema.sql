@@ -73,6 +73,10 @@ CREATE TABLE IF NOT EXISTS source_node_links (
     node_id TEXT NOT NULL REFERENCES nodes(node_id) ON DELETE CASCADE,
     role TEXT NOT NULL DEFAULT 'related',
     confidence REAL,
+    link_origin TEXT NOT NULL DEFAULT 'legacy',
+    derived_from_node_id TEXT NOT NULL DEFAULT '',
+    evidence_excerpt TEXT NOT NULL DEFAULT '',
+    evidence_validation_json TEXT NOT NULL DEFAULT '{}',
     PRIMARY KEY(source_id, node_id)
 );
 
@@ -86,6 +90,7 @@ CREATE TABLE IF NOT EXISTS claims (
     source_id TEXT NOT NULL REFERENCES sources(source_id) ON DELETE CASCADE,
     evidence_pointer TEXT NOT NULL DEFAULT '',
     evidence_excerpt TEXT NOT NULL DEFAULT '',
+    attributed_to TEXT NOT NULL DEFAULT '',
     scope TEXT NOT NULL DEFAULT '',
     assumption_text TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'current',

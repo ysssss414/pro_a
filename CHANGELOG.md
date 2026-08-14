@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1 — 2026-08-14
+
+- Candidate Node 增加独立研究价值门槛；Event 必须是有明确时间的离散事件，Theme 必须具有长期且跨 Source/Node 的价值。
+- Existing Node Match 必须提供可定位 Evidence；父级/祖先 Node 改由已确认的 `part_of` 关系推导。
+- Claim 增加 `attributed_to`，公司级经营信息必须在 statement 中显式写出公司主体。
+- Evidence 校验统一为 Unicode NFKC、Markdown 转义还原和空白标准化后的精确子串匹配，并保留标准化审计信息。
+- Candidate Node Proposal 对当前 Source 的全部 validated Claims 进行二次相关性回填，接受后关联完整 Claim 集并触发 Initial Current View Impact Review。
+- 未启用 IMA，未扩展 OCR/PDF、Gap/RQ 生命周期或修改稳定性状态机与冻结规则。
+
 ## 0.2.0 — 2026-08-14
 
 - 增加初始 Relation Seed 与 `pro-a relations seed <csv_path>`，支持名称/别名解析、事务回滚和重复导入幂等。

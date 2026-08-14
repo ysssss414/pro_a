@@ -24,6 +24,10 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
     cv_proposals = audit.get("current_view_proposals") or []
     gaps = audit.get("knowledge_gaps") or []
     rq_candidates = audit.get("research_question_candidates") or []
+    analysis_quality = (source.get("metadata") or {}).get("analysis_quality") or {}
+    rejected_matches = analysis_quality.get("rejected_node_matches") or []
+    rejected_candidates = analysis_quality.get("rejected_node_candidates") or []
+    rejected_claim_links = analysis_quality.get("rejected_claim_node_links") or []
     lines += [
         "", "## 处理结果", "",
         f"- Existing Nodes matched: {len(nodes)}",
@@ -34,6 +38,9 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         f"- Current View Proposals: {len(cv_proposals)}",
         f"- Knowledge Gaps: {len(gaps)}",
         f"- Research Question Candidates: {len(rq_candidates)}", "",
+        f"- Rejected unsupported Node Matches: {len(rejected_matches)}",
+        f"- Rejected unsupported Claim-Node Links: {len(rejected_claim_links)}",
+        f"- Rejected low-quality Node Candidates: {len(rejected_candidates)}", "",
         "## Source Metadata", "",
         f"- Source ID: `{source.get('source_id', data.get('source_id', ''))}`",
         f"- Title: {source.get('title', data.get('title', ''))}",
@@ -45,20 +52,24 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         "## Existing Nodes", "",
     ]
     lines += [
-        f"- `{node['node_id']}` {node['canonical_name']} ({node['primary_type']}) — role={node['role']}, confidence={node.get('confidence')}"
+        f"- `{node['node_id']}` {node['canonical_name']} ({node['primary_type']}) — role={node['role']}, "
+        f"origin={node.get('link_origin', '')}, confidence={node.get('confidence')}, "
+        f"evidence_validated={node.get('evidence_validation', {}).get('evidence_validated', False)}"
         for node in nodes
     ] or ["- None"]
     lines += ["", "## Candidate Node Proposals", ""]
     lines += [
         f"- `{proposal['proposal_id']}` {proposal['payload'].get('canonical_name', '')} "
         f"({proposal['payload'].get('primary_type', '')}) — status={proposal['status']}, "
-        f"confidence={proposal['payload'].get('confidence')}"
+        f"confidence={proposal['payload'].get('confidence')}, "
+        f"related_claims={len(proposal['payload'].get('related_claim_ids') or [])}"
         for proposal in node_proposals
     ] or ["- None"]
     lines += ["", "## Claims", ""]
     lines += [
         f"- `{claim['claim_id']}` [{claim['nature']} / {claim['status']} / {claim['novelty_level']}] "
-        f"confidence={claim.get('confidence')}, evidence_validated={claim.get('evidence_validated')} — {claim['statement']}"
+        f"confidence={claim.get('confidence')}, attributed_to={claim.get('attributed_to', '')}, "
+        f"evidence_validated={claim.get('evidence_validated')} — {claim['statement']}"
         for claim in claims
     ] or ["- None"]
     lines += ["", "## Historical Compare", ""]

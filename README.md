@@ -1,8 +1,8 @@
-# pro_a v0.2.0-real-ingestion
+# pro_a v0.2.1-knowledge-quality
 
 面向长期投研的本地知识处理引擎原型。核心职责是把新资料从本地 Inbox 转换为可追溯的 Source / Claim / Knowledge Node / Current View，并通过 IMA OpenAPI 同步原始资料和正式研究成果。
 
-v0.2.0-real-ingestion 第一阶段不改变冻结业务规则，目标是让第一份真实 Standard 投研资料具备可严格校验、可诊断、可人工验收的端到端闭环。IMA 默认保持关闭。
+v0.2.1-knowledge-quality 不改变冻结业务规则，目标是根据第一份真实 Standard 投研资料提高 Node、Claim 与 Evidence 的研究质量。IMA 默认保持关闭。
 
 ## 已实现
 
@@ -26,6 +26,11 @@ v0.2.0-real-ingestion 第一阶段不改变冻结业务规则，目标是让第�
 - 41 个初始 Knowledge Node Seed 与 25 条结构 Relation Seed
 - Relation Seed 名称/别名解析、幂等导入和整批错误回滚
 - LLM 输出冻结枚举、Node 引用、confidence 与 Evidence excerpt 程序校验
+- Candidate Node 独立研究价值、离散 Event 和长期 Theme 程序门槛
+- Existing Node Match Evidence 校验与 `part_of` 祖先推导
+- Claim 主体/归因字段 `attributed_to`
+- NFKC + Markdown 转义还原 + 空白标准化后的 Evidence 精确匹配审计
+- Candidate Node 对全部 validated Claims 的二次相关性回填
 - Receipt / `source show` 展示 Source metadata、Existing Nodes、Node/RQ Candidates、Claims、历史比对、Impact Reviews、Current View Proposals 和 Gaps
 
 ## 设计边界
