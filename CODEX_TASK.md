@@ -1,8 +1,10 @@
-# Codex continuation brief — pro_a v0.2.2-current-view-quality
+# Codex continuation brief — pro_a v0.2.2.1-current-view-fix-and-cleanup
 
 ## 当前状态
 
-v0.2.2-current-view-quality 已在 v0.2.1 的 Node / Claim / Evidence 质量基础上，补齐 Initial Current View 的 Source 级 Evidence profile、实际 attribution、单一公司 scope、Target-Node-centric 校验，以及 Product type-specific Evidence。同一份昀冢科技 MLCC Standard 样本已在全新 workspace 通过真实 DeepSeek Proposal 回归。v0.1.1 稳定性状态机继续保留，冻结业务规则未变。开始修改前先阅读：
+v0.2.2.1 已在 v0.2.2 基础上增加程序化 `evidence_scope`、单一公司确定性行业主句拦截、Actual/Guidance 原子拆分、公司实际价格 nature 修正、Product Applications 显式 Evidence 校验，以及完整公司主体 attribution mapping；Current View 确定性排序和 pending New Node 查询已收敛为单一实现。v0.1.1 稳定性状态机、历史 migration 和冻结业务规则均保留。
+
+同一份昀冢科技 MLCC Standard 样本已在全新 workspace 真实复跑：Source 为 B 级 secondary，14 条 Claims 均通过 Evidence 校验，MLCC 关联 13 条 Claims；DeepSeek 的多次 Initial View 输出因 attribution、Applications、single-company scope 或 target-centric 风险不合规而被程序拦截，同一 Impact Review 持久化为 `retry`，未创建半合规 Current View Proposal。后续若处理该问题，不得通过放宽硬校验强行生成 Proposal。开始修改前先阅读：
 
 1. `docs/REQUIREMENTS_FROZEN.md`
 2. `README.md`

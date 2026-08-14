@@ -9,6 +9,7 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 3.2 novelty_level 只能是 N0 / N1 / N2 / N3；confidence 必须是 0 到 1 的数字。
 4. 每条 Claim 必须给 evidence_pointer（尽量引用原文标记如 [[PAGE:3]]/[[PARA:8]]/[[SHEET:X:ROW:5]]）与 evidence_excerpt。evidence_excerpt 必须来自输入原文，尽量短。
 4.1 每条 Claim 必须填写 attributed_to，表示“谁作出该陈述/判断”；它不是 Source 的作者或来源。公司经营数据、价格、收入、产能、产品信息必须在 statement 中显式写出公司主体，不能泛化成行业事实。
+4.2 公司来源不等于 company_guidance：已发生的价格、出货、收入、产能等实际数据应为 data/fact；未来目标、预测、计划或指引才是 company_guidance。若一句同时包含当前实际值与未来目标，必须拆成两条原子 Claim，分别保留同一原文 Evidence 与 attribution。
 5. 区分 fact_time（事实发生/预测对应时间）与资料 publication_time。无法判断留空，不猜。
 6. 新 Node 只有在对象具有独立研究价值、会被多份资料反复引用、值得维护独立 Current View 时才建议创建；不要把普通名词、数值、年份都 Node 化。
 6.1 Event 必须是具有明确 event_time 的离散事件。产能挤兑、调价模式、扩产计划、价格策略、经营机制、周期或供需状态不是 Event，应作为 Claim / Current View 内容。
@@ -154,12 +155,12 @@ L3 证据层：关键事实、数据、Supporting Claims、Watch Items、Knowled
 8. Research Question 只有在答案可能改变 Current View/Material/Thesis、属于核心变量、反复出现或用户明确指定时才作为候选；它是新 Node，必须审批。
 9. initial 允许基于单一 Source 建立，不采用 material/thesis 的多源硬门槛；但必须执行 Evidence Scope Constraint：结论范围、确定性和因果强度不得高于 Evidence。
 10. Evidence independence 按 context.evidence_profile 中的 underlying Source/Source 统计。同一 Source 的多条 Claims 不是相互独立 Evidence，禁止按 Claim 数量描述独立性。
-11. company_guidance / expert_judgment / broker_forecast / market_rumor 不得改写成无归属事实。逐条使用 context.required_claim_attributions 核对：core_logic 和 type_specific 使用此类 Claim 时，必须写出其中实际 attributed_to 主体（如“昀冢科技认为/财通电子团队判断/专家预计/市场传闻”），不能仅用泛称“公司/券商/专家”，并保留 Claim ID 与不确定性。
+11. company_guidance / expert_judgment / broker_forecast / market_rumor 不得改写成无归属事实。逐条使用 context.required_claim_attributions 核对：任何 Current View 字段（包括 one_line_conclusion、core_logic、investment_implication、major_risks、type_specific）使用此类 Claim 时，必须写出其中实际 attributed_to 主体（如“昀冢科技认为/财通电子团队判断/专家预计/市场传闻”），不能仅用泛称“公司/券商/专家”，并保留 Claim ID 与不确定性。
 12. key_facts 只能使用 fact / data / 明确公司指引；预测、专家判断、券商判断、传闻不得放入 key_facts。每条 key_fact 必须保留 Claim ID，公司指引必须保留公司主体。
-13. 当目标是 Industry / Segment / Product / Technology / Material / Equipment / Application / Theme，而 Evidence 主要来自单一公司时，不得把公司价格、产能、需求或经营趋势写成行业整体事实。必须表述为“公司侧 Evidence”“单一公司样本”“行业验证样本”，并指出尚不足以确认行业结论；除非存在行业级 Evidence 或多个公司与独立来源交叉验证。
+13. 当目标是 Industry / Segment / Product / Technology / Material / Equipment / Application / Theme，而 Evidence 主要来自单一公司时，不得把公司价格、产能、需求或经营趋势写成行业整体事实。必须表述为“公司侧 Evidence”“单一公司样本”“行业验证样本”，并指出尚不足以确认行业结论；除非存在行业级 Evidence 或多个公司与独立来源交叉验证。不得先写确定性行业结论、再在“但/然而/不过”之后补免责声明；one_line_conclusion、core_logic、investment_implication、major_risks 都适用。
 14. Current View 必须以目标 Node 为中心。one_line_conclusion、core_logic、investment_implication、key_watch_items 各自至少显式出现一次目标 canonical_name 或 alias；major_risks 每项须显式提及目标 Node，或引用该 Node 的 Evidence Claim。Source 主体只能作为 Evidence Provider / Key Company。
 15. core_logic 每一项必须保留至少一个 Claim ID。不得补充 Evidence 中没有的事实、公司、应用、因果关系或预测。
-16. Product 的 type_specific 必须输出 applications / demand_drivers / supply_capacity / pricing / major_suppliers / product_evolution 六个数组。无 Evidence 的字段返回空数组；非空项可为字符串或结构化对象，但必须保留 Claim ID 及实际 attributed_to 主体，不得补造。
+16. Product 的 type_specific 必须输出 applications / demand_drivers / supply_capacity / pricing / major_suppliers / product_evolution 六个数组。无 Evidence 的字段返回空数组；非空项可为字符串或结构化对象，但必须保留 Claim ID 及实际 attributed_to 主体，不得补造。applications 只接受原文明示“用于/应用于/下游为/application”等应用关系的 Evidence；“AI需求/存储需求”只能进入 demand_drivers，不能据此推断“AI服务器/存储设备”应用。
 17. Product 的 key_watch_items 应覆盖目标产品的行业供需、竞争对手和下游需求，而不是只跟踪单一 Evidence Provider。
 18. 只输出 JSON。
 """
@@ -182,7 +183,6 @@ IMPACT_USER = r"""
 必须原样保留的 Claim 归因映射：
 {required_attributions_json}
 
-输出前逐条核对 core_logic、key_facts 和 type_specific：只要引用上述 Claim ID，文本或结构化对象中就必须出现该 Claim 对应的实际 attributed_to 主体。
 错误示例：“AI 与存储驱动 MLCC 周期上行（CLM_x）”。
 正确示例：“昀冢科技认为 AI 与存储可能驱动 MLCC 周期变化（CLM_x）”。
 错误示例：“国内外原厂趋势一致（CLM_y）”。
@@ -240,6 +240,12 @@ IMPACT_USER = r"""
 }}
 
 若无需修改 Current View，requires_change=false，change_level="none"；仍可返回 Knowledge Gap。
+
+输出 JSON 前做最后检查：
+1. context.evidence_profile.evidence_scope 为 single_company_sample 时，one_line_conclusion 必须以“公司侧 Evidence 显示”或“单一公司样本显示”开头，不得先写确定性行业结论再补限定。
+2. one_line_conclusion、core_logic、key_facts、investment_implication、major_risks、type_specific 只要引用归因映射中的 Claim ID，就必须逐字出现 required_subject，不得替换为“公司/管理层/券商/专家”。
+3. major_risks 不引用归因映射中的判断 Claim ID；每项显式写目标 Node canonical_name/alias。事实/数据 Claim 不受此生成策略限制。
+4. type_specific 不引用 expert_judgment / broker_forecast / market_rumor；这些语义判断只进入 core_logic。Product applications 仅在被引用 Claim 的 statement/evidence_excerpt 明示“用于/应用于/下游为/application”等关系时非空；只有 AI/存储需求时必须返回空数组。
 """
 
 CLAIM_COMPARE_SYSTEM = r"""

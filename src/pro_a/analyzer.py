@@ -37,6 +37,20 @@ _ATTRIBUTED_NATURES = {
     "user_judgment", "ai_inference",
 }
 _ATTRIBUTION_SUFFIXES = ("业绩说明会", "管理层", "公司方面", "公司")
+_FUTURE_OR_JUDGMENT_RE = re.compile(
+    r"预计|预期|计划|目标|指引|展望|看好|认为|判断|可能|有望|拟|将(?:于|在)?|"
+    r"expected|forecast|guidance|target|will",
+    re.IGNORECASE,
+)
+_MIXED_ACTUAL_GUIDANCE_SPLIT_RE = re.compile(
+    r"[，,；;]\s*(?=预计|预期|计划|目标|指引|展望|拟|将(?:于|在)?|"
+    r"expected|forecast|guidance|target|will)",
+    re.IGNORECASE,
+)
+_ACTUAL_OBSERVATION_RE = re.compile(
+    r"当前|目前|截至|现有|当月|本月|单月|实际|已经|已完成|\d",
+    re.IGNORECASE,
+)
 
 
 def canonicalize_text(value: str) -> str:
@@ -63,10 +77,6 @@ def evidence_match(excerpt: str, full_text: str) -> dict[str, Any]:
         "normalized_start": start,
         "normalized_end": start + len(normalized_excerpt) if validated else -1,
     }
-
-
-def evidence_found(excerpt: str, full_text: str) -> bool:
-    return bool(evidence_match(excerpt, full_text)["evidence_validated"])
 
 
 def attribution_subjects(attributed_to: str) -> list[str]:
@@ -196,6 +206,71 @@ class Analyzer:
                 errors.append("theme_lacks_cross_source_or_node_value")
         return {"eligible": not errors, "errors": errors}
 
+    @staticmethod
+    def _atomic_statement(claim: dict[str, Any], fragment: str) -> str:
+        statement = normalize_ws(fragment).strip("，,；;。 ")
+        structured = claim.get("structured") or {}
+        company = canonicalize_text(str(structured.get("company") or ""))
+        metric = canonicalize_text(str(structured.get("metric") or ""))
+        prefix = ""
+        if company and company not in statement:
+            prefix += company
+        if metric and metric not in statement:
+            prefix += metric
+        return f"{prefix}{statement}。"
+
+    @classmethod
+    def _normalize_claim_atomicity(cls, claims: list[Any]) -> list[Any]:
+        normalized: list[Any] = []
+        for item in claims:
+            if not isinstance(item, dict):
+                normalized.append(item)
+                continue
+            if not isinstance(item.get("structured") or {}, dict):
+                normalized.append(item)
+                continue
+            statement = canonicalize_text(str(item.get("statement") or ""))
+            if item.get("nature") != "company_guidance":
+                normalized.append(item)
+                continue
+
+            split = _MIXED_ACTUAL_GUIDANCE_SPLIT_RE.search(statement)
+            actual_text = statement[:split.start()] if split else ""
+            future_text = statement[split.end():] if split else ""
+            if (
+                split
+                and _ACTUAL_OBSERVATION_RE.search(actual_text)
+                and _FUTURE_OR_JUDGMENT_RE.search(future_text)
+            ):
+                for segment, fragment, nature in (
+                    ("actual", actual_text, "data" if re.search(r"\d", actual_text) else "fact"),
+                    ("guidance", future_text, "company_guidance"),
+                ):
+                    atomic = copy.deepcopy(item)
+                    atomic["statement"] = cls._atomic_statement(atomic, fragment)
+                    atomic["nature"] = nature
+                    structured = dict(atomic.get("structured") or {})
+                    structured["claim_normalization"] = {
+                        "method": "mixed_actual_guidance_split",
+                        "segment": segment,
+                        "original_statement": str(item.get("statement") or ""),
+                    }
+                    atomic["structured"] = structured
+                    normalized.append(atomic)
+                continue
+
+            if not _FUTURE_OR_JUDGMENT_RE.search(statement) and _ACTUAL_OBSERVATION_RE.search(statement):
+                item["nature"] = "data" if re.search(r"\d", statement) else "fact"
+                structured = dict(item.get("structured") or {})
+                structured["claim_normalization"] = {
+                    "method": "actual_observation_nature_correction",
+                    "raw_nature": "company_guidance",
+                    "normalized_nature": item["nature"],
+                }
+                item["structured"] = structured
+            normalized.append(item)
+        return normalized
+
     def _validate_source_output(self, raw: Any, full_text: str) -> dict[str, Any]:
         data = copy.deepcopy(self._object(raw, "source_analysis"))
         metadata = self._object(data.get("source_metadata") or {}, "source_metadata")
@@ -274,7 +349,10 @@ class Analyzer:
             candidate["quality_eligible"] = quality["eligible"]
             candidate["quality_validation"] = quality
 
-        claims = self._list(data.get("claims") or [], "claims")
+        claims = self._normalize_claim_atomicity(
+            self._list(data.get("claims") or [], "claims")
+        )
+        data["claims"] = claims
         for index, claim in enumerate(claims):
             path = f"claims[{index}]"
             claim = self._object(claim, path)

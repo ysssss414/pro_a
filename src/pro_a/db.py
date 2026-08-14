@@ -12,6 +12,9 @@ from .constants import NODE_TYPES, RELATION_TYPES
 from .ids import make_id
 
 
+CURRENT_VIEW_ORDER = "revision_date DESC,revision_seq DESC,view_id DESC"
+
+
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
@@ -326,8 +329,8 @@ class Database:
 
     def current_view(self, node_id: str) -> dict[str, Any] | None:
         return self.one(
-            """SELECT * FROM current_views WHERE node_id=? AND status='official'
-               ORDER BY revision_date DESC,revision_seq DESC,view_id DESC LIMIT 1""",
+            f"""SELECT * FROM current_views WHERE node_id=? AND status='official'
+                ORDER BY {CURRENT_VIEW_ORDER} LIMIT 1""",
             (node_id,),
         )
 
@@ -336,6 +339,13 @@ class Database:
 
     def pending_proposals(self) -> list[dict[str, Any]]:
         return self.all("SELECT * FROM proposals WHERE status='pending' ORDER BY created_at")
+
+    def pending_new_node_proposal_exists(self, name: str) -> bool:
+        return bool(self.one(
+            """SELECT proposal_id FROM proposals
+               WHERE proposal_type='new_node' AND status='pending' AND payload_json LIKE ? LIMIT 1""",
+            (f'%"canonical_name": "{name}"%',),
+        ))
 
     def add_proposal(self, proposal_type: str, payload: dict[str, Any], target_node_id: str | None = None,
                      reason: str = "", propagation_batch_id: str = "", source_impact_id: str = "") -> str:

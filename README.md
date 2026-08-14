@@ -1,8 +1,8 @@
-# pro_a v0.2.2-current-view-quality
+# pro_a v0.2.2.1-current-view-fix-and-cleanup
 
 面向长期投研的本地知识处理引擎原型。核心职责是把新资料从本地 Inbox 转换为可追溯的 Source / Claim / Knowledge Node / Current View，并通过 IMA OpenAPI 同步原始资料和正式研究成果。
 
-v0.2.2-current-view-quality 不改变冻结业务规则、Source/Claim/Node 稳定规则或 v0.1.1 状态机，目标是提高 Initial Current View 的 Evidence Scope、归因、目标 Node 聚焦和类型字段质量。IMA 默认保持关闭。
+v0.2.2.1 在 v0.2.2 基础上强化单一公司 Evidence Scope、Actual/Guidance 原子化、公司主体归因和 Product Applications Evidence 校验，并清理重复查询与无效残留；不改变冻结业务规则、Source/Claim/Node 稳定规则或 v0.1.1 状态机。IMA 默认保持关闭。
 
 ## 已实现
 
