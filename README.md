@@ -1,8 +1,8 @@
-# pro_a v0.2.1-knowledge-quality
+# pro_a v0.2.2-current-view-quality
 
 面向长期投研的本地知识处理引擎原型。核心职责是把新资料从本地 Inbox 转换为可追溯的 Source / Claim / Knowledge Node / Current View，并通过 IMA OpenAPI 同步原始资料和正式研究成果。
 
-v0.2.1-knowledge-quality 不改变冻结业务规则，目标是根据第一份真实 Standard 投研资料提高 Node、Claim 与 Evidence 的研究质量。IMA 默认保持关闭。
+v0.2.2-current-view-quality 不改变冻结业务规则、Source/Claim/Node 稳定规则或 v0.1.1 状态机，目标是提高 Initial Current View 的 Evidence Scope、归因、目标 Node 聚焦和类型字段质量。IMA 默认保持关闭。
 
 ## 已实现
 
@@ -31,6 +31,10 @@ v0.2.1-knowledge-quality 不改变冻结业务规则，目标是根据第一份�
 - Claim 主体/归因字段 `attributed_to`
 - NFKC + Markdown 转义还原 + 空白标准化后的 Evidence 精确匹配审计
 - Candidate Node 对全部 validated Claims 的二次相关性回填
+- Initial Current View 单一 Source 规则与 Source/underlying Source 级 Evidence profile
+- Current View 实际 attribution 主体、Claim ID、Company→Industry scope 与 Target-Node-centric 程序校验
+- Evidence-backed `key_facts` / Judgment-backed `core_logic` 分离
+- Product Current View 的 applications、demand drivers、supply capacity、pricing、major suppliers、product evolution 类型字段
 - Receipt / `source show` 展示 Source metadata、Existing Nodes、Node/RQ Candidates、Claims、历史比对、Impact Reviews、Current View Proposals 和 Gaps
 
 ## 设计边界

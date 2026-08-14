@@ -32,6 +32,24 @@ def no_change_result():
     }
 
 
+def valid_theme_view(node_name: str, claim_ids: list[str]):
+    claim_refs = "、".join(claim_ids)
+    return {
+        "one_line_conclusion": f"{node_name}的现有Evidence支持更新判断。",
+        "core_logic": [f"{node_name}由新增Evidence支持（{claim_refs}）。"],
+        "key_facts": [f"{node_name}获得新增事实Evidence（{claim_id}）。" for claim_id in claim_ids],
+        "core_disagreements": [],
+        "assumptions_to_verify": [],
+        "investment_implication": f"{node_name}的投资含义需要结合后续Evidence持续验证。",
+        "major_risks": [f"{node_name}的新增Evidence可能被后续资料推翻。"],
+        "knowledge_gaps": [],
+        "key_watch_items": [f"持续跟踪{node_name}对应Evidence。"],
+        "recent_change": f"{node_name}判断更新。",
+        "evidence_claim_ids": claim_ids,
+        "type_specific": {},
+    }
+
+
 def test_impact_unique_key_includes_target_current_view_version(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("Versioned Impact Node", "Theme")
@@ -136,7 +154,7 @@ def test_material_change_accepts_one_high_quality_direct_primary(tmp_path: Path)
             "sufficient": True,
             "direct_primary_claim_ids": ["CLM_PRIMARY"],
         },
-        "proposed_current_view": {"one_line_conclusion": "allowed"},
+        "proposed_current_view": valid_theme_view("Sufficient Material", ["CLM_PRIMARY"]),
     }
     manager = PropagationManager(cfg, db, ResultAnalyzer(result))
 
@@ -170,7 +188,7 @@ def test_thesis_change_accepts_two_independent_high_quality_sources_with_broken_
             "logic_chain_failure": "demand no longer supports utilization",
             "conclusion_change": "the investment direction reverses",
         },
-        "proposed_current_view": {"one_line_conclusion": "allowed"},
+        "proposed_current_view": valid_theme_view("Sufficient Thesis", ["CLM_A", "CLM_B"]),
     }
     manager = PropagationManager(cfg, db, ResultAnalyzer(result))
 

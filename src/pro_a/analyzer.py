@@ -601,6 +601,9 @@ class Analyzer:
             current_view=current_view_md or "<NO_CURRENT_VIEW>",
             evidence_json=json.dumps(evidence, ensure_ascii=False),
             context_json=json.dumps(context, ensure_ascii=False),
+            required_attributions_json=json.dumps(
+                context.get("required_claim_attributions") or {}, ensure_ascii=False,
+            ),
         )
         data = self.llm.json(IMPACT_SYSTEM, user)
         return self._validate_impact_output(data, evidence)
