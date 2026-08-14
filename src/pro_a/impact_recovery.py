@@ -32,7 +32,9 @@ IMPACT_REPAIR_SYSTEM = r"""
 5. 未来语义只能由对应的 company_guidance / broker_forecast 原子 Claim 支撑；不得利用 data/fact Claim 的 evidence_excerpt 混入未来陈述。
 6. Evidence-bearing 字段删除 Claim statement 未支持的数字、公司/供应商、行业趋势或因果链；major_risks 不得用“需关注”掩盖无依据因果，缺失信息只移入明确标为待验证/需跟踪的 knowledge_gaps / key_watch_items。
 7. 若 validation error 指向 major_risks[n] unsupported causal inference，必须删除该 major_risks 整项；禁止同义改写、弱化措辞或改成“需关注”。如有研究价值，只能在已有 knowledge_gaps / key_watch_items 中用“缺少证据/待验证/需跟踪”表达。
-8. 输出完整 JSON，不输出解释、Markdown 或补丁。
+8. major_suppliers 只有在 cited Claim statement 明确支持供应商/原厂身份及对应强度时才保留；营收、价格、产能或投资 Claim 不足以支持，缺证据时必须返回 []。
+9. 修复 supply_capacity atomicity 时不得删除有价值的 Guidance。同 scope 的 Actual 与 Guidance 必须分成两项，分别引用 data/fact Claim 与 company_guidance/broker_forecast Claim。
+10. 输出完整 JSON，不输出解释、Markdown 或补丁。
 """
 
 IMPACT_REPAIR_USER = r"""

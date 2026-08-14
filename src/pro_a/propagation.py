@@ -31,6 +31,9 @@ PRODUCT_TYPE_FIELDS = {
     "major_suppliers", "product_evolution",
 }
 APPLICATION_RELATION_CUES = ("用于", "应用于", "下游为", "下游包括", "应用", "application")
+SUPPLIER_IDENTITY_CUES = ("供应商", "原厂", "厂商", "生产商", "制造商", "供货商")
+SUPPLIER_STRENGTH_CUES = ("主要", "核心", "头部", "领先", "龙头", "最大", "关键")
+SUPPLY_CAPACITY_CUES = ("产能", "出货量", "满产", "量产", "达产", "爬坡", "扩产", "投资")
 FUTURE_CLAIM_NATURES = {"company_guidance", "broker_forecast"}
 FUTURE_SEMANTIC_RE = re.compile(
     r"预计|预期|计划|目标|有望|指引|展望|未来|届时|拟|将(?!近)"
@@ -488,6 +491,101 @@ class PropagationManager:
                         f"Current View {field}[{index}] must preserve company subject for {claim_id}"
                     )
 
+    def _major_supplier_errors(
+        self,
+        items: list[Any],
+        by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        errors: list[str] = []
+        for index, item in enumerate(items):
+            item_text = self._item_text(item)
+            refs = self._claim_refs(item_text, by_id)
+            statements = [
+                canonicalize_text(str(by_id[claim_id].get("statement") or ""))
+                for claim_id in refs
+            ]
+            if not any(
+                cue in statement
+                for statement in statements
+                for cue in SUPPLIER_IDENTITY_CUES
+            ):
+                errors.append(
+                    "Current View type_specific.major_suppliers"
+                    f"[{index}] lacks explicit supplier identity Evidence in cited Claim statement"
+                )
+                continue
+            claimed_strength = [
+                cue for cue in SUPPLIER_STRENGTH_CUES if cue in item_text
+            ]
+            if claimed_strength and not any(
+                cue in statement
+                for statement in statements
+                for cue in claimed_strength
+            ):
+                errors.append(
+                    "Current View type_specific.major_suppliers"
+                    f"[{index}] supplier strength exceeds cited Claim statement"
+                )
+        return errors
+
+    def _supply_capacity_retention_errors(
+        self,
+        items: list[Any],
+        claims: list[dict[str, Any]],
+        by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        grouped: dict[str, dict[str, list[str]]] = {}
+        for claim in claims:
+            statement = canonicalize_text(str(claim.get("statement") or ""))
+            scope = canonicalize_text(str(claim.get("scope") or "")).lower()
+            if not scope or not any(cue in statement for cue in SUPPLY_CAPACITY_CUES):
+                continue
+            nature = claim.get("nature") or ""
+            kind = (
+                "guidance"
+                if nature in FUTURE_CLAIM_NATURES
+                else "actual" if nature in {"fact", "data"} else ""
+            )
+            if kind:
+                grouped.setdefault(scope, {"actual": [], "guidance": []})[kind].append(
+                    claim["claim_id"]
+                )
+
+        item_refs = [
+            set(self._claim_refs(self._item_text(item), by_id)) for item in items
+        ]
+        errors: list[str] = []
+        for scope, paired in sorted(grouped.items()):
+            if not paired["actual"] or not paired["guidance"]:
+                continue
+            for claim_id in paired["actual"]:
+                if not any(
+                    claim_id in refs
+                    and not any(
+                        by_id[ref].get("nature") in FUTURE_CLAIM_NATURES
+                        for ref in refs
+                    )
+                    for refs in item_refs
+                ):
+                    errors.append(
+                        "Product type_specific.supply_capacity must retain paired Actual "
+                        f"Claim {claim_id} for scope {scope} in a separate item"
+                    )
+            for claim_id in paired["guidance"]:
+                if not any(
+                    claim_id in refs
+                    and not any(
+                        by_id[ref].get("nature") in {"fact", "data"}
+                        for ref in refs
+                    )
+                    for refs in item_refs
+                ):
+                    errors.append(
+                        "Product type_specific.supply_capacity must retain paired Guidance "
+                        f"Claim {claim_id} for scope {scope} in a separate item"
+                    )
+        return errors
+
     def _validate_current_view_quality(
         self, node: dict[str, Any], result: dict[str, Any], evidence: list[dict[str, Any]],
     ) -> None:
@@ -560,6 +658,7 @@ class PropagationManager:
         type_specific = proposed.get("type_specific")
         if not isinstance(type_specific, dict):
             raise ValueError("Current View type_specific must be an object")
+        product_errors: list[str] = []
         if node.get("primary_type") == "Product":
             missing = PRODUCT_TYPE_FIELDS - set(type_specific)
             if missing:
@@ -589,6 +688,15 @@ class PropagationManager:
                             f"Product type_specific.applications[{index}] lacks explicit application Evidence"
                         )
 
+            product_errors.extend(
+                self._major_supplier_errors(type_specific["major_suppliers"], by_id)
+            )
+            product_errors.extend(
+                self._supply_capacity_retention_errors(
+                    type_specific["supply_capacity"], claims, by_id
+                )
+            )
+
             watch_text = " ".join(list_fields["key_watch_items"])
             required_watch_cues = {
                 "industry supply/demand": ("供需", "供给", "库存", "产能利用率"),
@@ -601,7 +709,7 @@ class PropagationManager:
             if not any(cue in investment for cue in ("产业", "行业", "供应链", "产品")):
                 raise ValueError("Product investment_implication must state product/industry implications")
 
-        deterministic_errors = self._deterministic_current_view_errors(
+        deterministic_errors = product_errors + self._deterministic_current_view_errors(
             node, result, proposed, claims, by_id
         )
         if deterministic_errors:

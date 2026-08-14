@@ -153,9 +153,7 @@ def valid_initial_result(claim_ids: list[str]) -> dict:
                 "pricing": [
                     "昀冢科技披露其7月、8月MLCC价格环比上涨30%以上（CLM_PRICE）。"
                 ],
-                "major_suppliers": [
-                    "昀冢科技是当前Evidence覆盖的MLCC供应商样本（CLM_PRICE）。"
-                ],
+                "major_suppliers": [],
                 "product_evolution": [
                     "昀冢科技认为高容MLCC是当前关注的产品方向（CLM_GUIDANCE）。"
                 ],
