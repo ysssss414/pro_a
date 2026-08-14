@@ -11,6 +11,7 @@ from .audit import build_source_audit
 from .config import load_config
 from .db import Database
 from .ima import IMAClient
+from .impact_recovery import ImpactRecoveryService
 from .pipeline import IngestionPipeline
 from .proposals import ProposalManager
 from .receipts import write_proposal
@@ -74,6 +75,14 @@ def build_parser() -> argparse.ArgumentParser:
     reject = psub.add_parser("reject")
     reject.add_argument("proposal_id")
     reject.add_argument("--reason", default="")
+
+    impacts = sub.add_parser("impacts", help="Inspect and recover persisted Impact Reviews")
+    impact_sub = impacts.add_subparsers(dest="impact_command", required=True)
+    impact_show = impact_sub.add_parser("show")
+    impact_show.add_argument("impact_id")
+    impact_retry = impact_sub.add_parser("retry")
+    impact_retry.add_argument("impact_id")
+    impact_retry.add_argument("--max-repairs", type=int, choices=(1, 2), default=2)
 
     ima = sub.add_parser("ima")
     isub = ima.add_subparsers(dest="ima_command", required=True)
@@ -190,6 +199,19 @@ def main(argv: list[str] | None = None):
         elif args.proposal_command == "reject":
             manager.reject(args.proposal_id, args.reason)
             print("rejected")
+        return
+
+    if args.command == "impacts":
+        recovery = ImpactRecoveryService(cfg, db, analyzer)
+        try:
+            if args.impact_command == "show":
+                jprint(recovery.show(args.impact_id))
+            elif args.impact_command == "retry":
+                jprint(recovery.retry(args.impact_id, max_repairs=args.max_repairs))
+        except KeyError as exc:
+            raise SystemExit(f"Impact not found: {args.impact_id}") from exc
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
         return
 
     if args.command == "ima":

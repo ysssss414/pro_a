@@ -204,6 +204,21 @@ CREATE TABLE IF NOT EXISTS impact_reviews (
     UNIQUE(batch_id, node_id, target_view_version)
 );
 
+CREATE TABLE IF NOT EXISTS impact_attempt_audit (
+    audit_id TEXT PRIMARY KEY,
+    impact_id TEXT NOT NULL,
+    execution_attempt INTEGER NOT NULL,
+    repair_round INTEGER NOT NULL DEFAULT 0,
+    phase TEXT NOT NULL,
+    candidate_json TEXT NOT NULL DEFAULT '{}',
+    validation_errors_json TEXT NOT NULL DEFAULT '[]',
+    error_text TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE(impact_id, execution_attempt, repair_round)
+);
+CREATE INDEX IF NOT EXISTS idx_impact_attempt_audit
+ON impact_attempt_audit(impact_id, execution_attempt, repair_round);
+
 CREATE TABLE IF NOT EXISTS side_effect_jobs (
     job_id TEXT PRIMARY KEY,
     job_type TEXT NOT NULL,
