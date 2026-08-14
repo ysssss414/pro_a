@@ -15,6 +15,7 @@ CLAIM_NATURES = [
 ]
 
 CLAIM_STATUSES = ["current", "pending_verification", "updated", "invalidated", "expired", "disputed", "needs_review"]
+NOVELTY_LEVELS = ["N0", "N1", "N2", "N3"]
 
 CHANGE_LEVELS = ["initial", "minor", "material", "thesis"]
 

@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from .analyzer import Analyzer
+from .audit import build_source_audit
 from .config import load_config
 from .db import Database
 from .ima import IMAClient
@@ -35,6 +36,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = sub.add_parser("status", help="Show local knowledge-engine status")
 
+    source = sub.add_parser("source", help="Inspect one Source without changing it")
+    ssub = source.add_subparsers(dest="source_command", required=True)
+    source_show = ssub.add_parser("show")
+    source_show.add_argument("source_id")
+
     nodes = sub.add_parser("nodes")
     nsub = nodes.add_subparsers(dest="nodes_command", required=True)
     nsub.add_parser("list")
@@ -55,6 +61,8 @@ def build_parser() -> argparse.ArgumentParser:
     radd.add_argument("relation_type")
     radd.add_argument("to_node_id")
     radd.add_argument("--scope", default="")
+    rseed = rsub.add_parser("seed")
+    rseed.add_argument("csv_path")
 
     props = sub.add_parser("proposals")
     psub = props.add_subparsers(dest="proposal_command", required=True)
@@ -127,6 +135,14 @@ def main(argv: list[str] | None = None):
         })
         return
 
+    if args.command == "source":
+        if args.source_command == "show":
+            try:
+                jprint(build_source_audit(db, args.source_id))
+            except KeyError as exc:
+                raise SystemExit(f"Source not found: {args.source_id}") from exc
+        return
+
     if args.command == "nodes":
         if args.nodes_command == "list":
             jprint(db.list_nodes())
@@ -148,6 +164,12 @@ def main(argv: list[str] | None = None):
         elif args.relations_command == "add":
             rel_id = db.add_relation(args.from_node_id, args.relation_type, args.to_node_id, scope=args.scope)
             print(rel_id)
+        elif args.relations_command == "seed":
+            try:
+                count = db.seed_relations_csv(Path(args.csv_path))
+            except (OSError, ValueError) as exc:
+                raise SystemExit(f"Relation seed failed: {exc}") from exc
+            print(f"Seeded {count} new relations")
         return
 
     if args.command == "proposals":

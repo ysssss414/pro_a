@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+from .constants import NODE_TYPES, RELATION_TYPES
 from .ids import make_id
 
 
@@ -173,6 +174,11 @@ class Database:
 
     def add_node(self, canonical_name: str, primary_type: str, aliases: list[str] | None = None,
                  description: str = "", node_id: str | None = None) -> str:
+        canonical_name = canonical_name.strip()
+        if not canonical_name:
+            raise ValueError("Node canonical_name is required")
+        if primary_type not in NODE_TYPES:
+            raise ValueError(f"Invalid Node Type: {primary_type}")
         node_id = node_id or make_id("NODE")
         ts = now_iso()
         aliases = aliases or []
@@ -196,11 +202,13 @@ class Database:
     def seed_nodes_csv(self, csv_path: Path) -> int:
         count = 0
         with csv_path.open("r", encoding="utf-8-sig", newline="") as f:
-            for row in csv.DictReader(f):
+            for row_number, row in enumerate(csv.DictReader(f), 2):
                 name = (row.get("canonical_name") or "").strip()
                 typ = (row.get("primary_type") or "").strip()
                 if not name or not typ:
                     continue
+                if typ not in NODE_TYPES:
+                    raise ValueError(f"Node seed row {row_number}: invalid primary_type {typ!r}")
                 aliases = [x.strip() for x in (row.get("aliases") or "").split("|") if x.strip()]
                 before = self.one("SELECT node_id FROM nodes WHERE canonical_name=? AND primary_type=?", (name, typ))
                 self.add_node(name, typ, aliases, (row.get("description") or "").strip())
@@ -227,17 +235,70 @@ class Database:
         )
 
     def add_relation(self, from_node_id: str, relation_type: str, to_node_id: str, **kwargs) -> str:
+        if relation_type not in RELATION_TYPES:
+            raise ValueError(f"Invalid relation_type: {relation_type}")
+        if not self.get_node(from_node_id):
+            raise ValueError(f"Unknown from Node: {from_node_id}")
+        if not self.get_node(to_node_id):
+            raise ValueError(f"Unknown to Node: {to_node_id}")
+        scope = (kwargs.get("scope") or "").strip()
+        existing = self.one(
+            """SELECT relation_id FROM node_relations
+               WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
+            (from_node_id, relation_type, to_node_id, scope),
+        )
+        if existing:
+            return existing["relation_id"]
         rel_id = make_id("REL")
         with self.connect() as conn:
             conn.execute(
-                """INSERT OR IGNORE INTO node_relations(
+                """INSERT INTO node_relations(
                    relation_id,from_node_id,relation_type,to_node_id,scope,valid_from,valid_to,confidence,status,evidence_claim_id,created_at
                 ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                (rel_id, from_node_id, relation_type, to_node_id, kwargs.get("scope", ""), kwargs.get("valid_from", ""),
+                (rel_id, from_node_id, relation_type, to_node_id, scope, kwargs.get("valid_from", ""),
                  kwargs.get("valid_to", ""), kwargs.get("confidence"), kwargs.get("status", "current"),
                  kwargs.get("evidence_claim_id"), now_iso()),
             )
         return rel_id
+
+    def seed_relations_csv(self, csv_path: Path) -> int:
+        required = {"from_name", "relation_type", "to_name", "scope"}
+        prepared: list[tuple[str, str, str, str]] = []
+        with Path(csv_path).open("r", encoding="utf-8-sig", newline="") as f:
+            reader = csv.DictReader(f)
+            missing = required - set(reader.fieldnames or [])
+            if missing:
+                raise ValueError(f"Relation seed missing columns: {', '.join(sorted(missing))}")
+            for row_number, row in enumerate(reader, 2):
+                from_name = (row.get("from_name") or "").strip()
+                relation_type = (row.get("relation_type") or "").strip()
+                to_name = (row.get("to_name") or "").strip()
+                scope = (row.get("scope") or "").strip()
+                if not any((from_name, relation_type, to_name, scope)):
+                    continue
+                if not from_name or not relation_type or not to_name:
+                    raise ValueError(f"Relation seed row {row_number}: from_name, relation_type and to_name are required")
+                if relation_type not in RELATION_TYPES:
+                    raise ValueError(f"Relation seed row {row_number}: invalid relation_type {relation_type!r}")
+                from_node = self.find_node_by_name_or_alias(from_name)
+                if not from_node:
+                    raise ValueError(f"Relation seed row {row_number}: Node not found: {from_name}")
+                to_node = self.find_node_by_name_or_alias(to_name)
+                if not to_node:
+                    raise ValueError(f"Relation seed row {row_number}: Node not found: {to_name}")
+                prepared.append((from_node["node_id"], relation_type, to_node["node_id"], scope))
+
+        inserted = 0
+        with self.transaction(immediate=True) as conn:
+            for from_node_id, relation_type, to_node_id, scope in prepared:
+                cursor = conn.execute(
+                    """INSERT OR IGNORE INTO node_relations(
+                       relation_id,from_node_id,relation_type,to_node_id,scope,created_at
+                       ) VALUES(?,?,?,?,?,?)""",
+                    (make_id("REL"), from_node_id, relation_type, to_node_id, scope, now_iso()),
+                )
+                inserted += cursor.rowcount
+        return inserted
 
     def neighbors(self, node_id: str) -> dict[str, list[dict[str, Any]]]:
         structural = []

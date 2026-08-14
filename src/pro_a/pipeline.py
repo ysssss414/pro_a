@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .analyzer import Analyzer, normalize_ws
+from .audit import build_source_audit
 from .config import AppConfig
 from .db import Database, now_iso
 from .ids import make_id
@@ -68,6 +69,13 @@ class IngestionPipeline:
             "UPDATE processing_jobs SET source_id=?,status=?,finished_at=?,error_text=? WHERE job_id=?",
             (source_id, status, now_iso(), error, job_id),
         )
+
+    def _complete_receipt(self, job_id: str, source_id: str, receipt: dict[str, Any]) -> dict[str, Any]:
+        receipt["job_id"] = job_id
+        receipt["audit"] = build_source_audit(self.db, source_id)
+        if self.cfg.pipeline.write_receipts:
+            receipt["receipt_path"] = str(write_receipt(self.cfg, job_id, receipt))
+        return receipt
 
     def _pending_node_proposal_exists(self, name: str) -> bool:
         return bool(self.db.one(
@@ -164,6 +172,11 @@ class IngestionPipeline:
                 status = "needs_review"
             structured = dict(c.get("structured") or {})
             structured["related_candidate_names"] = c.get("related_candidate_names") or []
+            structured["validation"] = dict(c.get("validation") or {
+                "evidence_validated": bool(c.get("evidence_validated")),
+                "model_confidence": c.get("confidence"),
+                "errors": [] if c.get("evidence_validated") else ["evidence_excerpt_not_found"],
+            })
             self.db.execute(
                 """INSERT INTO claims(claim_id,statement,nature,fact_time,publication_time,ingestion_time,source_id,
                    evidence_pointer,evidence_excerpt,scope,assumption_text,status,confidence,novelty_level,structured_json,created_at)
@@ -279,6 +292,7 @@ class IngestionPipeline:
         if mode not in {"archive", "standard", "deep"}:
             raise ValueError(mode)
         job_id = self._start_job(input_path, mode)
+        source_id = ""
         warnings: list[str] = []
         try:
             sha = sha256_file(input_path)
@@ -298,9 +312,7 @@ class IngestionPipeline:
                     "node_matches": [], "node_proposals": [], "claims": [], "current_view_proposals": [], "knowledge_gaps": [],
                 }
                 self._finish_job(job_id, "duplicate", duplicate["source_id"])
-                if self.cfg.pipeline.write_receipts:
-                    write_receipt(self.cfg, job_id, receipt)
-                return receipt
+                return self._complete_receipt(job_id, duplicate["source_id"], receipt)
 
             original_name = input_path.name
             source_id = duplicate["source_id"] if duplicate else make_id("SRC")
@@ -340,9 +352,7 @@ class IngestionPipeline:
                     "node_matches": [], "node_proposals": [], "claims": [], "current_view_proposals": [], "knowledge_gaps": [],
                 }
                 self._finish_job(job_id, "done", source_id)
-                if self.cfg.pipeline.write_receipts:
-                    write_receipt(self.cfg, job_id, receipt)
-                return receipt
+                return self._complete_receipt(job_id, source_id, receipt)
 
             if not self.analyzer.available:
                 warnings.append("LLM disabled/missing key; Source stored but Standard/Deep analysis not run.")
@@ -353,9 +363,7 @@ class IngestionPipeline:
                     "node_matches": [], "node_proposals": [], "claims": [], "current_view_proposals": [], "knowledge_gaps": [],
                 }
                 self._finish_job(job_id, "needs_llm", source_id)
-                if self.cfg.pipeline.write_receipts:
-                    write_receipt(self.cfg, job_id, receipt)
-                return receipt
+                return self._complete_receipt(job_id, source_id, receipt)
 
             analysis = self.analyzer.analyze_source(original_name, text, mode)
             meta = analysis.source_metadata
@@ -384,9 +392,30 @@ class IngestionPipeline:
             }
             self.db.execute("UPDATE sources SET analysis_mode=? WHERE source_id=?", (mode, source_id))
             self._finish_job(job_id, "done", source_id)
-            if self.cfg.pipeline.write_receipts:
-                write_receipt(self.cfg, job_id, receipt)
-            return receipt
+            return self._complete_receipt(job_id, source_id, receipt)
         except Exception as e:
-            self._finish_job(job_id, "failed", error=str(e))
-            raise
+            source_exists = bool(
+                source_id and self.db.one("SELECT source_id FROM sources WHERE source_id=?", (source_id,))
+            )
+            persisted_source_id = source_id if source_exists else ""
+            self._finish_job(job_id, "failed", source_id=persisted_source_id, error=str(e))
+            receipt = {
+                "status": "failed",
+                "mode": mode,
+                "source_id": persisted_source_id,
+                "title": input_path.name,
+                "path": str(input_path),
+                "error": str(e),
+                "warnings": warnings,
+                "node_matches": [],
+                "node_proposals": [],
+                "claims": [],
+                "current_view_proposals": [],
+                "knowledge_gaps": [],
+                "job_id": job_id,
+            }
+            if source_exists:
+                return self._complete_receipt(job_id, source_id, receipt)
+            if self.cfg.pipeline.write_receipts:
+                receipt["receipt_path"] = str(write_receipt(self.cfg, job_id, receipt))
+            return receipt

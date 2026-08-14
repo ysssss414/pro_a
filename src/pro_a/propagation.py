@@ -6,6 +6,7 @@ from typing import Any
 
 from .analyzer import Analyzer
 from .config import AppConfig
+from .constants import CHANGE_LEVELS
 from .db import Database, now_iso
 from .ids import make_id
 from .receipts import write_proposal
@@ -260,6 +261,13 @@ class PropagationManager:
             return {"status": "needs_llm", "proposal_id": "", "gaps": [], "rq_proposals": []}
 
         result = self.analyzer.review_impact(node, current["content_md"] if current else "", evidence, context)
+        if not isinstance(result, dict):
+            raise ValueError("Impact Review must return an object")
+        level = result.get("change_level") or "none"
+        if level not in {*CHANGE_LEVELS, "none"}:
+            raise ValueError(f"Invalid Impact Review change_level: {level}")
+        if not isinstance(result.get("requires_change"), bool):
+            raise ValueError("Impact Review requires_change must be boolean")
         gaps = []
         if self.cfg.pipeline.create_gaps_automatically:
             for gap in result.get("knowledge_gaps") or []:
