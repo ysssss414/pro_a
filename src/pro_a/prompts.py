@@ -160,9 +160,13 @@ L3 证据层：关键事实、数据、Supporting Claims、Watch Items、Knowled
 13. 当目标是 Industry / Segment / Product / Technology / Material / Equipment / Application / Theme，而 Evidence 主要来自单一公司时，不得把公司价格、产能、需求或经营趋势写成行业整体事实。必须表述为“公司侧 Evidence”“单一公司样本”“行业验证样本”，并指出尚不足以确认行业结论；除非存在行业级 Evidence 或多个公司与独立来源交叉验证。不得先写确定性行业结论、再在“但/然而/不过”之后补免责声明；one_line_conclusion、core_logic、investment_implication、major_risks 都适用。
 14. Current View 必须以目标 Node 为中心。one_line_conclusion、core_logic、investment_implication、key_watch_items 各自至少显式出现一次目标 canonical_name 或 alias；major_risks 每项须显式提及目标 Node，或引用该 Node 的 Evidence Claim。Source 主体只能作为 Evidence Provider / Key Company。
 15. core_logic 每一项必须保留至少一个 Claim ID。不得补充 Evidence 中没有的事实、公司、应用、因果关系或预测。
-16. Product 的 type_specific 必须输出 applications / demand_drivers / supply_capacity / pricing / major_suppliers / product_evolution 六个数组。无 Evidence 的字段返回空数组；非空项可为字符串或结构化对象，但必须保留 Claim ID 及实际 attributed_to 主体，不得补造。applications 只接受原文明示“用于/应用于/下游为/application”等应用关系的 Evidence；“AI需求/存储需求”只能进入 demand_drivers，不能据此推断“AI服务器/存储设备”应用。
+16. Product 的 type_specific 必须输出 applications / demand_drivers / supply_capacity / pricing / major_suppliers / product_evolution 六个数组。无 Evidence 的字段返回空数组；非空项可为字符串或结构化对象，但必须保留 Claim ID 及实际 attributed_to 主体，不得补造。applications 只接受原文明示“用于/应用于/下游为/application”等应用关系的 Evidence；“AI需求/存储需求”只能进入 demand_drivers，不能据此推断“AI服务器/存储设备”应用。major_suppliers 只有在被引用 Claim statement 明确写出“供应商/原厂/厂商/生产商/制造商”等身份时才可非空；“主要/核心/头部/龙头”等强度不得超过 Claim statement。营收、价格、产能或投资 Claim 不能推导供应商身份。
 17. Product 的 key_watch_items 应覆盖目标产品的行业供需、竞争对手和下游需求，而不是只跟踪单一 Evidence Provider。
-18. 只输出 JSON。
+18. Current View 中出现“预计/计划/目标/将/有望/指引”等未来语义时，必须引用对应的 company_guidance / broker_forecast 原子 Claim；data/fact Claim 的 evidence_excerpt 即使同时包含未来原文，也不能支持未来陈述。Actual 与 Guidance 同句出现时分别保留两个 Claim ID，或拆成两项。
+19. one_line_conclusion、core_logic、key_facts、investment_implication、major_risks、type_specific 不得新增 Claim statement 未支持的具体事实、公司/供应商、数值、行业趋势或因果链。single_company_sample 不得升级为行业事实。major_risks 仍是 Evidence-bearing 字段，不能把无依据因果改写成“需关注某风险”来规避；应删除，或移入明确写明缺少证据的 knowledge_gaps / key_watch_items。
+20. knowledge_gaps、research_question_candidates、key_watch_items 可以描述缺失信息，但必须明确写成“缺少/待验证/需要跟踪”，不得伪装成已知事实。
+21. 当 supply_capacity Evidence 对同一 scope 同时存在 Actual(data/fact) 与 future Guidance(company_guidance/broker_forecast) 原子 Claims 时，必须分成 Actual 与 Guidance 两项，各自引用正确 Claim ID；禁止为了通过 Atomic Citation gate 删除有价值的 Guidance。
+22. 只输出 JSON。
 """
 
 IMPACT_USER = r"""
@@ -246,6 +250,9 @@ IMPACT_USER = r"""
 2. one_line_conclusion、core_logic、key_facts、investment_implication、major_risks、type_specific 只要引用归因映射中的 Claim ID，就必须逐字出现 required_subject，不得替换为“公司/管理层/券商/专家”。
 3. major_risks 不引用归因映射中的判断 Claim ID；每项显式写目标 Node canonical_name/alias。事实/数据 Claim 不受此生成策略限制。
 4. type_specific 不引用 expert_judgment / broker_forecast / market_rumor；这些语义判断只进入 core_logic。Product applications 仅在被引用 Claim 的 statement/evidence_excerpt 明示“用于/应用于/下游为/application”等关系时非空；只有 AI/存储需求时必须返回空数组。
+5. Actual 与 Guidance 不得混用同一个 data/fact Claim；未来数字必须引用对应的 company_guidance / broker_forecast Claim。
+6. Evidence-bearing 字段逐项删除 Claim statement 未支持的公司、数值、行业趋势和因果链；major_risks 不能用“需关注”掩盖无依据因果，缺失信息仅写入明确标为待验证/需跟踪的 knowledge_gaps / key_watch_items。
+7. major_suppliers 不得由营收、价格、产能或投资 Claim 推导；Claim statement 未明确供应商/原厂身份时返回空数组。supply_capacity 的同 scope Actual 与 Guidance 必须分条保留，不能删除 Guidance。
 """
 
 CLAIM_COMPARE_SYSTEM = r"""

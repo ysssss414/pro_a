@@ -142,8 +142,6 @@ class Database:
             ON current_views(node_id, revision_date DESC, revision_seq DESC);
             CREATE UNIQUE INDEX IF NOT EXISTS idx_current_views_proposal
             ON current_views(accepted_proposal_id) WHERE accepted_proposal_id<>'';
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_proposals_source_impact
-            ON proposals(source_impact_id) WHERE source_impact_id<>'';
             CREATE INDEX IF NOT EXISTS idx_impact_work_queue
             ON impact_reviews(batch_id, status, queue_order, created_at);
             CREATE TABLE IF NOT EXISTS side_effect_jobs (
@@ -161,6 +159,12 @@ class Database:
             CREATE INDEX IF NOT EXISTS idx_side_effect_jobs_status
             ON side_effect_jobs(status, created_at);
             """
+        )
+        conn.execute("DROP INDEX IF EXISTS idx_proposals_source_impact")
+        conn.execute(
+            """CREATE UNIQUE INDEX idx_proposals_source_impact
+               ON proposals(source_impact_id)
+               WHERE source_impact_id<>'' AND status IN ('pending','accepted')"""
         )
 
     def _migrate_0_2_to_0_2_1(self, conn: sqlite3.Connection) -> None:
@@ -350,7 +354,11 @@ class Database:
     def add_proposal(self, proposal_type: str, payload: dict[str, Any], target_node_id: str | None = None,
                      reason: str = "", propagation_batch_id: str = "", source_impact_id: str = "") -> str:
         if source_impact_id:
-            existing = self.one("SELECT proposal_id FROM proposals WHERE source_impact_id=?", (source_impact_id,))
+            existing = self.one(
+                """SELECT proposal_id FROM proposals
+                   WHERE source_impact_id=? AND status IN ('pending','accepted')""",
+                (source_impact_id,),
+            )
             if existing:
                 return existing["proposal_id"]
         proposal_id = make_id("PROP")

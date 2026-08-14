@@ -31,6 +31,45 @@ PRODUCT_TYPE_FIELDS = {
     "major_suppliers", "product_evolution",
 }
 APPLICATION_RELATION_CUES = ("用于", "应用于", "下游为", "下游包括", "应用", "application")
+SUPPLIER_IDENTITY_CUES = ("供应商", "原厂", "厂商", "生产商", "制造商", "供货商")
+SUPPLIER_STRENGTH_CUES = ("主要", "核心", "头部", "领先", "龙头", "最大", "关键")
+SUPPLY_CAPACITY_CUES = ("产能", "出货量", "满产", "量产", "达产", "爬坡", "扩产", "投资")
+FUTURE_CLAIM_NATURES = {"company_guidance", "broker_forecast"}
+FUTURE_SEMANTIC_RE = re.compile(
+    r"预计|预期|计划|目标|有望|指引|展望|未来|届时|拟|将(?!近)"
+)
+NUMBER_TOKEN_RE = re.compile(
+    r"\d+(?:\.\d+)?(?:\s*(?:Q[1-4]|H[12]|M\d{1,2}|年(?:底|末)?|月|日|"
+    r"亿颗(?:/月)?|亿元|亿|万|%|倍))?",
+    re.IGNORECASE,
+)
+CAUSAL_CUES = (
+    "导致", "引发", "使得", "使", "造成", "从而", "进而", "带来", "推动", "驱动",
+)
+TREND_CUES = (
+    "价格战", "竞争加剧", "扩产加剧", "供给过剩", "供需改善", "需求增长",
+    "需求下滑", "上行周期", "下行周期", "涨价趋势", "降价趋势",
+)
+TREND_QUALIFIERS = (
+    "待验证", "尚待", "不能确认", "无法确认", "不足以", "是否", "跟踪", "关注",
+    "可能", "或", "风险",
+)
+ORG_NAME_RE = re.compile(
+    r"(?:^|[，,。；;：:\s（(])"
+    r"([\u4e00-\u9fff]{2,8}(?:科技|电子|电机|集团|股份|半导体|材料|精密|控股|实业))"
+)
+ATOMIC_FUTURE_FIELDS = {
+    "key_facts",
+    "type_specific.supply_capacity",
+    "type_specific.pricing",
+    "type_specific.product_evolution",
+}
+
+
+class CurrentViewValidationError(ValueError):
+    def __init__(self, errors: list[str]):
+        self.errors = errors
+        super().__init__("; ".join(errors))
 
 
 class PropagationManager:
@@ -114,6 +153,212 @@ class PropagationManager:
     @staticmethod
     def _claim_refs(text: str, by_id: dict[str, dict[str, Any]]) -> list[str]:
         return [claim_id for claim_id in by_id if claim_id in text]
+
+    @staticmethod
+    def _item_text(item: Any) -> str:
+        return item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+
+    @classmethod
+    def _evidence_bearing_items(
+        cls, proposed: dict[str, Any]
+    ) -> list[tuple[str, int | None, str]]:
+        items: list[tuple[str, int | None, str]] = []
+        for field in ("one_line_conclusion", "investment_implication"):
+            value = proposed.get(field)
+            if isinstance(value, str):
+                items.append((field, None, value))
+        for field in ("core_logic", "key_facts", "major_risks"):
+            for index, item in enumerate(proposed.get(field) or []):
+                if isinstance(item, (str, dict)):
+                    items.append((field, index, cls._item_text(item)))
+        type_specific = proposed.get("type_specific") or {}
+        if isinstance(type_specific, dict):
+            for field, values in type_specific.items():
+                if not isinstance(values, list):
+                    continue
+                for index, item in enumerate(values):
+                    if isinstance(item, (str, dict)):
+                        items.append(
+                            (f"type_specific.{field}", index, cls._item_text(item))
+                        )
+        return items
+
+    @staticmethod
+    def _field_label(field: str, index: int | None) -> str:
+        return field if index is None else f"{field}[{index}]"
+
+    @staticmethod
+    def _number_tokens(text: str, claim_ids: list[str]) -> set[str]:
+        for claim_id in claim_ids:
+            text = text.replace(claim_id, "")
+        return {
+            re.sub(r"\s+", "", match.group(0)).lower()
+            for match in NUMBER_TOKEN_RE.finditer(text)
+        }
+
+    @staticmethod
+    def _organization_names(text: str, claim_ids: list[str]) -> set[str]:
+        for claim_id in claim_ids:
+            text = text.replace(claim_id, "")
+        return {match.group(1) for match in ORG_NAME_RE.finditer(text)}
+
+    @staticmethod
+    def _causal_consequence(text: str) -> str:
+        normalized = canonicalize_text(text)
+        for cue in ("如果", "一旦", "若"):
+            if cue not in normalized:
+                continue
+            conditional = normalized[normalized.find(cue) + len(cue):]
+            parts = re.split(r"[，,；;]", conditional, maxsplit=1)
+            if len(parts) == 2:
+                return parts[1]
+        cause_match = re.search(r"(?:可能)?因(?!此)", normalized)
+        if cause_match:
+            causal = normalized[cause_match.end():]
+            parts = re.split(r"[，,；;]", causal, maxsplit=1)
+            if len(parts) == 2:
+                return parts[1]
+        matches = [
+            (normalized.rfind(cue), cue)
+            for cue in CAUSAL_CUES
+            if cue in normalized
+        ]
+        if not matches:
+            return ""
+        position, cue = max(matches)
+        consequence = normalized[position + len(cue):]
+        return re.split(r"[，,。；;（）()]", consequence, maxsplit=1)[0]
+
+    @staticmethod
+    def _shares_specific_phrase(left: str, right: str, *, length: int = 4) -> bool:
+        left = re.sub(r"[^A-Za-z0-9\u4e00-\u9fff]", "", left).lower()
+        right = re.sub(r"[^A-Za-z0-9\u4e00-\u9fff]", "", right).lower()
+        if len(left) < length:
+            return bool(left) and left in right
+        return any(left[index:index + length] in right for index in range(len(left) - length + 1))
+
+    def _deterministic_current_view_errors(
+        self,
+        node: dict[str, Any],
+        result: dict[str, Any],
+        proposed: dict[str, Any],
+        claims: list[dict[str, Any]],
+        by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        errors: list[str] = []
+        claim_ids = list(by_id)
+        scope_restricted = self._single_company_scope_constraint(node, claims)
+
+        for field, index, item_text in self._evidence_bearing_items(proposed):
+            label = self._field_label(field, index)
+            refs = self._claim_refs(item_text, by_id)
+            supporting_claims = [by_id[claim_id] for claim_id in refs] if refs else claims
+            supporting_statements = [
+                str(claim.get("statement") or "") for claim in supporting_claims
+            ]
+
+            if field in ATOMIC_FUTURE_FIELDS and FUTURE_SEMANTIC_RE.search(item_text):
+                future_refs = [
+                    claim_id
+                    for claim_id in refs
+                    if by_id[claim_id].get("nature") in FUTURE_CLAIM_NATURES
+                    and str(by_id[claim_id].get("statement") or "").strip()
+                ]
+                if not future_refs:
+                    errors.append(
+                        f"Current View {label} future statement requires a guidance/forecast "
+                        "Claim; data/fact Claim evidence_excerpt cannot support future guidance"
+                    )
+
+            item_numbers = self._number_tokens(item_text, claim_ids)
+            supported_numbers: set[str] = set()
+            for statement in supporting_statements:
+                supported_numbers.update(self._number_tokens(statement, []))
+            unsupported_numbers = sorted(item_numbers - supported_numbers)
+            if unsupported_numbers:
+                errors.append(
+                    f"Current View {label} contains unsupported numeric fact(s): "
+                    + ", ".join(unsupported_numbers)
+                )
+
+            organizations = self._organization_names(item_text, claim_ids)
+            unsupported_organizations = sorted(
+                organization
+                for organization in organizations
+                if not any(organization in statement for statement in supporting_statements)
+                and not any(
+                    organization in str(claim.get("attributed_to") or "")
+                    for claim in supporting_claims
+                )
+            )
+            if unsupported_organizations:
+                errors.append(
+                    f"Current View {label} contains unsupported company/supplier(s): "
+                    + ", ".join(unsupported_organizations)
+                )
+
+            consequence = self._causal_consequence(item_text)
+            high_risk_consequence = any(
+                cue in consequence for cue in ("价格战", "垄断", "淘汰")
+            )
+            causal_supported = any(
+                self._shares_specific_phrase(consequence, statement)
+                for statement in supporting_statements
+            )
+            if (
+                consequence
+                and (scope_restricted or high_risk_consequence)
+                and not causal_supported
+            ):
+                errors.append(
+                    f"Current View {label} contains unsupported causal inference: "
+                    f"{consequence}"
+                )
+                continue
+
+            asserted_trends = [cue for cue in TREND_CUES if cue in item_text]
+            if (
+                asserted_trends
+                and scope_restricted
+                and not any(qualifier in item_text for qualifier in TREND_QUALIFIERS)
+                and not any(
+                    trend in statement
+                    for trend in asserted_trends
+                    for statement in supporting_statements
+                )
+            ):
+                errors.append(
+                    f"Current View {label} contains unsupported established trend: "
+                    + ", ".join(asserted_trends)
+                )
+
+        gap_cues = (
+            "缺少", "缺乏", "缺失", "不足", "待验证", "尚待", "需要跟踪", "需跟踪",
+            "需要验证", "需验证", "尚不清楚", "未知", "无法确认", "信息不足",
+        )
+        watch_cues = ("跟踪", "关注", "监测", "观察", "待验证", "需要验证", "需验证")
+        question_cues = ("是否", "？", "?", "待验证", "需要验证", "需验证", "缺少", "缺乏")
+        open_fields = (
+            ("knowledge_gaps", proposed.get("knowledge_gaps") or [], gap_cues),
+            ("key_watch_items", proposed.get("key_watch_items") or [], watch_cues),
+            ("knowledge_gaps", result.get("knowledge_gaps") or [], gap_cues),
+            (
+                "research_question_candidates",
+                result.get("research_question_candidates") or [],
+                question_cues,
+            ),
+        )
+        for field, values, cues in open_fields:
+            if not isinstance(values, list):
+                continue
+            for index, item in enumerate(values):
+                item_text = self._item_text(item)
+                if item_text.strip() and not any(cue in item_text for cue in cues):
+                    errors.append(
+                        f"Current View {field}[{index}] must be explicitly framed as "
+                        "missing evidence, pending validation, or tracking"
+                    )
+        return errors
 
     @staticmethod
     def _target_terms(node: dict[str, Any]) -> list[str]:
@@ -246,6 +491,101 @@ class PropagationManager:
                         f"Current View {field}[{index}] must preserve company subject for {claim_id}"
                     )
 
+    def _major_supplier_errors(
+        self,
+        items: list[Any],
+        by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        errors: list[str] = []
+        for index, item in enumerate(items):
+            item_text = self._item_text(item)
+            refs = self._claim_refs(item_text, by_id)
+            statements = [
+                canonicalize_text(str(by_id[claim_id].get("statement") or ""))
+                for claim_id in refs
+            ]
+            if not any(
+                cue in statement
+                for statement in statements
+                for cue in SUPPLIER_IDENTITY_CUES
+            ):
+                errors.append(
+                    "Current View type_specific.major_suppliers"
+                    f"[{index}] lacks explicit supplier identity Evidence in cited Claim statement"
+                )
+                continue
+            claimed_strength = [
+                cue for cue in SUPPLIER_STRENGTH_CUES if cue in item_text
+            ]
+            if claimed_strength and not any(
+                cue in statement
+                for statement in statements
+                for cue in claimed_strength
+            ):
+                errors.append(
+                    "Current View type_specific.major_suppliers"
+                    f"[{index}] supplier strength exceeds cited Claim statement"
+                )
+        return errors
+
+    def _supply_capacity_retention_errors(
+        self,
+        items: list[Any],
+        claims: list[dict[str, Any]],
+        by_id: dict[str, dict[str, Any]],
+    ) -> list[str]:
+        grouped: dict[str, dict[str, list[str]]] = {}
+        for claim in claims:
+            statement = canonicalize_text(str(claim.get("statement") or ""))
+            scope = canonicalize_text(str(claim.get("scope") or "")).lower()
+            if not scope or not any(cue in statement for cue in SUPPLY_CAPACITY_CUES):
+                continue
+            nature = claim.get("nature") or ""
+            kind = (
+                "guidance"
+                if nature in FUTURE_CLAIM_NATURES
+                else "actual" if nature in {"fact", "data"} else ""
+            )
+            if kind:
+                grouped.setdefault(scope, {"actual": [], "guidance": []})[kind].append(
+                    claim["claim_id"]
+                )
+
+        item_refs = [
+            set(self._claim_refs(self._item_text(item), by_id)) for item in items
+        ]
+        errors: list[str] = []
+        for scope, paired in sorted(grouped.items()):
+            if not paired["actual"] or not paired["guidance"]:
+                continue
+            for claim_id in paired["actual"]:
+                if not any(
+                    claim_id in refs
+                    and not any(
+                        by_id[ref].get("nature") in FUTURE_CLAIM_NATURES
+                        for ref in refs
+                    )
+                    for refs in item_refs
+                ):
+                    errors.append(
+                        "Product type_specific.supply_capacity must retain paired Actual "
+                        f"Claim {claim_id} for scope {scope} in a separate item"
+                    )
+            for claim_id in paired["guidance"]:
+                if not any(
+                    claim_id in refs
+                    and not any(
+                        by_id[ref].get("nature") in {"fact", "data"}
+                        for ref in refs
+                    )
+                    for refs in item_refs
+                ):
+                    errors.append(
+                        "Product type_specific.supply_capacity must retain paired Guidance "
+                        f"Claim {claim_id} for scope {scope} in a separate item"
+                    )
+        return errors
+
     def _validate_current_view_quality(
         self, node: dict[str, Any], result: dict[str, Any], evidence: list[dict[str, Any]],
     ) -> None:
@@ -318,6 +658,7 @@ class PropagationManager:
         type_specific = proposed.get("type_specific")
         if not isinstance(type_specific, dict):
             raise ValueError("Current View type_specific must be an object")
+        product_errors: list[str] = []
         if node.get("primary_type") == "Product":
             missing = PRODUCT_TYPE_FIELDS - set(type_specific)
             if missing:
@@ -347,6 +688,15 @@ class PropagationManager:
                             f"Product type_specific.applications[{index}] lacks explicit application Evidence"
                         )
 
+            product_errors.extend(
+                self._major_supplier_errors(type_specific["major_suppliers"], by_id)
+            )
+            product_errors.extend(
+                self._supply_capacity_retention_errors(
+                    type_specific["supply_capacity"], claims, by_id
+                )
+            )
+
             watch_text = " ".join(list_fields["key_watch_items"])
             required_watch_cues = {
                 "industry supply/demand": ("供需", "供给", "库存", "产能利用率"),
@@ -358,6 +708,12 @@ class PropagationManager:
                     raise ValueError(f"Product Current View key_watch_items missing {label}")
             if not any(cue in investment for cue in ("产业", "行业", "供应链", "产品")):
                 raise ValueError("Product investment_implication must state product/industry implications")
+
+        deterministic_errors = product_errors + self._deterministic_current_view_errors(
+            node, result, proposed, claims, by_id
+        )
+        if deterministic_errors:
+            raise CurrentViewValidationError(deterministic_errors)
 
     def _apply_initial_evidence_profile(
         self, result: dict[str, Any], evidence: list[dict[str, Any]]
