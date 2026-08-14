@@ -1,10 +1,10 @@
-# pro_a v0.1.1-stability
+# pro_a v0.2.0-real-ingestion
 
 面向长期投研的本地知识处理引擎原型。核心职责是把新资料从本地 Inbox 转换为可追溯的 Source / Claim / Knowledge Node / Current View，并通过 IMA OpenAPI 同步原始资料和正式研究成果。
 
-v0.1.1-stability 不改变冻结业务规则，重点补强 Proposal / Current View 原子性、幂等与恢复、确定性版本排序、持久化 Impact Review、程序化 Evidence Sufficiency，以及 Source 分析模式升级。
+v0.2.0-real-ingestion 第一阶段不改变冻结业务规则，目标是让第一份真实 Standard 投研资料具备可严格校验、可诊断、可人工验收的端到端闭环。IMA 默认保持关闭。
 
-## v0.1 已实现
+## 已实现
 
 - 三种入库模式：`archive` / `standard` / `deep`
 - 本地 Inbox 扫描与文件稳定检测
@@ -23,6 +23,10 @@ v0.1.1-stability 不改变冻结业务规则，重点补强 Proposal / Current V
 - IMA 原始文件上传：`check_repeated_names → create_media → COS → add_knowledge`
 - IMA Current View Markdown 上传
 - 人类可读 Ingestion Receipt / Proposal 文件
+- 41 个初始 Knowledge Node Seed 与 25 条结构 Relation Seed
+- Relation Seed 名称/别名解析、幂等导入和整批错误回滚
+- LLM 输出冻结枚举、Node 引用、confidence 与 Evidence excerpt 程序校验
+- Receipt / `source show` 展示 Source metadata、Existing Nodes、Node/RQ Candidates、Claims、历史比对、Impact Reviews、Current View Proposals 和 Gaps
 
 ## 设计边界
 
@@ -42,8 +46,7 @@ IMA v0.1 不依赖“新建知识库/新建文件夹”接口。请先在 IMA �
 ```powershell
 cd pro_a_v0_1
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
-.\.venv\Scripts\Activate.ps1
-pro-a init
+.\.venv\Scripts\pro-a.exe init
 ```
 
 复制配置：
@@ -55,7 +58,8 @@ Copy-Item .\config.example.toml .\config.toml
 首次可导入一批已经确认的示例节点：
 
 ```powershell
-pro-a nodes seed .\config\nodes_seed.example.csv
+.\.venv\Scripts\pro-a.exe nodes seed .\config\nodes_seed.example.csv
+.\.venv\Scripts\pro-a.exe relations seed .\config\relations_seed.example.csv
 ```
 
 ### 配置 LLM
@@ -78,6 +82,28 @@ model = "deepseek-chat"
 api_key_env = "PROA_LLM_API_KEY"
 ```
 
+第一轮真实 Standard 验收保持 IMA 关闭：
+
+```toml
+[ima]
+enabled = false
+```
+
+把资料放入 Standard Inbox 并执行：
+
+```powershell
+Copy-Item .\sample.txt .\workspace\inbox\standard\
+.\.venv\Scripts\pro-a.exe ingest --once
+```
+
+CLI 输出会包含 `source_id`、`job_id`、`receipt_path` 和完整 `audit`。随后可只读查看：
+
+```powershell
+.\.venv\Scripts\pro-a.exe source show SRC_xxx
+```
+
+Receipt 位于 `workspace/generated/receipts/<JOB_ID>.md`，包含 Source metadata、Existing Nodes、Candidate Node Proposals、Claims 与 Evidence 校验、Historical Compare、Impact Reviews、Current View Proposals、Knowledge Gaps 和 Research Question Candidates。
+
 ### 配置 IMA
 
 在 IMA 中生成 OpenAPI Client ID / API Key 后：
@@ -99,7 +125,7 @@ output_kb_id = "研究成果库ID"
 验证：
 
 ```powershell
-pro-a ima list-kbs
+.\.venv\Scripts\pro-a.exe ima list-kbs
 ```
 
 ## 日常使用
@@ -125,27 +151,27 @@ workspace/inbox/deep/
 单次处理：
 
 ```powershell
-pro-a ingest --once
+.\.venv\Scripts\pro-a.exe ingest --once
 ```
 
 持续监听：
 
 ```powershell
-pro-a watch --interval 5
+.\.venv\Scripts\pro-a.exe watch --interval 5
 ```
 
 查看待确认项：
 
 ```powershell
-pro-a proposals list
-pro-a proposals show PROP_xxx
+.\.venv\Scripts\pro-a.exe proposals list
+.\.venv\Scripts\pro-a.exe proposals show PROP_xxx
 ```
 
 确认 / 拒绝：
 
 ```powershell
-pro-a proposals accept PROP_xxx
-pro-a proposals reject PROP_xxx --reason "证据不足"
+.\.venv\Scripts\pro-a.exe proposals accept PROP_xxx
+.\.venv\Scripts\pro-a.exe proposals reject PROP_xxx --reason "证据不足"
 ```
 
 正式 Current View 会写入：
@@ -178,7 +204,7 @@ workspace/
 └─ pro_a.db
 ```
 
-## 当前明确未做（v0.2+）
+## 当前明确未做（后续阶段）
 
 - GUI
 - IMA 内自定义 Skill / MCP 入口

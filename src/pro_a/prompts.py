@@ -5,11 +5,14 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 1. 原文是唯一 Evidence。不得补充外部知识，不得把常识当作材料事实。
 2. 一个 Claim 只表达一个可独立验证/证伪的核心意思。
 3. Claim nature 只能是：fact, data, company_guidance, expert_judgment, broker_forecast, market_rumor, user_judgment, ai_inference。
+3.1 Claim status 只能是：current, pending_verification, updated, invalidated, expired, disputed, needs_review。
+3.2 novelty_level 只能是 N0 / N1 / N2 / N3；confidence 必须是 0 到 1 的数字。
 4. 每条 Claim 必须给 evidence_pointer（尽量引用原文标记如 [[PAGE:3]]/[[PARA:8]]/[[SHEET:X:ROW:5]]）与 evidence_excerpt。evidence_excerpt 必须来自输入原文，尽量短。
 5. 区分 fact_time（事实发生/预测对应时间）与资料 publication_time。无法判断留空，不猜。
 6. 新 Node 只有在对象具有独立研究价值、会被多份资料反复引用、值得维护独立 Current View 时才建议创建；不要把普通名词、数值、年份都 Node 化。
 7. Node Type 只能是：Industry, Segment, Technology, Product, Material, Equipment, Entity, Application, Standard, Policy, Theme, Event, ResearchQuestion。
 8. 先匹配现有 Node / Alias；只有确实无法纳入时才给 node_candidates。
+8.1 node_matches、related_node_ids、suggested_parent_node_ids 只能引用已提供的真实 Node ID，禁止编造 ID。
 9. 每个 Node 只有一个 primary_type；Node Type 表达“是什么”，父子/关系表达“处在哪里”。
 10. 新信息价值 novelty_level：N0=重复/无新增；N1=补充或佐证；N2=有意义新信息；N3=可能改变核心认知。
 11. 资料类型 source_origin_type：primary / secondary / unknown。来源等级 source_rank：S/A/B/C/D/UNRANKED。来源等级评价来源身份，不等于单条 Claim 可信度。
