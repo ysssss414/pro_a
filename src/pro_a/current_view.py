@@ -13,7 +13,10 @@ from .ids import make_id
 def _bullets(items: list[Any]) -> str:
     if not items:
         return "- 暂无"
-    return "\n".join(f"- {x}" for x in items)
+    return "\n".join(
+        f"- {json.dumps(item, ensure_ascii=False, sort_keys=True) if isinstance(item, dict) else item}"
+        for item in items
+    )
 
 
 def render_current_view(node: dict[str, Any], version: str, data: dict[str, Any], change_level: str,

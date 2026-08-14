@@ -4,7 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
-from .analyzer import Analyzer
+from .analyzer import Analyzer, attribution_subjects, canonicalize_text
 from .config import AppConfig
 from .constants import CHANGE_LEVELS
 from .db import Database, now_iso
@@ -16,6 +16,19 @@ NO_TARGET_VIEW = "<none>"
 HIGH_PRIMARY_RANKS = {"S", "A"}
 MATERIAL_QUALITY_RANKS = {"S", "A", "B"}
 THESIS_QUALITY_RANKS = {"S", "A"}
+JUDGMENT_NATURES = {
+    "company_guidance", "expert_judgment", "broker_forecast", "market_rumor",
+    "user_judgment", "ai_inference",
+}
+KEY_FACT_NATURES = {"fact", "data", "company_guidance"}
+NON_ENTITY_SCOPE_TYPES = {
+    "Industry", "Segment", "Technology", "Product", "Material", "Equipment",
+    "Application", "Theme",
+}
+PRODUCT_TYPE_FIELDS = {
+    "applications", "demand_drivers", "supply_capacity", "pricing",
+    "major_suppliers", "product_evolution",
+}
 
 
 class PropagationManager:
@@ -39,9 +52,282 @@ class PropagationManager:
     def _independence_key(claim: dict[str, Any]) -> str:
         return claim.get("underlying_source_id") or claim.get("evidence_source_id") or claim.get("source_id") or ""
 
+    def _evidence_profile(self, evidence: list[dict[str, Any]]) -> dict[str, Any]:
+        sources: dict[str, dict[str, Any]] = {}
+        independent: set[str] = set()
+        for item in evidence:
+            if not item.get("claim_id"):
+                continue
+            source_id = item.get("evidence_source_id") or item.get("source_id") or ""
+            if source_id:
+                sources.setdefault(source_id, item)
+            key = self._independence_key(item)
+            if key:
+                independent.add(key)
+
+        def distribution(field: str, default: str) -> dict[str, int]:
+            counts: dict[str, int] = {}
+            for source_id in sorted(sources):
+                value = str(sources[source_id].get(field) or default)
+                counts[value] = counts.get(value, 0) + 1
+            return dict(sorted(counts.items()))
+
+        return {
+            "evidence_source_count": len(sources),
+            "independent_evidence_source_count": len(independent),
+            "source_rank_distribution": distribution("source_rank", "UNRANKED"),
+            "source_origin_distribution": distribution("origin_type", "unknown"),
+        }
+
+    @staticmethod
+    def _structured(claim: dict[str, Any]) -> dict[str, Any]:
+        value = claim.get("structured_json") or {}
+        if isinstance(value, dict):
+            return value
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, dict) else {}
+        except (TypeError, ValueError):
+            return {}
+
+    def _company_subject(self, claim: dict[str, Any]) -> str:
+        structured_company = canonicalize_text(str(self._structured(claim).get("company") or ""))
+        if structured_company:
+            return structured_company
+        scope = canonicalize_text(str(claim.get("scope") or ""))
+        if claim.get("nature") == "company_guidance" or "公司" in scope or "企业" in scope:
+            subjects = attribution_subjects(str(claim.get("attributed_to") or ""))
+            return subjects[-1] if subjects else ""
+        return ""
+
+    @staticmethod
+    def _claim_refs(text: str, by_id: dict[str, dict[str, Any]]) -> list[str]:
+        return [claim_id for claim_id in by_id if claim_id in text]
+
+    @staticmethod
+    def _target_terms(node: dict[str, Any]) -> list[str]:
+        terms = [node.get("canonical_name") or "", *(node.get("aliases") or [])]
+        return [canonicalize_text(str(term)).lower() for term in terms if canonicalize_text(str(term))]
+
+    @classmethod
+    def _contains_target(cls, text: str, node: dict[str, Any]) -> bool:
+        normalized = canonicalize_text(text).lower()
+        return any(term in normalized for term in cls._target_terms(node))
+
+    @staticmethod
+    def _attribution_supported(text: str, claim: dict[str, Any], *, judgment: bool) -> bool:
+        normalized = canonicalize_text(text)
+        subjects = attribution_subjects(str(claim.get("attributed_to") or ""))
+        nature = claim.get("nature") or ""
+        generic = {
+            "company_guidance": ("公司", "管理层"),
+            "expert_judgment": ("专家", "分析师", "研究员"),
+            "broker_forecast": ("券商", "机构", "分析师"),
+            "market_rumor": ("市场传闻", "传闻", "市场消息"),
+            "user_judgment": ("用户",),
+            "ai_inference": ("AI推断", "模型推断"),
+        }.get(nature, ())
+        has_subject = (
+            any(subject in normalized for subject in subjects)
+            if subjects
+            else any(cue in normalized for cue in generic)
+        )
+        if not judgment:
+            return has_subject
+        markers = (
+            "认为", "判断", "预计", "预判", "指引", "表示", "称", "披露",
+            "展望", "看好", "可能", "或", "传闻", "据传", "推断",
+        )
+        return has_subject and any(marker in normalized for marker in markers)
+
+    def _single_company_scope_constraint(
+        self, node: dict[str, Any], evidence: list[dict[str, Any]]
+    ) -> bool:
+        if node.get("primary_type") not in NON_ENTITY_SCOPE_TYPES:
+            return False
+        companies = {
+            company for item in evidence if (company := self._company_subject(item))
+        }
+        industry_terms = ("行业", "产业", "市场", "全球")
+        industry_level_fact = any(
+            item.get("nature") in {"fact", "data"}
+            and any(term in canonicalize_text(str(item.get("scope") or "")) for term in industry_terms)
+            and not self._company_subject(item)
+            for item in evidence
+            if item.get("claim_id")
+        )
+        return len(companies) == 1 and not industry_level_fact
+
+    def _validate_cited_items(
+        self, field: str, items: list[Any], by_id: dict[str, dict[str, Any]], *,
+        key_facts: bool = False,
+    ) -> None:
+        for index, item in enumerate(items):
+            item_text = item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+            refs = self._claim_refs(item_text, by_id)
+            if not refs:
+                raise ValueError(f"Current View {field}[{index}] must retain at least one Claim ID")
+            for claim_id in refs:
+                claim = by_id[claim_id]
+                nature = claim.get("nature") or ""
+                if key_facts and nature not in KEY_FACT_NATURES:
+                    raise ValueError(
+                        f"Current View key_facts cannot use judgment Claim {claim_id} ({nature})"
+                    )
+                judgment_attribution = (
+                    isinstance(item, str)
+                    and not key_facts
+                    and (
+                        field == "core_logic"
+                        or nature
+                        in {
+                            "expert_judgment",
+                            "broker_forecast",
+                            "market_rumor",
+                            "user_judgment",
+                            "ai_inference",
+                        }
+                    )
+                )
+                if nature in JUDGMENT_NATURES and not self._attribution_supported(
+                    item_text, claim, judgment=judgment_attribution,
+                ):
+                    raise ValueError(
+                        f"Current View {field}[{index}] must preserve attribution for {claim_id}"
+                    )
+
+    def _validate_current_view_quality(
+        self, node: dict[str, Any], result: dict[str, Any], evidence: list[dict[str, Any]],
+    ) -> None:
+        proposed = result.get("proposed_current_view")
+        if not isinstance(proposed, dict):
+            raise ValueError("Current View proposal must contain proposed_current_view")
+        claims = [item for item in evidence if item.get("claim_id")]
+        by_id = {item["claim_id"]: item for item in claims}
+        evidence_ids = proposed.get("evidence_claim_ids") or []
+        if not isinstance(evidence_ids, list) or not evidence_ids:
+            raise ValueError("Current View must retain evidence_claim_ids")
+        if any(claim_id not in by_id for claim_id in evidence_ids):
+            raise ValueError("Current View evidence_claim_ids contain unknown Evidence")
+
+        one_line_value = proposed.get("one_line_conclusion")
+        investment_value = proposed.get("investment_implication")
+        if not isinstance(one_line_value, str) or not isinstance(investment_value, str):
+            raise ValueError(
+                "Current View one_line_conclusion and investment_implication must be strings"
+            )
+        one_line = one_line_value.strip()
+        investment = investment_value.strip()
+        if not one_line or not investment:
+            raise ValueError("Current View requires one_line_conclusion and investment_implication")
+        list_fields = {
+            field: proposed.get(field) or []
+            for field in ("core_logic", "key_facts", "major_risks", "key_watch_items")
+        }
+        for field, items in list_fields.items():
+            if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
+                raise ValueError(f"Current View {field} must be an array of strings")
+        for field in ("core_logic", "major_risks", "key_watch_items"):
+            if not list_fields[field]:
+                raise ValueError(f"Current View {field} cannot be empty")
+
+        target_fields = {
+            "one_line_conclusion": one_line,
+            "core_logic": " ".join(list_fields["core_logic"]),
+            "investment_implication": investment,
+            "key_watch_items": " ".join(list_fields["key_watch_items"]),
+        }
+        for field, text in target_fields.items():
+            if not self._contains_target(text, node):
+                raise ValueError(f"Current View {field} must be target-Node-centric")
+        for index, risk in enumerate(list_fields["major_risks"]):
+            if not self._contains_target(risk, node) and not self._claim_refs(risk, by_id):
+                raise ValueError(
+                    f"Current View major_risks[{index}] must mention the target Node or cite its Evidence"
+                )
+
+        self._validate_cited_items("core_logic", list_fields["core_logic"], by_id)
+        self._validate_cited_items("key_facts", list_fields["key_facts"], by_id, key_facts=True)
+
+        if self._single_company_scope_constraint(node, claims):
+            qualifiers = ("公司侧", "单一公司", "样本", "尚不足", "不能确认", "无法确认", "不能单独")
+            for field, text in (("one_line_conclusion", one_line), ("investment_implication", investment)):
+                if not any(qualifier in text for qualifier in qualifiers):
+                    raise ValueError(
+                        f"Current View {field} exceeds single-company Evidence scope"
+                    )
+
+        type_specific = proposed.get("type_specific")
+        if not isinstance(type_specific, dict):
+            raise ValueError("Current View type_specific must be an object")
+        if node.get("primary_type") == "Product":
+            missing = PRODUCT_TYPE_FIELDS - set(type_specific)
+            if missing:
+                raise ValueError(
+                    "Product Current View missing type_specific fields: " + ", ".join(sorted(missing))
+                )
+            for field in sorted(PRODUCT_TYPE_FIELDS):
+                items = type_specific[field]
+                if not isinstance(items, list) or any(
+                    not isinstance(item, (str, dict)) for item in items
+                ):
+                    raise ValueError(
+                        f"Product type_specific.{field} must be an array of strings or objects"
+                    )
+                self._validate_cited_items(f"type_specific.{field}", items, by_id)
+
+            watch_text = " ".join(list_fields["key_watch_items"])
+            required_watch_cues = {
+                "industry supply/demand": ("供需", "供给", "库存", "产能利用率"),
+                "competitors": ("竞争", "对手", "同行", "厂商", "供应商"),
+                "downstream demand": ("下游", "需求", "应用"),
+            }
+            for label, cues in required_watch_cues.items():
+                if not any(cue in watch_text for cue in cues):
+                    raise ValueError(f"Product Current View key_watch_items missing {label}")
+            if not any(cue in investment for cue in ("产业", "行业", "供应链", "产品")):
+                raise ValueError("Product investment_implication must state product/industry implications")
+
+    def _apply_initial_evidence_profile(
+        self, result: dict[str, Any], evidence: list[dict[str, Any]]
+    ) -> None:
+        profile = self._evidence_profile(evidence)
+        result.update(profile)
+        proposed = result.get("proposed_current_view")
+        if isinstance(proposed, dict):
+            proposed["evidence_profile"] = profile
+        if result.get("change_level") == "initial":
+            semantic = dict(result.get("evidence_sufficiency") or {})
+            model_sufficient = semantic.get("sufficient") is not False
+            source_sufficient = profile["evidence_source_count"] >= 1
+            sufficient = source_sufficient and model_sufficient
+            original_reason = str(semantic.get("reason") or "").strip()
+            semantic.update(profile)
+            semantic["sufficient"] = sufficient
+            if not source_sufficient:
+                semantic["reason"] = "Initial View requires at least one Evidence Source"
+            elif not model_sufficient:
+                semantic["reason"] = (
+                    "Initial View semantic Evidence Scope review found insufficient support"
+                    + (f": {original_reason}" if original_reason else "")
+                )
+            else:
+                semantic["reason"] = (
+                    "Initial View permits a single source; this proposal uses "
+                    f"{profile['evidence_source_count']} Source(s) representing "
+                    f"{profile['independent_evidence_source_count']} independent underlying Source(s). "
+                    "Evidence Scope Constraint applies."
+                )
+            result["evidence_sufficiency"] = semantic
+
     def _programmatic_evidence_sufficiency(
         self, level: str, evidence: list[dict[str, Any]], semantic: dict[str, Any]
     ) -> tuple[bool, str]:
+        if level == "initial":
+            profile = self._evidence_profile(evidence)
+            if profile["evidence_source_count"] >= 1:
+                return True, "Initial View permits one Source; Evidence Scope Constraint applies"
+            return False, "Initial View requires at least one Evidence Source"
         if level not in {"material", "thesis"}:
             return True, "No elevated evidence threshold required"
 
@@ -162,6 +448,10 @@ class PropagationManager:
             "scope_normalization_notes": result.get("scope_normalization_notes") or [],
             "evidence_sufficiency": result.get("evidence_sufficiency") or {},
             "programmatic_evidence_sufficiency": result.get("programmatic_evidence_sufficiency") or {},
+            "evidence_source_count": result.get("evidence_source_count", 0),
+            "independent_evidence_source_count": result.get("independent_evidence_source_count", 0),
+            "source_rank_distribution": result.get("source_rank_distribution") or {},
+            "source_origin_distribution": result.get("source_origin_distribution") or {},
             "proposed_current_view": result.get("proposed_current_view") or {},
             "evidence_claim_ids": claim_ids,
             "trigger_source_id": trigger_source_id,
@@ -260,6 +550,22 @@ class PropagationManager:
             )
             return {"status": "needs_llm", "proposal_id": "", "gaps": [], "rq_proposals": []}
 
+        profile = self._evidence_profile(evidence)
+        required_attributions = {
+            item["claim_id"]: {
+                "nature": item.get("nature") or "",
+                "attributed_to": item.get("attributed_to") or "",
+            }
+            for item in evidence
+            if item.get("claim_id")
+            and item.get("nature") in JUDGMENT_NATURES
+            and item.get("attributed_to")
+        }
+        context = {
+            **context,
+            "evidence_profile": profile,
+            "required_claim_attributions": required_attributions,
+        }
         result = self.analyzer.review_impact(node, current["content_md"] if current else "", evidence, context)
         if not isinstance(result, dict):
             raise ValueError("Impact Review must return an object")
@@ -268,6 +574,25 @@ class PropagationManager:
             raise ValueError(f"Invalid Impact Review change_level: {level}")
         if not isinstance(result.get("requires_change"), bool):
             raise ValueError("Impact Review requires_change must be boolean")
+        proposal_id = ""
+        level = result.get("change_level")
+        requires_change = bool(result.get("requires_change")) and level not in (None, "", "none")
+        self._apply_initial_evidence_profile(result, evidence)
+        semantic_sufficiency = result.get("evidence_sufficiency") or {}
+        program_sufficient, program_reason = self._programmatic_evidence_sufficiency(
+            level, evidence, semantic_sufficiency,
+        )
+        result["programmatic_evidence_sufficiency"] = {
+            "sufficient": program_sufficient,
+            "reason": program_reason,
+        }
+        if level in {"initial", "material", "thesis"} and (
+            semantic_sufficiency.get("sufficient") is False or not program_sufficient
+        ):
+            requires_change = False
+        if requires_change:
+            self._validate_current_view_quality(node, result, evidence)
+
         gaps = []
         if self.cfg.pipeline.create_gaps_automatically:
             for gap in result.get("knowledge_gaps") or []:
@@ -280,22 +605,6 @@ class PropagationManager:
             pid = self._create_rq_candidate(candidate, node["node_id"], claim_ids, impact["batch_id"])
             if pid:
                 rq_pids.append(pid)
-
-        proposal_id = ""
-        level = result.get("change_level")
-        requires_change = bool(result.get("requires_change")) and level not in (None, "", "none")
-        semantic_sufficiency = result.get("evidence_sufficiency") or {}
-        program_sufficient, program_reason = self._programmatic_evidence_sufficiency(
-            level, evidence, semantic_sufficiency,
-        )
-        result["programmatic_evidence_sufficiency"] = {
-            "sufficient": program_sufficient,
-            "reason": program_reason,
-        }
-        if level in {"material", "thesis"} and (
-            semantic_sufficiency.get("sufficient") is False or not program_sufficient
-        ):
-            requires_change = False
         if requires_change:
             proposal_id = self._create_current_view_proposal(
                 node["node_id"], result, claim_ids, context.get("trigger_source_id", ""),

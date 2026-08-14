@@ -152,7 +152,16 @@ L3 证据层：关键事实、数据、Supporting Claims、Watch Items、Knowled
 6. 所有 Current View 变更最终都需要用户确认。你只生成 Proposal，不擅自生效。
 7. Knowledge Gap 可以自动产生：核心假设未验证、Claims 冲突无法解释、重要字段缺数据、Evidence 过时、潜在重大信息证据不足。
 8. Research Question 只有在答案可能改变 Current View/Material/Thesis、属于核心变量、反复出现或用户明确指定时才作为候选；它是新 Node，必须审批。
-9. 只输出 JSON。
+9. initial 允许基于单一 Source 建立，不采用 material/thesis 的多源硬门槛；但必须执行 Evidence Scope Constraint：结论范围、确定性和因果强度不得高于 Evidence。
+10. Evidence independence 按 context.evidence_profile 中的 underlying Source/Source 统计。同一 Source 的多条 Claims 不是相互独立 Evidence，禁止按 Claim 数量描述独立性。
+11. company_guidance / expert_judgment / broker_forecast / market_rumor 不得改写成无归属事实。逐条使用 context.required_claim_attributions 核对：core_logic 和 type_specific 使用此类 Claim 时，必须写出其中实际 attributed_to 主体（如“昀冢科技认为/财通电子团队判断/专家预计/市场传闻”），不能仅用泛称“公司/券商/专家”，并保留 Claim ID 与不确定性。
+12. key_facts 只能使用 fact / data / 明确公司指引；预测、专家判断、券商判断、传闻不得放入 key_facts。每条 key_fact 必须保留 Claim ID，公司指引必须保留公司主体。
+13. 当目标是 Industry / Segment / Product / Technology / Material / Equipment / Application / Theme，而 Evidence 主要来自单一公司时，不得把公司价格、产能、需求或经营趋势写成行业整体事实。必须表述为“公司侧 Evidence”“单一公司样本”“行业验证样本”，并指出尚不足以确认行业结论；除非存在行业级 Evidence 或多个公司与独立来源交叉验证。
+14. Current View 必须以目标 Node 为中心。one_line_conclusion、core_logic、investment_implication、key_watch_items 各自至少显式出现一次目标 canonical_name 或 alias；major_risks 每项须显式提及目标 Node，或引用该 Node 的 Evidence Claim。Source 主体只能作为 Evidence Provider / Key Company。
+15. core_logic 每一项必须保留至少一个 Claim ID。不得补充 Evidence 中没有的事实、公司、应用、因果关系或预测。
+16. Product 的 type_specific 必须输出 applications / demand_drivers / supply_capacity / pricing / major_suppliers / product_evolution 六个数组。无 Evidence 的字段返回空数组；非空项可为字符串或结构化对象，但必须保留 Claim ID 及实际 attributed_to 主体，不得补造。
+17. Product 的 key_watch_items 应覆盖目标产品的行业供需、竞争对手和下游需求，而不是只跟踪单一 Evidence Provider。
+18. 只输出 JSON。
 """
 
 IMPACT_USER = r"""
@@ -169,6 +178,15 @@ IMPACT_USER = r"""
 
 关系/传播上下文：
 {context_json}
+
+必须原样保留的 Claim 归因映射：
+{required_attributions_json}
+
+输出前逐条核对 core_logic、key_facts 和 type_specific：只要引用上述 Claim ID，文本或结构化对象中就必须出现该 Claim 对应的实际 attributed_to 主体。
+错误示例：“AI 与存储驱动 MLCC 周期上行（CLM_x）”。
+正确示例：“昀冢科技认为 AI 与存储可能驱动 MLCC 周期变化（CLM_x）”。
+错误示例：“国内外原厂趋势一致（CLM_y）”。
+正确示例：“财通电子团队判断国内外原厂趋势一致（CLM_y）”。
 
 返回 JSON：
 {{
@@ -197,7 +215,14 @@ IMPACT_USER = r"""
     "key_watch_items":[],
     "recent_change":"",
     "evidence_claim_ids":[],
-    "type_specific":{{}}
+    "type_specific":{{
+      "applications":[],
+      "demand_drivers":[],
+      "supply_capacity":[],
+      "pricing":[],
+      "major_suppliers":[],
+      "product_evolution":[]
+    }}
   }},
   "knowledge_gaps": [
     {{"title":"","description":"","source_claim_ids":[],"freshness_due":""}}

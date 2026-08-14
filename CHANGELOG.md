@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2 — 2026-08-14
+
+- Initial Current View 允许单一 Source，同时执行 Evidence Scope Constraint；Proposal 记录 Source 数量、底层独立 Source 数量、Source Rank 与 primary/secondary 分布。
+- Current View 程序校验强制保留 company guidance、expert judgment、broker forecast、market rumor 的实际 attribution 主体及 Claim ID。
+- 单一公司 Evidence 不得直接外推行业/产品整体结论；one-line、core logic、investment implication、risks 与 watch items 必须保持 Target-Node-centric。
+- `key_facts` 仅接受事实、数据和明确公司指引；Product Current View 支持 applications、demand drivers、supply capacity、pricing、major suppliers、product evolution 六类 type-specific Evidence。
+- Product type-specific 支持字符串或带 Claim ID / attribution 的结构化审计项。
+- 使用同一份昀冢科技 MLCC Standard 样本在全新 workspace 完成真实 DeepSeek Initial Proposal 回归；IMA 继续关闭，冻结业务规则与稳定性状态机未变。
+
 ## 0.2.1 — 2026-08-14
 
 - Candidate Node 增加独立研究价值门槛；Event 必须是有明确时间的离散事件，Theme 必须具有长期且跨 Source/Node 的价值。
