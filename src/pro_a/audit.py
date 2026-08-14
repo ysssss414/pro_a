@@ -22,12 +22,14 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
     source["metadata"] = _json(source.pop("metadata_json", "{}"), {})
 
     nodes = db.all(
-        """SELECT n.node_id,n.canonical_name,n.primary_type,n.description,l.role,l.confidence
+        """SELECT n.node_id,n.canonical_name,n.primary_type,n.description,l.role,l.confidence,
+                  l.link_origin,l.derived_from_node_id,l.evidence_excerpt,l.evidence_validation_json
            FROM source_node_links l JOIN nodes n ON n.node_id=l.node_id
            WHERE l.source_id=? ORDER BY CASE l.role WHEN 'primary' THEN 0 ELSE 1 END,n.canonical_name""",
         (source_id,),
     )
     for node in nodes:
+        node["evidence_validation"] = _json(node.pop("evidence_validation_json", "{}"), {})
         node["aliases"] = [
             row["alias"] for row in db.all(
                 "SELECT alias FROM node_aliases WHERE node_id=? ORDER BY alias", (node["node_id"],)

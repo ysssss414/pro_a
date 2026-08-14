@@ -29,13 +29,21 @@ class AuditAnalyzer:
             },
             node_matches=[{
                 "node_id": self.node_id, "role": "primary", "confidence": 0.96,
-                "reason": "公司主体明确",
+                "reason": "公司主体明确", "evidence_excerpt": "中际旭创",
+                "evidence_validated": True,
+                "validation": {
+                    "evidence_validated": True,
+                    "match_method": "normalized_exact_substring",
+                    "normalized_excerpt": "中际旭创",
+                    "normalized_start": 0,
+                    "normalized_end": 4,
+                },
             }],
             node_candidates=[{
                 "canonical_name": "800G光模块", "primary_type": "Product", "aliases": [],
                 "description": "高速光模块产品", "suggested_parent_node_ids": [],
                 "reason": "资料反复讨论的独立产品", "confidence": 0.82,
-                "candidate_kind": "normal",
+                "candidate_kind": "normal", "quality_eligible": True,
             }],
             claims=[{
                 "statement": "中际旭创预计2026年产能增长20%。",
@@ -45,6 +53,7 @@ class AuditAnalyzer:
                 "fact_time": "2026",
                 "evidence_pointer": "[[PARA:1]]",
                 "evidence_excerpt": "预计2026年产能增长20%",
+                "attributed_to": "中际旭创",
                 "evidence_validated": True,
                 "scope": "公司产能",
                 "assumption": "需求按期释放",
@@ -56,6 +65,9 @@ class AuditAnalyzer:
             }],
             source_references=[],
         )
+
+    def backfill_candidate_claims(self, candidates, claims):
+        return {"800g光模块": [0]}
 
     def compare_claims(self, node, new_claims, history):
         return {

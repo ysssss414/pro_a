@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pro-a"
-version = "0.2.0"
+version = "0.2.1"
 description = "Research knowledge ingestion engine with IMA sync"
 requires-python = ">=3.10"
 dependencies = [

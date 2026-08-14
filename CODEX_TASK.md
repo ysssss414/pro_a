@@ -1,8 +1,8 @@
-# Codex continuation brief — pro_a v0.2.0-real-ingestion
+# Codex continuation brief — pro_a v0.2.1-knowledge-quality
 
 ## 当前状态
 
-v0.2.0-real-ingestion 第一阶段已补齐 Relation Seed、LLM 严格输出校验、完整 Ingestion Receipt 和只读 Source 诊断。v0.1.1 的原子状态机、幂等/stale、确定性版本排序、持久 Impact Review、程序化 Evidence Sufficiency 和 Source 模式升级继续保留。冻结业务规则未变。开始修改前先阅读：
+v0.2.1-knowledge-quality 已在 v0.2.0 的 Relation Seed、严格校验和 Source 审计基础上，补齐 Candidate Node 质量门槛、Node Match Evidence、Claim attribution、Evidence canonicalization 和 Candidate Claim backfill。v0.1.1 稳定性状态机继续保留，冻结业务规则未变。开始修改前先阅读：
 
 1. `docs/REQUIREMENTS_FROZEN.md`
 2. `README.md`

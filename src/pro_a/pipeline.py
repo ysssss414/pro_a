@@ -85,15 +85,18 @@ class IngestionPipeline:
 
     def _create_node_proposal(self, candidate: dict[str, Any], source_id: str, claim_ids: list[str], batch_id: str) -> str | None:
         name = (candidate.get("canonical_name") or "").strip()
-        if not name:
+        if not name or candidate.get("quality_eligible") is not True:
             return None
         existing = self.db.find_node_by_name_or_alias(name)
         if existing:
             for cid in claim_ids:
                 self.db.execute("INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
                                 (cid, existing["node_id"], "related"))
-            self.db.execute("INSERT OR IGNORE INTO source_node_links(source_id,node_id,role,confidence) VALUES(?,?,?,?)",
-                            (source_id, existing["node_id"], "related", candidate.get("confidence")))
+            self.db.execute(
+                """INSERT OR IGNORE INTO source_node_links(
+                   source_id,node_id,role,confidence,link_origin) VALUES(?,?,?,?,?)""",
+                (source_id, existing["node_id"], "related", candidate.get("confidence"), "candidate_resolution"),
+            )
             return None
         if self._pending_node_proposal_exists(name):
             return None
@@ -133,9 +136,16 @@ class IngestionPipeline:
         except IMAError as e:
             return {"status": "failed", "error": str(e)}
 
-    def _update_source_metadata(self, source_id: str, source_type: str, meta: dict[str, Any], refs: list[dict[str, Any]]) -> None:
+    def _update_source_metadata(
+        self, source_id: str, source_type: str, meta: dict[str, Any],
+        refs: list[dict[str, Any]], analysis_quality: dict[str, Any] | None = None,
+    ) -> None:
         title = (meta.get("title") or "").strip()
-        metadata = {"summary": meta.get("summary", ""), "source_references_unresolved": refs}
+        metadata = {
+            "summary": meta.get("summary", ""),
+            "source_references_unresolved": refs,
+            "analysis_quality": analysis_quality or {},
+        }
         self.db.execute(
             """UPDATE sources SET title=CASE WHEN ?<>'' THEN ? ELSE title END,source_type=?,source_rank=?,origin_type=?,
                author=?,organization=?,publication_time=?,metadata_json=?,status='analyzed' WHERE source_id=?""",
@@ -159,10 +169,12 @@ class IngestionPipeline:
                 except Exception:
                     pass
 
-    def _insert_claims(self, source_id: str, analysis, publication_time: str) -> tuple[list[str], dict[str, list[str]]]:
+    def _insert_claims(
+        self, source_id: str, analysis, publication_time: str
+    ) -> tuple[list[str], dict[int, str]]:
         claim_ids: list[str] = []
-        candidate_claims: dict[str, list[str]] = {}
-        for c in analysis.claims:
+        claim_id_by_index: dict[int, str] = {}
+        for claim_index, c in enumerate(analysis.claims):
             statement = normalize_ws(str(c.get("statement", "")))
             if not statement:
                 continue
@@ -172,6 +184,8 @@ class IngestionPipeline:
                 status = "needs_review"
             structured = dict(c.get("structured") or {})
             structured["related_candidate_names"] = c.get("related_candidate_names") or []
+            if c.get("statement_normalization"):
+                structured["statement_normalization"] = dict(c["statement_normalization"])
             structured["validation"] = dict(c.get("validation") or {
                 "evidence_validated": bool(c.get("evidence_validated")),
                 "model_confidence": c.get("confidence"),
@@ -179,37 +193,119 @@ class IngestionPipeline:
             })
             self.db.execute(
                 """INSERT INTO claims(claim_id,statement,nature,fact_time,publication_time,ingestion_time,source_id,
-                   evidence_pointer,evidence_excerpt,scope,assumption_text,status,confidence,novelty_level,structured_json,created_at)
-                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   evidence_pointer,evidence_excerpt,attributed_to,scope,assumption_text,status,confidence,novelty_level,
+                   structured_json,created_at)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (claim_id, statement, c.get("nature") or "fact", c.get("fact_time") or "", publication_time,
                  now_iso(), source_id, c.get("evidence_pointer") or "", c.get("evidence_excerpt") or "",
-                 c.get("scope") or "", c.get("assumption") or "", status, c.get("confidence"),
+                 c.get("attributed_to") or "", c.get("scope") or "", c.get("assumption") or "", status, c.get("confidence"),
                  c.get("novelty_level") or "N2", json.dumps(structured, ensure_ascii=False), now_iso()),
             )
             claim_ids.append(claim_id)
+            claim_id_by_index[claim_index] = claim_id
             for node_id in c.get("related_node_ids") or []:
                 if self.db.get_node(node_id):
                     self.db.execute("INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
                                     (claim_id, node_id, "related"))
-                    self.db.execute("INSERT OR IGNORE INTO source_node_links(source_id,node_id,role,confidence) VALUES(?,?,?,?)",
-                                    (source_id, node_id, "related", c.get("confidence")))
-            for name in c.get("related_candidate_names") or []:
-                key = normalize_ws(str(name)).lower()
-                if key:
-                    candidate_claims.setdefault(key, []).append(claim_id)
-        return claim_ids, candidate_claims
+                    self.db.execute(
+                        """INSERT OR IGNORE INTO source_node_links(
+                           source_id,node_id,role,confidence,link_origin,evidence_excerpt,evidence_validation_json)
+                           VALUES(?,?,?,?,?,?,?)""",
+                        (source_id, node_id, "related", c.get("confidence"), "claim",
+                         c.get("evidence_excerpt") or "", json.dumps(structured["validation"], ensure_ascii=False)),
+                    )
+        return claim_ids, claim_id_by_index
 
     def _apply_node_matches(self, source_id: str, matches: list[dict[str, Any]]) -> list[str]:
         linked = []
         for m in matches:
             node_id = m.get("node_id")
-            if not node_id or not self.db.get_node(node_id):
+            if not node_id or not self.db.get_node(node_id) or m.get("evidence_validated") is not True:
                 continue
             role = "primary" if m.get("role") == "primary" else "related"
-            self.db.execute("INSERT OR REPLACE INTO source_node_links(source_id,node_id,role,confidence) VALUES(?,?,?,?)",
-                            (source_id, node_id, role, m.get("confidence")))
+            self.db.execute(
+                """INSERT OR REPLACE INTO source_node_links(
+                   source_id,node_id,role,confidence,link_origin,derived_from_node_id,
+                   evidence_excerpt,evidence_validation_json) VALUES(?,?,?,?,?,?,?,?)""",
+                (source_id, node_id, role, m.get("confidence"), "direct", "",
+                 m.get("evidence_excerpt") or "", json.dumps(m.get("validation") or {}, ensure_ascii=False)),
+            )
             linked.append(node_id)
         return linked
+
+    def _part_of_ancestors(self, node_id: str) -> list[dict[str, Any]]:
+        return self.db.all(
+            """WITH RECURSIVE ancestors(node_id,depth,path) AS (
+                 SELECT to_node_id,1,'|' || from_node_id || '|' || to_node_id || '|'
+                 FROM node_relations
+                 WHERE from_node_id=? AND relation_type='part_of' AND status='current'
+                 UNION ALL
+                 SELECT r.to_node_id,a.depth+1,a.path || r.to_node_id || '|'
+                 FROM ancestors a JOIN node_relations r ON r.from_node_id=a.node_id
+                 WHERE r.relation_type='part_of' AND r.status='current'
+                   AND instr(a.path,'|' || r.to_node_id || '|')=0
+               )
+               SELECT node_id,MIN(depth) AS depth FROM ancestors GROUP BY node_id ORDER BY depth,node_id""",
+            (node_id,),
+        )
+
+    def _derive_source_ancestor_links(self, source_id: str) -> None:
+        origins = self.db.all(
+            """SELECT node_id,role,confidence,link_origin FROM source_node_links
+               WHERE source_id=? AND link_origin IN ('direct','claim')
+               ORDER BY CASE role WHEN 'primary' THEN 0 ELSE 1 END,node_id""",
+            (source_id,),
+        )
+        for origin in origins:
+            for ancestor in self._part_of_ancestors(origin["node_id"]):
+                existing = self.db.one(
+                    "SELECT link_origin FROM source_node_links WHERE source_id=? AND node_id=?",
+                    (source_id, ancestor["node_id"]),
+                )
+                if existing and existing["link_origin"] != "direct":
+                    continue
+                if existing:
+                    self.db.execute(
+                        """UPDATE source_node_links SET role='related',link_origin='part_of',
+                           derived_from_node_id=?,evidence_excerpt='',evidence_validation_json='{}'
+                           WHERE source_id=? AND node_id=?""",
+                        (origin["node_id"], source_id, ancestor["node_id"]),
+                    )
+                else:
+                    self.db.execute(
+                        """INSERT INTO source_node_links(
+                           source_id,node_id,role,confidence,link_origin,derived_from_node_id)
+                           VALUES(?,?,?,?,?,?)""",
+                        (source_id, ancestor["node_id"], "related", origin.get("confidence"),
+                         "part_of", origin["node_id"]),
+                    )
+
+    @staticmethod
+    def _validated_candidate_claim_indices(
+        analysis, mapping: dict[str, list[int]]
+    ) -> dict[str, list[int]]:
+        expected = {
+            normalize_ws(str(candidate.get("canonical_name") or "")).lower()
+            for candidate in analysis.node_candidates
+            if candidate.get("quality_eligible") is True
+        }
+        if set(mapping) != expected:
+            raise ValueError("Candidate Claim backfill must return every eligible Candidate Node exactly once")
+        validated: dict[str, list[int]] = {}
+        for key, indices in mapping.items():
+            if not isinstance(indices, list):
+                raise ValueError(f"Candidate Claim backfill for {key!r} must be a list")
+            checked: list[int] = []
+            for index in indices:
+                if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(analysis.claims):
+                    raise ValueError(f"Candidate Claim backfill for {key!r} contains an invalid Claim index")
+                claim = analysis.claims[index]
+                if claim.get("evidence_validated") is not True or claim.get("status") == "needs_review":
+                    raise ValueError(f"Candidate Claim backfill for {key!r} contains an unvalidated Claim")
+                if index not in checked:
+                    checked.append(index)
+            validated[key] = checked
+        return validated
 
     def _historical_compare(self, source_id: str, new_claim_ids: list[str]) -> None:
         if not self.analyzer.available or not new_claim_ids:
@@ -367,14 +463,37 @@ class IngestionPipeline:
 
             analysis = self.analyzer.analyze_source(original_name, text, mode)
             meta = analysis.source_metadata
-            self._update_source_metadata(source_id, source_type, meta, analysis.source_references)
-            linked_nodes = self._apply_node_matches(source_id, analysis.node_matches)
-            claim_ids, candidate_claim_map = self._insert_claims(source_id, analysis, meta.get("publication_time") or "")
+            candidate_claim_indices = self._validated_candidate_claim_indices(
+                analysis,
+                self.analyzer.backfill_candidate_claims(analysis.node_candidates, analysis.claims),
+            )
+            analysis_quality = {
+                "rejected_node_matches": analysis.rejected_node_matches,
+                "rejected_node_candidates": analysis.rejected_node_candidates,
+                "rejected_claim_node_links": analysis.rejected_claim_node_links,
+            }
+            self._update_source_metadata(
+                source_id, source_type, meta, analysis.source_references, analysis_quality,
+            )
+            self._apply_node_matches(source_id, analysis.node_matches)
+            claim_ids, claim_id_by_index = self._insert_claims(
+                source_id, analysis, meta.get("publication_time") or "",
+            )
+            self._derive_source_ancestor_links(source_id)
+            linked_nodes = [
+                row["node_id"] for row in self.db.all(
+                    "SELECT node_id FROM source_node_links WHERE source_id=? ORDER BY node_id", (source_id,)
+                )
+            ]
 
             node_proposals: list[str] = []
             for candidate in analysis.node_candidates:
                 key = normalize_ws(str(candidate.get("canonical_name", ""))).lower()
-                related_claims = candidate_claim_map.get(key, [])
+                related_claims = [
+                    claim_id_by_index[index]
+                    for index in candidate_claim_indices.get(key, [])
+                    if index in claim_id_by_index
+                ]
                 pid = self._create_node_proposal(candidate, source_id, related_claims, job_id)
                 if pid:
                     node_proposals.append(pid)

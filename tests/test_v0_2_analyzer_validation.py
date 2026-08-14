@@ -33,7 +33,8 @@ def valid_source_payload(node_id: str) -> dict:
             "summary": "测试摘要",
         },
         "node_matches": [
-            {"node_id": node_id, "role": "primary", "confidence": 0.95, "reason": "明确提及"}
+            {"node_id": node_id, "role": "primary", "confidence": 0.95,
+             "reason": "明确提及", "evidence_excerpt": "中际旭创"}
         ],
         "node_candidates": [],
         "claims": [
@@ -45,6 +46,7 @@ def valid_source_payload(node_id: str) -> dict:
                 "fact_time": "2026",
                 "evidence_pointer": "[[PARA:1]]",
                 "evidence_excerpt": "预计2026年产能增长20%",
+                "attributed_to": "中际旭创",
                 "scope": "公司产能",
                 "assumption": "",
                 "status": "current",

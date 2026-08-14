@@ -8,11 +8,16 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 3.1 Claim status 只能是：current, pending_verification, updated, invalidated, expired, disputed, needs_review。
 3.2 novelty_level 只能是 N0 / N1 / N2 / N3；confidence 必须是 0 到 1 的数字。
 4. 每条 Claim 必须给 evidence_pointer（尽量引用原文标记如 [[PAGE:3]]/[[PARA:8]]/[[SHEET:X:ROW:5]]）与 evidence_excerpt。evidence_excerpt 必须来自输入原文，尽量短。
+4.1 每条 Claim 必须填写 attributed_to，表示“谁作出该陈述/判断”；它不是 Source 的作者或来源。公司经营数据、价格、收入、产能、产品信息必须在 statement 中显式写出公司主体，不能泛化成行业事实。
 5. 区分 fact_time（事实发生/预测对应时间）与资料 publication_time。无法判断留空，不猜。
 6. 新 Node 只有在对象具有独立研究价值、会被多份资料反复引用、值得维护独立 Current View 时才建议创建；不要把普通名词、数值、年份都 Node 化。
+6.1 Event 必须是具有明确 event_time 的离散事件。产能挤兑、调价模式、扩产计划、价格策略、经营机制、周期或供需状态不是 Event，应作为 Claim / Current View 内容。
+6.2 Theme 必须具有长期且跨 Source 或跨 Node 的研究价值；单份材料中的一个逻辑或状态默认不建立 Theme。
+6.3 公司经营计划、产能计划、价格策略、周期状态、供需机制默认作为 Claim / Current View 内容。Entity、Product、Technology、Material 等明确研究对象可由高质量 Source 首次提出。
 7. Node Type 只能是：Industry, Segment, Technology, Product, Material, Equipment, Entity, Application, Standard, Policy, Theme, Event, ResearchQuestion。
-8. 先匹配现有 Node / Alias；只有确实无法纳入时才给 node_candidates。
+8. 只在原文明示现有 Node / Alias 时匹配；允许一个 Source 没有任何 Existing Node Match，不得为了匹配而做无文本依据的语义联想。
 8.1 node_matches、related_node_ids、suggested_parent_node_ids 只能引用已提供的真实 Node ID，禁止编造 ID。
+8.2 每个 node_match 必须给出能够在原文定位、且明确包含该 Node canonical name 或 alias 的 evidence_excerpt。父级/祖先 Node 不重复匹配，由系统依据已确认 part_of 关系推导。
 9. 每个 Node 只有一个 primary_type；Node Type 表达“是什么”，父子/关系表达“处在哪里”。
 10. 新信息价值 novelty_level：N0=重复/无新增；N1=补充或佐证；N2=有意义新信息；N3=可能改变核心认知。
 11. 资料类型 source_origin_type：primary / secondary / unknown。来源等级 source_rank：S/A/B/C/D/UNRANKED。来源等级评价来源身份，不等于单条 Claim 可信度。
@@ -44,7 +49,7 @@ SOURCE_ANALYSIS_USER = r"""
     "summary": ""
   }},
   "node_matches": [
-    {{"node_id":"NODE_xxx","role":"primary|related","confidence":0.0,"reason":""}}
+    {{"node_id":"NODE_xxx","role":"primary|related","confidence":0.0,"reason":"","evidence_excerpt":""}}
   ],
   "node_candidates": [
     {{
@@ -56,6 +61,13 @@ SOURCE_ANALYSIS_USER = r"""
       "reason":"",
       "confidence":0.0,
       "candidate_kind":"normal|research_question",
+      "independent_research_value":true,
+      "maintenance_rationale":"为什么值得长期维护独立 Current View",
+      "is_discrete_event":false,
+      "event_time":"",
+      "evidence_excerpt":"仅 Event 使用，必须包含明确发生时间",
+      "long_term_research_value":false,
+      "cross_source_or_node_value":false,
       "question":"",
       "importance":"",
       "what_would_change_my_mind":""
@@ -70,6 +82,7 @@ SOURCE_ANALYSIS_USER = r"""
       "fact_time":"",
       "evidence_pointer":"",
       "evidence_excerpt":"",
+      "attributed_to":"谁作出该表述/判断，而非 Source 作者",
       "scope":"",
       "assumption":"",
       "status":"current",
@@ -87,6 +100,33 @@ SOURCE_ANALYSIS_USER = r"""
 - archive：不应调用本提示。
 - standard：只抽取对研究判断有明确价值的核心 Claim，宁缺毋滥。
 - deep：更完整抽取定量、供需、竞争、技术路线、公司行为、预测、投资假设、风险、冲突线索，并更积极识别 Knowledge Gap / ResearchQuestion 候选，但仍禁止过度拆句。
+"""
+
+CANDIDATE_BACKFILL_SYSTEM = r"""
+你是 Candidate Node 与 Claim 的二次相关性审查器。Candidate Node 已经通过独立研究价值门槛。
+
+任务：针对每一个 Candidate Node，重新检查当前 Source 的全部 validated Claims，找出所有直接与该对象有关、在 Node 获批后应正式关联的 Claims。不能只依赖首次抽取时的名称命中，也不能把仅有宽泛行业关联的 Claim 强行关联。
+
+严格规则：
+1. 每个输入 Candidate Node 必须恰好返回一次，即使 related_claim_refs 为空。
+2. 只能引用输入中提供的 claim_ref，禁止编造。
+3. 只做相关性判断，不改写 Claim，不创建 Node，不补充外部事实。
+4. 只输出 JSON。
+"""
+
+CANDIDATE_BACKFILL_USER = r"""
+Candidate Nodes：
+{candidates_json}
+
+当前 Source 的全部 validated Claims：
+{claims_json}
+
+返回：
+{{
+  "candidate_claim_links": [
+    {{"candidate_name":"", "related_claim_refs":[], "reason":""}}
+  ]
+}}
 """
 
 IMPACT_SYSTEM = r"""
