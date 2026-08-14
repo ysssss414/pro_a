@@ -114,7 +114,7 @@ def valid_initial_result(claim_ids: list[str]) -> dict:
             "investment_implication": (
                 "对MLCC产业而言，昀冢科技公司侧Evidence可作为景气验证样本，但不能单独确认行业长周期。"
             ),
-            "major_risks": ["MLCC行业供给扩张或下游需求走弱可能使公司样本失去代表性。"],
+            "major_risks": ["MLCC行业结论当前依赖单一公司样本，缺少行业级交叉验证。"],
             "knowledge_gaps": ["缺少MLCC行业供需、竞争对手和下游需求量化数据。"],
             "key_watch_items": [
                 "跟踪MLCC行业供需与库存数据。",
@@ -148,6 +148,72 @@ def evaluate(tmp_path: Path, result_mutator=None):
     reviewed = manager.evaluate_node(
         batch_id="BATCH_MLCC", trigger_type="new_node_accept", trigger_id="PROP_MLCC",
         node_id=node_id, path_type="direct", claim_ids=claim_ids,
+        trigger_source_id="SRC_MLCC",
+    )
+    return db, reviewed
+
+
+def evaluate_atomic_capacity(tmp_path: Path, key_facts: list[str]):
+    cfg, db = make_config(tmp_path)
+    node_id = db.add_node("MLCC", "Product", ["多层陶瓷电容器"])
+    claim_ids = mlcc_evidence(db, node_id)
+    ts = now_iso()
+    atomic_claims = [
+        {
+            "claim_id": "CLM_CAPACITY_ACTUAL",
+            "statement": "昀冢科技MLCC一期当前出货量80亿颗/月",
+            "nature": "data",
+            "evidence_excerpt": (
+                "一期当前出货量80亿颗/月，预计26年底满产，"
+                "26Q4出货量达120亿颗/月"
+            ),
+        },
+        {
+            "claim_id": "CLM_CAPACITY_GUIDANCE",
+            "statement": "昀冢科技预计26年底满产，26Q4出货量达120亿颗/月",
+            "nature": "company_guidance",
+            "evidence_excerpt": (
+                "一期当前出货量80亿颗/月，预计26年底满产，"
+                "26Q4出货量达120亿颗/月"
+            ),
+        },
+    ]
+    for claim in atomic_claims:
+        db.execute(
+            """INSERT INTO claims(claim_id,statement,nature,ingestion_time,source_id,
+               evidence_excerpt,attributed_to,scope,status,confidence,structured_json,created_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                claim["claim_id"],
+                claim["statement"],
+                claim["nature"],
+                ts,
+                "SRC_MLCC",
+                claim["evidence_excerpt"],
+                "昀冢科技业绩说明会",
+                "昀冢科技",
+                "current",
+                0.85,
+                json.dumps({"company": "昀冢科技"}, ensure_ascii=False),
+                ts,
+            ),
+        )
+        db.execute(
+            "INSERT INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
+            (claim["claim_id"], node_id, "related"),
+        )
+        claim_ids.append(claim["claim_id"])
+
+    result = valid_initial_result(claim_ids)
+    result["proposed_current_view"]["key_facts"] = key_facts
+    manager = PropagationManager(cfg, db, ResultAnalyzer(result))
+    reviewed = manager.evaluate_node(
+        batch_id="BATCH_ATOMIC",
+        trigger_type="new_node_accept",
+        trigger_id="PROP_ATOMIC",
+        node_id=node_id,
+        path_type="direct",
+        claim_ids=claim_ids,
         trigger_source_id="SRC_MLCC",
     )
     return db, reviewed
@@ -370,3 +436,80 @@ def test_product_demand_driver_does_not_require_application_inference(tmp_path: 
     view = db.proposal(reviewed["proposal_id"])["payload"]["proposed_current_view"]
     assert view["type_specific"]["applications"] == []
     assert "AI与存储需求" in view["type_specific"]["demand_drivers"][0]
+
+
+def test_data_claim_excerpt_cannot_support_actual_and_future_current_view(tmp_path: Path):
+    db, reviewed = evaluate_atomic_capacity(
+        tmp_path,
+        [
+            "昀冢科技MLCC一期当前出货量80亿颗/月，预计26年底满产，"
+            "26Q4出货量达120亿颗/月（CLM_CAPACITY_ACTUAL）。"
+        ],
+    )
+
+    assert reviewed["status"] == "retry"
+    assert "future statement requires a guidance/forecast Claim" in reviewed["error"]
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
+
+
+def test_actual_and_future_current_view_accepts_both_atomic_claims(tmp_path: Path):
+    _, reviewed = evaluate_atomic_capacity(
+        tmp_path,
+        [
+            "昀冢科技MLCC一期当前出货量80亿颗/月，预计26年底满产，"
+            "26Q4出货量达120亿颗/月"
+            "（CLM_CAPACITY_ACTUAL、CLM_CAPACITY_GUIDANCE）。"
+        ],
+    )
+
+    assert reviewed["status"] == "proposed"
+
+
+def test_actual_and_future_current_view_accepts_split_atomic_statements(tmp_path: Path):
+    _, reviewed = evaluate_atomic_capacity(
+        tmp_path,
+        [
+            "昀冢科技MLCC一期当前出货量80亿颗/月（CLM_CAPACITY_ACTUAL）。",
+            "昀冢科技预计26年底满产，26Q4出货量达120亿颗/月"
+            "（CLM_CAPACITY_GUIDANCE）。",
+        ],
+    )
+
+    assert reviewed["status"] == "proposed"
+
+
+def test_single_company_sample_rejects_unsupported_price_war_inference(tmp_path: Path):
+    def add_price_war_inference(result):
+        result["proposed_current_view"]["major_risks"].append(
+            "MLCC行业竞争格局可能因扩产加剧，导致价格战风险。"
+        )
+
+    db, reviewed = evaluate(tmp_path, add_price_war_inference)
+
+    assert reviewed["status"] == "retry"
+    assert "unsupported causal inference" in reviewed["error"]
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
+
+
+def test_major_risk_cannot_disguise_unsupported_causality_as_watch_item(tmp_path: Path):
+    def disguise_price_war_inference(result):
+        result["proposed_current_view"]["major_risks"].append(
+            "MLCC行业竞争格局可能因扩产加剧，需关注价格竞争风险。"
+        )
+
+    db, reviewed = evaluate(tmp_path, disguise_price_war_inference)
+
+    assert reviewed["status"] == "retry"
+    assert "unsupported causal inference" in reviewed["error"]
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
+
+
+def test_missing_competition_evidence_is_allowed_as_explicit_gap(tmp_path: Path):
+    def add_explicit_gap(result):
+        result["proposed_current_view"]["knowledge_gaps"].append(
+            "当前缺乏MLCC竞争格局资料，需要跟踪主要供应商后续披露。"
+        )
+
+    _, reviewed = evaluate(tmp_path, add_explicit_gap)
+
+    assert reviewed["status"] == "proposed"

@@ -133,7 +133,7 @@ def valid_initial_result(claim_ids: list[str]) -> dict:
             "investment_implication": (
                 "对MLCC产业而言，昀冢科技公司侧Evidence可作为景气验证样本，但不能单独确认行业长周期。"
             ),
-            "major_risks": ["MLCC行业供给扩张或下游需求走弱可能削弱当前公司样本的代表性。"],
+            "major_risks": ["MLCC行业结论当前依赖单一公司样本，缺少行业级交叉验证。"],
             "knowledge_gaps": ["缺少MLCC行业供需、竞争对手和下游需求量化数据。"],
             "key_watch_items": [
                 "跟踪MLCC行业供需与库存数据。",
@@ -183,6 +183,33 @@ def setup_impact(tmp_path: Path):
     )
     assert impact_id
     return cfg, db, analyzer, impact_id, claim_ids
+
+
+def persist_pending_candidate(cfg, db, impact_id: str, claim_ids: list[str], candidate: dict) -> str:
+    manager = PropagationManager(cfg, db, Analyzer(cfg, db))
+    impact = db.one("SELECT * FROM impact_reviews WHERE impact_id=?", (impact_id,))
+    context = json.loads(impact["payload_json"])
+    manager._apply_initial_evidence_profile(candidate, manager._claims(claim_ids))
+    proposal_id = manager._create_current_view_proposal(
+        impact["node_id"],
+        candidate,
+        claim_ids,
+        context["trigger_source_id"],
+        impact["batch_id"],
+        context,
+        impact_id,
+    )
+    db.execute(
+        """UPDATE impact_reviews
+           SET status='proposed',proposal_id=?,attempts=1,reason=?
+           WHERE impact_id=?""",
+        (
+            proposal_id,
+            json.dumps({"context": context, "result": candidate}, ensure_ascii=False),
+            impact_id,
+        ),
+    )
+    return proposal_id
 
 
 def test_retry_repairs_invalid_candidate_and_keeps_proposal_pending(tmp_path: Path):
@@ -276,8 +303,68 @@ def test_failed_repairs_remain_retry_and_never_bypass_validator(tmp_path: Path):
 def test_impacts_cli_exposes_show_and_retry():
     parser = build_parser()
     show = parser.parse_args(["impacts", "show", "IMP_X"])
-    retry = parser.parse_args(["impacts", "retry", "IMP_X", "--max-repairs", "1"])
+    retry = parser.parse_args(
+        ["impacts", "retry", "IMP_X", "--replace-pending", "--max-repairs", "1"]
+    )
 
     assert show.command == "impacts" and show.impact_command == "show"
     assert retry.command == "impacts" and retry.impact_command == "retry"
+    assert retry.replace_pending is True
     assert retry.max_repairs == 1
+
+
+def test_replace_pending_stales_original_repairs_and_is_idempotent(tmp_path: Path):
+    cfg, db, analyzer, impact_id, claim_ids = setup_impact(tmp_path)
+    invalid = valid_initial_result(claim_ids)
+    invalid["proposed_current_view"]["major_risks"].append(
+        "MLCC行业竞争格局可能因扩产加剧，导致价格战风险。"
+    )
+    old_proposal_id = persist_pending_candidate(
+        cfg, db, impact_id, claim_ids, invalid
+    )
+    repaired = valid_initial_result(claim_ids)
+    analyzer.llm = SequencedLLM([repaired])
+    recovery = ImpactRecoveryService(cfg, db, analyzer)
+
+    first = recovery.retry(impact_id, replace_pending=True, max_repairs=2)
+
+    assert first["status"] == "proposed"
+    assert first["replaced_proposal_id"] == old_proposal_id
+    assert first["proposal_id"] != old_proposal_id
+    assert db.proposal(old_proposal_id)["status"] == "stale"
+    new_proposal = db.proposal(first["proposal_id"])
+    assert new_proposal["status"] == "pending"
+    assert new_proposal["source_impact_id"] == impact_id
+    assert db.one("SELECT COUNT(*) AS n FROM current_views WHERE status='official'")["n"] == 0
+    assert db.one(
+        "SELECT attempts FROM impact_reviews WHERE impact_id=?", (impact_id,)
+    )["attempts"] == 2
+
+    audit = db.all(
+        """SELECT * FROM impact_attempt_audit
+           WHERE impact_id=? ORDER BY execution_attempt,repair_round""",
+        (impact_id,),
+    )
+    assert [row["phase"] for row in audit] == ["correction_original", "correction_repair"]
+    original_errors = json.loads(audit[0]["validation_errors_json"])
+    assert any("unsupported causal inference" in error for error in original_errors)
+    assert json.loads(audit[0]["candidate_json"])["proposed_current_view"]["major_risks"][-1] == (
+        "MLCC行业竞争格局可能因扩产加剧，导致价格战风险。"
+    )
+    assert json.loads(audit[1]["candidate_json"])["proposed_current_view"] == (
+        repaired["proposed_current_view"]
+    )
+    assert json.loads(audit[1]["validation_errors_json"]) == []
+
+    second = recovery.retry(impact_id, replace_pending=True, max_repairs=2)
+
+    assert second["proposal_id"] == first["proposal_id"]
+    assert second["proposal_status"] == "pending"
+    assert second["idempotent"] is True
+    assert db.one(
+        "SELECT COUNT(*) AS n FROM proposals WHERE source_impact_id=?", (impact_id,)
+    )["n"] == 2
+    assert db.one(
+        "SELECT attempts FROM impact_reviews WHERE impact_id=?", (impact_id,)
+    )["attempts"] == 2
+    assert analyzer.llm.calls == 1

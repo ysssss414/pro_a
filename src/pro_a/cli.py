@@ -82,6 +82,11 @@ def build_parser() -> argparse.ArgumentParser:
     impact_show.add_argument("impact_id")
     impact_retry = impact_sub.add_parser("retry")
     impact_retry.add_argument("impact_id")
+    impact_retry.add_argument(
+        "--replace-pending",
+        action="store_true",
+        help="Validate and supersede an invalid pending Current View Proposal",
+    )
     impact_retry.add_argument("--max-repairs", type=int, choices=(1, 2), default=2)
 
     ima = sub.add_parser("ima")
@@ -207,7 +212,13 @@ def main(argv: list[str] | None = None):
             if args.impact_command == "show":
                 jprint(recovery.show(args.impact_id))
             elif args.impact_command == "retry":
-                jprint(recovery.retry(args.impact_id, max_repairs=args.max_repairs))
+                jprint(
+                    recovery.retry(
+                        args.impact_id,
+                        replace_pending=args.replace_pending,
+                        max_repairs=args.max_repairs,
+                    )
+                )
         except KeyError as exc:
             raise SystemExit(f"Impact not found: {args.impact_id}") from exc
         except ValueError as exc:
