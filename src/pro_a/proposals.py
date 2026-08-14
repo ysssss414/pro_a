@@ -8,7 +8,7 @@ from .analyzer import Analyzer
 from .config import AppConfig
 from .constants import NODE_TYPES
 from .current_view import create_official_view_record, write_official_view_file
-from .db import Database, now_iso
+from .db import CURRENT_VIEW_ORDER, Database, now_iso
 from .ids import make_id
 from .ima import IMAClient
 from .propagation import PropagationManager
@@ -136,8 +136,8 @@ class ProposalManager:
     @staticmethod
     def _current_view_conn(conn, node_id: str) -> dict[str, Any] | None:
         row = conn.execute(
-            """SELECT * FROM current_views WHERE node_id=? AND status='official'
-               ORDER BY revision_date DESC,revision_seq DESC,view_id DESC LIMIT 1""",
+            f"""SELECT * FROM current_views WHERE node_id=? AND status='official'
+                ORDER BY {CURRENT_VIEW_ORDER} LIMIT 1""",
             (node_id,),
         ).fetchone()
         return dict(row) if row else None

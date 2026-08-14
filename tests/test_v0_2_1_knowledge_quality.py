@@ -130,6 +130,61 @@ def test_company_data_uses_structured_company_as_subject_even_with_industry_scop
     assert result.claims[0]["attributed_to"] == "昀冢科技业绩说明会"
 
 
+def test_mixed_current_actual_and_future_guidance_is_atomicized(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    item = claim(
+        "昀冢科技一期当前出货量为80亿颗/月，预计2026Q4达到120亿颗/月。",
+        "昀冢科技一期当前出货量为80亿颗/月，预计2026Q4达到120亿颗/月。",
+        attributed_to="昀冢科技业绩说明会",
+        scope="昀冢科技一期MLCC产能",
+    )
+    item["nature"] = "company_guidance"
+    item["structured"] = {
+        "company": "昀冢科技",
+        "metric": "一期MLCC出货量",
+        "current_output": "80亿颗/月",
+        "target_output": "120亿颗/月",
+        "target_time": "2026Q4",
+    }
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(claims=[item]))
+
+    result = analyzer.analyze_source(
+        "sample.md",
+        "昀冢科技一期当前出货量为80亿颗/月，预计2026Q4达到120亿颗/月。",
+        "standard",
+    )
+
+    assert len(result.claims) == 2
+    assert [item["nature"] for item in result.claims] == ["data", "company_guidance"]
+    assert "当前出货量为80亿颗/月" in result.claims[0]["statement"]
+    assert "预计2026Q4达到120亿颗/月" in result.claims[1]["statement"]
+    assert all(item["validation"]["evidence_validated"] for item in result.claims)
+
+
+def test_actual_company_price_is_not_rewritten_as_guidance_or_forecast(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    item = claim(
+        "昀冢科技26M7、26M8单月MLCC价格环比上涨30%以上。",
+        "昀冢科技26M7、26M8单月MLCC价格环比上涨30%以上。",
+        attributed_to="昀冢科技业绩说明会",
+        scope="昀冢科技MLCC价格",
+    )
+    item["nature"] = "company_guidance"
+    item["structured"] = {"company": "昀冢科技", "metric": "MLCC价格"}
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(claims=[item]))
+
+    result = analyzer.analyze_source(
+        "sample.md", "昀冢科技26M7、26M8单月MLCC价格环比上涨30%以上。", "standard"
+    )
+
+    normalized = result.claims[0]
+    assert normalized["nature"] == "data"
+    assert "预计" not in normalized["statement"]
+    assert "forecast" not in normalized["statement"].lower()
+
+
 def test_node_match_without_locatable_evidence_is_not_directly_linked(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("国产替代", "Theme")

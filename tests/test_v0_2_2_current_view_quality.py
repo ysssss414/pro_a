@@ -64,7 +64,7 @@ def mlcc_evidence(db, node_id: str) -> list[str]:
             {
                 "claim_id": "CLM_PRICE",
                 "statement": "昀冢科技披露其7月、8月MLCC价格环比上涨30%以上",
-                "nature": "company_guidance",
+                "nature": "data",
                 "attributed_to": "昀冢科技业绩说明会",
                 "scope": "昀冢科技",
                 "structured": {"company": "昀冢科技", "metric": "MLCC价格"},
@@ -124,7 +124,7 @@ def valid_initial_result(claim_ids: list[str]) -> dict:
             "recent_change": "首次基于昀冢科技样本建立MLCC初始认知。",
             "evidence_claim_ids": claim_ids,
             "type_specific": {
-                "applications": ["昀冢科技认为AI与存储可能拉动高容MLCC需求（CLM_GUIDANCE）。"],
+                "applications": [],
                 "demand_drivers": ["昀冢科技认为AI与存储需求是潜在驱动（CLM_GUIDANCE）。"],
                 "supply_capacity": ["昀冢科技认为高容MLCC可能存在产能挤兑（CLM_GUIDANCE）。"],
                 "pricing": ["昀冢科技披露其7月、8月MLCC价格环比上涨30%以上（CLM_PRICE）。"],
@@ -163,8 +163,10 @@ def test_initial_proposal_records_source_level_evidence_profile(tmp_path: Path):
     assert payload["independent_evidence_source_count"] == 1
     assert payload["source_rank_distribution"] == {"B": 1}
     assert payload["source_origin_distribution"] == {"secondary": 1}
+    assert payload["evidence_scope"] == "single_company_sample"
     assert "相互独立" not in payload["evidence_sufficiency"]["reason"]
     assert payload["proposed_current_view"]["evidence_profile"]["independent_evidence_source_count"] == 1
+    assert payload["proposed_current_view"]["evidence_profile"]["evidence_scope"] == "single_company_sample"
 
 
 def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(tmp_path: Path):
@@ -189,6 +191,7 @@ def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(t
         "independent_evidence_source_count": 1,
         "source_rank_distribution": {"A": 1, "B": 1},
         "source_origin_distribution": {"secondary": 2},
+        "evidence_scope": "industry_level",
     }
 
 
@@ -205,6 +208,12 @@ def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(t
             "one_line_conclusion": "MLCC行业已经确认进入长期上行周期。"
         }),
         lambda result: result["proposed_current_view"].update({
+            "one_line_conclusion": "MLCC行业处于上行周期，但单一公司样本尚不足以确认长期趋势。"
+        }),
+        lambda result: result["proposed_current_view"].update({
+            "investment_implication": "MLCC行业已经进入长周期，单一公司样本仍需后续验证。"
+        }),
+        lambda result: result["proposed_current_view"].update({
             "one_line_conclusion": "昀冢科技价格和产能改善，未来成长确定。"
         }),
         lambda result: result["proposed_current_view"].update({"type_specific": {}}),
@@ -215,6 +224,9 @@ def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(t
             "major_risks": ["后续情况仍存在不确定性。"]
         }),
         lambda result: result["proposed_current_view"].update({
+            "major_risks": ["MLCC行业已经进入供给过剩（CLM_GUIDANCE）。"]
+        }),
+        lambda result: result["proposed_current_view"].update({
             "one_line_conclusion": ["MLCC", "单一公司样本"]
         }),
     ],
@@ -222,10 +234,13 @@ def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(t
         "unattributed-guidance",
         "judgment-in-key-facts",
         "company-to-industry-overreach",
+        "late-scope-caveat-does-not-cure-overreach",
+        "investment-overreach-before-late-caveat",
         "source-centric-view",
         "missing-product-schema",
         "generic-company-attribution",
         "ungrounded-major-risk",
+        "company-guidance-overreach-in-major-risk",
         "non-string-one-line",
     ],
 )
@@ -281,9 +296,21 @@ def test_impact_context_exposes_required_claim_attributions(tmp_path: Path):
 
     assert reviewed["status"] == "proposed"
     assert analyzer.context["required_claim_attributions"] == {
-        "CLM_PRICE": {"nature": "company_guidance", "attributed_to": "昀冢科技业绩说明会"},
-        "CLM_GUIDANCE": {"nature": "company_guidance", "attributed_to": "昀冢科技业绩说明会"},
-        "CLM_BROKER": {"nature": "expert_judgment", "attributed_to": "财通电子团队"},
+        "CLM_PRICE": {
+            "nature": "data",
+            "attributed_to": "昀冢科技业绩说明会",
+            "required_subject": "昀冢科技",
+        },
+        "CLM_GUIDANCE": {
+            "nature": "company_guidance",
+            "attributed_to": "昀冢科技业绩说明会",
+            "required_subject": "昀冢科技",
+        },
+        "CLM_BROKER": {
+            "nature": "expert_judgment",
+            "attributed_to": "财通电子团队",
+            "required_subject": "财通电子团队",
+        },
     }
 
 
@@ -294,6 +321,17 @@ def test_company_guidance_look_positive_word_preserves_attributed_judgment(tmp_p
         )
 
     _, reviewed = evaluate(tmp_path, use_look_positive_attribution)
+
+    assert reviewed["status"] == "proposed"
+
+
+def test_company_guidance_plan_word_preserves_attributed_judgment(tmp_path: Path):
+    def use_plan_attribution(result):
+        result["proposed_current_view"]["core_logic"][0] = (
+            "昀冢科技计划围绕高容MLCC扩产，但计划执行仍存在不确定性（CLM_GUIDANCE）。"
+        )
+
+    _, reviewed = evaluate(tmp_path, use_plan_attribution)
 
     assert reviewed["status"] == "proposed"
 
@@ -310,3 +348,25 @@ def test_initial_single_source_does_not_override_semantic_scope_insufficiency(tm
     assert reviewed["status"] == "no_change"
     assert reviewed["proposal_id"] == ""
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
+
+
+def test_product_application_requires_explicit_application_evidence(tmp_path: Path):
+    def infer_application_from_demand(result):
+        result["proposed_current_view"]["type_specific"]["applications"] = [
+            "AI服务器是MLCC的应用方向（CLM_GUIDANCE）。"
+        ]
+
+    db, reviewed = evaluate(tmp_path, infer_application_from_demand)
+
+    assert reviewed["status"] == "retry"
+    assert reviewed["proposal_id"] == ""
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
+
+
+def test_product_demand_driver_does_not_require_application_inference(tmp_path: Path):
+    db, reviewed = evaluate(tmp_path)
+
+    assert reviewed["status"] == "proposed"
+    view = db.proposal(reviewed["proposal_id"])["payload"]["proposed_current_view"]
+    assert view["type_specific"]["applications"] == []
+    assert "AI与存储需求" in view["type_specific"]["demand_drivers"][0]

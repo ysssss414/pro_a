@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from typing import Any
 
 from .analyzer import Analyzer, attribution_subjects, canonicalize_text
 from .config import AppConfig
 from .constants import CHANGE_LEVELS
-from .db import Database, now_iso
+from .db import CURRENT_VIEW_ORDER, Database, now_iso
 from .ids import make_id
 from .receipts import write_proposal
 
@@ -29,6 +30,7 @@ PRODUCT_TYPE_FIELDS = {
     "applications", "demand_drivers", "supply_capacity", "pricing",
     "major_suppliers", "product_evolution",
 }
+APPLICATION_RELATION_CUES = ("用于", "应用于", "下游为", "下游包括", "应用", "application")
 
 
 class PropagationManager:
@@ -72,11 +74,20 @@ class PropagationManager:
                 counts[value] = counts.get(value, 0) + 1
             return dict(sorted(counts.items()))
 
+        companies = {
+            company for item in evidence if (company := self._company_subject(item))
+        }
+        evidence_scope = (
+            "multi_company_sample"
+            if len(companies) >= 2 and len(independent) >= 2
+            else "single_company_sample" if companies else "industry_level"
+        )
         return {
             "evidence_source_count": len(sources),
             "independent_evidence_source_count": len(independent),
             "source_rank_distribution": distribution("source_rank", "UNRANKED"),
             "source_origin_distribution": distribution("origin_type", "unknown"),
+            "evidence_scope": evidence_scope,
         }
 
     @staticmethod
@@ -136,7 +147,7 @@ class PropagationManager:
             return has_subject
         markers = (
             "认为", "判断", "预计", "预判", "指引", "表示", "称", "披露",
-            "展望", "看好", "可能", "或", "传闻", "据传", "推断",
+            "展望", "看好", "计划", "目标", "拟", "将", "可能", "或", "传闻", "据传", "推断",
         )
         return has_subject and any(marker in normalized for marker in markers)
 
@@ -149,14 +160,48 @@ class PropagationManager:
             company for item in evidence if (company := self._company_subject(item))
         }
         industry_terms = ("行业", "产业", "市场", "全球")
-        industry_level_fact = any(
+        industry_level_primary = any(
             item.get("nature") in {"fact", "data"}
             and any(term in canonicalize_text(str(item.get("scope") or "")) for term in industry_terms)
             and not self._company_subject(item)
+            and item.get("origin_type") == "primary"
+            and item.get("source_rank") in MATERIAL_QUALITY_RANKS
             for item in evidence
             if item.get("claim_id")
         )
-        return len(companies) == 1 and not industry_level_fact
+        company_sources = {
+            self._independence_key(item)
+            for item in evidence
+            if self._company_subject(item) and self._independence_key(item)
+        }
+        multi_company_cross_validation = len(companies) >= 2 and len(company_sources) >= 2
+        return bool(companies) and not industry_level_primary and not multi_company_cross_validation
+
+    @classmethod
+    def _scope_assertion_exceeds_single_company(
+        cls, text: str, node: dict[str, Any]
+    ) -> bool:
+        leading = re.split(
+            r"[，,；;]|但|然而|不过|可是", canonicalize_text(text), maxsplit=1
+        )[0]
+        qualifiers = (
+            "公司侧", "单一公司", "公司样本", "样本显示", "验证样本",
+            "验证信号", "尚不足", "待验证", "不能确认", "无法确认",
+        )
+        if any(qualifier in leading for qualifier in qualifiers):
+            return False
+        deterministic = (
+            "已经", "已确认", "确认进入", "确认处于", "处于", "进入",
+            "确定", "必然", "全面上行", "长期上行", "整体改善",
+        )
+        broad_terms = ("行业", "产业", "市场", "全行业", "整体")
+        broad_assertion = any(term in leading for term in broad_terms)
+        if not broad_assertion:
+            broad_assertion = any(
+                re.search(re.escape(term) + r".{0,12}(?:处于|进入|已确认|长期上行|整体改善)", leading)
+                for term in cls._target_terms(node)
+            )
+        return broad_assertion and any(cue in leading for cue in deterministic)
 
     def _validate_cited_items(
         self, field: str, items: list[Any], by_id: dict[str, dict[str, Any]], *,
@@ -194,6 +239,11 @@ class PropagationManager:
                 ):
                     raise ValueError(
                         f"Current View {field}[{index}] must preserve attribution for {claim_id}"
+                    )
+                company = self._company_subject(claim)
+                if company and company not in canonicalize_text(item_text):
+                    raise ValueError(
+                        f"Current View {field}[{index}] must preserve company subject for {claim_id}"
                     )
 
     def _validate_current_view_quality(
@@ -248,11 +298,19 @@ class PropagationManager:
 
         self._validate_cited_items("core_logic", list_fields["core_logic"], by_id)
         self._validate_cited_items("key_facts", list_fields["key_facts"], by_id, key_facts=True)
+        for risk in list_fields["major_risks"]:
+            if self._claim_refs(risk, by_id):
+                self._validate_cited_items("major_risks", [risk], by_id)
 
         if self._single_company_scope_constraint(node, claims):
-            qualifiers = ("公司侧", "单一公司", "样本", "尚不足", "不能确认", "无法确认", "不能单独")
-            for field, text in (("one_line_conclusion", one_line), ("investment_implication", investment)):
-                if not any(qualifier in text for qualifier in qualifiers):
+            scoped_fields = [
+                ("one_line_conclusion", one_line),
+                ("investment_implication", investment),
+                *(("core_logic", item) for item in list_fields["core_logic"]),
+                *(("major_risks", item) for item in list_fields["major_risks"]),
+            ]
+            for field, text in scoped_fields:
+                if self._scope_assertion_exceeds_single_company(text, node):
                     raise ValueError(
                         f"Current View {field} exceeds single-company Evidence scope"
                     )
@@ -275,6 +333,19 @@ class PropagationManager:
                         f"Product type_specific.{field} must be an array of strings or objects"
                     )
                 self._validate_cited_items(f"type_specific.{field}", items, by_id)
+
+            for index, item in enumerate(type_specific["applications"]):
+                item_text = item if isinstance(item, str) else json.dumps(item, ensure_ascii=False)
+                refs = self._claim_refs(item_text, by_id)
+                for claim_id in refs:
+                    claim = by_id[claim_id]
+                    evidence_text = canonicalize_text(
+                        f"{claim.get('statement') or ''} {claim.get('evidence_excerpt') or ''}"
+                    ).lower()
+                    if not any(cue in evidence_text for cue in APPLICATION_RELATION_CUES):
+                        raise ValueError(
+                            f"Product type_specific.applications[{index}] lacks explicit application Evidence"
+                        )
 
             watch_text = " ".join(list_fields["key_watch_items"])
             required_watch_cues = {
@@ -402,18 +473,12 @@ class PropagationManager:
         )
         return gap_id
 
-    def _pending_node_proposal_exists(self, name: str) -> bool:
-        return bool(self.db.one(
-            "SELECT proposal_id FROM proposals WHERE proposal_type='new_node' AND status='pending' AND payload_json LIKE ? LIMIT 1",
-            (f'%"canonical_name": "{name}"%',),
-        ))
-
     def _create_rq_candidate(self, candidate: dict[str, Any], base_node_id: str, claim_ids: list[str], batch_id: str) -> str | None:
         question = (candidate.get("question") or candidate.get("canonical_name") or "").strip()
         if not question:
             return None
         canonical_name = (candidate.get("canonical_name") or question).strip()
-        if self.db.find_node_by_name_or_alias(canonical_name) or self._pending_node_proposal_exists(canonical_name):
+        if self.db.find_node_by_name_or_alias(canonical_name) or self.db.pending_new_node_proposal_exists(canonical_name):
             return None
         related = list(dict.fromkeys([base_node_id, *(candidate.get("related_node_ids") or [])]))
         payload = {
@@ -452,6 +517,7 @@ class PropagationManager:
             "independent_evidence_source_count": result.get("independent_evidence_source_count", 0),
             "source_rank_distribution": result.get("source_rank_distribution") or {},
             "source_origin_distribution": result.get("source_origin_distribution") or {},
+            "evidence_scope": result.get("evidence_scope") or "industry_level",
             "proposed_current_view": result.get("proposed_current_view") or {},
             "evidence_claim_ids": claim_ids,
             "trigger_source_id": trigger_source_id,
@@ -472,8 +538,8 @@ class PropagationManager:
 
     def _target_view_version(self, conn: sqlite3.Connection, node_id: str) -> str:
         row = conn.execute(
-            """SELECT version FROM current_views WHERE node_id=? AND status='official'
-               ORDER BY revision_date DESC,revision_seq DESC,view_id DESC LIMIT 1""",
+            f"""SELECT version FROM current_views WHERE node_id=? AND status='official'
+                ORDER BY {CURRENT_VIEW_ORDER} LIMIT 1""",
             (node_id,),
         ).fetchone()
         return row["version"] if row else NO_TARGET_VIEW
@@ -555,11 +621,17 @@ class PropagationManager:
             item["claim_id"]: {
                 "nature": item.get("nature") or "",
                 "attributed_to": item.get("attributed_to") or "",
+                "required_subject": (
+                    attribution_subjects(str(item.get("attributed_to") or "")) or [""]
+                )[-1],
             }
             for item in evidence
             if item.get("claim_id")
-            and item.get("nature") in JUDGMENT_NATURES
             and item.get("attributed_to")
+            and (
+                item.get("nature") in JUDGMENT_NATURES
+                or bool(self._company_subject(item))
+            )
         }
         context = {
             **context,

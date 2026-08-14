@@ -77,12 +77,6 @@ class IngestionPipeline:
             receipt["receipt_path"] = str(write_receipt(self.cfg, job_id, receipt))
         return receipt
 
-    def _pending_node_proposal_exists(self, name: str) -> bool:
-        return bool(self.db.one(
-            "SELECT proposal_id FROM proposals WHERE proposal_type='new_node' AND status='pending' AND payload_json LIKE ? LIMIT 1",
-            (f'%"canonical_name": "{name}"%',),
-        ))
-
     def _create_node_proposal(self, candidate: dict[str, Any], source_id: str, claim_ids: list[str], batch_id: str) -> str | None:
         name = (candidate.get("canonical_name") or "").strip()
         if not name or candidate.get("quality_eligible") is not True:
@@ -98,7 +92,7 @@ class IngestionPipeline:
                 (source_id, existing["node_id"], "related", candidate.get("confidence"), "candidate_resolution"),
             )
             return None
-        if self._pending_node_proposal_exists(name):
+        if self.db.pending_new_node_proposal_exists(name):
             return None
         payload = {
             **candidate,
@@ -160,14 +154,11 @@ class IngestionPipeline:
             target = self.db.one("SELECT source_id FROM sources WHERE title=? AND source_id<>? ORDER BY ingested_at DESC LIMIT 1",
                                  (ref_title, source_id))
             if target:
-                try:
-                    self.db.execute(
-                        "INSERT INTO source_relations(relation_id,from_source_id,relation_type,to_source_id,note,created_at) VALUES(?,?,?,?,?,?)",
-                        (make_id("SREL"), source_id, ref.get("relation_type") or "references", target["source_id"],
-                         ref.get("note") or "", now_iso()),
-                    )
-                except Exception:
-                    pass
+                self.db.execute(
+                    "INSERT OR IGNORE INTO source_relations(relation_id,from_source_id,relation_type,to_source_id,note,created_at) VALUES(?,?,?,?,?,?)",
+                    (make_id("SREL"), source_id, ref.get("relation_type") or "references", target["source_id"],
+                     ref.get("note") or "", now_iso()),
+                )
 
     def _insert_claims(
         self, source_id: str, analysis, publication_time: str
@@ -341,14 +332,11 @@ class IngestionPipeline:
                     continue
                 rel_type = {"corroborates": "supports", "duplicate": "supports", "updates": "updates", "contradicts": "contradicts"}.get(cls)
                 if rel_type:
-                    try:
-                        self.db.execute(
-                            "INSERT INTO claim_relations(relation_id,from_claim_id,relation_type,to_claim_id,reason,created_at) VALUES(?,?,?,?,?,?)",
-                            (make_id("CREL"), new_id, rel_type, old_id,
-                             f"{cmp.get('reason','')} | scope: {cmp.get('scope_normalization','')}", now_iso()),
-                        )
-                    except Exception:
-                        pass
+                    self.db.execute(
+                        "INSERT OR IGNORE INTO claim_relations(relation_id,from_claim_id,relation_type,to_claim_id,reason,created_at) VALUES(?,?,?,?,?,?)",
+                        (make_id("CREL"), new_id, rel_type, old_id,
+                         f"{cmp.get('reason','')} | scope: {cmp.get('scope_normalization','')}", now_iso()),
+                    )
                 if cls == "duplicate":
                     self.db.execute("UPDATE claims SET novelty_level='N0' WHERE claim_id=?", (new_id,))
                 elif cls == "corroborates":

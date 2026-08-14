@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .config import AppConfig
-from .db import Database, now_iso
+from .db import CURRENT_VIEW_ORDER, Database, now_iso
 from .ids import make_id
 
 
@@ -92,8 +92,8 @@ def create_official_view_record(conn, cfg: AppConfig, node_id: str, data: dict[s
     if not node:
         raise KeyError(f"Unknown node: {node_id}")
     previous_row = conn.execute(
-        """SELECT * FROM current_views WHERE node_id=? AND status='official'
-           ORDER BY revision_date DESC,revision_seq DESC,view_id DESC LIMIT 1""",
+        f"""SELECT * FROM current_views WHERE node_id=? AND status='official'
+            ORDER BY {CURRENT_VIEW_ORDER} LIMIT 1""",
         (node_id,),
     ).fetchone()
     previous = dict(previous_row) if previous_row else None
