@@ -208,6 +208,7 @@ def main(argv: list[str] | None = None):
                 raise SystemExit(f"Relation add failed: {exc}") from exc
             print(rel_id)
         elif args.relations_command == "propose":
+            stale_proposal_ids: list[str] = []
             try:
                 proposal_id = db.propose_relation(
                     args.from_node_id,
@@ -217,9 +218,12 @@ def main(argv: list[str] | None = None):
                     supporting_claim_ids=args.evidence_claim_ids,
                     confidence=args.confidence,
                     reason=args.reason,
+                    _stale_proposal_ids=stale_proposal_ids,
                 )
             except ValueError as exc:
                 raise SystemExit(f"Relation proposal failed: {exc}") from exc
+            for stale_proposal_id in stale_proposal_ids:
+                write_proposal(cfg, db.proposal(stale_proposal_id))
             write_proposal(cfg, db.proposal(proposal_id))
             print(proposal_id)
         elif args.relations_command == "add-evidence":
