@@ -54,7 +54,7 @@ _ACTUAL_OBSERVATION_RE = re.compile(
 _RELATION_SEMANTIC_MARKERS = {
     "upstream_of": ("上游", "upstream of"),
     "supplies": ("供应", "供货", "supply", "supplies", "supplied", "supplying"),
-    "produces": ("生产", "制造", "produce", "produces", "produced", "manufacture", "manufactures"),
+    "produces": ("生产", "制造", "produce", "produces", "produced", "manufacture", "manufactures", "manufactured"),
     "uses": ("采用", "使用", "搭载", "use", "uses", "used", "using"),
     "applied_in": ("应用于", "用于", "applied in", "applied to", "used in"),
     "substitutes": ("替代", "取代", "substitute", "substitutes", "replace", "replaces"),
@@ -439,20 +439,41 @@ class Analyzer:
         marker_start, marker_end, marker = marker_span
         if from_start < to_start:
             between = text[from_end:to_start]
+            marker_between = from_end <= marker_start and marker_end <= to_start
+            marker_after = to_end <= marker_start <= to_end + 24
             if (
                 relation_type in {"supplies", "produces", "uses"}
-                and to_end <= marker_start <= to_end + 24
+                and marker_between
+                and (
+                    re.search(r"被|由", text[from_end:marker_start])
+                    or re.search(r"\bby\b", text[marker_end:to_start])
+                )
+            ):
+                return True
+            if (
+                relation_type in {"supplies", "produces", "uses"}
+                and marker_after
                 and re.search(r"由|被", between)
             ):
                 return True
             if (
                 relation_type == "regulated_by"
-                and from_end <= marker_start and marker_end <= to_start
+                and marker_between
                 and marker in {"监管", "管制"}
             ):
                 return True
         if to_start < from_start:
-            return to_end <= marker_start and marker_end <= from_start
+            marker_between = to_end <= marker_start and marker_end <= from_start
+            if not marker_between:
+                return False
+            if (
+                relation_type in {"supplies", "produces", "uses"}
+                and re.search(r"\bby\b", text[marker_end:from_start])
+            ):
+                return False
+            if relation_type == "regulated_by" and marker in {"监管", "管制"}:
+                return False
+            return True
         return False
 
     @classmethod
@@ -487,12 +508,6 @@ class Analyzer:
                     ):
                         saw_negated = True
                         continue
-                    if cls._directionally_supported(
-                        normalized, relation_type, from_span, to_span, marker_span,
-                    ):
-                        saw_supported = True
-                        continue
-                    saw_direction_unsupported = True
                     if (
                         relation_type in _DIRECTIONAL_RELATION_TYPES
                         and cls._is_reversed_direction_pattern(
@@ -500,12 +515,19 @@ class Analyzer:
                         )
                     ):
                         saw_reversed = True
+                        continue
+                    if cls._directionally_supported(
+                        normalized, relation_type, from_span, to_span, marker_span,
+                    ):
+                        saw_supported = True
+                        continue
+                    saw_direction_unsupported = True
         if saw_negated:
             return "negated"
-        if saw_supported:
-            return "supported"
         if saw_reversed:
             return "reversed"
+        if saw_supported:
+            return "supported"
         if saw_direction_unsupported:
             return "direction_unsupported"
         return "semantic_unsupported"

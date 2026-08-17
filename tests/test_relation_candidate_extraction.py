@@ -376,6 +376,68 @@ def test_safe_passive_pattern_can_support_actual_direction(
     assert result.rejected_relation_candidates == []
 
 
+@pytest.mark.parametrize(
+    ("text", "relation_type"),
+    [
+        ("Alpha uses Beta.", "uses"),
+        ("Alpha supplies Beta.", "supplies"),
+        ("Alpha produces Beta.", "produces"),
+    ],
+)
+def test_english_active_direction_is_supported(
+    tmp_path: Path, text: str, relation_type: str,
+):
+    result = analyze_directional_candidate(tmp_path, text, relation_type)
+
+    assert len(result.relation_candidates) == 1
+    assert result.rejected_relation_candidates == []
+
+
+@pytest.mark.parametrize(
+    ("text", "relation_type"),
+    [
+        ("Alpha is used by Beta.", "uses"),
+        ("Alpha is supplied by Beta.", "supplies"),
+        ("Alpha is produced by Beta.", "produces"),
+        ("Alpha is manufactured by Beta.", "produces"),
+    ],
+)
+def test_english_passive_supports_at_most_the_actual_direction(
+    tmp_path: Path, text: str, relation_type: str,
+):
+    wrong_path = tmp_path / "wrong"
+    actual_path = tmp_path / "actual"
+    wrong_path.mkdir()
+    actual_path.mkdir()
+
+    wrong = analyze_directional_candidate(wrong_path, text, relation_type)
+    actual = analyze_directional_candidate(
+        actual_path, text, relation_type, reverse_candidate=True,
+    )
+
+    assert wrong.relation_candidates == []
+    assert wrong.rejected_relation_candidates[0]["reason"] == "reversed relation direction"
+    assert len(actual.relation_candidates) == 1
+    assert len(wrong.relation_candidates) + len(actual.relation_candidates) == 1
+
+
+def test_complex_chinese_passive_supply_is_rejected_in_both_directions(tmp_path: Path):
+    wrong_path = tmp_path / "wrong"
+    reverse_path = tmp_path / "reverse"
+    wrong_path.mkdir()
+    reverse_path.mkdir()
+
+    wrong = analyze_directional_candidate(
+        wrong_path, "Alpha 被供应给 Beta。", "supplies",
+    )
+    reverse = analyze_directional_candidate(
+        reverse_path, "Alpha 被供应给 Beta。", "supplies", reverse_candidate=True,
+    )
+
+    assert wrong.relation_candidates == []
+    assert reverse.relation_candidates == []
+
+
 def test_complex_direction_syntax_is_conservatively_rejected(tmp_path: Path):
     result = analyze_directional_candidate(
         tmp_path, "Alpha 围绕 Beta 的供应关系展开讨论。", "supplies",
@@ -500,8 +562,8 @@ def test_atomic_split_maps_only_unique_relation_supporting_child(tmp_path: Path)
     assert unrelated_id not in proposal["payload"]["supporting_claim_ids"]
     assert "supporting_claim_refs" not in proposal["payload"]
     assert "_resolved_supporting_claim_indices" not in proposal["payload"]
-    assert "C1" not in proposal["payload"]["scope"]
-    assert "C1" not in proposal["payload"]["reason"]
+    assert proposal["payload"]["scope"] == "C1 / Rubin"
+    assert proposal["payload"]["reason"] == "C1 directly states that Rubin GPU uses HBM4"
 
     accepted = ProposalManager(cfg, db, pipeline.analyzer).accept(proposal["proposal_id"])
     assert [
@@ -661,13 +723,46 @@ def test_pipeline_maps_temp_ref_to_persistent_claim_and_only_creates_proposal(tm
     assert persisted_claim_id.startswith("CLM_")
     assert "supporting_claim_refs" not in proposal["payload"]
     assert "_resolved_supporting_claim_indices" not in proposal["payload"]
-    assert "C1" not in proposal["payload"]["reason"]
+    assert proposal["payload"]["reason"] == "C1 directly states that Rubin GPU uses HBM4"
     assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
     assert db.one("SELECT COUNT(*) AS n FROM relation_evidence_links")["n"] == 0
     assert result["audit"]["relation_proposals"][0]["proposal_id"] == proposal_id
     receipt = Path(result["receipt_path"]).read_text(encoding="utf-8")
     assert "## Relation Proposals" in receipt
     assert "Relation Candidates: accepted 1, rejected 0" in receipt
+
+
+def test_pipeline_preserves_c_number_scope_and_reason_identity(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    reason = "Migration from C1 stepping to C2 stepping"
+    analyzer = PipelineAnalyzer(
+        from_node_id,
+        to_node_id,
+        candidates=[
+            candidate(from_node_id, to_node_id, scope="C1 stepping", reason=reason),
+            candidate(from_node_id, to_node_id, scope="C2 stepping", reason=reason),
+        ],
+    )
+    pipeline = IngestionPipeline(cfg, db)
+    pipeline.analyzer = analyzer
+    pipeline.propagation.analyzer = analyzer
+    request = cfg.root / "inbox" / "standard" / "scope-integrity.md"
+    request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+
+    result = pipeline.process_all()[0]
+
+    proposals = [db.proposal(proposal_id) for proposal_id in result["relation_proposals"]]
+    assert len(proposals) == 2
+    assert {item["payload"]["scope"] for item in proposals} == {
+        "C1 stepping", "C2 stepping",
+    }
+    assert {item["payload"]["reason"] for item in proposals} == {reason}
+    assert all("supporting_claim_refs" not in item["payload"] for item in proposals)
+    assert all(
+        "_resolved_supporting_claim_indices" not in item["payload"]
+        for item in proposals
+    )
 
 
 def test_pipeline_unresolved_temp_ref_creates_no_proposal_and_is_audited(tmp_path: Path):

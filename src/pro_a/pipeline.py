@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import time
 from pathlib import Path
 from typing import Any
@@ -108,12 +107,6 @@ class IngestionPipeline:
     def _create_relation_proposal(
         self, candidate: dict[str, Any], claim_id_by_index: dict[int, str]
     ) -> str:
-        def without_temporary_claim_refs(value: Any) -> str:
-            return re.sub(
-                r"\bC\d+\b", "supporting Claim", str(value or ""),
-                flags=re.IGNORECASE,
-            )
-
         supporting_claim_ids: list[str] = []
         resolved_indices = candidate.get("_resolved_supporting_claim_indices")
         if not isinstance(resolved_indices, list) or not resolved_indices:
@@ -134,10 +127,10 @@ class IngestionPipeline:
             candidate.get("from_node_id"),
             candidate.get("relation_type"),
             candidate.get("to_node_id"),
-            scope=without_temporary_claim_refs(candidate.get("scope")),
+            scope=candidate.get("scope", ""),
             supporting_claim_ids=supporting_claim_ids,
             confidence=candidate.get("confidence"),
-            reason=without_temporary_claim_refs(candidate.get("reason")),
+            reason=candidate.get("reason", ""),
             _stale_proposal_ids=stale_proposal_ids,
         )
         for stale_proposal_id in stale_proposal_ids:
