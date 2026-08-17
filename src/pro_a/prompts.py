@@ -32,6 +32,9 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 14.5 related_to 不是语义不清时的兜底；只有原文明确表述“相关/关联/related to”等关系时才可输出。证据不足就不输出，宁缺毋滥。
 14.6 正例：Claim C1 “NVIDIA Rubin GPU 将采用 HBM4。”，且 Existing Nodes 中存在 Rubin GPU 与 HBM4，可输出 Rubin GPU --uses--> HBM4，supporting_claim_refs=["C1"]。
 14.7 反例：C1 “Rubin 是 NVIDIA 下一代 GPU。”，C2 “HBM4 用于下一代 AI Server。”；禁止组合两条 Claim 得出 Rubin GPU --uses--> HBM4。反例：“Rubin GPU 与 HBM4 是两个研究重点”也不支持 uses、supplies、depends_on 或弱 Evidence related_to。
+14.8 明确否定的 Relation 不得输出 positive candidate，例如“A 不依赖 B”不得输出 A --depends_on--> B。
+14.9 被动句必须保证 from/to 与 Relation 定义方向一致：“A 由 B 供应”表达 B --supplies--> A，不是 A --supplies--> B；“A 被 B 使用”表达 B --uses--> A，不是 A --uses--> B。
+14.10 无法可靠确认方向或否定作用域时，不输出 Relation Candidate。
 15. 只输出 JSON，不要输出解释文字。
 """
 

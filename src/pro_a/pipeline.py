@@ -105,16 +105,20 @@ class IngestionPipeline:
         return pid
 
     def _create_relation_proposal(
-        self, candidate: dict[str, Any], claim_ids_by_ref: dict[str, list[str]]
+        self, candidate: dict[str, Any], claim_id_by_index: dict[int, str]
     ) -> str:
         supporting_claim_ids: list[str] = []
-        for claim_ref in candidate.get("supporting_claim_refs") or []:
-            resolved = claim_ids_by_ref.get(claim_ref)
-            if not resolved:
-                raise ValueError(f"unresolved temporary Claim ref: {claim_ref}")
-            for claim_id in resolved:
-                if claim_id not in supporting_claim_ids:
-                    supporting_claim_ids.append(claim_id)
+        resolved_indices = candidate.get("_resolved_supporting_claim_indices")
+        if not isinstance(resolved_indices, list) or not resolved_indices:
+            raise ValueError("Relation Candidate lacks resolved supporting Claim indices")
+        for claim_index in resolved_indices:
+            if isinstance(claim_index, bool) or not isinstance(claim_index, int):
+                raise ValueError("Relation Candidate has an invalid resolved Claim index")
+            claim_id = claim_id_by_index.get(claim_index)
+            if not claim_id:
+                raise ValueError(f"unresolved relation-specific Claim index: {claim_index}")
+            if claim_id not in supporting_claim_ids:
+                supporting_claim_ids.append(claim_id)
         if not supporting_claim_ids:
             raise ValueError("Relation Candidate has no persistent supporting Claim IDs")
 
@@ -192,10 +196,9 @@ class IngestionPipeline:
 
     def _insert_claims(
         self, source_id: str, analysis, publication_time: str
-    ) -> tuple[list[str], dict[int, str], dict[str, list[str]]]:
+    ) -> tuple[list[str], dict[int, str]]:
         claim_ids: list[str] = []
         claim_id_by_index: dict[int, str] = {}
-        claim_ids_by_ref: dict[str, list[str]] = {}
         for claim_index, c in enumerate(analysis.claims):
             statement = normalize_ws(str(c.get("statement", "")))
             if not statement:
@@ -225,8 +228,6 @@ class IngestionPipeline:
             )
             claim_ids.append(claim_id)
             claim_id_by_index[claim_index] = claim_id
-            claim_ref = str(c.get("claim_ref") or f"C{claim_index + 1}")
-            claim_ids_by_ref.setdefault(claim_ref, []).append(claim_id)
             for node_id in c.get("related_node_ids") or []:
                 if self.db.get_node(node_id):
                     self.db.execute("INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
@@ -238,7 +239,7 @@ class IngestionPipeline:
                         (source_id, node_id, "related", c.get("confidence"), "claim",
                          c.get("evidence_excerpt") or "", json.dumps(structured["validation"], ensure_ascii=False)),
                     )
-        return claim_ids, claim_id_by_index, claim_ids_by_ref
+        return claim_ids, claim_id_by_index
 
     def _apply_node_matches(self, source_id: str, matches: list[dict[str, Any]]) -> list[str]:
         linked = []
@@ -496,7 +497,7 @@ class IngestionPipeline:
                 "rejected_relation_candidates": analysis.rejected_relation_candidates,
             }
             self._apply_node_matches(source_id, analysis.node_matches)
-            claim_ids, claim_id_by_index, claim_ids_by_ref = self._insert_claims(
+            claim_ids, claim_id_by_index = self._insert_claims(
                 source_id, analysis, meta.get("publication_time") or "",
             )
             self._derive_source_ancestor_links(source_id)
@@ -521,7 +522,7 @@ class IngestionPipeline:
             relation_proposals: list[str] = []
             for candidate in analysis.relation_candidates:
                 try:
-                    proposal_id = self._create_relation_proposal(candidate, claim_ids_by_ref)
+                    proposal_id = self._create_relation_proposal(candidate, claim_id_by_index)
                 except ValueError as exc:
                     analysis.rejected_relation_candidates.append({
                         "candidate": candidate,

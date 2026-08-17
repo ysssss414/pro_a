@@ -53,22 +53,35 @@ _ACTUAL_OBSERVATION_RE = re.compile(
 )
 _RELATION_SEMANTIC_MARKERS = {
     "upstream_of": ("上游", "upstream of"),
-    "supplies": ("供应", "供货", "supplies", "supplied"),
-    "produces": ("生产", "制造", "produces", "manufactures"),
-    "uses": ("采用", "使用", "搭载", "uses", "using"),
-    "applied_in": ("应用于", "用于", "applied in", "used in"),
-    "substitutes": ("替代", "取代", "substitutes", "replaces"),
-    "depends_on": ("依赖", "取决于", "depends on", "dependent on"),
-    "constrains": ("制约", "限制", "约束", "constrains", "limits"),
-    "drives": ("驱动", "推动", "带动", "drives"),
+    "supplies": ("供应", "供货", "supply", "supplies", "supplied", "supplying"),
+    "produces": ("生产", "制造", "produce", "produces", "produced", "manufacture", "manufactures", "manufactured"),
+    "uses": ("采用", "使用", "搭载", "use", "uses", "used", "using"),
+    "applied_in": ("应用于", "用于", "applied in", "applied to", "used in"),
+    "substitutes": ("替代", "取代", "substitute", "substitutes", "replace", "replaces"),
+    "depends_on": ("依赖", "取决于", "depend on", "depends on", "dependent on", "rely on", "relies on"),
+    "constrains": ("制约", "限制", "约束", "constrain", "constrains", "limit", "limits"),
+    "drives": ("驱动", "推动", "带动", "drive", "drives"),
     "competes_with": ("竞争", "竞品", "competes with", "competing with"),
-    "benefits_from": ("受益于", "benefits from"),
+    "benefits_from": ("受益于", "benefit from", "benefits from"),
     "exposed_to": ("暴露于", "敞口", "exposed to", "exposure to"),
-    "regulated_by": ("监管", "受管制", "regulated by"),
-    "validates": ("验证", "证实", "validates", "confirms"),
-    "invalidates": ("证伪", "推翻", "否定", "invalidates", "disproves"),
+    "regulated_by": ("监管", "管制", "regulated by", "governed by"),
+    "validates": ("验证", "证实", "validate", "validates", "confirm", "confirms"),
+    "invalidates": ("证伪", "推翻", "否定", "invalidate", "invalidates", "disprove", "disproves"),
     "related_to": ("相关", "关联", "related to", "associated with"),
 }
+_DIRECTIONAL_RELATION_TYPES = {
+    "upstream_of", "supplies", "produces", "uses", "applied_in", "depends_on",
+    "constrains", "drives", "benefits_from", "exposed_to", "regulated_by",
+    "validates", "invalidates",
+}
+_RELATION_CANDIDATE_CLAIM_STATUSES = {"current", "pending_verification", "disputed"}
+_CHINESE_RELATION_NEGATION_RE = re.compile(r"并非|不是|未曾|不再|尚未|没有|并未|不|非|未|无")
+_ENGLISH_RELATION_NEGATION_RE = re.compile(
+    r"\b(?:not|no|never|without|does\s+not|do\s+not|did\s+not|is\s+not|"
+    r"are\s+not|was\s+not|were\s+not|will\s+not|doesn't|don't|didn't|"
+    r"isn't|aren't|wasn't|weren't)\b",
+    re.IGNORECASE,
+)
 
 
 def canonicalize_text(value: str) -> str:
@@ -312,6 +325,238 @@ class Analyzer:
         )
 
     @classmethod
+    def _term_spans(cls, text: str, terms: list[str]) -> list[tuple[int, int, str]]:
+        spans: list[tuple[int, int, str]] = []
+        for term in terms:
+            start = text.find(term)
+            while start >= 0:
+                span = (start, start + len(term), term)
+                if span not in spans:
+                    spans.append(span)
+                start = text.find(term, start + 1)
+        return spans
+
+    @staticmethod
+    def _relation_marker_matches(
+        text: str, relation_type: str,
+    ) -> list[tuple[int, int, str]]:
+        matches: list[tuple[int, int, str]] = []
+        for marker in sorted(
+            _RELATION_SEMANTIC_MARKERS.get(relation_type) or (), key=len, reverse=True,
+        ):
+            if marker.isascii():
+                pattern = re.compile(
+                    rf"(?<![a-z]){re.escape(marker)}(?![a-z])", re.IGNORECASE,
+                )
+                found = (
+                    (match.start(), match.end(), match.group(0).lower())
+                    for match in pattern.finditer(text)
+                )
+            else:
+                found_items: list[tuple[int, int, str]] = []
+                start = text.find(marker)
+                while start >= 0:
+                    found_items.append((start, start + len(marker), marker))
+                    start = text.find(marker, start + 1)
+                found = iter(found_items)
+            for item in found:
+                if item not in matches:
+                    matches.append(item)
+        return matches
+
+    @staticmethod
+    def _is_negated_relation_marker(
+        text: str,
+        from_span: tuple[int, int, str],
+        to_span: tuple[int, int, str],
+        marker_span: tuple[int, int, str],
+    ) -> bool:
+        start = min(from_span[0], to_span[0], marker_span[0])
+        end = max(from_span[1], to_span[1], marker_span[1])
+        context = list(text[start:end])
+        for endpoint in (from_span, to_span):
+            for index in range(endpoint[0] - start, endpoint[1] - start):
+                context[index] = " "
+        normalized = "".join(context)
+        return bool(
+            _CHINESE_RELATION_NEGATION_RE.search(normalized)
+            or _ENGLISH_RELATION_NEGATION_RE.search(normalized)
+        )
+
+    @staticmethod
+    def _directionally_supported(
+        text: str,
+        relation_type: str,
+        from_span: tuple[int, int, str],
+        to_span: tuple[int, int, str],
+        marker_span: tuple[int, int, str],
+    ) -> bool:
+        from_start, from_end, _ = from_span
+        to_start, to_end, _ = to_span
+        marker_start, marker_end, marker = marker_span
+        if from_start < to_start:
+            between = text[from_end:to_start]
+            marker_between = from_end <= marker_start and marker_end <= to_start
+            marker_after = to_end <= marker_start <= to_end + 24
+            if marker_between:
+                if relation_type == "regulated_by":
+                    return marker in {"regulated by", "governed by"}
+                return True
+            if marker_after:
+                if relation_type == "supplies":
+                    return bool(re.search(r"向|为|给", between)) and not re.search(r"由|被", between)
+                if relation_type == "upstream_of":
+                    return bool(re.search(r"是|位于|属于", between))
+                if relation_type == "regulated_by":
+                    return bool(re.search(r"受|由", between))
+                if relation_type in {"related_to", "competes_with"}:
+                    return bool(re.search(r"与|和|同|跟|&", between))
+            return False
+
+        if to_start < from_start:
+            between = text[to_end:from_start]
+            marker_between = to_end <= marker_start and marker_end <= from_start
+            marker_after = from_end <= marker_start <= from_end + 24
+            if relation_type in {"supplies", "produces", "uses"}:
+                if marker_after and re.search(r"由|被", between):
+                    return True
+                if marker_between and re.search(r"\bby\b", text[marker_end:from_start]):
+                    return True
+            if relation_type == "regulated_by" and marker_between:
+                return marker in {"监管", "管制"}
+        return False
+
+    @staticmethod
+    def _is_reversed_direction_pattern(
+        text: str,
+        relation_type: str,
+        from_span: tuple[int, int, str],
+        to_span: tuple[int, int, str],
+        marker_span: tuple[int, int, str],
+    ) -> bool:
+        from_start, from_end, _ = from_span
+        to_start, to_end, _ = to_span
+        marker_start, marker_end, marker = marker_span
+        if from_start < to_start:
+            between = text[from_end:to_start]
+            marker_between = from_end <= marker_start and marker_end <= to_start
+            marker_after = to_end <= marker_start <= to_end + 24
+            if (
+                relation_type in {"supplies", "produces", "uses"}
+                and marker_between
+                and (
+                    re.search(r"被|由", text[from_end:marker_start])
+                    or re.search(r"\bby\b", text[marker_end:to_start])
+                )
+            ):
+                return True
+            if (
+                relation_type in {"supplies", "produces", "uses"}
+                and marker_after
+                and re.search(r"由|被", between)
+            ):
+                return True
+            if (
+                relation_type == "regulated_by"
+                and marker_between
+                and marker in {"监管", "管制"}
+            ):
+                return True
+        if to_start < from_start:
+            marker_between = to_end <= marker_start and marker_end <= from_start
+            if not marker_between:
+                return False
+            if (
+                relation_type in {"supplies", "produces", "uses"}
+                and re.search(r"\bby\b", text[marker_end:from_start])
+            ):
+                return False
+            if relation_type == "regulated_by" and marker in {"监管", "管制"}:
+                return False
+            return True
+        return False
+
+    @classmethod
+    def _text_relation_semantic_status(
+        cls,
+        text: str,
+        from_node: dict[str, Any],
+        relation_type: str,
+        to_node: dict[str, Any],
+    ) -> str:
+        normalized = canonicalize_text(text).lower()
+        from_spans = cls._term_spans(normalized, cls._node_evidence_terms(from_node))
+        to_spans = cls._term_spans(normalized, cls._node_evidence_terms(to_node))
+        marker_spans = cls._relation_marker_matches(normalized, relation_type)
+        if not from_spans or not to_spans or not marker_spans:
+            return "semantic_unsupported"
+
+        saw_negated = False
+        saw_reversed = False
+        saw_direction_unsupported = False
+        saw_supported = False
+        for from_span in from_spans:
+            for to_span in to_spans:
+                if not (from_span[1] <= to_span[0] or to_span[1] <= from_span[0]):
+                    continue
+                relation_end = max(from_span[1], to_span[1]) + 24
+                for marker_span in marker_spans:
+                    if not min(from_span[0], to_span[0]) <= marker_span[0] <= relation_end:
+                        continue
+                    if cls._is_negated_relation_marker(
+                        normalized, from_span, to_span, marker_span,
+                    ):
+                        saw_negated = True
+                        continue
+                    if (
+                        relation_type in _DIRECTIONAL_RELATION_TYPES
+                        and cls._is_reversed_direction_pattern(
+                            normalized, relation_type, from_span, to_span, marker_span,
+                        )
+                    ):
+                        saw_reversed = True
+                        continue
+                    if cls._directionally_supported(
+                        normalized, relation_type, from_span, to_span, marker_span,
+                    ):
+                        saw_supported = True
+                        continue
+                    saw_direction_unsupported = True
+        if saw_negated:
+            return "negated"
+        if saw_reversed:
+            return "reversed"
+        if saw_supported:
+            return "supported"
+        if saw_direction_unsupported:
+            return "direction_unsupported"
+        return "semantic_unsupported"
+
+    @classmethod
+    def _claim_relation_semantic_status(
+        cls,
+        claim: dict[str, Any],
+        from_node: dict[str, Any],
+        relation_type: str,
+        to_node: dict[str, Any],
+    ) -> str:
+        statuses = [
+            cls._text_relation_semantic_status(
+                str(claim.get(field) or ""), from_node, relation_type, to_node,
+            )
+            for field in ("statement", "evidence_excerpt")
+        ]
+        if "negated" in statuses:
+            return "negated"
+        if statuses == ["supported", "supported"]:
+            return "supported"
+        if "reversed" in statuses:
+            return "reversed"
+        if "direction_unsupported" in statuses:
+            return "direction_unsupported"
+        return "semantic_unsupported"
+
+    @classmethod
     def _claim_semantically_supports_relation(
         cls,
         claim: dict[str, Any],
@@ -320,36 +565,23 @@ class Analyzer:
         to_node: dict[str, Any],
     ) -> bool:
         """Conservative lexical gate; extraction prompt and human approval remain authoritative."""
-        evidence = canonicalize_text(str(claim.get("evidence_excerpt") or "")).lower()
-        markers = _RELATION_SEMANTIC_MARKERS.get(relation_type) or ()
-        if not evidence or not markers:
-            return False
-        from_terms = cls._node_evidence_terms(from_node)
-        to_terms = cls._node_evidence_terms(to_node)
-        for from_term in from_terms:
-            from_start = evidence.find(from_term)
-            while from_start >= 0:
-                for to_term in to_terms:
-                    to_start = evidence.find(to_term, from_start + len(from_term))
-                    while to_start >= 0:
-                        # Include a short suffix for forms such as “A 与 B 竞争/相关”.
-                        window_end = min(len(evidence), to_start + len(to_term) + 24)
-                        window = evidence[from_start:window_end]
-                        if any(marker in window for marker in markers):
-                            return True
-                        to_start = evidence.find(to_term, to_start + 1)
-                from_start = evidence.find(from_term, from_start + 1)
-        return False
+        return cls._claim_relation_semantic_status(
+            claim, from_node, relation_type, to_node,
+        ) == "supported"
 
     def _validate_relation_candidates(
         self, raw_candidates: Any, claims: list[dict[str, Any]]
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         candidates = self._list(raw_candidates or [], "relation_candidates")
-        claim_by_ref: dict[str, list[dict[str, Any]]] = {}
-        for claim in claims:
-            ref = claim.get("claim_ref")
-            if isinstance(ref, str) and ref:
-                claim_by_ref.setdefault(ref, []).append(claim)
+        claim_by_ref: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+        for claim_index, claim in enumerate(claims):
+            refs = [claim.get("claim_ref"), *(claim.get("_relation_claim_refs") or [])]
+            for ref in refs:
+                if not isinstance(ref, str) or not ref:
+                    continue
+                resolved = (claim_index, claim)
+                if resolved not in claim_by_ref.setdefault(ref, []):
+                    claim_by_ref[ref].append(resolved)
 
         accepted: list[dict[str, Any]] = []
         rejected: list[dict[str, Any]] = []
@@ -366,6 +598,7 @@ class Analyzer:
                 reject(raw_candidate, "malformed candidate: expected an object", "structure")
                 continue
             candidate = copy.deepcopy(raw_candidate)
+            candidate.pop("_resolved_supporting_claim_indices", None)
             from_node_id = candidate.get("from_node_id")
             to_node_id = candidate.get("to_node_id")
             relation_type = candidate.get("relation_type")
@@ -437,53 +670,74 @@ class Analyzer:
                 reject(candidate, "part_of not allowed", "endpoint")
                 continue
 
-            referenced_claims: list[tuple[str, list[dict[str, Any]]]] = []
-            reference_error = ""
+            resolved_claim_indices: list[int] = []
+            resolution_error = ""
+            resolution_stage = "claim_reference"
             for ref in refs:
                 resolved = claim_by_ref.get(ref)
                 if not resolved:
-                    reference_error = f"unknown supporting_claim_ref: {ref}"
+                    resolution_error = f"unknown supporting_claim_ref: {ref}"
                     break
                 validated = [
-                    claim for claim in resolved
+                    (claim_index, claim) for claim_index, claim in resolved
                     if claim.get("evidence_validated") is True
-                    and claim.get("status") != "needs_review"
+                    and claim.get("status") in _RELATION_CANDIDATE_CLAIM_STATUSES
                 ]
                 if not validated:
-                    reference_error = f"supporting Claim rejected: {ref}"
+                    resolution_error = f"supporting Claim rejected: {ref}"
                     break
-                referenced_claims.append((ref, validated))
-            if reference_error:
-                reject(candidate, reference_error, "claim_reference")
-                continue
-
-            evidence_error = False
-            semantic_error = False
-            for _, resolved in referenced_claims:
-                dual_endpoint_claims = [
-                    claim for claim in resolved
-                    if self._claim_identifies_relation_endpoints(claim, from_node, to_node)
+                evaluations: list[tuple[int, str]] = []
+                for claim_index, claim in validated:
+                    if not self._claim_identifies_relation_endpoints(
+                        claim, from_node, to_node,
+                    ):
+                        evaluations.append((claim_index, "endpoint_unsupported"))
+                        continue
+                    evaluations.append((
+                        claim_index,
+                        self._claim_relation_semantic_status(
+                            claim, from_node, relation_type, to_node,
+                        ),
+                    ))
+                eligible = [
+                    claim_index for claim_index, status in evaluations
+                    if status == "supported"
                 ]
-                if not dual_endpoint_claims:
-                    evidence_error = True
-                    break
-                if not any(
-                    self._claim_semantically_supports_relation(
-                        claim, from_node, relation_type, to_node,
+                if len(eligible) == 1:
+                    if eligible[0] not in resolved_claim_indices:
+                        resolved_claim_indices.append(eligible[0])
+                    continue
+                if len(eligible) > 1:
+                    resolution_error = (
+                        "ambiguous atomic Claim ref: multiple relation-supporting children"
                     )
-                    for claim in dual_endpoint_claims
-                ):
-                    semantic_error = True
+                    resolution_stage = "claim_resolution"
                     break
-            if evidence_error:
-                reject(
-                    candidate,
-                    "no single supporting Claim explicitly identifies both endpoints",
-                    "evidence",
-                )
-                continue
-            if semantic_error:
-                reject(candidate, "semantic support insufficient", "semantic")
+                if len(resolved) > 1:
+                    resolution_error = "atomic Claim ref has no relation-supporting child"
+                    resolution_stage = "claim_resolution"
+                    break
+                statuses = {status for _, status in evaluations}
+                if "negated" in statuses:
+                    resolution_error = "negated relation evidence"
+                    resolution_stage = "semantic"
+                elif "reversed" in statuses:
+                    resolution_error = "reversed relation direction"
+                    resolution_stage = "semantic"
+                elif "direction_unsupported" in statuses:
+                    resolution_error = "semantic direction unsupported"
+                    resolution_stage = "semantic"
+                elif "endpoint_unsupported" in statuses:
+                    resolution_error = (
+                        "no single supporting Claim explicitly identifies both endpoints"
+                    )
+                    resolution_stage = "evidence"
+                else:
+                    resolution_error = "semantic support insufficient"
+                    resolution_stage = "semantic"
+                break
+            if resolution_error:
+                reject(candidate, resolution_error, resolution_stage)
                 continue
 
             normalized = {
@@ -493,6 +747,7 @@ class Analyzer:
                 "scope": scope.strip(),
                 "supporting_claim_refs": refs,
                 "reason": reason.strip(),
+                "_resolved_supporting_claim_indices": resolved_claim_indices,
             }
             if confidence is not None:
                 normalized["confidence"] = float(confidence)
@@ -854,8 +1109,8 @@ class Analyzer:
         rejected_candidates: list[dict[str, Any]] = []
         rejected_claim_links: list[dict[str, Any]] = []
         rejected_relation_candidates: list[dict[str, Any]] = []
-        seen_claims: set[str] = set()
-        claim_ref_by_statement: dict[str, str] = {}
+        claim_index_by_statement: dict[str, int] = {}
+        next_relation_claim_ref = 1
         seen_matches: set[str] = set()
         seen_candidates: set[str] = set()
         for idx, chunk in enumerate(chunks, 1):
@@ -886,26 +1141,32 @@ class Analyzer:
             local_to_global_refs: dict[str, list[str]] = {}
             for claim in data.get("claims") or []:
                 local_ref = str(claim.get("claim_ref") or "")
+                if local_ref and local_ref not in local_to_global_refs:
+                    local_to_global_refs[local_ref] = [f"C{next_relation_claim_ref}"]
+                    next_relation_claim_ref += 1
+            for claim in data.get("claims") or []:
+                local_ref = str(claim.get("claim_ref") or "")
                 statement = normalize_ws(str(claim.get("statement", "")))
                 key = statement.lower()
                 if not statement:
                     continue
-                if key in seen_claims:
-                    global_ref = claim_ref_by_statement[key]
+                global_ref = (local_to_global_refs.get(local_ref) or [""])[0]
+                if key in claim_index_by_statement:
+                    merged_claim = merged["claims"][claim_index_by_statement[key]]
+                    relation_refs = merged_claim.setdefault("_relation_claim_refs", [])
+                    if global_ref and global_ref not in relation_refs:
+                        relation_refs.append(global_ref)
                 else:
-                    seen_claims.add(key)
-                    global_ref = f"C{len(merged['claims']) + 1}"
-                    claim_ref_by_statement[key] = global_ref
-                    claim["claim_ref"] = global_ref
+                    claim_index_by_statement[key] = len(merged["claims"])
+                    if global_ref:
+                        claim["claim_ref"] = global_ref
+                        claim["_relation_claim_refs"] = [global_ref]
                     rejected_claim_links.extend(claim.get("rejected_related_node_links") or [])
                     merged["claims"].append(claim)
-                if local_ref:
-                    refs = local_to_global_refs.setdefault(local_ref, [])
-                    if global_ref not in refs:
-                        refs.append(global_ref)
 
             def remap_refs(candidate: dict[str, Any]) -> dict[str, Any]:
                 mapped = copy.deepcopy(candidate)
+                mapped.pop("_resolved_supporting_claim_indices", None)
                 global_refs: list[str] = []
                 for ref in mapped.get("supporting_claim_refs") or []:
                     for global_ref in local_to_global_refs.get(ref, [ref]):
