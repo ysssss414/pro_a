@@ -1,53 +1,119 @@
-# pro_a v0.2.2.1-current-view-fix-and-cleanup
+# pro_a — post-v0.2.3B.1 baseline
 
-面向长期投研的本地知识处理引擎原型。核心职责是把新资料从本地 Inbox 转换为可追溯的 Source / Claim / Knowledge Node / Current View，并通过 IMA OpenAPI 同步原始资料和正式研究成果。
+面向长期投研的本地知识处理引擎。核心目标不是“存文档”，而是持续维护可追溯、可验证、可更新的知识状态：
 
-v0.2.2.1 在 v0.2.2 基础上强化单一公司 Evidence Scope、Actual/Guidance 原子化、公司主体归因和 Product Applications Evidence 校验，并清理重复查询与无效残留；不改变冻结业务规则、Source/Claim/Node 稳定规则或 v0.1.1 状态机。IMA 默认保持关闭。
+```text
+Source
+→ Claim
+→ Knowledge Node
+→ Current View
+→ 新 Evidence 持续更新认知
+```
+
+SQLite / pro_a 是 Canonical Knowledge Engine；IMA 未来仅承担文档云存储、Search/RAG 与正式研究成果承载。IMA 当前默认关闭。
+
+## 当前基线
+
+截至 2026-08-17，v0.2.3B.1 / B.1.1 已完成并合入 `main`。
+
+当前已验证的 Relation 链路：
+
+```text
+LLM Relation Candidate
+→ supporting Claim resolution
+→ atomic Claim / Evidence validation
+→ semantic validation
+→ direction validation
+→ pending node_relation Proposal
+→ human confirmation
+→ formal Relation + relation_evidence_links
+```
+
+当前 Relation Candidate baseline 的核心安全性质：
+
+- 非结构 Relation 不可绕过 Evidence gate。
+- supporting Claim 必须可解析为真实持久化 Claim。
+- atomic split 后只允许唯一支持该 Relation 的 child Claim 进入 Evidence。
+- directional Relation 对主动/被动方向进行程序校验；明显 reversed direction 必须拒绝。
+- `supporting_claim_refs` 与 `_resolved_supporting_claim_indices` 不进入 Proposal payload。
+- 合法业务文本中的 `C1` / `C2` 不再被清洗或改写。
+- 不同 scope（例如 `C1 stepping` / `C2 stepping`）保持不同 Proposal identity。
+- Proposal 仍须人工确认；系统不得自动 formalize 非结构 Relation。
+
+B.1.1 合并前基线验证：`213 passed`，`compileall` 通过，`git diff --check` 通过。
+
+下一阶段不是继续增加启发式规则，而是先执行真实资料 R1 baseline acceptance。详见 `docs/R1_ACCEPTANCE.md`。
 
 ## 已实现
 
-- 三种入库模式：`archive` / `standard` / `deep`
-- 本地 Inbox 扫描与文件稳定检测
-- SHA-256 去重、Source ID、不可变本地归档
-- PDF / Word / Excel / PPT / Markdown / TXT 解析
-- SQLite 状态库
-- Knowledge Node、别名、关系、Source、Claim、Current View、Knowledge Gap、Research Question、Proposal、Impact Review 数据表
-- 通用 OpenAI-compatible LLM 适配器（默认关闭，可接 DeepSeek 等兼容接口）
-- Claim 抽取、Node 匹配/新增 Node Proposal、Evidence Pointer/Excerpt 校验
-- Current View 变更分级：Minor / Material / Thesis Change
-- 所有 Current View 变更都生成 Proposal，只有用户确认后才形成正式 `v_YYYYMMDD` 版本
-- 同日多次正式更新自动生成 `v_YYYYMMDD_01` / `_02`
-- 新 Node 必须 Proposal 确认
-- 非结构 Relation 可通过统一 `node_relation` Proposal 提交显式 supporting Claims 后确认
-- Current View 确认后按“上下级 → 关联节点”的规则触发 Impact Review；未产生 View 变化则该路径停止
-- Knowledge Gap 自动产生；Research Question 作为 Node Candidate，需要确认
-- IMA 原始文件上传：`check_repeated_names → create_media → COS → add_knowledge`
-- IMA Current View Markdown 上传
-- 人类可读 Ingestion Receipt / Proposal 文件
-- 41 个初始 Knowledge Node Seed 与 25 条结构 Relation Seed
-- Relation Seed 名称/别名解析、幂等导入和整批错误回滚
-- LLM 输出冻结枚举、Node 引用、confidence 与 Evidence excerpt 程序校验
-- Candidate Node 独立研究价值、离散 Event 和长期 Theme 程序门槛
-- Existing Node Match Evidence 校验与 `part_of` 祖先推导
-- Claim 主体/归因字段 `attributed_to`
-- NFKC + Markdown 转义还原 + 空白标准化后的 Evidence 精确匹配审计
-- Candidate Node 对全部 validated Claims 的二次相关性回填
-- Initial Current View 单一 Source 规则与 Source/underlying Source 级 Evidence profile
-- Current View 实际 attribution 主体、Claim ID、Company→Industry scope 与 Target-Node-centric 程序校验
-- Evidence-backed `key_facts` / Judgment-backed `core_logic` 分离
-- Product Current View 的 applications、demand drivers、supply capacity、pricing、major suppliers、product evolution 类型字段
-- Receipt / `source show` 展示 Source metadata、Existing Nodes、Node/RQ Candidates、Claims、历史比对、Impact Reviews、Current View Proposals 和 Gaps
+### Source / ingestion
 
-## 设计边界
+- `archive` / `standard` / `deep` 三种入库模式。
+- 本地 Inbox 扫描与文件稳定检测。
+- SHA-256 去重、Source ID、不可变本地归档。
+- PDF / Word / Excel / PPT / Markdown / TXT 基础解析。
+- 失败处理保留 Source、processing job 与 receipt。
+- Source 物理只存一次，多 Node 关联保存在 SQLite。
 
-`pro_a` 是逻辑知识层；IMA 是云端文档/RAG/成果承载层。原始 Source 只保存一次，不按 Node 复制。一个 Source 与多个 Node 的关系保存在 SQLite 中。
+### Claim / Evidence
 
-IMA v0.1 不依赖“新建知识库/新建文件夹”接口。请先在 IMA 手工创建：
+- Claim 抽取与 Evidence Pointer / Excerpt 校验。
+- Unicode NFKC、Markdown 转义还原、空白标准化后的精确 Evidence 匹配。
+- Claim `attributed_to` 与公司主体确定性约束。
+- Actual / Guidance 等原子化处理。
+- Evidence 无法定位时自动降级为 `needs_review`。
 
-1. `00_Research_Sources`：原始资料库
-2. `10_Research_Outputs`：Current View / Research Output 等成果库
+### Knowledge Node
 
-然后把知识库 ID（可选文件夹 ID）填入 `config.toml`。
+- 冻结 Primary Type：Industry / Segment / Technology / Product / Material / Equipment / Entity / Application / Standard / Policy / Theme / Event / ResearchQuestion。
+- 新 Node 必须 Proposal + 人工确认。
+- Candidate Node 独立研究价值门槛。
+- Existing Node Match 必须有 canonical name / alias Evidence。
+- 父级 / 祖先仅由已确认 `part_of` 推导。
+- AI Hardware Node Universe v0.1 当前正式状态：256 active Nodes、170 条 current `part_of`、7 条 `retired_r1_migration`。
+
+### Relation / Relation Evidence
+
+- `relation_evidence_links` 支持一条 Relation 累积多个 supports / contradicts Claims。
+- `part_of` 是唯一允许无 Evidence 创建的正式 Relation。
+- 非 `part_of` current Relation 必须至少有 active supporting Claim。
+- Relation seed 仅允许 `part_of`。
+- 手工 Relation Proposal 支持显式 supporting Claim。
+- LLM 可生成 Relation Candidate，但程序必须进行 Evidence / semantic / direction validation 后才允许创建 pending Proposal。
+- stale Relation Proposal recovery 与 Proposal identity 处理已实现。
+
+### Current View / propagation
+
+- Current View 采用不可覆盖的日期版本：`v_YYYYMMDD[_NN]`。
+- 所有正式 Current View 变化必须 Proposal + 人工确认。
+- Minor / Material / Thesis Change 分级。
+- Material / Thesis 存在 Evidence Sufficiency 程序门槛。
+- Initial Current View 支持单一 Source，但执行 Evidence Scope Constraint。
+- Target-Node-centric、attribution、Claim ID、Company→Industry scope 等程序校验。
+- `key_facts` 与 Judgment-backed `core_logic` 分离。
+- Product Current View 支持 applications / demand drivers / supply capacity / pricing / major suppliers / product evolution。
+- Current View 确认后按“上下/结构关系优先，再相关关系”触发 Impact Review；目标 View 无需变化则停止该路径。
+- Impact Review 持久化、retry、stale recovery 与确定性质量门槛已实现。
+
+### Gap / Research Question
+
+- Knowledge Gap 可自动产生。
+- ResearchQuestion 属于新 Node，必须人工确认。
+- Gap 完整生命周期与 RQ Current Answer 自动更新仍属于后续工作。
+
+## 冻结设计边界
+
+冻结业务规则以 `docs/REQUIREMENTS_FROZEN.md` 为准，本文不覆盖或修改冻结规则。
+
+关键边界：
+
+- Raw Source immutable。
+- 新 Node 必须人工确认。
+- 正式 Current View 变化必须人工确认。
+- 非 `part_of` Relation 必须有 Relation-specific supporting Evidence。
+- Propagation 传播 Impact Review，不复制结论。
+- SQLite 是知识状态 Source of Truth；IMA 不是知识状态机。
+- IMA 当前保持关闭，除非另行明确启动集成验收。
 
 ## Windows 快速开始
 
@@ -57,32 +123,14 @@ IMA v0.1 不依赖“新建知识库/新建文件夹”接口。请先在 IMA �
 cd pro_a_v0_1
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 .\.venv\Scripts\pro-a.exe init
-```
-
-复制配置：
-
-```powershell
 Copy-Item .\config.example.toml .\config.toml
 ```
 
-首次可导入一批已经确认的示例节点：
+Standard / Deep 使用兼容 OpenAI Chat Completions 的模型时，例如 DeepSeek：
 
 ```powershell
-.\.venv\Scripts\pro-a.exe nodes seed .\config\nodes_seed.example.csv
-.\.venv\Scripts\pro-a.exe relations seed .\config\relations_seed.example.csv
+$env:PROA_LLM_API_KEY="..."
 ```
-
-### 配置 LLM
-
-默认 `llm.enabled = false`，此时 Archive 模式可完整运行，Standard/Deep 会保存 Source，但把分析阶段标记为 `needs_llm`。
-
-若使用兼容 OpenAI Chat Completions 的模型：
-
-```powershell
-$env:PROA_LLM_API_KEY="你的API Key"
-```
-
-编辑 `config.toml`：
 
 ```toml
 [llm]
@@ -90,152 +138,78 @@ enabled = true
 base_url = "https://api.deepseek.com"
 model = "deepseek-chat"
 api_key_env = "PROA_LLM_API_KEY"
-```
 
-第一轮真实 Standard 验收保持 IMA 关闭：
-
-```toml
 [ima]
 enabled = false
 ```
 
-把资料放入 Standard Inbox 并执行：
+单次入库：
 
 ```powershell
-Copy-Item .\sample.txt .\workspace\inbox\standard\
 .\.venv\Scripts\pro-a.exe ingest --once
 ```
 
-CLI 输出会包含 `source_id`、`job_id`、`receipt_path` 和完整 `audit`。随后可只读查看：
+查看 Source 审计：
 
 ```powershell
 .\.venv\Scripts\pro-a.exe source show SRC_xxx
 ```
 
-Receipt 位于 `workspace/generated/receipts/<JOB_ID>.md`，包含 Source metadata、Existing Nodes、Candidate Node Proposals、Claims 与 Evidence 校验、Historical Compare、Impact Reviews、Current View Proposals、Knowledge Gaps 和 Research Question Candidates。
-
-### 配置 IMA
-
-在 IMA 中生成 OpenAPI Client ID / API Key 后：
-
-```powershell
-$env:IMA_OPENAPI_CLIENTID="..."
-$env:IMA_OPENAPI_APIKEY="..."
-```
-
-编辑：
-
-```toml
-[ima]
-enabled = true
-source_kb_id = "原始资料库ID"
-output_kb_id = "研究成果库ID"
-```
-
-验证：
-
-```powershell
-.\.venv\Scripts\pro-a.exe ima list-kbs
-```
-
-## 日常使用
-
-只存档：
-
-```text
-workspace/inbox/archive/
-```
-
-正常研究材料：
-
-```text
-workspace/inbox/standard/
-```
-
-高价值、需要更深 Claim / Gap / RQ 处理：
-
-```text
-workspace/inbox/deep/
-```
-
-单次处理：
-
-```powershell
-.\.venv\Scripts\pro-a.exe ingest --once
-```
-
-持续监听：
-
-```powershell
-.\.venv\Scripts\pro-a.exe watch --interval 5
-```
-
-查看待确认项：
+查看 / 审批 Proposal：
 
 ```powershell
 .\.venv\Scripts\pro-a.exe proposals list
 .\.venv\Scripts\pro-a.exe proposals show PROP_xxx
-```
-
-确认 / 拒绝：
-
-```powershell
 .\.venv\Scripts\pro-a.exe proposals accept PROP_xxx
 .\.venv\Scripts\pro-a.exe proposals reject PROP_xxx --reason "证据不足"
 ```
 
-人工提出需要 Evidence 的研究关系（`--evidence-claim-id` 可重复）：
+人工提出 Relation：
 
 ```powershell
 .\.venv\Scripts\pro-a.exe relations propose NODE_A uses NODE_B `
   --scope "Rubin" `
   --evidence-claim-id CLM_1 `
-  --evidence-claim-id CLM_2 `
   --confidence 0.9 `
   --reason "Rubin GPU explicitly uses HBM4"
 ```
 
-命令只创建待审批 Proposal；后续仍使用统一的 `proposals show/accept/reject`。
+## 当前开发阶段
 
-正式 Current View 会写入：
+当前阶段：**post-v0.2.3B.1 / R1 preparation**。
 
-```text
-workspace/generated/current_views/<NODE_ID>/Current_View_v_YYYYMMDD.md
-```
-
-同一天第二次更新则是：
+开发顺序：
 
 ```text
-Current_View_v_YYYYMMDD_01.md
+B.1 freeze
+→ R1 Gold Set
+→ R1 baseline acceptance
+→ pipeline-stage error attribution
+→ 决定 B.1 PASS / REOPEN
+→ 由真实失败样本生成 B.2 backlog
 ```
 
-## 目录
+安全性错误优先级高于覆盖率问题：错误 Relation 被正式化的风险高于复杂关系被保守拒绝的风险。
 
-```text
-workspace/
-├─ inbox/
-│  ├─ archive/
-│  ├─ standard/
-│  └─ deep/
-├─ archive/                 # 本地不可变 Source 原件
-├─ generated/
-│  ├─ current_views/
-│  └─ receipts/
-├─ review/
-│  └─ proposals/
-├─ logs/
-└─ pro_a.db
-```
+详见：
 
-## 当前明确未做（后续阶段）
+- `docs/REQUIREMENTS_FROZEN.md` — 冻结业务规则
+- `docs/R1_ACCEPTANCE.md` — R1 验收方法与 Hard Failure 定义
+- `docs/RELATION_SEMANTICS.md` — Relation working semantics（未冻结）
+- `docs/ROADMAP.md` — 当前路线与 backlog 组织方式
+- `CODEX_TASK.md` — Codex 恢复后 continuation brief
 
-- GUI
-- IMA 内自定义 Skill / MCP 入口
-- 自动创建 IMA 知识库或文件夹
-- 图片 OCR / 多模态解析
-- 复杂 PDF 表格语义重建
-- Claim 语义向量去重（v0.1 只有规则 + LLM 比对）
-- 外部互联网研究自动回灌
-- Materiality 的 Node-specific 数值阈值管理界面
+## 当前明确未完成
 
-这些不影响 v0.1 验证核心闭环。
+- R1 真实资料 Relation baseline acceptance。
+- Relation ontology / type compatibility 的最终冻结矩阵。
+- Claim 语义去重 / 冲突候选检索。
+- Proposal “修改后接受”。
+- Knowledge Gap resolve / reopen / supersede 生命周期。
+- ResearchQuestion Current Answer 自动更新与审批。
+- 更可靠的 PDF 表格 / 图表解析与图片多模态解析。
+- Source Updated Version / Near Duplicate 完整识别。
+- Node-specific Materiality Threshold。
+- 外部互联网 Research Output 回灌。
+- 正式 IMA 集成验收。
+- GUI。
