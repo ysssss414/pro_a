@@ -19,7 +19,7 @@ NOVELTY_LEVELS = ["N0", "N1", "N2", "N3"]
 
 CHANGE_LEVELS = ["initial", "minor", "material", "thesis"]
 
-PROPOSAL_TYPES = ["new_node", "current_view_change"]
+PROPOSAL_TYPES = ["new_node", "current_view_change", "node_relation"]
 PROPOSAL_STATUSES = ["pending", "accepted", "rejected", "modified", "stale"]
 
 INGESTION_MODES = ["archive", "standard", "deep"]

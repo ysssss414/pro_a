@@ -44,14 +44,19 @@ class ProposalManager:
             raise KeyError(f"Unknown proposal: {proposal_id}")
         if proposal["status"] == "accepted":
             result = self._result(proposal)
-            if result.get("view_id"):
-                self._run_side_effect_jobs(result["view_id"])
-            if result.get("propagation_batch_id"):
-                self.propagation.run_batch(result["propagation_batch_id"])
+            if proposal["proposal_type"] != "node_relation":
+                if result.get("view_id"):
+                    self._run_side_effect_jobs(result["view_id"])
+                if result.get("propagation_batch_id"):
+                    self.propagation.run_batch(result["propagation_batch_id"])
             return result
         if proposal["status"] != "pending":
             raise ValueError(f"Proposal is not pending: {proposal['status']}")
 
+        if proposal["proposal_type"] == "node_relation":
+            result = self._accept_node_relation_atomic(proposal_id)
+            write_proposal(self.cfg, self.db.proposal(proposal_id))
+            return result
         if proposal["proposal_type"] == "new_node":
             result = self._accept_new_node(proposal)
             self.db.execute(
@@ -83,8 +88,112 @@ class ProposalManager:
             raise ValueError(f"Proposal is not pending: {proposal['status']}")
         self._update_status(proposal_id, "rejected", reason)
         batch_id = proposal.get("propagation_batch_id") or ""
-        if batch_id:
+        if batch_id and proposal["proposal_type"] != "node_relation":
             self.propagation.resume_batch(batch_id)
+
+    def _accept_node_relation_atomic(self, proposal_id: str) -> dict[str, Any]:
+        with self.db.transaction(immediate=True) as conn:
+            row = conn.execute(
+                "SELECT * FROM proposals WHERE proposal_id=?", (proposal_id,)
+            ).fetchone()
+            if not row:
+                raise KeyError(proposal_id)
+            proposal = dict(row)
+            if proposal["status"] == "accepted":
+                return self._result(proposal)
+            if proposal["status"] != "pending":
+                raise ValueError(f"Proposal is not pending: {proposal['status']}")
+            if proposal["proposal_type"] != "node_relation":
+                raise ValueError(
+                    f"Proposal is not node_relation: {proposal['proposal_type']}"
+                )
+            if proposal.get("source_impact_id") or proposal.get("propagation_batch_id"):
+                raise ValueError(
+                    "node_relation Proposal cannot belong to Impact Recovery or propagation"
+                )
+            try:
+                raw_payload = json.loads(proposal["payload_json"])
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise ValueError("node_relation payload must be valid JSON") from exc
+            payload = self.db.validate_node_relation_payload(raw_payload, _conn=conn)
+            claim_ids = payload["supporting_claim_ids"]
+
+            existing = conn.execute(
+                """SELECT * FROM node_relations
+                   WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
+                (
+                    payload["from_node_id"],
+                    payload["relation_type"],
+                    payload["to_node_id"],
+                    payload["scope"],
+                ),
+            ).fetchone()
+            attached_claim_ids: list[str] = []
+            already_attached_claim_ids: list[str] = []
+            if existing:
+                relation = dict(existing)
+                if relation["status"] != "current":
+                    raise ValueError(
+                        f"Existing Relation is not current: {relation['relation_id']} "
+                        f"(status={relation['status']})"
+                    )
+                relation_id = relation["relation_id"]
+                for claim_id in claim_ids:
+                    evidence = conn.execute(
+                        """SELECT status FROM relation_evidence_links
+                           WHERE relation_id=? AND claim_id=? AND evidence_role='supports'""",
+                        (relation_id, claim_id),
+                    ).fetchone()
+                    if evidence:
+                        if evidence["status"] != "active":
+                            raise ValueError(
+                                f"Existing supporting Evidence is not active: "
+                                f"{relation_id}/{claim_id}"
+                            )
+                        already_attached_claim_ids.append(claim_id)
+                        continue
+                    self.db.add_relation_evidence(
+                        relation_id,
+                        claim_id,
+                        evidence_role="supports",
+                        _conn=conn,
+                    )
+                    attached_claim_ids.append(claim_id)
+                created_new_relation = False
+            else:
+                first_claim_id, *remaining_claim_ids = claim_ids
+                relation_id = self.db.add_relation(
+                    payload["from_node_id"],
+                    payload["relation_type"],
+                    payload["to_node_id"],
+                    scope=payload["scope"],
+                    confidence=payload.get("confidence"),
+                    evidence_claim_id=first_claim_id,
+                    _conn=conn,
+                )
+                attached_claim_ids.append(first_claim_id)
+                for claim_id in remaining_claim_ids:
+                    self.db.add_relation_evidence(
+                        relation_id,
+                        claim_id,
+                        evidence_role="supports",
+                        _conn=conn,
+                    )
+                    attached_claim_ids.append(claim_id)
+                created_new_relation = True
+
+            result = {
+                "relation_id": relation_id,
+                "created_new_relation": created_new_relation,
+                "attached_claim_ids": attached_claim_ids,
+                "already_attached_claim_ids": already_attached_claim_ids,
+            }
+            conn.execute(
+                """UPDATE proposals SET status='accepted',result_json=?,resolved_at=?
+                   WHERE proposal_id=?""",
+                (json.dumps(result, ensure_ascii=False), now_iso(), proposal_id),
+            )
+        return result
 
     def _accept_new_node(self, proposal: dict[str, Any]) -> dict[str, Any]:
         p = proposal["payload"]
