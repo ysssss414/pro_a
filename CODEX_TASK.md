@@ -6,7 +6,7 @@ AI Hardware Node Universe v0.1 已正式落库：256 个 active Nodes，EML 为 
 
 Relation Evidence Foundation 已实现：schema `0.2.2` 新增 `relation_evidence_links`；保留 legacy `node_relations.evidence_claim_id` 并幂等 backfill；一个 Relation 可累积多个 supports/contradicts Claims。`part_of` 可无 Evidence，其他正式 current Relation 必须有真实 supporting Claim；contradicts 不自动 retire Relation；relation seed 仅允许 `part_of`。
 
-New Node acceptance 已与上述 gate 集成：既有 `related_node_ids` 只有在 Proposal 同时包含 `related_claim_ids` 时才创建 `related_to`，并将这些 Claims 幂等附加到同一 Relation。无 supporting Claim 时不创建非结构 Relation。此修复仅维持既有 acceptance 行为，不新增 Relation Proposal、证据自动选择或自动审批逻辑。
+New Node acceptance 不会将 `related_node_ids` 自动正式化为 `related_to`；`related_claim_ids` 只保留为 Claim↔Node linkage，不作为 Relation-specific Evidence。`suggested_parent_node_ids` 的 `part_of` 行为保持不变。非结构 Relation 仍须通过明确的 Relation 创建路径及 supporting Claim gate，不新增 Relation Proposal、证据自动选择或自动审批逻辑。
 
 此前 v0.2.2.1 的程序化 `evidence_scope`、单一公司确定性行业主句拦截、Actual/Guidance 原子拆分、公司主体 attribution mapping、Current View 确定性排序及 impact recovery 均保留。v0.1.1 稳定性状态机、历史 migration 和冻结业务规则未改变。
 

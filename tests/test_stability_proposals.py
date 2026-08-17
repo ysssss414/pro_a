@@ -96,8 +96,9 @@ def test_accept_same_new_node_proposal_is_idempotent(tmp_path: Path):
     assert db.one("SELECT COUNT(*) AS n FROM nodes")["n"] == 1
 
 
-def test_accept_new_node_attaches_related_claims_as_relation_evidence(tmp_path: Path):
+def test_accept_new_node_keeps_claim_links_without_formalizing_related_relation(tmp_path: Path):
     cfg, db = make_config(tmp_path)
+    parent_node_id = db.add_node("Existing Theme", "Theme")
     related_node_id = db.add_node("Existing Application", "Application")
     for index in (1, 2):
         add_source_and_claim(
@@ -115,6 +116,7 @@ def test_accept_new_node_attaches_related_claims_as_relation_evidence(tmp_path: 
             "canonical_name": "New Product",
             "primary_type": "Product",
             "aliases": [],
+            "suggested_parent_node_ids": [parent_node_id],
             "related_node_ids": [related_node_id],
             "related_claim_ids": [
                 "CLM_NEW_NODE_RELATION_1",
@@ -126,14 +128,19 @@ def test_accept_new_node_attaches_related_claims_as_relation_evidence(tmp_path: 
 
     accepted = manager.accept(proposal_id)
 
-    relation = db.one(
-        """SELECT * FROM node_relations
-           WHERE from_node_id=? AND relation_type='related_to' AND to_node_id=?""",
-        (accepted["node_id"], related_node_id),
+    relations = db.all(
+        "SELECT relation_type,to_node_id FROM node_relations WHERE from_node_id=?",
+        (accepted["node_id"],),
     )
-    assert relation["status"] == "current"
-    assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 1
-    assert [item["claim_id"] for item in db.relation_evidence(relation["relation_id"])] == [
+    assert relations == [{"relation_type": "part_of", "to_node_id": parent_node_id}]
+    assert db.one("SELECT COUNT(*) AS n FROM relation_evidence_links")["n"] == 0
+    assert [
+        row["claim_id"]
+        for row in db.all(
+            "SELECT claim_id FROM claim_node_links WHERE node_id=? ORDER BY claim_id",
+            (accepted["node_id"],),
+        )
+    ] == [
         "CLM_NEW_NODE_RELATION_1",
         "CLM_NEW_NODE_RELATION_2",
     ]

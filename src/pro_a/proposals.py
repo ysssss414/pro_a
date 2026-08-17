@@ -97,15 +97,6 @@ class ProposalManager:
         for parent_id in p.get("suggested_parent_node_ids") or []:
             if self.db.get_node(parent_id):
                 self.db.add_relation(node_id, "part_of", parent_id)
-        for related_id in p.get("related_node_ids") or []:
-            if self.db.get_node(related_id) and related_id != node_id:
-                for claim_id in claim_ids:
-                    self.db.add_relation(
-                        node_id,
-                        "related_to",
-                        related_id,
-                        evidence_claim_id=claim_id,
-                    )
         source_id = p.get("source_id", "")
         if source_id:
             self.db.execute(
