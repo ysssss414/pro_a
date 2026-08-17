@@ -83,7 +83,21 @@ def test_structural_impact_pauses_related_queue_when_llm_is_unavailable(tmp_path
     structural_id = db.add_node("Queue Parent", "Theme")
     related_id = db.add_node("Queue Related", "Theme")
     db.add_relation(source_id, "part_of", structural_id)
-    db.add_relation(source_id, "related_to", related_id)
+    add_source_and_claim(
+        db,
+        source_id="SRC_QUEUE_RELATION",
+        claim_id="CLM_QUEUE_RELATION",
+        node_id=source_id,
+        source_rank="A",
+        origin_type="primary",
+        confidence=0.90,
+    )
+    db.add_relation(
+        source_id,
+        "related_to",
+        related_id,
+        evidence_claim_id="CLM_QUEUE_RELATION",
+    )
     view = create_official_view(db, cfg, source_id, {"one_line_conclusion": "changed"}, "initial")
     manager = PropagationManager(cfg, db, UnavailableAnalyzer())
 

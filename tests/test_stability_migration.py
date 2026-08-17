@@ -64,7 +64,7 @@ def test_v0_1_database_is_migrated_in_place(tmp_path: Path):
     db = Database(path)
     db.init_schema()
 
-    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.2.1"
+    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.2.2"
     source = db.one("SELECT ingestion_mode,analysis_mode,underlying_source_id FROM sources WHERE source_id='SRC_1'")
     assert source == {"ingestion_mode": "standard", "analysis_mode": "standard", "underlying_source_id": ""}
     view = db.one("SELECT revision_date,revision_seq FROM current_views WHERE view_id='VIEW_1'")

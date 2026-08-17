@@ -597,7 +597,7 @@ def test_accept_candidate_links_all_backfilled_validated_claims(tmp_path: Path):
 def test_schema_records_claim_attribution_and_match_audit(tmp_path: Path):
     _, db = make_config(tmp_path)
 
-    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.2.1"
+    assert db.one("SELECT value FROM meta WHERE key='schema_version'")["value"] == "0.2.2"
     claim_columns = {row["name"] for row in db.all("PRAGMA table_info(claims)")}
     link_columns = {row["name"] for row in db.all("PRAGMA table_info(source_node_links)")}
     assert "attributed_to" in claim_columns
