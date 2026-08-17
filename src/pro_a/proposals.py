@@ -93,12 +93,10 @@ class ProposalManager:
         node_id = self.db.add_node(
             p["canonical_name"], p["primary_type"], p.get("aliases") or [], p.get("description", "")
         )
+        claim_ids = p.get("related_claim_ids") or []
         for parent_id in p.get("suggested_parent_node_ids") or []:
             if self.db.get_node(parent_id):
                 self.db.add_relation(node_id, "part_of", parent_id)
-        for related_id in p.get("related_node_ids") or []:
-            if self.db.get_node(related_id) and related_id != node_id:
-                self.db.add_relation(node_id, "related_to", related_id)
         source_id = p.get("source_id", "")
         if source_id:
             self.db.execute(
@@ -106,7 +104,6 @@ class ProposalManager:
                    source_id,node_id,role,confidence,link_origin) VALUES(?,?,?,?,?)""",
                 (source_id, node_id, "related", p.get("confidence"), "candidate"),
             )
-        claim_ids = p.get("related_claim_ids") or []
         for cid in claim_ids:
             self.db.execute(
                 "INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",

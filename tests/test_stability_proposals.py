@@ -96,6 +96,57 @@ def test_accept_same_new_node_proposal_is_idempotent(tmp_path: Path):
     assert db.one("SELECT COUNT(*) AS n FROM nodes")["n"] == 1
 
 
+def test_accept_new_node_keeps_claim_links_without_formalizing_related_relation(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    parent_node_id = db.add_node("Existing Theme", "Theme")
+    related_node_id = db.add_node("Existing Application", "Application")
+    for index in (1, 2):
+        add_source_and_claim(
+            db,
+            source_id=f"SRC_NEW_NODE_RELATION_{index}",
+            claim_id=f"CLM_NEW_NODE_RELATION_{index}",
+            node_id=related_node_id,
+            source_rank="A",
+            origin_type="primary",
+            confidence=0.90,
+        )
+    proposal_id = db.add_proposal(
+        "new_node",
+        {
+            "canonical_name": "New Product",
+            "primary_type": "Product",
+            "aliases": [],
+            "suggested_parent_node_ids": [parent_node_id],
+            "related_node_ids": [related_node_id],
+            "related_claim_ids": [
+                "CLM_NEW_NODE_RELATION_1",
+                "CLM_NEW_NODE_RELATION_2",
+            ],
+        },
+    )
+    manager = ProposalManager(cfg, db, NoChangeAnalyzer())
+
+    accepted = manager.accept(proposal_id)
+
+    relations = db.all(
+        "SELECT relation_type,to_node_id FROM node_relations WHERE from_node_id=?",
+        (accepted["node_id"],),
+    )
+    assert relations == [{"relation_type": "part_of", "to_node_id": parent_node_id}]
+    assert db.one("SELECT COUNT(*) AS n FROM relation_evidence_links")["n"] == 0
+    assert [
+        row["claim_id"]
+        for row in db.all(
+            "SELECT claim_id FROM claim_node_links WHERE node_id=? ORDER BY claim_id",
+            (accepted["node_id"],),
+        )
+    ] == [
+        "CLM_NEW_NODE_RELATION_1",
+        "CLM_NEW_NODE_RELATION_2",
+    ]
+    assert db.proposal(proposal_id)["status"] == "accepted"
+
+
 def test_stale_current_view_proposal_is_not_accepted(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("Stale Node", "Theme")
