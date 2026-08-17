@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -183,6 +184,154 @@ def test_pending_relation_proposal_identity_includes_scope_and_type(tmp_path: Pa
     )
 
     assert len({first, different_scope, different_type}) == 3
+
+
+def test_invalid_pending_relation_recovers_to_new_proposal_and_syncs_artifact(
+    tmp_path: Path, capsys,
+):
+    cfg, db, manager, from_node_id, to_node_id = relation_context(tmp_path)
+    base_args = [
+        "--config",
+        str(cfg.config_path),
+        "relations",
+        "propose",
+        from_node_id,
+        "uses",
+        to_node_id,
+        "--scope",
+        "Rubin",
+    ]
+    main([*base_args, "--evidence-claim-id", "CLM_REL_1"])
+    first_id = capsys.readouterr().out.strip()
+    first_payload = db.proposal(first_id)["payload"]
+    db.execute("UPDATE claims SET status='invalidated' WHERE claim_id='CLM_REL_1'")
+
+    main([*base_args, "--evidence-claim-id", "CLM_REL_2"])
+    second_id = capsys.readouterr().out.strip()
+
+    assert second_id != first_id
+    first = db.proposal(first_id)
+    second = db.proposal(second_id)
+    assert first["status"] == "stale"
+    assert first["payload"] == first_payload
+    assert first["payload"]["supporting_claim_ids"] == ["CLM_REL_1"]
+    assert first["resolved_at"]
+    assert "no longer valid" in first["reason"]
+    assert "CLM_REL_1" in first["reason"]
+    assert "status=invalidated" in first["reason"]
+    assert second["status"] == "pending"
+    assert second["payload"]["supporting_claim_ids"] == ["CLM_REL_2"]
+    assert db.one(
+        """SELECT COUNT(*) AS n FROM proposals
+           WHERE proposal_type='node_relation' AND status='pending'"""
+    )["n"] == 1
+
+    artifact = (
+        cfg.root / "review" / "proposals" / f"{first_id}.md"
+    ).read_text(encoding="utf-8")
+    assert "- status: stale" in artifact
+    assert first["reason"] in artifact
+    assert '"CLM_REL_1"' in artifact
+
+    accepted = manager.accept(second_id)
+    assert [
+        (item["claim_id"], item["evidence_role"], item["evidence_status"])
+        for item in db.relation_evidence(accepted["relation_id"])
+    ] == [("CLM_REL_2", "supports", "active")]
+
+
+def test_recovery_keeps_valid_pending_merge_behavior(tmp_path: Path):
+    _, db, _, from_node_id, to_node_id = relation_context(tmp_path)
+    first_id = propose(db, from_node_id, to_node_id, claim_ids=["CLM_REL_1"])
+    stale_ids: list[str] = []
+
+    second_id = db.propose_relation(
+        from_node_id,
+        "uses",
+        to_node_id,
+        scope="Rubin",
+        supporting_claim_ids=["CLM_REL_2"],
+        _stale_proposal_ids=stale_ids,
+    )
+
+    assert second_id == first_id
+    assert stale_ids == []
+    assert db.proposal(first_id)["payload"]["supporting_claim_ids"] == [
+        "CLM_REL_1",
+        "CLM_REL_2",
+    ]
+
+
+def test_invalid_new_request_does_not_stale_old_pending_proposal(tmp_path: Path):
+    _, db, _, from_node_id, to_node_id = relation_context(tmp_path)
+    first_id = propose(db, from_node_id, to_node_id, claim_ids=["CLM_REL_1"])
+    db.execute(
+        "UPDATE claims SET status='invalidated' WHERE claim_id IN ('CLM_REL_1','CLM_REL_2')"
+    )
+    stale_ids: list[str] = []
+
+    with pytest.raises(ValueError, match="CLM_REL_2.*status=invalidated"):
+        db.propose_relation(
+            from_node_id,
+            "uses",
+            to_node_id,
+            scope="Rubin",
+            supporting_claim_ids=["CLM_REL_2"],
+            _stale_proposal_ids=stale_ids,
+        )
+
+    assert stale_ids == []
+    assert db.proposal(first_id)["status"] == "pending"
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 1
+
+
+def test_inactive_new_endpoint_does_not_start_pending_recovery(tmp_path: Path):
+    _, db, _, from_node_id, to_node_id = relation_context(tmp_path)
+    first_id = propose(db, from_node_id, to_node_id, claim_ids=["CLM_REL_1"])
+    db.execute("UPDATE nodes SET status='inactive' WHERE node_id=?", (to_node_id,))
+    stale_ids: list[str] = []
+
+    with pytest.raises(ValueError, match="to Node is not active"):
+        db.propose_relation(
+            from_node_id,
+            "uses",
+            to_node_id,
+            scope="Rubin",
+            supporting_claim_ids=["CLM_REL_2"],
+            _stale_proposal_ids=stale_ids,
+        )
+
+    assert stale_ids == []
+    assert db.proposal(first_id)["status"] == "pending"
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 1
+
+
+def test_pending_recovery_rolls_back_stale_if_new_insert_fails(
+    tmp_path: Path, monkeypatch,
+):
+    _, db, _, from_node_id, to_node_id = relation_context(tmp_path)
+    first_id = propose(db, from_node_id, to_node_id, claim_ids=["CLM_REL_1"])
+    first_reason = db.proposal(first_id)["reason"]
+    db.execute("UPDATE claims SET status='invalidated' WHERE claim_id='CLM_REL_1'")
+    monkeypatch.setattr("pro_a.db.make_id", lambda prefix: first_id)
+    stale_ids: list[str] = []
+
+    with pytest.raises(sqlite3.IntegrityError, match="UNIQUE constraint"):
+        db.propose_relation(
+            from_node_id,
+            "uses",
+            to_node_id,
+            scope="Rubin",
+            supporting_claim_ids=["CLM_REL_2"],
+            _stale_proposal_ids=stale_ids,
+        )
+
+    first = db.proposal(first_id)
+    assert stale_ids == []
+    assert first["status"] == "pending"
+    assert first["reason"] == first_reason
+    assert first["resolved_at"] == ""
+    assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 1
 
 
 def isolated_state(db: Database) -> dict[str, int]:

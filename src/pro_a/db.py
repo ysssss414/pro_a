@@ -571,6 +571,7 @@ class Database:
         scope: str = "",
         confidence: float | None = None,
         reason: str = "",
+        _stale_proposal_ids: list[str] | None = None,
     ) -> str:
         requested_payload: dict[str, Any] = {
             "from_node_id": from_node_id,
@@ -583,6 +584,8 @@ class Database:
         if confidence is not None:
             requested_payload["confidence"] = confidence
 
+        recovered_stale_ids: list[str] = []
+        proposal_id = ""
         with self.transaction(immediate=True) as conn:
             normalized = self._validate_node_relation_payload_conn(conn, requested_payload)
             identity = self._node_relation_identity(normalized)
@@ -600,9 +603,22 @@ class Database:
                     continue
                 if self._node_relation_identity(existing_payload) != identity:
                     continue
-                validated_existing = self._validate_node_relation_payload_conn(
-                    conn, existing_payload,
-                )
+                try:
+                    validated_existing = self._validate_node_relation_payload_conn(
+                        conn, existing_payload,
+                    )
+                except ValueError as exc:
+                    stale_reason = (
+                        "Superseded because pending node_relation Proposal is no longer valid: "
+                        f"{exc}"
+                    )
+                    conn.execute(
+                        """UPDATE proposals SET status='stale',reason=?,resolved_at=?
+                           WHERE proposal_id=? AND status='pending'""",
+                        (stale_reason, now_iso(), row["proposal_id"]),
+                    )
+                    recovered_stale_ids.append(row["proposal_id"])
+                    continue
                 merged_claim_ids = list(dict.fromkeys([
                     *validated_existing["supporting_claim_ids"],
                     *normalized["supporting_claim_ids"],
@@ -619,27 +635,31 @@ class Database:
                     "UPDATE proposals SET payload_json=? WHERE proposal_id=?",
                     (json.dumps(merged_payload, ensure_ascii=False), row["proposal_id"]),
                 )
-                return row["proposal_id"]
+                proposal_id = row["proposal_id"]
+                break
 
-            proposal_id = make_id("PROP")
-            conn.execute(
-                """INSERT INTO proposals(
-                   proposal_id,proposal_type,target_node_id,payload_json,status,reason,
-                   propagation_batch_id,source_impact_id,created_at
-                   ) VALUES(?,?,?,?,?,?,?,?,?)""",
-                (
-                    proposal_id,
-                    "node_relation",
-                    normalized["from_node_id"],
-                    json.dumps(normalized, ensure_ascii=False),
-                    "pending",
-                    normalized["reason"],
-                    "",
-                    "",
-                    now_iso(),
-                ),
-            )
-            return proposal_id
+            if not proposal_id:
+                proposal_id = make_id("PROP")
+                conn.execute(
+                    """INSERT INTO proposals(
+                       proposal_id,proposal_type,target_node_id,payload_json,status,reason,
+                       propagation_batch_id,source_impact_id,created_at
+                       ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                    (
+                        proposal_id,
+                        "node_relation",
+                        normalized["from_node_id"],
+                        json.dumps(normalized, ensure_ascii=False),
+                        "pending",
+                        normalized["reason"],
+                        "",
+                        "",
+                        now_iso(),
+                    ),
+                )
+        if _stale_proposal_ids is not None:
+            _stale_proposal_ids.extend(recovered_stale_ids)
+        return proposal_id
 
     def seed_relations_csv(self, csv_path: Path) -> int:
         required = {"from_name", "relation_type", "to_name", "scope"}
