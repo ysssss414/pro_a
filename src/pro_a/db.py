@@ -13,6 +13,8 @@ from .ids import make_id
 
 
 CURRENT_VIEW_ORDER = "revision_date DESC,revision_seq DESC,view_id DESC"
+RELATION_EVIDENCE_ROLES = {"supports", "contradicts"}
+RELATION_EVIDENCE_STATUSES = {"active", "retired"}
 
 
 def now_iso() -> str:
@@ -59,7 +61,8 @@ class Database:
             conn.executescript(schema)
             self._migrate_0_1_to_0_1_1(conn)
             self._migrate_0_2_to_0_2_1(conn)
-            conn.execute("INSERT OR REPLACE INTO meta(key,value) VALUES('schema_version','0.2.1')")
+            self._migrate_0_2_1_to_0_2_2(conn)
+            conn.execute("INSERT OR REPLACE INTO meta(key,value) VALUES('schema_version','0.2.2')")
 
     @staticmethod
     def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
@@ -174,6 +177,26 @@ class Database:
         self._add_column(conn, "source_node_links", "evidence_excerpt TEXT NOT NULL DEFAULT ''")
         self._add_column(conn, "source_node_links", "evidence_validation_json TEXT NOT NULL DEFAULT '{}'")
 
+    def _migrate_0_2_1_to_0_2_2(self, conn: sqlite3.Connection) -> None:
+        conn.execute(
+            """CREATE TABLE IF NOT EXISTS relation_evidence_links (
+               relation_id TEXT NOT NULL REFERENCES node_relations(relation_id) ON DELETE CASCADE,
+               claim_id TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE CASCADE,
+               evidence_role TEXT NOT NULL CHECK(evidence_role IN ('supports', 'contradicts')),
+               status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'retired')),
+               created_at TEXT NOT NULL,
+               PRIMARY KEY(relation_id, claim_id, evidence_role)
+               )"""
+        )
+        conn.execute(
+            """INSERT OR IGNORE INTO relation_evidence_links(
+               relation_id,claim_id,evidence_role,status,created_at
+               )
+               SELECT relation_id,evidence_claim_id,'supports','active',created_at
+               FROM node_relations
+               WHERE evidence_claim_id IS NOT NULL AND TRIM(evidence_claim_id)<>''"""
+        )
+
     def one(self, sql: str, params: Iterable[Any] = ()) -> dict[str, Any] | None:
         with self.connect() as conn:
             row = conn.execute(sql, tuple(params)).fetchone()
@@ -249,32 +272,117 @@ class Database:
             (name,),
         )
 
+    def add_relation_evidence(
+        self,
+        relation_id: str,
+        claim_id: str,
+        *,
+        evidence_role: str = "supports",
+        status: str = "active",
+    ) -> bool:
+        if evidence_role not in RELATION_EVIDENCE_ROLES:
+            raise ValueError(f"Invalid relation evidence role: {evidence_role}")
+        if status not in RELATION_EVIDENCE_STATUSES:
+            raise ValueError(f"Invalid relation evidence status: {status}")
+        with self.transaction(immediate=True) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM node_relations WHERE relation_id=?", (relation_id,)
+            ).fetchone():
+                raise ValueError(f"Unknown Relation: {relation_id}")
+            if not conn.execute(
+                "SELECT 1 FROM claims WHERE claim_id=?", (claim_id,)
+            ).fetchone():
+                raise ValueError(f"Unknown evidence Claim: {claim_id}")
+            cursor = conn.execute(
+                """INSERT OR IGNORE INTO relation_evidence_links(
+                   relation_id,claim_id,evidence_role,status,created_at
+                   ) VALUES(?,?,?,?,?)""",
+                (relation_id, claim_id, evidence_role, status, now_iso()),
+            )
+        return bool(cursor.rowcount)
+
+    def relation_evidence(self, relation_id: str) -> list[dict[str, Any]]:
+        if not self.one("SELECT 1 FROM node_relations WHERE relation_id=?", (relation_id,)):
+            raise ValueError(f"Unknown Relation: {relation_id}")
+        return self.all(
+            """SELECT rel.relation_id,rel.claim_id,rel.evidence_role,
+                      rel.status AS evidence_status,rel.created_at AS evidence_created_at,
+                      c.source_id,c.statement,c.status,c.confidence
+               FROM relation_evidence_links rel
+               JOIN claims c ON c.claim_id=rel.claim_id
+               WHERE rel.relation_id=?
+               ORDER BY rel.claim_id,rel.evidence_role""",
+            (relation_id,),
+        )
+
     def add_relation(self, from_node_id: str, relation_type: str, to_node_id: str, **kwargs) -> str:
         if relation_type not in RELATION_TYPES:
             raise ValueError(f"Invalid relation_type: {relation_type}")
-        if not self.get_node(from_node_id):
-            raise ValueError(f"Unknown from Node: {from_node_id}")
-        if not self.get_node(to_node_id):
-            raise ValueError(f"Unknown to Node: {to_node_id}")
         scope = (kwargs.get("scope") or "").strip()
-        existing = self.one(
-            """SELECT relation_id FROM node_relations
-               WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
-            (from_node_id, relation_type, to_node_id, scope),
-        )
-        if existing:
-            return existing["relation_id"]
-        rel_id = make_id("REL")
-        with self.connect() as conn:
+        evidence_claim_id = (kwargs.get("evidence_claim_id") or "").strip()
+        requested_status = kwargs.get("status", "current")
+        with self.transaction(immediate=True) as conn:
+            if not conn.execute(
+                "SELECT 1 FROM nodes WHERE node_id=?", (from_node_id,)
+            ).fetchone():
+                raise ValueError(f"Unknown from Node: {from_node_id}")
+            if not conn.execute(
+                "SELECT 1 FROM nodes WHERE node_id=?", (to_node_id,)
+            ).fetchone():
+                raise ValueError(f"Unknown to Node: {to_node_id}")
+            if evidence_claim_id and not conn.execute(
+                "SELECT 1 FROM claims WHERE claim_id=?", (evidence_claim_id,)
+            ).fetchone():
+                raise ValueError(f"Unknown evidence Claim: {evidence_claim_id}")
+
+            existing = conn.execute(
+                """SELECT relation_id,status FROM node_relations
+                   WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
+                (from_node_id, relation_type, to_node_id, scope),
+            ).fetchone()
+            if existing:
+                relation_id = existing["relation_id"]
+                if evidence_claim_id:
+                    conn.execute(
+                        """INSERT OR IGNORE INTO relation_evidence_links(
+                           relation_id,claim_id,evidence_role,status,created_at
+                           ) VALUES(?,?,'supports','active',?)""",
+                        (relation_id, evidence_claim_id, now_iso()),
+                    )
+                elif relation_type != "part_of" and existing["status"] == "current":
+                    supporting = conn.execute(
+                        """SELECT 1 FROM relation_evidence_links
+                           WHERE relation_id=? AND evidence_role='supports' AND status='active'
+                           LIMIT 1""",
+                        (relation_id,),
+                    ).fetchone()
+                    if not supporting:
+                        raise ValueError(
+                            "A current non-part_of Relation requires a supporting Claim"
+                        )
+                return relation_id
+
+            if relation_type != "part_of" and requested_status == "current" and not evidence_claim_id:
+                raise ValueError("A current non-part_of Relation requires a supporting Claim")
+
+            relation_id = make_id("REL")
+            created_at = now_iso()
             conn.execute(
                 """INSERT INTO node_relations(
                    relation_id,from_node_id,relation_type,to_node_id,scope,valid_from,valid_to,confidence,status,evidence_claim_id,created_at
                 ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                (rel_id, from_node_id, relation_type, to_node_id, scope, kwargs.get("valid_from", ""),
-                 kwargs.get("valid_to", ""), kwargs.get("confidence"), kwargs.get("status", "current"),
-                 kwargs.get("evidence_claim_id"), now_iso()),
+                (relation_id, from_node_id, relation_type, to_node_id, scope, kwargs.get("valid_from", ""),
+                 kwargs.get("valid_to", ""), kwargs.get("confidence"), requested_status,
+                 evidence_claim_id or None, created_at),
             )
-        return rel_id
+            if evidence_claim_id:
+                conn.execute(
+                    """INSERT INTO relation_evidence_links(
+                       relation_id,claim_id,evidence_role,status,created_at
+                       ) VALUES(?,?,'supports','active',?)""",
+                    (relation_id, evidence_claim_id, created_at),
+                )
+        return relation_id
 
     def seed_relations_csv(self, csv_path: Path) -> int:
         required = {"from_name", "relation_type", "to_name", "scope"}
@@ -295,6 +403,10 @@ class Database:
                     raise ValueError(f"Relation seed row {row_number}: from_name, relation_type and to_name are required")
                 if relation_type not in RELATION_TYPES:
                     raise ValueError(f"Relation seed row {row_number}: invalid relation_type {relation_type!r}")
+                if relation_type != "part_of":
+                    raise ValueError(
+                        f"Relation seed row {row_number}: only supports part_of; got {relation_type!r}"
+                    )
                 from_node = self.find_node_by_name_or_alias(from_name)
                 if not from_node:
                     raise ValueError(f"Relation seed row {row_number}: Node not found: {from_name}")

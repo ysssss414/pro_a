@@ -9,7 +9,7 @@ from pro_a.current_view import create_official_view
 from pro_a.ima import IMAError
 from pro_a.proposals import ProposalManager
 
-from stability_helpers import current_view_payload, make_config
+from stability_helpers import add_source_and_claim, current_view_payload, make_config
 
 
 class NoChangeAnalyzer:
@@ -115,7 +115,21 @@ def test_propagation_failure_after_commit_is_persisted_for_retry(tmp_path: Path)
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("Propagation Source", "Theme")
     neighbor_id = db.add_node("Propagation Target", "Theme")
-    db.add_relation(node_id, "related_to", neighbor_id)
+    add_source_and_claim(
+        db,
+        source_id="SRC_PROPAGATION_RELATION",
+        claim_id="CLM_PROPAGATION_RELATION",
+        node_id=node_id,
+        source_rank="A",
+        origin_type="primary",
+        confidence=0.90,
+    )
+    db.add_relation(
+        node_id,
+        "related_to",
+        neighbor_id,
+        evidence_claim_id="CLM_PROPAGATION_RELATION",
+    )
     pid = db.add_proposal("current_view_change", current_view_payload(db, node_id, "accepted"), target_node_id=node_id)
     manager = ProposalManager(cfg, db, ExplodingAnalyzer())
 

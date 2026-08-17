@@ -62,6 +62,13 @@ def build_parser() -> argparse.ArgumentParser:
     radd.add_argument("relation_type")
     radd.add_argument("to_node_id")
     radd.add_argument("--scope", default="")
+    radd.add_argument("--evidence-claim-id", default="")
+    radd_evidence = rsub.add_parser("add-evidence")
+    radd_evidence.add_argument("relation_id")
+    radd_evidence.add_argument("claim_id")
+    radd_evidence.add_argument("--role", choices=("supports", "contradicts"), default="supports")
+    rshow = rsub.add_parser("show")
+    rshow.add_argument("relation_id")
     rseed = rsub.add_parser("seed")
     rseed.add_argument("csv_path")
 
@@ -176,8 +183,40 @@ def main(argv: list[str] | None = None):
             else:
                 jprint(db.all("SELECT * FROM node_relations ORDER BY created_at"))
         elif args.relations_command == "add":
-            rel_id = db.add_relation(args.from_node_id, args.relation_type, args.to_node_id, scope=args.scope)
+            try:
+                rel_id = db.add_relation(
+                    args.from_node_id,
+                    args.relation_type,
+                    args.to_node_id,
+                    scope=args.scope,
+                    evidence_claim_id=args.evidence_claim_id,
+                )
+            except ValueError as exc:
+                raise SystemExit(f"Relation add failed: {exc}") from exc
             print(rel_id)
+        elif args.relations_command == "add-evidence":
+            try:
+                inserted = db.add_relation_evidence(
+                    args.relation_id,
+                    args.claim_id,
+                    evidence_role=args.role,
+                )
+            except ValueError as exc:
+                raise SystemExit(f"Relation evidence add failed: {exc}") from exc
+            print("attached" if inserted else "already attached")
+        elif args.relations_command == "show":
+            relation = db.one(
+                "SELECT * FROM node_relations WHERE relation_id=?",
+                (args.relation_id,),
+            )
+            if not relation:
+                raise SystemExit(f"Relation not found: {args.relation_id}")
+            jprint({
+                "relation": relation,
+                "from_node": db.get_node(relation["from_node_id"]),
+                "to_node": db.get_node(relation["to_node_id"]),
+                "evidence_claims": db.relation_evidence(args.relation_id),
+            })
         elif args.relations_command == "seed":
             try:
                 count = db.seed_relations_csv(Path(args.csv_path))

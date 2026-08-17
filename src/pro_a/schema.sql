@@ -101,6 +101,15 @@ CREATE TABLE IF NOT EXISTS claims (
 );
 CREATE INDEX IF NOT EXISTS idx_claims_source ON claims(source_id);
 
+CREATE TABLE IF NOT EXISTS relation_evidence_links (
+    relation_id TEXT NOT NULL REFERENCES node_relations(relation_id) ON DELETE CASCADE,
+    claim_id TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE CASCADE,
+    evidence_role TEXT NOT NULL CHECK(evidence_role IN ('supports', 'contradicts')),
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'retired')),
+    created_at TEXT NOT NULL,
+    PRIMARY KEY(relation_id, claim_id, evidence_role)
+);
+
 CREATE TABLE IF NOT EXISTS claim_node_links (
     claim_id TEXT NOT NULL REFERENCES claims(claim_id) ON DELETE CASCADE,
     node_id TEXT NOT NULL REFERENCES nodes(node_id) ON DELETE CASCADE,

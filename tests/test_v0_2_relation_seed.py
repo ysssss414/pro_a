@@ -64,11 +64,30 @@ def test_relation_seed_missing_node_rolls_back_entire_file(tmp_path: Path):
     csv_path.write_text(
         "from_name,relation_type,to_name,scope\n"
         "EML,part_of,光模块,\n"
-        "不存在节点,related_to,光模块,\n",
+        "不存在节点,part_of,光模块,\n",
         encoding="utf-8",
     )
 
     with pytest.raises(ValueError, match=r"row 3.*不存在节点"):
+        db.seed_relations_csv(csv_path)
+
+    assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
+
+
+def test_relation_seed_non_part_of_rolls_back_entire_file(tmp_path: Path):
+    db = Database(tmp_path / "relations.db")
+    db.init_schema()
+    db.add_node("EML", "Technology")
+    db.add_node("光模块", "Segment")
+    csv_path = tmp_path / "relations.csv"
+    csv_path.write_text(
+        "from_name,relation_type,to_name,scope\n"
+        "EML,part_of,光模块,结构归属\n"
+        "EML,uses,光模块,功能关系\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"row 3.*only supports part_of"):
         db.seed_relations_csv(csv_path)
 
     assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
