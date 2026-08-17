@@ -10,7 +10,7 @@ from typing import Any
 from .config import AppConfig
 from .constants import (
     CHANGE_LEVELS, CLAIM_NATURES, CLAIM_STATUSES, NODE_TYPES, NOVELTY_LEVELS,
-    SOURCE_ORIGIN_TYPES, SOURCE_RANKS,
+    RELATION_TYPES, SOURCE_ORIGIN_TYPES, SOURCE_RANKS,
 )
 from .db import Database
 from .llm import ChatLLM, LLMError
@@ -51,6 +51,24 @@ _ACTUAL_OBSERVATION_RE = re.compile(
     r"当前|目前|截至|现有|当月|本月|单月|实际|已经|已完成|\d",
     re.IGNORECASE,
 )
+_RELATION_SEMANTIC_MARKERS = {
+    "upstream_of": ("上游", "upstream of"),
+    "supplies": ("供应", "供货", "supplies", "supplied"),
+    "produces": ("生产", "制造", "produces", "manufactures"),
+    "uses": ("采用", "使用", "搭载", "uses", "using"),
+    "applied_in": ("应用于", "用于", "applied in", "used in"),
+    "substitutes": ("替代", "取代", "substitutes", "replaces"),
+    "depends_on": ("依赖", "取决于", "depends on", "dependent on"),
+    "constrains": ("制约", "限制", "约束", "constrains", "limits"),
+    "drives": ("驱动", "推动", "带动", "drives"),
+    "competes_with": ("竞争", "竞品", "competes with", "competing with"),
+    "benefits_from": ("受益于", "benefits from"),
+    "exposed_to": ("暴露于", "敞口", "exposed to", "exposure to"),
+    "regulated_by": ("监管", "受管制", "regulated by"),
+    "validates": ("验证", "证实", "validates", "confirms"),
+    "invalidates": ("证伪", "推翻", "否定", "invalidates", "disproves"),
+    "related_to": ("相关", "关联", "related to", "associated with"),
+}
 
 
 def canonicalize_text(value: str) -> str:
@@ -106,6 +124,8 @@ class SourceAnalysis:
     rejected_node_matches: list[dict[str, Any]] = field(default_factory=list)
     rejected_node_candidates: list[dict[str, Any]] = field(default_factory=list)
     rejected_claim_node_links: list[dict[str, Any]] = field(default_factory=list)
+    relation_candidates: list[dict[str, Any]] = field(default_factory=list)
+    rejected_relation_candidates: list[dict[str, Any]] = field(default_factory=list)
 
 
 class Analyzer:
@@ -271,6 +291,214 @@ class Analyzer:
             normalized.append(item)
         return normalized
 
+    @staticmethod
+    def _node_evidence_terms(node: dict[str, Any]) -> list[str]:
+        terms: list[str] = []
+        for raw in [node.get("canonical_name") or "", *(node.get("aliases") or [])]:
+            term = canonicalize_text(str(raw)).lower()
+            if term and term not in terms:
+                terms.append(term)
+        return terms
+
+    @classmethod
+    def _claim_identifies_relation_endpoints(
+        cls, claim: dict[str, Any], from_node: dict[str, Any], to_node: dict[str, Any]
+    ) -> bool:
+        evidence = canonicalize_text(str(claim.get("evidence_excerpt") or "")).lower()
+        return bool(
+            evidence
+            and any(term in evidence for term in cls._node_evidence_terms(from_node))
+            and any(term in evidence for term in cls._node_evidence_terms(to_node))
+        )
+
+    @classmethod
+    def _claim_semantically_supports_relation(
+        cls,
+        claim: dict[str, Any],
+        from_node: dict[str, Any],
+        relation_type: str,
+        to_node: dict[str, Any],
+    ) -> bool:
+        """Conservative lexical gate; extraction prompt and human approval remain authoritative."""
+        evidence = canonicalize_text(str(claim.get("evidence_excerpt") or "")).lower()
+        markers = _RELATION_SEMANTIC_MARKERS.get(relation_type) or ()
+        if not evidence or not markers:
+            return False
+        from_terms = cls._node_evidence_terms(from_node)
+        to_terms = cls._node_evidence_terms(to_node)
+        for from_term in from_terms:
+            from_start = evidence.find(from_term)
+            while from_start >= 0:
+                for to_term in to_terms:
+                    to_start = evidence.find(to_term, from_start + len(from_term))
+                    while to_start >= 0:
+                        # Include a short suffix for forms such as “A 与 B 竞争/相关”.
+                        window_end = min(len(evidence), to_start + len(to_term) + 24)
+                        window = evidence[from_start:window_end]
+                        if any(marker in window for marker in markers):
+                            return True
+                        to_start = evidence.find(to_term, to_start + 1)
+                from_start = evidence.find(from_term, from_start + 1)
+        return False
+
+    def _validate_relation_candidates(
+        self, raw_candidates: Any, claims: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        candidates = self._list(raw_candidates or [], "relation_candidates")
+        claim_by_ref: dict[str, list[dict[str, Any]]] = {}
+        for claim in claims:
+            ref = claim.get("claim_ref")
+            if isinstance(ref, str) and ref:
+                claim_by_ref.setdefault(ref, []).append(claim)
+
+        accepted: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
+
+        def reject(candidate: Any, reason: str, stage: str) -> None:
+            rejected.append({
+                "candidate": copy.deepcopy(candidate),
+                "reason": reason,
+                "stage": stage,
+            })
+
+        for raw_candidate in candidates:
+            if not isinstance(raw_candidate, dict):
+                reject(raw_candidate, "malformed candidate: expected an object", "structure")
+                continue
+            candidate = copy.deepcopy(raw_candidate)
+            from_node_id = candidate.get("from_node_id")
+            to_node_id = candidate.get("to_node_id")
+            relation_type = candidate.get("relation_type")
+            if not isinstance(from_node_id, str) or not from_node_id.strip():
+                reject(candidate, "malformed candidate: from_node_id is required", "structure")
+                continue
+            if not isinstance(to_node_id, str) or not to_node_id.strip():
+                reject(candidate, "malformed candidate: to_node_id is required", "structure")
+                continue
+            if not isinstance(relation_type, str) or not relation_type:
+                reject(candidate, "malformed candidate: relation_type is required", "structure")
+                continue
+            from_node_id = from_node_id.strip()
+            to_node_id = to_node_id.strip()
+            scope = candidate.get("scope", "")
+            if not isinstance(scope, str):
+                reject(candidate, "malformed candidate: scope must be a string", "structure")
+                continue
+            reason = candidate.get("reason", "")
+            if not isinstance(reason, str):
+                reject(candidate, "malformed candidate: reason must be a string", "structure")
+                continue
+            confidence = candidate.get("confidence")
+            if confidence is not None and (
+                isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not 0.0 <= confidence <= 1.0
+            ):
+                reject(candidate, "malformed candidate: confidence must be between 0 and 1", "structure")
+                continue
+            raw_refs = candidate.get("supporting_claim_refs")
+            if not isinstance(raw_refs, list) or not raw_refs:
+                reject(candidate, "supporting_claim_refs must not be empty", "structure")
+                continue
+            refs: list[str] = []
+            malformed_ref = False
+            for ref in raw_refs:
+                if not isinstance(ref, str) or not ref.strip():
+                    malformed_ref = True
+                    break
+                normalized_ref = ref.strip()
+                if normalized_ref not in refs:
+                    refs.append(normalized_ref)
+            if malformed_ref:
+                reject(candidate, "malformed candidate: supporting_claim_refs must contain Claim refs", "structure")
+                continue
+
+            from_node = self.db.get_node(from_node_id)
+            to_node = self.db.get_node(to_node_id)
+            if not from_node:
+                reject(candidate, f"unknown from Node: {from_node_id}", "endpoint")
+                continue
+            if not to_node:
+                reject(candidate, f"unknown to Node: {to_node_id}", "endpoint")
+                continue
+            if from_node.get("status") != "active":
+                reject(candidate, f"inactive from endpoint: {from_node_id}", "endpoint")
+                continue
+            if to_node.get("status") != "active":
+                reject(candidate, f"inactive to endpoint: {to_node_id}", "endpoint")
+                continue
+            if from_node_id == to_node_id:
+                reject(candidate, "self relation not allowed", "endpoint")
+                continue
+            if relation_type not in RELATION_TYPES:
+                reject(candidate, f"invalid relation_type: {relation_type}", "endpoint")
+                continue
+            if relation_type == "part_of":
+                reject(candidate, "part_of not allowed", "endpoint")
+                continue
+
+            referenced_claims: list[tuple[str, list[dict[str, Any]]]] = []
+            reference_error = ""
+            for ref in refs:
+                resolved = claim_by_ref.get(ref)
+                if not resolved:
+                    reference_error = f"unknown supporting_claim_ref: {ref}"
+                    break
+                validated = [
+                    claim for claim in resolved
+                    if claim.get("evidence_validated") is True
+                    and claim.get("status") != "needs_review"
+                ]
+                if not validated:
+                    reference_error = f"supporting Claim rejected: {ref}"
+                    break
+                referenced_claims.append((ref, validated))
+            if reference_error:
+                reject(candidate, reference_error, "claim_reference")
+                continue
+
+            evidence_error = False
+            semantic_error = False
+            for _, resolved in referenced_claims:
+                dual_endpoint_claims = [
+                    claim for claim in resolved
+                    if self._claim_identifies_relation_endpoints(claim, from_node, to_node)
+                ]
+                if not dual_endpoint_claims:
+                    evidence_error = True
+                    break
+                if not any(
+                    self._claim_semantically_supports_relation(
+                        claim, from_node, relation_type, to_node,
+                    )
+                    for claim in dual_endpoint_claims
+                ):
+                    semantic_error = True
+                    break
+            if evidence_error:
+                reject(
+                    candidate,
+                    "no single supporting Claim explicitly identifies both endpoints",
+                    "evidence",
+                )
+                continue
+            if semantic_error:
+                reject(candidate, "semantic support insufficient", "semantic")
+                continue
+
+            normalized = {
+                "from_node_id": from_node_id,
+                "relation_type": relation_type,
+                "to_node_id": to_node_id,
+                "scope": scope.strip(),
+                "supporting_claim_refs": refs,
+                "reason": reason.strip(),
+            }
+            if confidence is not None:
+                normalized["confidence"] = float(confidence)
+            accepted.append(normalized)
+        return accepted, rejected
+
     def _validate_source_output(self, raw: Any, full_text: str) -> dict[str, Any]:
         data = copy.deepcopy(self._object(raw, "source_analysis"))
         metadata = self._object(data.get("source_metadata") or {}, "source_metadata")
@@ -349,9 +577,12 @@ class Analyzer:
             candidate["quality_eligible"] = quality["eligible"]
             candidate["quality_validation"] = quality
 
-        claims = self._normalize_claim_atomicity(
-            self._list(data.get("claims") or [], "claims")
-        )
+        raw_claims = self._list(data.get("claims") or [], "claims")
+        for index, claim in enumerate(raw_claims):
+            if isinstance(claim, dict):
+                # The model-facing reference is deterministic and local to this response.
+                claim["claim_ref"] = f"C{index + 1}"
+        claims = self._normalize_claim_atomicity(raw_claims)
         data["claims"] = claims
         for index, claim in enumerate(claims):
             path = f"claims[{index}]"
@@ -449,6 +680,12 @@ class Analyzer:
                     })
             claim["related_node_ids"] = accepted_node_ids
             claim["rejected_related_node_links"] = rejected_node_links
+
+        relation_candidates, rejected_relation_candidates = self._validate_relation_candidates(
+            data.get("relation_candidates") or [], claims,
+        )
+        data["relation_candidates"] = relation_candidates
+        data["rejected_relation_candidates"] = rejected_relation_candidates
 
         references = self._list(data.get("source_references") or [], "source_references")
         for index, reference in enumerate(references):
@@ -610,12 +847,15 @@ class Analyzer:
         chunks = chunk_text(text, self.cfg.llm.max_chunk_chars)
         catalog_json = json.dumps(self.node_catalog(), ensure_ascii=False)
         merged = {
-            "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [], "source_references": []
+            "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [],
+            "source_references": [], "relation_candidates": [],
         }
         rejected_matches: list[dict[str, Any]] = []
         rejected_candidates: list[dict[str, Any]] = []
         rejected_claim_links: list[dict[str, Any]] = []
+        rejected_relation_candidates: list[dict[str, Any]] = []
         seen_claims: set[str] = set()
+        claim_ref_by_statement: dict[str, str] = {}
         seen_matches: set[str] = set()
         seen_candidates: set[str] = set()
         for idx, chunk in enumerate(chunks, 1):
@@ -643,20 +883,58 @@ class Analyzer:
                 elif key and key not in seen_candidates:
                     seen_candidates.add(key)
                     merged["node_candidates"].append(c)
+            local_to_global_refs: dict[str, list[str]] = {}
             for claim in data.get("claims") or []:
+                local_ref = str(claim.get("claim_ref") or "")
                 statement = normalize_ws(str(claim.get("statement", "")))
                 key = statement.lower()
-                if not statement or key in seen_claims:
+                if not statement:
                     continue
-                seen_claims.add(key)
-                rejected_claim_links.extend(claim.get("rejected_related_node_links") or [])
-                merged["claims"].append(claim)
+                if key in seen_claims:
+                    global_ref = claim_ref_by_statement[key]
+                else:
+                    seen_claims.add(key)
+                    global_ref = f"C{len(merged['claims']) + 1}"
+                    claim_ref_by_statement[key] = global_ref
+                    claim["claim_ref"] = global_ref
+                    rejected_claim_links.extend(claim.get("rejected_related_node_links") or [])
+                    merged["claims"].append(claim)
+                if local_ref:
+                    refs = local_to_global_refs.setdefault(local_ref, [])
+                    if global_ref not in refs:
+                        refs.append(global_ref)
+
+            def remap_refs(candidate: dict[str, Any]) -> dict[str, Any]:
+                mapped = copy.deepcopy(candidate)
+                global_refs: list[str] = []
+                for ref in mapped.get("supporting_claim_refs") or []:
+                    for global_ref in local_to_global_refs.get(ref, [ref]):
+                        if global_ref not in global_refs:
+                            global_refs.append(global_ref)
+                mapped["supporting_claim_refs"] = global_refs
+                return mapped
+
+            merged["relation_candidates"].extend(
+                remap_refs(candidate) for candidate in data.get("relation_candidates") or []
+            )
+            for rejection in data.get("rejected_relation_candidates") or []:
+                normalized_rejection = copy.deepcopy(rejection)
+                if isinstance(normalized_rejection.get("candidate"), dict):
+                    normalized_rejection["candidate"] = remap_refs(
+                        normalized_rejection["candidate"]
+                    )
+                rejected_relation_candidates.append(normalized_rejection)
             merged["source_references"].extend(data.get("source_references") or [])
+        merged["relation_candidates"], remap_rejections = self._validate_relation_candidates(
+            merged["relation_candidates"], merged["claims"],
+        )
+        rejected_relation_candidates.extend(remap_rejections)
         return SourceAnalysis(
             **merged,
             rejected_node_matches=rejected_matches,
             rejected_node_candidates=rejected_candidates,
             rejected_claim_node_links=rejected_claim_links,
+            rejected_relation_candidates=rejected_relation_candidates,
         )
 
 

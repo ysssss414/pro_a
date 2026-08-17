@@ -24,7 +24,15 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 11. 资料类型 source_origin_type：primary / secondary / unknown。来源等级 source_rank：S/A/B/C/D/UNRANKED。来源等级评价来源身份，不等于单条 Claim 可信度。
 12. 不要用多篇二手材料的重复引用制造“独立证据”。若材料明显引用其他来源，可在 source_references 中说明。
 13. ResearchQuestion 候选也属于新 Node，必须作为 node_candidates 返回，不能直接创建。
-14. 只输出 JSON，不要输出解释文字。
+14. relation_candidates 只允许引用“已提供的 Existing Active Nodes”的真实 node_id；两端不得引用 Candidate Node、名称占位符或未批准对象。
+14.1 relation_type 只能是：upstream_of, supplies, produces, uses, applied_in, substitutes, depends_on, constrains, drives, competes_with, benefits_from, exposed_to, regulated_by, validates, invalidates, related_to。禁止输出 part_of。
+14.2 Claims 按输出数组位置使用临时引用 C1、C2、C3……；每个 Relation Candidate 必须用 supporting_claim_refs 引用本次输出的 Claim，禁止伪造 CLM ID。
+14.3 supporting Claim 必须直接表达所提 Relation 的语义，其原始 evidence_excerpt 必须同时明确出现两端 Node 的 canonical_name 或 alias。不得用 reason 代替 Evidence。
+14.4 不得拼接多条 Claim：禁止由 C1 只出现 A、C2 只出现 B 推导 A 与 B 的 Relation。不得根据 related_node_ids、Node graph、父级、常识或外部知识补关系。
+14.5 related_to 不是语义不清时的兜底；只有原文明确表述“相关/关联/related to”等关系时才可输出。证据不足就不输出，宁缺毋滥。
+14.6 正例：Claim C1 “NVIDIA Rubin GPU 将采用 HBM4。”，且 Existing Nodes 中存在 Rubin GPU 与 HBM4，可输出 Rubin GPU --uses--> HBM4，supporting_claim_refs=["C1"]。
+14.7 反例：C1 “Rubin 是 NVIDIA 下一代 GPU。”，C2 “HBM4 用于下一代 AI Server。”；禁止组合两条 Claim 得出 Rubin GPU --uses--> HBM4。反例：“Rubin GPU 与 HBM4 是两个研究重点”也不支持 uses、supplies、depends_on 或弱 Evidence related_to。
+15. 只输出 JSON，不要输出解释文字。
 """
 
 SOURCE_ANALYSIS_USER = r"""
@@ -76,6 +84,7 @@ SOURCE_ANALYSIS_USER = r"""
   ],
   "claims": [
     {{
+      "claim_ref":"C1（按 Claims 数组位置依次编号）",
       "statement":"",
       "nature":"fact",
       "related_node_ids":[],
@@ -90,6 +99,17 @@ SOURCE_ANALYSIS_USER = r"""
       "confidence":0.0,
       "novelty_level":"N2",
       "structured":{{}}
+    }}
+  ],
+  "relation_candidates": [
+    {{
+      "from_node_id":"NODE_xxx",
+      "relation_type":"uses",
+      "to_node_id":"NODE_yyy",
+      "scope":"",
+      "supporting_claim_refs":["C1"],
+      "confidence":0.0,
+      "reason":"仅说明该 Claim 如何直接表达 Relation；不得加入外部知识"
     }}
   ],
   "source_references": [

@@ -92,7 +92,9 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
     related_proposals = []
     for proposal in db.all("SELECT * FROM proposals ORDER BY created_at,proposal_id"):
         payload = _json(proposal.pop("payload_json", "{}"), {})
-        related_claims = set(payload.get("related_claim_ids") or payload.get("evidence_claim_ids") or [])
+        related_claims: set[str] = set()
+        for key in ("related_claim_ids", "evidence_claim_ids", "supporting_claim_ids"):
+            related_claims.update(payload.get(key) or [])
         related = (
             payload.get("source_id") == source_id
             or payload.get("trigger_source_id") == source_id
@@ -107,6 +109,10 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
     current_view_proposals = [
         proposal for proposal in related_proposals
         if proposal["proposal_type"] == "current_view_change"
+    ]
+    relation_proposals = [
+        proposal for proposal in related_proposals
+        if proposal["proposal_type"] == "node_relation"
     ]
     research_question_candidates = [
         proposal for proposal in related_proposals
@@ -136,6 +142,13 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
         "claim_relations": claim_relations,
         "impact_reviews": impact_reviews,
         "node_proposals": node_proposals,
+        "relation_proposals": relation_proposals,
+        "relation_candidates": (
+            (source.get("metadata") or {}).get("analysis_quality") or {}
+        ).get("relation_candidates") or [],
+        "rejected_relation_candidates": (
+            (source.get("metadata") or {}).get("analysis_quality") or {}
+        ).get("rejected_relation_candidates") or [],
         "current_view_proposals": current_view_proposals,
         "knowledge_gaps": knowledge_gaps,
         "research_question_candidates": research_question_candidates,

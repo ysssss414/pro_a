@@ -104,6 +104,36 @@ class IngestionPipeline:
         write_proposal(self.cfg, self.db.proposal(pid))
         return pid
 
+    def _create_relation_proposal(
+        self, candidate: dict[str, Any], claim_ids_by_ref: dict[str, list[str]]
+    ) -> str:
+        supporting_claim_ids: list[str] = []
+        for claim_ref in candidate.get("supporting_claim_refs") or []:
+            resolved = claim_ids_by_ref.get(claim_ref)
+            if not resolved:
+                raise ValueError(f"unresolved temporary Claim ref: {claim_ref}")
+            for claim_id in resolved:
+                if claim_id not in supporting_claim_ids:
+                    supporting_claim_ids.append(claim_id)
+        if not supporting_claim_ids:
+            raise ValueError("Relation Candidate has no persistent supporting Claim IDs")
+
+        stale_proposal_ids: list[str] = []
+        proposal_id = self.db.propose_relation(
+            candidate.get("from_node_id"),
+            candidate.get("relation_type"),
+            candidate.get("to_node_id"),
+            scope=candidate.get("scope", ""),
+            supporting_claim_ids=supporting_claim_ids,
+            confidence=candidate.get("confidence"),
+            reason=candidate.get("reason", ""),
+            _stale_proposal_ids=stale_proposal_ids,
+        )
+        for stale_proposal_id in stale_proposal_ids:
+            write_proposal(self.cfg, self.db.proposal(stale_proposal_id))
+        write_proposal(self.cfg, self.db.proposal(proposal_id))
+        return proposal_id
+
     def _insert_source(self, source_id: str, title: str, original_name: str, archived: Path, sha: str, mode: str) -> None:
         self.db.execute(
             """INSERT INTO sources(source_id,title,original_name,archived_path,sha256,ingestion_mode,ingested_at,status)
@@ -162,9 +192,10 @@ class IngestionPipeline:
 
     def _insert_claims(
         self, source_id: str, analysis, publication_time: str
-    ) -> tuple[list[str], dict[int, str]]:
+    ) -> tuple[list[str], dict[int, str], dict[str, list[str]]]:
         claim_ids: list[str] = []
         claim_id_by_index: dict[int, str] = {}
+        claim_ids_by_ref: dict[str, list[str]] = {}
         for claim_index, c in enumerate(analysis.claims):
             statement = normalize_ws(str(c.get("statement", "")))
             if not statement:
@@ -194,6 +225,8 @@ class IngestionPipeline:
             )
             claim_ids.append(claim_id)
             claim_id_by_index[claim_index] = claim_id
+            claim_ref = str(c.get("claim_ref") or f"C{claim_index + 1}")
+            claim_ids_by_ref.setdefault(claim_ref, []).append(claim_id)
             for node_id in c.get("related_node_ids") or []:
                 if self.db.get_node(node_id):
                     self.db.execute("INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
@@ -205,7 +238,7 @@ class IngestionPipeline:
                         (source_id, node_id, "related", c.get("confidence"), "claim",
                          c.get("evidence_excerpt") or "", json.dumps(structured["validation"], ensure_ascii=False)),
                     )
-        return claim_ids, claim_id_by_index
+        return claim_ids, claim_id_by_index, claim_ids_by_ref
 
     def _apply_node_matches(self, source_id: str, matches: list[dict[str, Any]]) -> list[str]:
         linked = []
@@ -459,12 +492,11 @@ class IngestionPipeline:
                 "rejected_node_matches": analysis.rejected_node_matches,
                 "rejected_node_candidates": analysis.rejected_node_candidates,
                 "rejected_claim_node_links": analysis.rejected_claim_node_links,
+                "relation_candidates": analysis.relation_candidates,
+                "rejected_relation_candidates": analysis.rejected_relation_candidates,
             }
-            self._update_source_metadata(
-                source_id, source_type, meta, analysis.source_references, analysis_quality,
-            )
             self._apply_node_matches(source_id, analysis.node_matches)
-            claim_ids, claim_id_by_index = self._insert_claims(
+            claim_ids, claim_id_by_index, claim_ids_by_ref = self._insert_claims(
                 source_id, analysis, meta.get("publication_time") or "",
             )
             self._derive_source_ancestor_links(source_id)
@@ -486,6 +518,24 @@ class IngestionPipeline:
                 if pid:
                     node_proposals.append(pid)
 
+            relation_proposals: list[str] = []
+            for candidate in analysis.relation_candidates:
+                try:
+                    proposal_id = self._create_relation_proposal(candidate, claim_ids_by_ref)
+                except ValueError as exc:
+                    analysis.rejected_relation_candidates.append({
+                        "candidate": candidate,
+                        "reason": str(exc),
+                        "stage": "proposal_mapping",
+                    })
+                    continue
+                if proposal_id not in relation_proposals:
+                    relation_proposals.append(proposal_id)
+
+            self._update_source_metadata(
+                source_id, source_type, meta, analysis.source_references, analysis_quality,
+            )
+
             self._historical_compare(source_id, claim_ids)
             cv_proposals, gaps, rq_proposals = self._direct_impacts(job_id, source_id)
             node_proposals.extend(rq_proposals)
@@ -495,6 +545,8 @@ class IngestionPipeline:
                 "title": meta.get("title") or original_name, "archived_path": str(archived),
                 "ima_status": ima_result.get("status"), "warnings": warnings,
                 "node_matches": linked_nodes, "node_proposals": node_proposals, "claims": claim_ids,
+                "relation_proposals": relation_proposals,
+                "rejected_relation_candidates": analysis.rejected_relation_candidates,
                 "current_view_proposals": cv_proposals, "knowledge_gaps": gaps,
             }
             self.db.execute("UPDATE sources SET analysis_mode=? WHERE source_id=?", (mode, source_id))

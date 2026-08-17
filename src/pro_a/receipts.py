@@ -18,6 +18,9 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
     source = audit.get("source") or {}
     nodes = audit.get("nodes") or []
     node_proposals = audit.get("node_proposals") or []
+    relation_candidates = audit.get("relation_candidates") or []
+    relation_proposals = audit.get("relation_proposals") or []
+    rejected_relation_candidates = audit.get("rejected_relation_candidates") or []
     claims = audit.get("claims") or []
     claim_relations = audit.get("claim_relations") or []
     impacts = audit.get("impact_reviews") or []
@@ -32,6 +35,8 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         "", "## 处理结果", "",
         f"- Existing Nodes matched: {len(nodes)}",
         f"- Candidate Node Proposals: {len(node_proposals)}",
+        f"- Relation Candidates: accepted {len(relation_candidates)}, rejected {len(rejected_relation_candidates)}",
+        f"- Relation Proposals: {len(relation_proposals)}",
         f"- Claims created: {len(claims)}",
         f"- Historical comparisons: {len(claim_relations)}",
         f"- Impact Reviews: {len(impacts)}",
@@ -64,6 +69,20 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         f"confidence={proposal['payload'].get('confidence')}, "
         f"related_claims={len(proposal['payload'].get('related_claim_ids') or [])}"
         for proposal in node_proposals
+    ] or ["- None"]
+    lines += ["", "## Relation Proposals", ""]
+    lines += [
+        f"- `{proposal['proposal_id']}` `{proposal['payload'].get('from_node_id', '')}` "
+        f"--{proposal['payload'].get('relation_type', '')}--> "
+        f"`{proposal['payload'].get('to_node_id', '')}` — status={proposal['status']}, "
+        f"supporting_claims={len(proposal['payload'].get('supporting_claim_ids') or [])}"
+        for proposal in relation_proposals
+    ] or ["- None"]
+    lines += ["", "## Rejected Relation Candidates", ""]
+    lines += [
+        f"- stage={item.get('stage', '')}, reason={item.get('reason', '')}, "
+        f"candidate=`{json.dumps(item.get('candidate'), ensure_ascii=False)}`"
+        for item in rejected_relation_candidates
     ] or ["- None"]
     lines += ["", "## Claims", ""]
     lines += [
@@ -104,9 +123,13 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
     lines.append("")
     if data.get("warnings"):
         lines += ["## Warnings", *[f"- {x}" for x in data["warnings"]], ""]
-    if data.get("node_proposals") or data.get("current_view_proposals"):
+    if data.get("node_proposals") or data.get("relation_proposals") or data.get("current_view_proposals"):
         lines += ["## 需要确认", ""]
-        for p in [*data.get("node_proposals", []), *data.get("current_view_proposals", [])]:
+        for p in [
+            *data.get("node_proposals", []),
+            *data.get("relation_proposals", []),
+            *data.get("current_view_proposals", []),
+        ]:
             lines.append(f"- `{p}`")
         lines.append("")
     lines += ["## JSON", "```json", json.dumps(data, ensure_ascii=False, indent=2, default=str), "```", ""]
