@@ -1,5 +1,44 @@
 # Changelog
 
+## post-v0.2.3B.1 baseline — 2026-08-17
+
+- Relation Candidate Evidence Validation 收口完成并合入 `main`。
+- Relation Candidate 必须先解析 supporting Claim，再进行 Evidence / atomic Claim / semantic / direction validation，之后才允许生成 pending `node_relation` Proposal。
+- directional Relation 新增主动/被动与 reversed direction 程序校验；`uses` / `supplies` / `produces` 的明显英文被动错误方向必须拒绝，复杂中文被动语义优先保守拒绝。
+- generic `marker_between` 不再绕过 reversed detection；reversed 状态优先于 supported。
+- Relation Evidence mapping 强化为精确 atomic Claim 支持，不允许无关 child Claim 进入 supporting evidence。
+- 临时 Claim refs 只用于内部解析；`supporting_claim_refs` 与 `_resolved_supporting_claim_indices` 不进入 Proposal payload。
+- 停止对 Relation `scope` / `reason` 中 `C\d+` 文本进行正则清洗，合法业务文本如 `C1 stepping` / `C2 stepping` 原样保留。
+- 不同 scope 保持不同 Proposal identity，避免错误合并。
+- B.1.1 合并前验证：213 tests passed；`compileall` 与 `git diff --check` 通过。
+- 未修改 schema、冻结业务规则、Propagation / Impact Recovery、正式数据库或 IMA；R1 原始目录未纳入提交。
+
+## v0.2.3B Relation Candidate / Proposal validation — 2026-08-17
+
+- 建立非结构 Relation 的统一 pending Proposal 路径，Relation 不再由模型输出直接 formalize。
+- Proposal acceptance 强制执行 Relation-specific Evidence gate；非 `part_of` Relation 必须至少有 active supporting Claim。
+- 增加 stale Relation Proposal recovery 与幂等处理。
+- Relation Candidate 从 LLM 输出进入程序验证链：endpoint / relation type / supporting Claim resolution / Evidence / semantic / direction。
+- 不允许 unresolved temporary Claim reference 创建 Proposal。
+- rejected relation candidates 与原因进入审计输出，支持后续真实资料 R1 验收。
+
+## v0.2.3 Relation Evidence / Impact Recovery — 2026-08-14 to 2026-08-17
+
+- `relation_evidence_links` 成为 Relation-specific Evidence 基础，一条 Relation 可累积多个 supports / contradicts Claims。
+- 保留 legacy `node_relations.evidence_claim_id` 并做兼容迁移 / backfill。
+- `part_of` 可无 Evidence；其他 current Relation 必须有 active supporting Evidence。
+- contradicts Evidence 只记录冲突，不自动 retire Relation。
+- Relation seed 仅允许 `part_of`，不能绕过 Evidence gate。
+- New Node acceptance 不会把 `related_node_ids` 自动 formalize 为 `related_to`。
+- Impact Recovery 增加 deterministic quality gates、stale / retry 恢复与审计，冻结 Propagation 规则保持不变。
+
+## 0.2.2.1 — 2026-08-14
+
+- 强化程序化 `evidence_scope`、Actual / Guidance 原子拆分、公司主体 attribution mapping 与 Current View 确定性排序。
+- 单一公司 Evidence 不得外推为行业 / 产品整体结论；Initial Current View 继续执行 Target-Node-centric 与 Evidence Scope Constraint。
+- Product Applications 与 type-specific Evidence 校验增强。
+- 清理重复查询与无效残留，不改变冻结业务规则或 v0.1.1 稳定性状态机。
+
 ## 0.2.2 — 2026-08-14
 
 - Initial Current View 允许单一 Source，同时执行 Evidence Scope Constraint；Proposal 记录 Source 数量、底层独立 Source 数量、Source Rank 与 primary/secondary 分布。
