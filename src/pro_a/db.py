@@ -15,6 +15,7 @@ from .ids import make_id
 CURRENT_VIEW_ORDER = "revision_date DESC,revision_seq DESC,view_id DESC"
 RELATION_EVIDENCE_ROLES = {"supports", "contradicts"}
 RELATION_EVIDENCE_STATUSES = {"active", "retired"}
+ACTIVE_RELATION_SUPPORTING_CLAIM_STATUSES = {"current", "pending_verification", "disputed"}
 
 
 def now_iso() -> str:
@@ -279,26 +280,44 @@ class Database:
         *,
         evidence_role: str = "supports",
         status: str = "active",
+        _conn: sqlite3.Connection | None = None,
     ) -> bool:
         if evidence_role not in RELATION_EVIDENCE_ROLES:
             raise ValueError(f"Invalid relation evidence role: {evidence_role}")
         if status not in RELATION_EVIDENCE_STATUSES:
             raise ValueError(f"Invalid relation evidence status: {status}")
-        with self.transaction(immediate=True) as conn:
-            if not conn.execute(
-                "SELECT 1 FROM node_relations WHERE relation_id=?", (relation_id,)
-            ).fetchone():
-                raise ValueError(f"Unknown Relation: {relation_id}")
-            if not conn.execute(
-                "SELECT 1 FROM claims WHERE claim_id=?", (claim_id,)
-            ).fetchone():
-                raise ValueError(f"Unknown evidence Claim: {claim_id}")
-            cursor = conn.execute(
-                """INSERT OR IGNORE INTO relation_evidence_links(
-                   relation_id,claim_id,evidence_role,status,created_at
-                   ) VALUES(?,?,?,?,?)""",
-                (relation_id, claim_id, evidence_role, status, now_iso()),
+        if _conn is not None:
+            return self._add_relation_evidence_conn(
+                _conn, relation_id, claim_id, evidence_role=evidence_role, status=status,
             )
+        with self.transaction(immediate=True) as conn:
+            return self._add_relation_evidence_conn(
+                conn, relation_id, claim_id, evidence_role=evidence_role, status=status,
+            )
+
+    @staticmethod
+    def _add_relation_evidence_conn(
+        conn: sqlite3.Connection,
+        relation_id: str,
+        claim_id: str,
+        *,
+        evidence_role: str,
+        status: str,
+    ) -> bool:
+        if not conn.execute(
+            "SELECT 1 FROM node_relations WHERE relation_id=?", (relation_id,)
+        ).fetchone():
+            raise ValueError(f"Unknown Relation: {relation_id}")
+        if not conn.execute(
+            "SELECT 1 FROM claims WHERE claim_id=?", (claim_id,)
+        ).fetchone():
+            raise ValueError(f"Unknown evidence Claim: {claim_id}")
+        cursor = conn.execute(
+            """INSERT OR IGNORE INTO relation_evidence_links(
+               relation_id,claim_id,evidence_role,status,created_at
+               ) VALUES(?,?,?,?,?)""",
+            (relation_id, claim_id, evidence_role, status, now_iso()),
+        )
         return bool(cursor.rowcount)
 
     def relation_evidence(self, relation_id: str) -> list[dict[str, Any]]:
@@ -315,74 +334,312 @@ class Database:
             (relation_id,),
         )
 
-    def add_relation(self, from_node_id: str, relation_type: str, to_node_id: str, **kwargs) -> str:
+    def add_relation(
+        self,
+        from_node_id: str,
+        relation_type: str,
+        to_node_id: str,
+        *,
+        _conn: sqlite3.Connection | None = None,
+        **kwargs,
+    ) -> str:
         if relation_type not in RELATION_TYPES:
             raise ValueError(f"Invalid relation_type: {relation_type}")
         scope = (kwargs.get("scope") or "").strip()
         evidence_claim_id = (kwargs.get("evidence_claim_id") or "").strip()
         requested_status = kwargs.get("status", "current")
-        with self.transaction(immediate=True) as conn:
-            if not conn.execute(
-                "SELECT 1 FROM nodes WHERE node_id=?", (from_node_id,)
-            ).fetchone():
-                raise ValueError(f"Unknown from Node: {from_node_id}")
-            if not conn.execute(
-                "SELECT 1 FROM nodes WHERE node_id=?", (to_node_id,)
-            ).fetchone():
-                raise ValueError(f"Unknown to Node: {to_node_id}")
-            if evidence_claim_id and not conn.execute(
-                "SELECT 1 FROM claims WHERE claim_id=?", (evidence_claim_id,)
-            ).fetchone():
-                raise ValueError(f"Unknown evidence Claim: {evidence_claim_id}")
-
-            existing = conn.execute(
-                """SELECT relation_id,status FROM node_relations
-                   WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
-                (from_node_id, relation_type, to_node_id, scope),
-            ).fetchone()
-            if existing:
-                relation_id = existing["relation_id"]
-                if evidence_claim_id:
-                    conn.execute(
-                        """INSERT OR IGNORE INTO relation_evidence_links(
-                           relation_id,claim_id,evidence_role,status,created_at
-                           ) VALUES(?,?,'supports','active',?)""",
-                        (relation_id, evidence_claim_id, now_iso()),
-                    )
-                elif relation_type != "part_of" and existing["status"] == "current":
-                    supporting = conn.execute(
-                        """SELECT 1 FROM relation_evidence_links
-                           WHERE relation_id=? AND evidence_role='supports' AND status='active'
-                           LIMIT 1""",
-                        (relation_id,),
-                    ).fetchone()
-                    if not supporting:
-                        raise ValueError(
-                            "A current non-part_of Relation requires a supporting Claim"
-                        )
-                return relation_id
-
-            if relation_type != "part_of" and requested_status == "current" and not evidence_claim_id:
-                raise ValueError("A current non-part_of Relation requires a supporting Claim")
-
-            relation_id = make_id("REL")
-            created_at = now_iso()
-            conn.execute(
-                """INSERT INTO node_relations(
-                   relation_id,from_node_id,relation_type,to_node_id,scope,valid_from,valid_to,confidence,status,evidence_claim_id,created_at
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                (relation_id, from_node_id, relation_type, to_node_id, scope, kwargs.get("valid_from", ""),
-                 kwargs.get("valid_to", ""), kwargs.get("confidence"), requested_status,
-                 evidence_claim_id or None, created_at),
+        relation_options = {
+            key: value
+            for key, value in kwargs.items()
+            if key not in {"scope", "evidence_claim_id", "status"}
+        }
+        if _conn is not None:
+            return self._add_relation_conn(
+                _conn, from_node_id, relation_type, to_node_id, scope=scope,
+                evidence_claim_id=evidence_claim_id, requested_status=requested_status,
+                **relation_options,
             )
+        with self.transaction(immediate=True) as conn:
+            return self._add_relation_conn(
+                conn, from_node_id, relation_type, to_node_id, scope=scope,
+                evidence_claim_id=evidence_claim_id, requested_status=requested_status,
+                **relation_options,
+            )
+
+    @staticmethod
+    def _add_relation_conn(
+        conn: sqlite3.Connection,
+        from_node_id: str,
+        relation_type: str,
+        to_node_id: str,
+        *,
+        scope: str,
+        evidence_claim_id: str,
+        requested_status: str,
+        **kwargs,
+    ) -> str:
+        if not conn.execute(
+            "SELECT 1 FROM nodes WHERE node_id=?", (from_node_id,)
+        ).fetchone():
+            raise ValueError(f"Unknown from Node: {from_node_id}")
+        if not conn.execute(
+            "SELECT 1 FROM nodes WHERE node_id=?", (to_node_id,)
+        ).fetchone():
+            raise ValueError(f"Unknown to Node: {to_node_id}")
+        if evidence_claim_id and not conn.execute(
+            "SELECT 1 FROM claims WHERE claim_id=?", (evidence_claim_id,)
+        ).fetchone():
+            raise ValueError(f"Unknown evidence Claim: {evidence_claim_id}")
+
+        existing = conn.execute(
+            """SELECT relation_id,status FROM node_relations
+               WHERE from_node_id=? AND relation_type=? AND to_node_id=? AND scope=?""",
+            (from_node_id, relation_type, to_node_id, scope),
+        ).fetchone()
+        if existing:
+            relation_id = existing["relation_id"]
             if evidence_claim_id:
                 conn.execute(
-                    """INSERT INTO relation_evidence_links(
+                    """INSERT OR IGNORE INTO relation_evidence_links(
                        relation_id,claim_id,evidence_role,status,created_at
                        ) VALUES(?,?,'supports','active',?)""",
-                    (relation_id, evidence_claim_id, created_at),
+                    (relation_id, evidence_claim_id, now_iso()),
                 )
+            elif relation_type != "part_of" and existing["status"] == "current":
+                supporting = conn.execute(
+                    """SELECT 1 FROM relation_evidence_links
+                       WHERE relation_id=? AND evidence_role='supports' AND status='active'
+                       LIMIT 1""",
+                    (relation_id,),
+                ).fetchone()
+                if not supporting:
+                    raise ValueError(
+                        "A current non-part_of Relation requires a supporting Claim"
+                    )
+            return relation_id
+
+        if relation_type != "part_of" and requested_status == "current" and not evidence_claim_id:
+            raise ValueError("A current non-part_of Relation requires a supporting Claim")
+
+        relation_id = make_id("REL")
+        created_at = now_iso()
+        conn.execute(
+            """INSERT INTO node_relations(
+               relation_id,from_node_id,relation_type,to_node_id,scope,valid_from,valid_to,confidence,status,evidence_claim_id,created_at
+            ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+            (relation_id, from_node_id, relation_type, to_node_id, scope, kwargs.get("valid_from", ""),
+             kwargs.get("valid_to", ""), kwargs.get("confidence"), requested_status,
+             evidence_claim_id or None, created_at),
+        )
+        if evidence_claim_id:
+            conn.execute(
+                """INSERT INTO relation_evidence_links(
+                   relation_id,claim_id,evidence_role,status,created_at
+                   ) VALUES(?,?,'supports','active',?)""",
+                (relation_id, evidence_claim_id, created_at),
+            )
         return relation_id
+
+    @staticmethod
+    def _node_relation_identity(payload: dict[str, Any]) -> tuple[str, str, str, str] | None:
+        from_node_id = payload.get("from_node_id")
+        relation_type = payload.get("relation_type")
+        to_node_id = payload.get("to_node_id")
+        scope = payload.get("scope", "")
+        if not all(isinstance(value, str) for value in (from_node_id, relation_type, to_node_id)):
+            return None
+        if scope is None:
+            scope = ""
+        if not isinstance(scope, str):
+            return None
+        return from_node_id.strip(), relation_type, to_node_id.strip(), scope.strip()
+
+    @staticmethod
+    def _validate_node_relation_payload_conn(
+        conn: sqlite3.Connection, payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            raise ValueError("node_relation payload must be an object")
+
+        from_node_id = payload.get("from_node_id")
+        to_node_id = payload.get("to_node_id")
+        relation_type = payload.get("relation_type")
+        if not isinstance(from_node_id, str) or not from_node_id.strip():
+            raise ValueError("node_relation from_node_id is required")
+        if not isinstance(to_node_id, str) or not to_node_id.strip():
+            raise ValueError("node_relation to_node_id is required")
+        if not isinstance(relation_type, str) or not relation_type:
+            raise ValueError("node_relation relation_type is required")
+        from_node_id = from_node_id.strip()
+        to_node_id = to_node_id.strip()
+
+        from_node = conn.execute(
+            "SELECT node_id,status FROM nodes WHERE node_id=?", (from_node_id,)
+        ).fetchone()
+        if not from_node:
+            raise ValueError(f"Unknown from Node: {from_node_id}")
+        to_node = conn.execute(
+            "SELECT node_id,status FROM nodes WHERE node_id=?", (to_node_id,)
+        ).fetchone()
+        if not to_node:
+            raise ValueError(f"Unknown to Node: {to_node_id}")
+        if from_node["status"] != "active":
+            raise ValueError(f"from Node is not active: {from_node_id}")
+        if to_node["status"] != "active":
+            raise ValueError(f"to Node is not active: {to_node_id}")
+        if from_node_id == to_node_id:
+            raise ValueError("node_relation cannot relate a Node to itself")
+        if relation_type not in RELATION_TYPES:
+            raise ValueError(f"Invalid relation_type: {relation_type}")
+        if relation_type == "part_of":
+            raise ValueError("node_relation does not support part_of")
+
+        raw_claim_ids = payload.get("supporting_claim_ids")
+        if not isinstance(raw_claim_ids, list) or not raw_claim_ids:
+            raise ValueError("node_relation requires at least one supporting Claim")
+        claim_ids: list[str] = []
+        for raw_claim_id in raw_claim_ids:
+            if not isinstance(raw_claim_id, str) or not raw_claim_id.strip():
+                raise ValueError("node_relation supporting_claim_ids must contain Claim IDs")
+            claim_id = raw_claim_id.strip()
+            if claim_id not in claim_ids:
+                claim_ids.append(claim_id)
+        for claim_id in claim_ids:
+            claim = conn.execute(
+                "SELECT claim_id,status FROM claims WHERE claim_id=?", (claim_id,)
+            ).fetchone()
+            if not claim:
+                raise ValueError(f"Unknown supporting Claim: {claim_id}")
+            if claim["status"] == "needs_review":
+                raise ValueError(f"Supporting Claim needs review: {claim_id}")
+            if claim["status"] not in ACTIVE_RELATION_SUPPORTING_CLAIM_STATUSES:
+                raise ValueError(
+                    f"Supporting Claim cannot be used as active Evidence: {claim_id} "
+                    f"(status={claim['status']})"
+                )
+
+        scope = payload.get("scope", "")
+        if scope is None:
+            scope = ""
+        if not isinstance(scope, str):
+            raise ValueError("node_relation scope must be a string")
+        reason = payload.get("reason", "")
+        if reason is None:
+            reason = ""
+        if not isinstance(reason, str):
+            raise ValueError("node_relation reason must be a string")
+        confidence = payload.get("confidence")
+        if confidence is not None:
+            if (
+                isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not 0.0 <= confidence <= 1.0
+            ):
+                raise ValueError("node_relation confidence must be between 0 and 1")
+            confidence = float(confidence)
+
+        normalized = {
+            "from_node_id": from_node_id,
+            "relation_type": relation_type,
+            "to_node_id": to_node_id,
+            "scope": scope.strip(),
+            "supporting_claim_ids": claim_ids,
+            "reason": reason.strip(),
+        }
+        if confidence is not None:
+            normalized["confidence"] = confidence
+        return normalized
+
+    def validate_node_relation_payload(
+        self,
+        payload: dict[str, Any],
+        *,
+        _conn: sqlite3.Connection | None = None,
+    ) -> dict[str, Any]:
+        if _conn is not None:
+            return self._validate_node_relation_payload_conn(_conn, payload)
+        with self.connect() as conn:
+            return self._validate_node_relation_payload_conn(conn, payload)
+
+    def propose_relation(
+        self,
+        from_node_id: str,
+        relation_type: str,
+        to_node_id: str,
+        *,
+        supporting_claim_ids: list[str],
+        scope: str = "",
+        confidence: float | None = None,
+        reason: str = "",
+    ) -> str:
+        requested_payload: dict[str, Any] = {
+            "from_node_id": from_node_id,
+            "relation_type": relation_type,
+            "to_node_id": to_node_id,
+            "scope": scope,
+            "supporting_claim_ids": supporting_claim_ids,
+            "reason": reason,
+        }
+        if confidence is not None:
+            requested_payload["confidence"] = confidence
+
+        with self.transaction(immediate=True) as conn:
+            normalized = self._validate_node_relation_payload_conn(conn, requested_payload)
+            identity = self._node_relation_identity(normalized)
+            pending = conn.execute(
+                """SELECT proposal_id,payload_json FROM proposals
+                   WHERE proposal_type='node_relation' AND status='pending'
+                   ORDER BY created_at,proposal_id"""
+            ).fetchall()
+            for row in pending:
+                try:
+                    existing_payload = json.loads(row["payload_json"])
+                except (TypeError, json.JSONDecodeError):
+                    continue
+                if not isinstance(existing_payload, dict):
+                    continue
+                if self._node_relation_identity(existing_payload) != identity:
+                    continue
+                validated_existing = self._validate_node_relation_payload_conn(
+                    conn, existing_payload,
+                )
+                merged_claim_ids = list(dict.fromkeys([
+                    *validated_existing["supporting_claim_ids"],
+                    *normalized["supporting_claim_ids"],
+                ]))
+                merged_payload = {
+                    **existing_payload,
+                    **validated_existing,
+                    "supporting_claim_ids": merged_claim_ids,
+                }
+                merged_payload.update(
+                    self._validate_node_relation_payload_conn(conn, merged_payload)
+                )
+                conn.execute(
+                    "UPDATE proposals SET payload_json=? WHERE proposal_id=?",
+                    (json.dumps(merged_payload, ensure_ascii=False), row["proposal_id"]),
+                )
+                return row["proposal_id"]
+
+            proposal_id = make_id("PROP")
+            conn.execute(
+                """INSERT INTO proposals(
+                   proposal_id,proposal_type,target_node_id,payload_json,status,reason,
+                   propagation_batch_id,source_impact_id,created_at
+                   ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (
+                    proposal_id,
+                    "node_relation",
+                    normalized["from_node_id"],
+                    json.dumps(normalized, ensure_ascii=False),
+                    "pending",
+                    normalized["reason"],
+                    "",
+                    "",
+                    now_iso(),
+                ),
+            )
+            return proposal_id
 
     def seed_relations_csv(self, csv_path: Path) -> int:
         required = {"from_name", "relation_type", "to_name", "scope"}
@@ -465,6 +722,22 @@ class Database:
 
     def add_proposal(self, proposal_type: str, payload: dict[str, Any], target_node_id: str | None = None,
                      reason: str = "", propagation_batch_id: str = "", source_impact_id: str = "") -> str:
+        if proposal_type == "node_relation":
+            if propagation_batch_id or source_impact_id:
+                raise ValueError(
+                    "node_relation Proposal cannot belong to Impact Recovery or propagation"
+                )
+            if not isinstance(payload, dict):
+                raise ValueError("node_relation payload must be an object")
+            return self.propose_relation(
+                payload.get("from_node_id"),
+                payload.get("relation_type"),
+                payload.get("to_node_id"),
+                scope=payload.get("scope", ""),
+                supporting_claim_ids=payload.get("supporting_claim_ids"),
+                confidence=payload.get("confidence"),
+                reason=payload["reason"] if "reason" in payload else reason,
+            )
         if source_impact_id:
             existing = self.one(
                 """SELECT proposal_id FROM proposals

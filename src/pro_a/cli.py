@@ -63,6 +63,19 @@ def build_parser() -> argparse.ArgumentParser:
     radd.add_argument("to_node_id")
     radd.add_argument("--scope", default="")
     radd.add_argument("--evidence-claim-id", default="")
+    rpropose = rsub.add_parser("propose")
+    rpropose.add_argument("from_node_id")
+    rpropose.add_argument("relation_type")
+    rpropose.add_argument("to_node_id")
+    rpropose.add_argument("--scope", default="")
+    rpropose.add_argument(
+        "--evidence-claim-id",
+        dest="evidence_claim_ids",
+        action="append",
+        required=True,
+    )
+    rpropose.add_argument("--confidence", type=float)
+    rpropose.add_argument("--reason", default="")
     radd_evidence = rsub.add_parser("add-evidence")
     radd_evidence.add_argument("relation_id")
     radd_evidence.add_argument("claim_id")
@@ -194,6 +207,21 @@ def main(argv: list[str] | None = None):
             except ValueError as exc:
                 raise SystemExit(f"Relation add failed: {exc}") from exc
             print(rel_id)
+        elif args.relations_command == "propose":
+            try:
+                proposal_id = db.propose_relation(
+                    args.from_node_id,
+                    args.relation_type,
+                    args.to_node_id,
+                    scope=args.scope,
+                    supporting_claim_ids=args.evidence_claim_ids,
+                    confidence=args.confidence,
+                    reason=args.reason,
+                )
+            except ValueError as exc:
+                raise SystemExit(f"Relation proposal failed: {exc}") from exc
+            write_proposal(cfg, db.proposal(proposal_id))
+            print(proposal_id)
         elif args.relations_command == "add-evidence":
             try:
                 inserted = db.add_relation_evidence(

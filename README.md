@@ -18,6 +18,7 @@ v0.2.2.1 在 v0.2.2 基础上强化单一公司 Evidence Scope、Actual/Guidance
 - 所有 Current View 变更都生成 Proposal，只有用户确认后才形成正式 `v_YYYYMMDD` 版本
 - 同日多次正式更新自动生成 `v_YYYYMMDD_01` / `_02`
 - 新 Node 必须 Proposal 确认
+- 非结构 Relation 可通过统一 `node_relation` Proposal 提交显式 supporting Claims 后确认
 - Current View 确认后按“上下级 → 关联节点”的规则触发 Impact Review；未产生 View 变化则该路径停止
 - Knowledge Gap 自动产生；Research Question 作为 Node Candidate，需要确认
 - IMA 原始文件上传：`check_repeated_names → create_media → COS → add_knowledge`
@@ -182,6 +183,19 @@ workspace/inbox/deep/
 .\.venv\Scripts\pro-a.exe proposals accept PROP_xxx
 .\.venv\Scripts\pro-a.exe proposals reject PROP_xxx --reason "证据不足"
 ```
+
+人工提出需要 Evidence 的研究关系（`--evidence-claim-id` 可重复）：
+
+```powershell
+.\.venv\Scripts\pro-a.exe relations propose NODE_A uses NODE_B `
+  --scope "Rubin" `
+  --evidence-claim-id CLM_1 `
+  --evidence-claim-id CLM_2 `
+  --confidence 0.9 `
+  --reason "Rubin GPU explicitly uses HBM4"
+```
+
+命令只创建待审批 Proposal；后续仍使用统一的 `proposals show/accept/reject`。
 
 正式 Current View 会写入：
 
