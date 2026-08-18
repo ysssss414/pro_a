@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import requests
 
 from pro_a.config import LLMConfig
 from pro_a.llm import ChatLLM, LLMError
@@ -35,26 +36,62 @@ def completion(
     }
 
 
-def make_llm(monkeypatch, response: FakeResponse, *, max_output_tokens: int = 8192):
-    captured = {}
+def make_llm(
+    monkeypatch,
+    outcomes,
+    *,
+    max_output_tokens: int | None = None,
+):
+    if not isinstance(outcomes, list):
+        outcomes = [outcomes]
+    captured = {"calls": []}
 
     def fake_post(endpoint, *, headers, json, timeout):
+        captured["calls"].append(
+            {
+                "endpoint": endpoint,
+                "headers": headers,
+                "payload": json,
+                "timeout": timeout,
+            }
+        )
         captured.update(
             endpoint=endpoint,
             headers=headers,
             payload=json,
             timeout=timeout,
         )
-        return response
+        outcome = outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        return outcome
 
     monkeypatch.setenv("TEST_PROA_LLM_API_KEY", "secret")
     monkeypatch.setattr("pro_a.llm.requests.post", fake_post)
+    config_overrides = {}
+    if max_output_tokens is not None:
+        config_overrides["max_output_tokens"] = max_output_tokens
     cfg = LLMConfig(
         enabled=True,
         api_key_env="TEST_PROA_LLM_API_KEY",
-        max_output_tokens=max_output_tokens,
+        **config_overrides,
     )
     return ChatLLM(cfg), captured
+
+
+def test_default_max_output_tokens_is_32768():
+    assert LLMConfig().max_output_tokens == 32768
+
+
+def test_json_request_uses_default_max_tokens(monkeypatch):
+    llm, captured = make_llm(
+        monkeypatch,
+        FakeResponse(completion('{"ok": true}')),
+    )
+
+    llm.json("Return JSON.", "synthetic input")
+
+    assert captured["payload"]["max_tokens"] == 32768
 
 
 def test_json_returns_dict_for_stop_and_valid_json(monkeypatch):
@@ -77,7 +114,7 @@ def test_json_request_enforces_json_output_and_max_tokens(monkeypatch):
 
 
 def test_length_is_reported_as_truncation_before_parse(monkeypatch):
-    llm, _ = make_llm(
+    llm, captured = make_llm(
         monkeypatch,
         FakeResponse(
             completion(
@@ -99,22 +136,28 @@ def test_length_is_reported_as_truncation_before_parse(monkeypatch):
     ):
         llm.json("Return JSON.", "synthetic input")
 
+    assert len(captured["calls"]) == 1
+
 
 def test_stop_with_empty_content_is_reported_explicitly(monkeypatch):
-    llm, _ = make_llm(monkeypatch, FakeResponse(completion("  \n")))
+    llm, captured = make_llm(monkeypatch, FakeResponse(completion("  \n")))
 
     with pytest.raises(LLMError, match="LLM returned empty JSON content"):
         llm.json("Return JSON.", "synthetic input")
 
+    assert len(captured["calls"]) == 1
+
 
 def test_stop_with_malformed_json_reports_decode_error(monkeypatch):
-    llm, _ = make_llm(monkeypatch, FakeResponse(completion('{"ok":')))
+    llm, captured = make_llm(monkeypatch, FakeResponse(completion('{"ok":')))
 
     with pytest.raises(
         LLMError,
         match=r"LLM returned non-JSON content:.*JSONDecodeError.*position",
     ):
         llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 1
 
 
 @pytest.mark.parametrize(
@@ -132,14 +175,122 @@ def test_missing_completion_shape_is_unexpected(monkeypatch, payload):
         llm.json("Return JSON.", "synthetic input")
 
 
-def test_http_failure_behavior_is_preserved(monkeypatch):
-    llm, _ = make_llm(
+def test_connection_error_then_success(monkeypatch):
+    sleep_calls = []
+    monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)
+    llm, captured = make_llm(
         monkeypatch,
-        FakeResponse({}, status_code=429, text="rate limited"),
+        [
+            requests.exceptions.ConnectionError("connection aborted"),
+            FakeResponse(completion('{"ok": true}')),
+        ],
     )
 
-    with pytest.raises(LLMError, match="LLM HTTP 429: rate limited"):
+    assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
+    assert len(captured["calls"]) == 2
+    assert sleep_calls == [2.0]
+    assert llm.last_call_metadata["attempts_used"] == 2
+    first_attempt = llm.last_call_metadata["attempts"][0]
+    assert first_attempt["attempt_number"] == 1
+    assert first_attempt["max_attempts"] == 3
+    assert first_attempt["exception_class"] == "ConnectionError"
+    assert first_attempt["requested_model"] == "deepseek-chat"
+    assert first_attempt["max_tokens"] == 32768
+    assert first_attempt["will_retry"] is True
+    assert llm.last_call_metadata["attempts"][1]["http_status"] == 200
+
+
+def test_two_ssl_errors_then_success(monkeypatch):
+    sleep_calls = []
+    monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)
+    llm, captured = make_llm(
+        monkeypatch,
+        [
+            requests.exceptions.SSLError("first"),
+            requests.exceptions.SSLError("second"),
+            FakeResponse(completion('{"ok": true}')),
+        ],
+    )
+
+    assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
+    assert len(captured["calls"]) == 3
+    assert sleep_calls == [2.0, 4.0]
+    assert llm.last_call_metadata["attempts_used"] == 3
+
+
+def test_timeout_exhaustion_reports_attempts(monkeypatch):
+    sleep_calls = []
+    monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)
+    llm, captured = make_llm(
+        monkeypatch,
+        [
+            requests.exceptions.Timeout("first"),
+            requests.exceptions.Timeout("second"),
+            requests.exceptions.Timeout("third"),
+        ],
+    )
+
+    with pytest.raises(
+        LLMError,
+        match=r"failure_category=transport; attempts=3; final_exception_class=Timeout",
+    ):
         llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 3
+    assert sleep_calls == [2.0, 4.0]
+
+
+@pytest.mark.parametrize("status_code", [429, 500, 503])
+def test_retryable_http_status_then_success(monkeypatch, status_code):
+    sleep_calls = []
+    monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)
+    llm, captured = make_llm(
+        monkeypatch,
+        [
+            FakeResponse({}, status_code=status_code, text="retryable"),
+            FakeResponse(completion('{"ok": true}')),
+        ],
+    )
+
+    assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
+    assert len(captured["calls"]) == 2
+    assert sleep_calls == [2.0]
+    assert llm.last_call_metadata["attempts"][0]["http_status"] == status_code
+
+
+def test_retryable_http_exhaustion_reports_final_status(monkeypatch):
+    sleep_calls = []
+    monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)
+    llm, captured = make_llm(
+        monkeypatch,
+        [
+            FakeResponse({}, status_code=503, text="unavailable"),
+            FakeResponse({}, status_code=503, text="unavailable"),
+            FakeResponse({}, status_code=503, text="unavailable"),
+        ],
+    )
+
+    with pytest.raises(
+        LLMError,
+        match=r"failure_category=http_status; attempts=3; final_status=503",
+    ):
+        llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 3
+    assert sleep_calls == [2.0, 4.0]
+
+
+@pytest.mark.parametrize("status_code", [400, 401, 402, 422])
+def test_non_retryable_http_status_is_attempted_once(monkeypatch, status_code):
+    llm, captured = make_llm(
+        monkeypatch,
+        FakeResponse({}, status_code=status_code, text="not retryable"),
+    )
+
+    with pytest.raises(LLMError, match=rf"LLM HTTP {status_code}: not retryable"):
+        llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 1
 
 
 def test_fenced_json_remains_backward_compatible(monkeypatch):
@@ -165,10 +316,12 @@ def test_non_stop_finish_reasons_are_distinguished(
     finish_reason,
     message,
 ):
-    llm, _ = make_llm(
+    llm, captured = make_llm(
         monkeypatch,
         FakeResponse(completion("{}", finish_reason=finish_reason)),
     )
 
     with pytest.raises(LLMError, match=message):
         llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 1

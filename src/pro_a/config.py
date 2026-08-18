@@ -24,8 +24,10 @@ class LLMConfig:
     api_key_env: str = "PROA_LLM_API_KEY"
     model: str = "deepseek-chat"
     timeout_seconds: int = 120
+    max_retries: int = 2
+    retry_backoff_seconds: float = 2.0
     temperature: float = 0.1
-    max_output_tokens: int = 8192
+    max_output_tokens: int = 32768
     max_chunk_chars: int = 22000
     max_nodes_in_prompt: int = 500
 
