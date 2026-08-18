@@ -162,7 +162,9 @@ def test_stale_current_view_proposal_is_not_accepted(tmp_path: Path):
     assert db.one("SELECT COUNT(*) AS n FROM current_views")["n"] == 2
 
 
-def test_propagation_failure_after_commit_is_persisted_for_retry(tmp_path: Path):
+def test_propagation_failure_after_commit_is_persisted_as_terminal_failure(
+    tmp_path: Path,
+):
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("Propagation Source", "Theme")
     neighbor_id = db.add_node("Propagation Target", "Theme")
@@ -189,10 +191,13 @@ def test_propagation_failure_after_commit_is_persisted_for_retry(tmp_path: Path)
     assert result["view_id"]
     assert db.proposal(pid)["status"] == "accepted"
     assert db.one("SELECT COUNT(*) AS n FROM current_views")["n"] == 1
-    retry = db.one("SELECT status,last_error,attempts FROM impact_reviews WHERE node_id=?", (neighbor_id,))
-    assert retry["status"] == "retry"
-    assert "forced propagation failure" in retry["last_error"]
-    assert retry["attempts"] == 1
+    failed = db.one(
+        "SELECT status,last_error,attempts FROM impact_reviews WHERE node_id=?",
+        (neighbor_id,),
+    )
+    assert failed["status"] == "failed"
+    assert "forced propagation failure" in failed["last_error"]
+    assert failed["attempts"] == 1
 
 
 def test_ima_failure_after_commit_is_persisted_for_retry(tmp_path: Path):

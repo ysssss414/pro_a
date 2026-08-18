@@ -1,0 +1,112 @@
+{
+  "fixture_provenance": {
+    "run_id": "run_003",
+    "baseline_commit": "1027d2a25fb367f27c2d0ad8bc3765b198513aa4",
+    "source_artifacts": [
+      "workspace/r1_acceptance/run_003/logs/R1_LLM_CALLS.jsonl",
+      "workspace/r1_acceptance/run_003/R1_RUNTIME_RESULTS.jsonl",
+      "workspace/r1_acceptance/run_003/R1_RAW_RUNTIME_SNAPSHOT.json"
+    ],
+    "raw_response_content_saved": false,
+    "note": "run_003 persisted hashes, sizes, parse outcomes and exact validation errors, but not response bodies; cases below preserve the exact saved failure shape and metadata without copying or changing run_003."
+  },
+  "analyzer_cases": [
+    {
+      "call_id": "R1C_00014",
+      "source_id": "SRC_20260818_85ADDE96",
+      "source": "Rubin Ultra NVL576规格升级，互联环节迎量价齐升.docx",
+      "node_match_index": 11,
+      "validation_error": "Invalid LLM output at node_matches[11].evidence_excerpt: field is required"
+    },
+    {
+      "call_id": "R1C_00016",
+      "source_id": "SRC_20260818_681418DE",
+      "source": "拥抱AI算力新材料黄金周期20260812_原文.docx",
+      "node_match_index": 15,
+      "validation_error": "Invalid LLM output at node_matches[15].evidence_excerpt: field is required"
+    },
+    {
+      "call_id": "R1C_00025",
+      "source_id": "SRC_20260818_5BDF601E",
+      "source": "炬光科技20260812_原文.docx",
+      "node_match_index": 0,
+      "validation_error": "Invalid LLM output at node_matches[0].evidence_excerpt: field is required"
+    },
+    {
+      "call_id": "R1C_00032",
+      "source_id": "SRC_20260818_9C68BF75",
+      "source": "鹏鼎控股20260812_原文.docx",
+      "node_match_index": 2,
+      "validation_error": "Invalid LLM output at node_matches[2].evidence_excerpt: field is required"
+    }
+  ],
+  "impact_cases": [
+    {
+      "call_id": "R1C_00003",
+      "source_id": "SRC_20260818_E3F07A8E",
+      "impact_id": "IMP_20260818_8069C966",
+      "validation_error": "Current View major_risks cannot be empty"
+    },
+    {
+      "call_id": "R1C_00005",
+      "source_id": "SRC_20260818_E3F07A8E",
+      "impact_id": "IMP_20260818_C0B7B2FE",
+      "validation_error": "Current View major_risks[0] must preserve attribution for CLM_20260818_B228B8FE"
+    },
+    {
+      "call_id": "R1C_00010",
+      "source_id": "SRC_20260818_112DC75A",
+      "impact_id": "IMP_20260818_1DCA1966",
+      "validation_error": "Product Current View key_watch_items missing industry supply/demand"
+    },
+    {
+      "call_id": "R1C_00011",
+      "source_id": "SRC_20260818_112DC75A",
+      "impact_id": "IMP_20260818_C2D27E74",
+      "validation_error": "Current View investment_implication contains unsupported company/supplier(s): 硅微粉作为封装材料"
+    },
+    {
+      "call_id": "R1C_00020",
+      "source_id": "SRC_20260818_C33F2FA3",
+      "impact_id": "IMP_20260818_454BE8EE",
+      "validation_error": "Current View core_logic[0] must preserve attribution for CLM_20260818_0AE0AC9B"
+    },
+    {
+      "call_id": "R1C_00021",
+      "source_id": "SRC_20260818_C33F2FA3",
+      "impact_id": "IMP_20260818_BECE4CD2",
+      "validation_error": "Current View major_risks[0] must preserve attribution for CLM_20260818_85C008E6"
+    },
+    {
+      "call_id": "R1C_00024",
+      "source_id": "SRC_20260818_C33F2FA3",
+      "impact_id": "IMP_20260818_7B091CBE",
+      "validation_error": "Current View major_risks[0] must preserve attribution for CLM_20260818_894592A9"
+    },
+    {
+      "call_id": "R1C_00029",
+      "source_id": "SRC_20260818_A3158594",
+      "impact_id": "IMP_20260818_55AAFCB5",
+      "validation_error": "Current View core_logic[1] must retain at least one Claim ID"
+    },
+    {
+      "call_id": "R1C_00031",
+      "source_id": "SRC_20260818_A3158594",
+      "impact_id": "IMP_20260818_780DA3C6",
+      "validation_error": "Current View major_risks[0] must preserve attribution for CLM_20260818_6A8C3C1E"
+    }
+  ],
+  "length_case": {
+    "call_id": "R1C_00026",
+    "source_id": "SRC_20260818_61A92E1E",
+    "source": "联想集团20260814_原文.docx",
+    "stage": "source_analysis",
+    "attempt": 1,
+    "finish_reason": "length",
+    "prompt_tokens": 26176,
+    "completion_tokens": 32767,
+    "configured_max_tokens": 32768,
+    "content_length": 102211,
+    "raw_response_content_saved": false
+  }
+}

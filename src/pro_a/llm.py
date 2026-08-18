@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -49,6 +50,25 @@ def _extract_json(text: str) -> dict[str, Any]:
         if start >= 0 and end > start:
             return json.loads(text[start:end + 1])
         raise
+
+
+def _raw_json_syntax(text: str) -> dict[str, Any]:
+    stripped = text.strip()
+    if stripped.startswith("```"):
+        stripped = re.sub(r"^```(?:json)?\s*", "", stripped, flags=re.I)
+        stripped = re.sub(r"\s*```$", "", stripped)
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        return {
+            "raw_response_syntactically_parseable": False,
+            "raw_response_json_error": exc.msg,
+            "raw_response_json_error_position": exc.pos,
+        }
+    return {
+        "raw_response_syntactically_parseable": True,
+        "raw_response_json_type": type(parsed).__name__,
+    }
 
 
 class ChatLLM:
@@ -184,14 +204,35 @@ class ChatLLM:
         self._attempt_events[-1].update(
             response_model=data.get("model"),
             finish_reason=finish_reason,
+            prompt_tokens=(
+                usage.get("prompt_tokens") if isinstance(usage, dict) else None
+            ),
             completion_tokens=(
                 usage.get("completion_tokens") if isinstance(usage, dict) else None
             ),
+            total_tokens=(
+                usage.get("total_tokens") if isinstance(usage, dict) else None
+            ),
+            content_length=len(content),
+            content_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
+            **_raw_json_syntax(content),
         )
 
         details = _completion_details(data, choice, content)
         if finish_reason == "length":
-            raise LLMError(f"LLM output truncated: {details}")
+            self._attempt_events[-1].update(
+                result="output_truncation",
+                content_tail=content[-500:],
+            )
+            syntax = self._attempt_events[-1]
+            raise LLMError(
+                f"LLM output truncated: {details}; "
+                "failure_category=output_truncation; "
+                f"configured_max_tokens={self.cfg.max_output_tokens}; "
+                "raw_response_syntactically_parseable="
+                f"{syntax['raw_response_syntactically_parseable']}; "
+                f"content_tail={json.dumps(content[-500:], ensure_ascii=False)}"
+            )
         if finish_reason == "content_filter":
             raise LLMError(f"LLM JSON output blocked: {details}")
         if finish_reason == "insufficient_system_resource":

@@ -275,16 +275,23 @@ class ImpactRecoveryService:
         evidence: list[dict[str, Any]],
         context: dict[str, Any],
     ) -> dict[str, Any]:
-        user = IMPACT_USER.format(
-            node_json=json.dumps(node, ensure_ascii=False),
-            current_view=current_view_md or "<NO_CURRENT_VIEW>",
-            evidence_json=json.dumps(evidence, ensure_ascii=False),
-            context_json=json.dumps(context, ensure_ascii=False),
-            required_attributions_json=json.dumps(
-                context.get("required_claim_attributions") or {}, ensure_ascii=False
-            ),
+        if hasattr(self.analyzer, "llm"):
+            user = IMPACT_USER.format(
+                node_json=json.dumps(node, ensure_ascii=False),
+                current_view=current_view_md or "<NO_CURRENT_VIEW>",
+                evidence_json=json.dumps(evidence, ensure_ascii=False),
+                context_json=json.dumps(context, ensure_ascii=False),
+                required_attributions_json=json.dumps(
+                    context.get("required_claim_attributions") or {}, ensure_ascii=False
+                ),
+            )
+            return self.analyzer.llm.json(IMPACT_SYSTEM, user)
+        return self.analyzer.review_impact(
+            node,
+            current_view_md,
+            evidence,
+            context,
         )
-        return self.analyzer.llm.json(IMPACT_SYSTEM, user)
 
     def _repair(
         self,
@@ -314,7 +321,12 @@ class ImpactRecoveryService:
         candidate: dict[str, Any],
         evidence: list[dict[str, Any]],
     ) -> tuple[dict[str, Any], bool]:
-        result = self.analyzer._validate_impact_output(candidate, evidence)
+        validator = getattr(self.analyzer, "_validate_impact_output", None)
+        result = (
+            validator(candidate, evidence)
+            if callable(validator)
+            else copy.deepcopy(candidate)
+        )
         if not isinstance(result, dict):
             raise ValueError("Impact Review must return an object")
         level = result.get("change_level") or "none"
@@ -344,6 +356,31 @@ class ImpactRecoveryService:
         if requires_change:
             self.propagation._validate_current_view_quality(node, result, evidence)
         return result, requires_change
+
+    def _terminal_failure(
+        self,
+        impact_id: str,
+        error: str,
+        *,
+        failure_category: str,
+        validation_errors: list[str] | None = None,
+        **extra: Any,
+    ) -> dict[str, Any]:
+        self.db.execute(
+            """UPDATE impact_reviews
+               SET status='failed',last_error=?,evaluated_at=?
+               WHERE impact_id=?""",
+            (error, now_iso(), impact_id),
+        )
+        return {
+            "status": "failed",
+            "terminal": True,
+            "proposal_id": "",
+            "failure_category": failure_category,
+            "error": error,
+            "validation_errors": validation_errors or [],
+            **extra,
+        }
 
     def _finalize(
         self,
@@ -538,18 +575,12 @@ class ImpactRecoveryService:
                     validation_errors=validation_errors,
                     error_text=error,
                 )
-                self.db.execute(
-                    """UPDATE impact_reviews
-                       SET status='retry',last_error=?,evaluated_at=?
-                       WHERE impact_id=?""",
-                    (error, now_iso(), impact["impact_id"]),
+                return self._terminal_failure(
+                    impact["impact_id"],
+                    error,
+                    failure_category="llm_call_failure",
+                    replaced_proposal_id=proposal["proposal_id"],
                 )
-                return {
-                    "status": "retry",
-                    "proposal_id": "",
-                    "replaced_proposal_id": proposal["proposal_id"],
-                    "error": error,
-                }
 
             try:
                 result, requires_change = self._validate_candidate(
@@ -588,20 +619,14 @@ class ImpactRecoveryService:
             finalized["replaced_proposal_id"] = proposal["proposal_id"]
             return finalized
 
-        error = validation_errors[-1]
-        self.db.execute(
-            """UPDATE impact_reviews
-               SET status='retry',last_error=?,evaluated_at=?
-               WHERE impact_id=?""",
-            (error, now_iso(), impact["impact_id"]),
+        error = "; ".join(validation_errors)
+        return self._terminal_failure(
+            impact["impact_id"],
+            error,
+            failure_category="validation_exhausted",
+            validation_errors=validation_errors,
+            replaced_proposal_id=proposal["proposal_id"],
         )
-        return {
-            "status": "retry",
-            "proposal_id": "",
-            "replaced_proposal_id": proposal["proposal_id"],
-            "error": error,
-            "validation_errors": validation_errors,
-        }
 
     def retry(
         self,
@@ -615,6 +640,14 @@ class ImpactRecoveryService:
 
         impact = self._impact(impact_id)
         active = self._active_proposal(impact_id)
+        if impact.get("status") == "failed" and not active:
+            return {
+                "status": "failed",
+                "terminal": True,
+                "proposal_id": "",
+                "idempotent": True,
+                "error": impact.get("last_error") or "Impact Review failed",
+            }
         if replace_pending:
             if active and active.get("status") == "accepted":
                 return {
@@ -689,11 +722,11 @@ class ImpactRecoveryService:
         node = self.db.get_node(impact["node_id"])
         if not node:
             error = f"Target Node not found: {impact['node_id']}"
-            self.db.execute(
-                "UPDATE impact_reviews SET status='retry',last_error=?,evaluated_at=? WHERE impact_id=?",
-                (error, now_iso(), impact_id),
+            return self._terminal_failure(
+                impact_id,
+                error,
+                failure_category="target_node_missing",
             )
-            return {"status": "retry", "proposal_id": "", "error": error}
 
         claim_ids = context.get("claim_ids") or []
         evidence = self._evidence(impact, context)
@@ -732,13 +765,11 @@ class ImpactRecoveryService:
                     validation_errors=validation_errors,
                     error_text=error,
                 )
-                self.db.execute(
-                    """UPDATE impact_reviews
-                       SET status='retry',last_error=?,evaluated_at=?
-                       WHERE impact_id=?""",
-                    (error, now_iso(), impact_id),
+                return self._terminal_failure(
+                    impact_id,
+                    error,
+                    failure_category="llm_call_failure",
                 )
-                return {"status": "retry", "proposal_id": "", "error": error}
 
             candidate = round_candidate
             try:
@@ -757,20 +788,22 @@ class ImpactRecoveryService:
                     error_text="",
                 )
                 if repair_round < max_repairs:
+                    if not hasattr(self.analyzer, "llm"):
+                        error = "; ".join(validation_errors)
+                        return self._terminal_failure(
+                            impact_id,
+                            error,
+                            failure_category="validation_unrepairable",
+                            validation_errors=validation_errors,
+                        )
                     continue
-                error = validation_errors[-1]
-                self.db.execute(
-                    """UPDATE impact_reviews
-                       SET status='retry',last_error=?,evaluated_at=?
-                       WHERE impact_id=?""",
-                    (error, now_iso(), impact_id),
+                error = "; ".join(validation_errors)
+                return self._terminal_failure(
+                    impact_id,
+                    error,
+                    failure_category="validation_exhausted",
+                    validation_errors=validation_errors,
                 )
-                return {
-                    "status": "retry",
-                    "proposal_id": "",
-                    "error": error,
-                    "validation_errors": validation_errors,
-                }
 
             self._record_attempt(
                 impact_id=impact_id,

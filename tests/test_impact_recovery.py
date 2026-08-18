@@ -4,13 +4,22 @@ import copy
 import json
 from pathlib import Path
 
+import pytest
+
 from pro_a.analyzer import Analyzer
 from pro_a.cli import build_parser
 from pro_a.db import now_iso
 from pro_a.impact_recovery import ImpactRecoveryService
-from pro_a.propagation import PropagationManager
+from pro_a.propagation import CurrentViewValidationError, PropagationManager
 
 from stability_helpers import make_config
+
+
+RUN_003_INFRA_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "run_003_infrastructure_failures.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 class SequencedLLM:
@@ -19,9 +28,11 @@ class SequencedLLM:
     def __init__(self, outputs):
         self.outputs = [copy.deepcopy(item) for item in outputs]
         self.calls = 0
+        self.requests = []
 
     def json(self, system, user):
         self.calls += 1
+        self.requests.append({"system": system, "user": user})
         if not self.outputs:
             raise AssertionError("Unexpected extra LLM call")
         return copy.deepcopy(self.outputs.pop(0))
@@ -253,6 +264,91 @@ def test_retry_repairs_invalid_candidate_and_keeps_proposal_pending(tmp_path: Pa
     )
 
 
+def test_propagation_validation_failure_enters_repair_path_with_full_context(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    node_id = db.add_node("MLCC", "Product", ["多层陶瓷电容器"])
+    claim_ids = add_mlcc_evidence(db, node_id)
+    invalid = valid_initial_result(claim_ids)
+    invalid["proposed_current_view"]["one_line_conclusion"] = (
+        "MLCC行业已经确认进入长期上行周期。"
+    )
+    repaired = valid_initial_result(claim_ids)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = SequencedLLM([invalid, repaired])
+    manager = PropagationManager(cfg, db, analyzer)
+
+    result = manager.evaluate_node(
+        batch_id="BATCH_RUN_003_RETRY",
+        trigger_type="source",
+        trigger_id="SRC_MLCC",
+        node_id=node_id,
+        path_type="direct",
+        claim_ids=claim_ids,
+        trigger_source_id="SRC_MLCC",
+    )
+
+    assert result["status"] == "proposed"
+    impact = db.one(
+        "SELECT * FROM impact_reviews WHERE batch_id='BATCH_RUN_003_RETRY'"
+    )
+    assert impact["status"] == "proposed"
+    assert impact["attempts"] == 1
+    audit = db.all(
+        "SELECT * FROM impact_attempt_audit WHERE impact_id=? ORDER BY repair_round",
+        (impact["impact_id"],),
+    )
+    assert [row["phase"] for row in audit] == ["initial", "repair"]
+    assert len(analyzer.llm.requests) == 2
+    repair_request = analyzer.llm.requests[1]["user"]
+    assert "SRC_MLCC" in repair_request
+    assert "CLM_PRICE" in repair_request
+    assert "MLCC行业已经确认进入长期上行周期" in repair_request
+    assert "single-company Evidence scope" in repair_request
+
+
+@pytest.mark.parametrize(
+    "case",
+    RUN_003_INFRA_FIXTURE["impact_cases"],
+    ids=lambda case: case["call_id"],
+)
+def test_run_003_impact_validation_failures_repair_to_terminal_success(
+    tmp_path: Path, monkeypatch, case: dict
+):
+    cfg, db, analyzer, impact_id, claim_ids = setup_impact(tmp_path)
+    candidate = valid_initial_result(claim_ids)
+    analyzer.llm = SequencedLLM([candidate, candidate])
+    validation_calls = 0
+
+    def fail_once(_manager, _node, _result, _evidence):
+        nonlocal validation_calls
+        validation_calls += 1
+        if validation_calls == 1:
+            raise CurrentViewValidationError([case["validation_error"]])
+
+    monkeypatch.setattr(
+        PropagationManager,
+        "_validate_current_view_quality",
+        fail_once,
+    )
+
+    result = PropagationManager(cfg, db, analyzer)._evaluate_impact_row(impact_id)
+
+    assert result["status"] == "proposed"
+    impact = db.one("SELECT * FROM impact_reviews WHERE impact_id=?", (impact_id,))
+    assert impact["status"] == "proposed"
+    assert impact["attempts"] == 1
+    audit = db.all(
+        "SELECT * FROM impact_attempt_audit WHERE impact_id=? ORDER BY repair_round",
+        (impact_id,),
+    )
+    assert len(audit) == 2
+    assert json.loads(audit[0]["validation_errors_json"]) == [
+        case["validation_error"]
+    ]
+    assert json.loads(audit[1]["validation_errors_json"]) == []
+    assert analyzer.llm.calls == 2
+
+
 def test_retry_is_idempotent_after_proposal_creation(tmp_path: Path):
     cfg, db, analyzer, impact_id, claim_ids = setup_impact(tmp_path)
     analyzer.llm = SequencedLLM([valid_initial_result(claim_ids)])
@@ -276,7 +372,9 @@ def test_retry_is_idempotent_after_proposal_creation(tmp_path: Path):
     assert analyzer.llm.calls == 1
 
 
-def test_failed_repairs_remain_retry_and_never_bypass_validator(tmp_path: Path):
+def test_failed_repairs_end_in_explicit_terminal_failure_and_never_bypass_validator(
+    tmp_path: Path,
+):
     cfg, db, analyzer, impact_id, claim_ids = setup_impact(tmp_path)
     invalid = valid_initial_result(claim_ids)
     invalid["proposed_current_view"]["one_line_conclusion"] = (
@@ -287,15 +385,22 @@ def test_failed_repairs_remain_retry_and_never_bypass_validator(tmp_path: Path):
 
     result = recovery.retry(impact_id, max_repairs=2)
 
-    assert result["status"] == "retry"
+    assert result["status"] == "failed"
+    assert result["terminal"] is True
     assert db.one("SELECT COUNT(*) AS n FROM proposals WHERE source_impact_id=?", (impact_id,))["n"] == 0
     assert db.one("SELECT COUNT(*) AS n FROM current_views WHERE status='official'")["n"] == 0
     impact = db.one("SELECT * FROM impact_reviews WHERE impact_id=?", (impact_id,))
-    assert impact["status"] == "retry"
+    assert impact["status"] == "failed"
     assert "single-company Evidence scope" in impact["last_error"]
     assert db.one(
         "SELECT COUNT(*) AS n FROM impact_attempt_audit WHERE impact_id=?", (impact_id,)
     )["n"] == 3
+
+    second = recovery.retry(impact_id, max_repairs=2)
+    assert second["status"] == "failed"
+    assert second["terminal"] is True
+    assert second["idempotent"] is True
+    assert analyzer.llm.calls == 3
 
 
 def test_impacts_cli_exposes_show_and_retry():

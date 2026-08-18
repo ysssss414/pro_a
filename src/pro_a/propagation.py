@@ -7,7 +7,6 @@ from typing import Any
 
 from .analyzer import Analyzer, attribution_subjects, canonicalize_text
 from .config import AppConfig
-from .constants import CHANGE_LEVELS
 from .db import CURRENT_VIEW_ORDER, Database, now_iso
 from .ids import make_id
 from .receipts import write_proposal
@@ -943,111 +942,24 @@ class PropagationManager:
         try:
             return self._evaluate_impact_row(impact_id)
         except Exception as exc:
-            self._mark_retry(impact_id, exc)
-            return {"status": "retry", "proposal_id": "", "gaps": [], "rq_proposals": [], "error": str(exc)}
+            self._mark_failed(impact_id, exc)
+            return {
+                "status": "failed", "terminal": True, "proposal_id": "",
+                "gaps": [], "rq_proposals": [], "error": str(exc),
+            }
 
-    def _mark_retry(self, impact_id: str, exc: Exception) -> None:
+    def _mark_failed(self, impact_id: str, exc: Exception) -> None:
         self.db.execute(
-            "UPDATE impact_reviews SET status='retry',last_error=?,evaluated_at=? WHERE impact_id=?",
+            "UPDATE impact_reviews SET status='failed',last_error=?,evaluated_at=? WHERE impact_id=?",
             (str(exc), now_iso(), impact_id),
         )
 
     def _evaluate_impact_row(self, impact_id: str) -> dict[str, Any]:
-        impact = self.db.one("SELECT * FROM impact_reviews WHERE impact_id=?", (impact_id,))
-        if not impact:
-            raise KeyError(impact_id)
-        context = json.loads(impact.get("payload_json") or impact.get("reason") or "{}")
-        node = self.db.get_node(impact["node_id"])
-        current = self.db.current_view(impact["node_id"])
-        claim_ids = context.get("claim_ids") or []
-        evidence = self._claims(claim_ids)
-        if context.get("propagated_change"):
-            evidence.append({"propagated_change": context["propagated_change"]})
+        from .impact_recovery import ImpactRecoveryService
 
-        self.db.execute("UPDATE impact_reviews SET attempts=attempts+1,last_error='' WHERE impact_id=?", (impact_id,))
-        if not self.analyzer.available:
-            self.db.execute(
-                "UPDATE impact_reviews SET status='needs_llm',evaluated_at=? WHERE impact_id=?",
-                (now_iso(), impact_id),
-            )
-            return {"status": "needs_llm", "proposal_id": "", "gaps": [], "rq_proposals": []}
-
-        profile = self._evidence_profile(evidence)
-        required_attributions = {
-            item["claim_id"]: {
-                "nature": item.get("nature") or "",
-                "attributed_to": item.get("attributed_to") or "",
-                "required_subject": (
-                    attribution_subjects(str(item.get("attributed_to") or "")) or [""]
-                )[-1],
-            }
-            for item in evidence
-            if item.get("claim_id")
-            and item.get("attributed_to")
-            and (
-                item.get("nature") in JUDGMENT_NATURES
-                or bool(self._company_subject(item))
-            )
-        }
-        context = {
-            **context,
-            "evidence_profile": profile,
-            "required_claim_attributions": required_attributions,
-        }
-        result = self.analyzer.review_impact(node, current["content_md"] if current else "", evidence, context)
-        if not isinstance(result, dict):
-            raise ValueError("Impact Review must return an object")
-        level = result.get("change_level") or "none"
-        if level not in {*CHANGE_LEVELS, "none"}:
-            raise ValueError(f"Invalid Impact Review change_level: {level}")
-        if not isinstance(result.get("requires_change"), bool):
-            raise ValueError("Impact Review requires_change must be boolean")
-        proposal_id = ""
-        level = result.get("change_level")
-        requires_change = bool(result.get("requires_change")) and level not in (None, "", "none")
-        self._apply_initial_evidence_profile(result, evidence)
-        semantic_sufficiency = result.get("evidence_sufficiency") or {}
-        program_sufficient, program_reason = self._programmatic_evidence_sufficiency(
-            level, evidence, semantic_sufficiency,
-        )
-        result["programmatic_evidence_sufficiency"] = {
-            "sufficient": program_sufficient,
-            "reason": program_reason,
-        }
-        if level in {"initial", "material", "thesis"} and (
-            semantic_sufficiency.get("sufficient") is False or not program_sufficient
-        ):
-            requires_change = False
-        if requires_change:
-            self._validate_current_view_quality(node, result, evidence)
-
-        gaps = []
-        if self.cfg.pipeline.create_gaps_automatically:
-            for gap in result.get("knowledge_gaps") or []:
-                gid = self._create_gap(node["node_id"], gap)
-                if gid:
-                    gaps.append(gid)
-
-        rq_pids = []
-        for candidate in result.get("research_question_candidates") or []:
-            pid = self._create_rq_candidate(candidate, node["node_id"], claim_ids, impact["batch_id"])
-            if pid:
-                rq_pids.append(pid)
-        if requires_change:
-            proposal_id = self._create_current_view_proposal(
-                node["node_id"], result, claim_ids, context.get("trigger_source_id", ""),
-                impact["batch_id"], context, impact_id,
-            )
-            status = "proposed"
-        else:
-            status = "no_change"
-        self.db.execute(
-            """UPDATE impact_reviews SET status=?,result_change_level=?,proposal_id=?,reason=?,
-               last_error='',evaluated_at=? WHERE impact_id=?""",
-            (status, result.get("change_level", "none"), proposal_id,
-             json.dumps({"context": context, "result": result}, ensure_ascii=False), now_iso(), impact_id),
-        )
-        return {"status": status, "proposal_id": proposal_id, "gaps": gaps, "rq_proposals": rq_pids, "result": result}
+        return ImpactRecoveryService(
+            self.cfg, self.db, self.analyzer
+        ).retry(impact_id, max_repairs=2)
 
     def enqueue_from_accepted_view(
         self, conn: sqlite3.Connection, view: dict[str, Any], proposal_payload: dict[str, Any], batch_id: str,
@@ -1120,8 +1032,8 @@ class PropagationManager:
             try:
                 result = self._evaluate_impact_row(row["impact_id"])
             except Exception as exc:
-                self._mark_retry(row["impact_id"], exc)
-                return
+                self._mark_failed(row["impact_id"], exc)
+                continue
             if result.get("status") in {"proposed", "needs_llm", "retry"}:
                 return
 
