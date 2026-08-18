@@ -982,6 +982,91 @@ def test_missing_evidence_staging_row_cannot_create_relation_proposal(tmp_path: 
     assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
 
 
+def test_ambiguous_present_and_missing_rows_do_not_trigger_missing_evidence_gate(
+    tmp_path: Path,
+):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    text = (
+        "edge_id,from_name,relation_type,to_name,evidence_status\n"
+        "R1F_0001,Rubin GPU,uses,HBM4,present\n"
+        "R1F_0002,Rubin GPU,uses,HBM4,missing\n"
+    )
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(
+        claims=[claim("Rubin GPU uses HBM4.", "Rubin GPU,uses,HBM4")],
+        relation_candidates=[candidate(from_node_id, to_node_id)],
+    ))
+
+    result = analyzer.analyze_source("ambiguous.csv", text, "standard")
+
+    assert len(result.relation_candidates) == 1
+    assert all(
+        item["reason"] != "supporting Claim source row marks relation Evidence missing"
+        for item in result.rejected_relation_candidates
+    )
+
+
+def test_multiple_matching_missing_rows_trigger_missing_evidence_gate(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    text = (
+        "edge_id,from_name,relation_type,to_name,evidence_status\n"
+        "R1F_0001,Rubin GPU,uses,HBM4,missing\n"
+        "R1F_0002,Rubin GPU,uses,HBM4,missing\n"
+    )
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(
+        claims=[claim("Rubin GPU uses HBM4.", "Rubin GPU,uses,HBM4")],
+        relation_candidates=[candidate(from_node_id, to_node_id)],
+    ))
+
+    result = analyzer.analyze_source("all-missing.csv", text, "standard")
+
+    assert result.relation_candidates == []
+    rejection = result.rejected_relation_candidates[0]
+    assert rejection["stage"] == "evidence"
+    assert rejection["reason"] == "supporting Claim source row marks relation Evidence missing"
+
+
+def test_quoted_csv_row_preserves_missing_evidence_identity(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    text = (
+        "edge_id,from_name,relation_type,to_name,notes,evidence_status\n"
+        'R1F_0003,"Rubin GPU, platform",uses,HBM4,"foo, bar",missing\n'
+    )
+    excerpt = 'R1F_0003,"Rubin GPU, platform",uses,HBM4,"foo, bar"'
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(
+        claims=[claim("Rubin GPU uses HBM4.", excerpt)],
+        relation_candidates=[candidate(from_node_id, to_node_id)],
+    ))
+
+    result = analyzer.analyze_source("quoted.csv", text, "standard")
+
+    assert result.relation_candidates == []
+    rejection = result.rejected_relation_candidates[0]
+    assert rejection["stage"] == "evidence"
+    assert rejection["reason"] == "supporting Claim source row marks relation Evidence missing"
+
+
+def test_normal_prose_without_evidence_status_keeps_relation_candidate(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    text = "NVIDIA Rubin GPU uses HBM4."
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(
+        claims=[claim(text, text)],
+        relation_candidates=[candidate(from_node_id, to_node_id)],
+    ))
+
+    result = analyzer.analyze_source("normal.md", text, "standard")
+
+    assert len(result.relation_candidates) == 1
+    assert result.rejected_relation_candidates == []
+
+
 def test_mock_llm_negative_sample_creates_no_relation_proposal(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     from_node_id, to_node_id = relation_nodes(db)
