@@ -1,12 +1,24 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+import time
 from typing import Any
 
 import requests
 
 from .config import LLMConfig
+
+
+logger = logging.getLogger(__name__)
+
+_RETRYABLE_STATUS_CODES = {429, 500, 503}
+_RETRYABLE_EXCEPTIONS = (
+    requests.exceptions.SSLError,
+    requests.exceptions.ConnectionError,
+    requests.exceptions.Timeout,
+)
 
 
 class LLMError(RuntimeError):
@@ -42,12 +54,57 @@ def _extract_json(text: str) -> dict[str, Any]:
 class ChatLLM:
     def __init__(self, cfg: LLMConfig):
         self.cfg = cfg
+        self._attempt_events: list[dict[str, Any]] = []
+
+    @property
+    def last_call_metadata(self) -> dict[str, Any]:
+        return {
+            "attempts_used": len(self._attempt_events),
+            "max_attempts": 1 + self.cfg.max_retries,
+            "attempts": [dict(event) for event in self._attempt_events],
+        }
 
     @property
     def available(self) -> bool:
         return bool(self.cfg.enabled and self.cfg.api_key and self.cfg.base_url and self.cfg.model)
 
+    def _record_attempt(
+        self,
+        attempt_number: int,
+        *,
+        http_status: int | None = None,
+        exception_class: str | None = None,
+        will_retry: bool = False,
+    ) -> None:
+        event = {
+            "attempt_number": attempt_number,
+            "max_attempts": 1 + self.cfg.max_retries,
+            "requested_model": self.cfg.model,
+            "max_tokens": self.cfg.max_output_tokens,
+            "http_status": http_status,
+            "exception_class": exception_class,
+            "will_retry": will_retry,
+        }
+        self._attempt_events.append(event)
+        log = logger.warning if will_retry else logger.info
+        log(
+            "LLM attempt: attempt_number=%s max_attempts=%s "
+            "exception_class=%s http_status=%s requested_model=%s max_tokens=%s "
+            "will_retry=%s",
+            attempt_number,
+            event["max_attempts"],
+            exception_class,
+            http_status,
+            self.cfg.model,
+            self.cfg.max_output_tokens,
+            will_retry,
+        )
+
+    def _sleep_before_retry(self, attempt_number: int) -> None:
+        time.sleep(self.cfg.retry_backoff_seconds * (2 ** (attempt_number - 1)))
+
     def json(self, system: str, user: str) -> dict[str, Any]:
+        self._attempt_events = []
         if not self.available:
             raise LLMError("LLM is disabled or API key is missing")
         endpoint = self.cfg.base_url.rstrip("/")
@@ -64,9 +121,51 @@ class ChatLLM:
             "max_tokens": self.cfg.max_output_tokens,
         }
         headers = {"Authorization": f"Bearer {self.cfg.api_key}", "Content-Type": "application/json"}
-        resp = requests.post(endpoint, headers=headers, json=payload, timeout=self.cfg.timeout_seconds)
-        if resp.status_code >= 400:
-            raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
+        max_attempts = 1 + self.cfg.max_retries
+        for attempt_number in range(1, max_attempts + 1):
+            try:
+                resp = requests.post(
+                    endpoint,
+                    headers=headers,
+                    json=payload,
+                    timeout=self.cfg.timeout_seconds,
+                )
+            except _RETRYABLE_EXCEPTIONS as e:
+                will_retry = attempt_number < max_attempts
+                self._record_attempt(
+                    attempt_number,
+                    exception_class=type(e).__name__,
+                    will_retry=will_retry,
+                )
+                if will_retry:
+                    self._sleep_before_retry(attempt_number)
+                    continue
+                raise LLMError(
+                    "LLM transport failure: failure_category=transport; "
+                    f"attempts={attempt_number}; final_exception_class={type(e).__name__}: {e}"
+                ) from e
+
+            will_retry = (
+                resp.status_code in _RETRYABLE_STATUS_CODES
+                and attempt_number < max_attempts
+            )
+            self._record_attempt(
+                attempt_number,
+                http_status=resp.status_code,
+                will_retry=will_retry,
+            )
+            if will_retry:
+                self._sleep_before_retry(attempt_number)
+                continue
+            if resp.status_code in _RETRYABLE_STATUS_CODES:
+                raise LLMError(
+                    "LLM HTTP retry exhausted: failure_category=http_status; "
+                    f"attempts={attempt_number}; final_status={resp.status_code}: {resp.text[:1000]}"
+                )
+            if resp.status_code >= 400:
+                raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
+            break
+
         try:
             data = resp.json()
         except ValueError as e:
@@ -80,6 +179,15 @@ class ChatLLM:
 
         if not isinstance(content, str):
             raise LLMError(f"Unexpected LLM response: {data}")
+
+        usage = data.get("usage")
+        self._attempt_events[-1].update(
+            response_model=data.get("model"),
+            finish_reason=finish_reason,
+            completion_tokens=(
+                usage.get("completion_tokens") if isinstance(usage, dict) else None
+            ),
+        )
 
         details = _completion_details(data, choice, content)
         if finish_reason == "length":
@@ -105,4 +213,5 @@ class ChatLLM:
             ) from e
         if not isinstance(parsed, dict):
             raise LLMError(f"LLM returned non-object JSON content: {details}")
+        self._attempt_events[-1]["result"] = "success"
         return parsed

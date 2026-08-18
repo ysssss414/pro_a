@@ -8,8 +8,10 @@ base_url = "https://api.deepseek.com"
 api_key_env = "PROA_LLM_API_KEY"
 model = "deepseek-chat"
 timeout_seconds = 120
+max_retries = 2
+retry_backoff_seconds = 2.0
 temperature = 0.1
-max_output_tokens = 8192
+max_output_tokens = 32768
 max_chunk_chars = 22000
 max_nodes_in_prompt = 500
 
