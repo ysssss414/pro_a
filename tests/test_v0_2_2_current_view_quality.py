@@ -336,7 +336,7 @@ def test_independence_uses_underlying_source_not_claim_or_wrapper_source_count(t
 def test_invalid_initial_view_quality_cannot_create_proposal(tmp_path: Path, mutator):
     db, reviewed = evaluate(tmp_path, mutator)
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert reviewed["proposal_id"] == ""
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -452,7 +452,7 @@ def test_product_application_requires_explicit_application_evidence(tmp_path: Pa
 
     db, reviewed = evaluate(tmp_path, infer_application_from_demand)
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert reviewed["proposal_id"] == ""
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -475,7 +475,7 @@ def test_data_claim_excerpt_cannot_support_actual_and_future_current_view(tmp_pa
         ],
     )
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert "future statement requires a guidance/forecast Claim" in reviewed["error"]
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -515,7 +515,7 @@ def test_supply_capacity_cannot_drop_paired_future_guidance(tmp_path: Path):
         ],
     )
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert "must retain paired Guidance Claim" in reviewed["error"]
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -528,7 +528,7 @@ def test_mlcc_revenue_claim_cannot_infer_major_supplier_identity(tmp_path: Path)
 
     db, reviewed = evaluate(tmp_path, infer_supplier_from_revenue)
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert "lacks explicit supplier identity Evidence" in reviewed["error"]
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -541,7 +541,7 @@ def test_single_company_sample_rejects_unsupported_price_war_inference(tmp_path:
 
     db, reviewed = evaluate(tmp_path, add_price_war_inference)
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert "unsupported causal inference" in reviewed["error"]
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 
@@ -554,7 +554,7 @@ def test_major_risk_cannot_disguise_unsupported_causality_as_watch_item(tmp_path
 
     db, reviewed = evaluate(tmp_path, disguise_price_war_inference)
 
-    assert reviewed["status"] == "retry"
+    assert reviewed["status"] == "failed"
     assert "unsupported causal inference" in reviewed["error"]
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
 

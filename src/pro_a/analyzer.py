@@ -833,9 +833,8 @@ class Analyzer:
             match["role"] = role
             model_confidence = self._confidence(match, path)
             excerpt = match.get("evidence_excerpt")
-            if not isinstance(excerpt, str) or not normalize_ws(excerpt):
-                self._invalid(f"{path}.evidence_excerpt", "field is required")
-            validation = evidence_match(excerpt, full_text)
+            excerpt_present = isinstance(excerpt, str) and bool(normalize_ws(excerpt))
+            validation = evidence_match(excerpt if excerpt_present else "", full_text)
             excerpt_located = validation["evidence_validated"]
             node = self.db.get_node(node_id) or {}
             node_terms = [node.get("canonical_name") or "", *(node.get("aliases") or [])]
@@ -848,12 +847,15 @@ class Analyzer:
             validation["node_name_or_alias_found"] = node_name_or_alias_found
             validation["evidence_validated"] = excerpt_located and node_name_or_alias_found
             validation["model_confidence"] = model_confidence
-            validation["errors"] = (
-                [] if validation["evidence_validated"] else [
+            if not excerpt_present:
+                validation["errors"] = ["evidence_excerpt_missing"]
+            elif validation["evidence_validated"]:
+                validation["errors"] = []
+            else:
+                validation["errors"] = [
                     "node_name_or_alias_not_in_evidence"
                     if excerpt_located else "evidence_excerpt_not_found"
                 ]
-            )
             match["evidence_validated"] = validation["evidence_validated"]
             match["validation"] = validation
 
@@ -1165,15 +1167,46 @@ class Analyzer:
         next_relation_claim_ref = 1
         seen_matches: set[str] = set()
         seen_candidates: set[str] = set()
+        raw_outputs: list[dict[str, Any]] = []
         for idx, chunk in enumerate(chunks, 1):
-            user = SOURCE_ANALYSIS_USER.format(
-                mode=mode,
-                filename=filename,
-                nodes_json=catalog_json,
-                text=f"[[CHUNK:{idx}/{len(chunks)}]]\n{chunk}",
-            )
-            data = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user)
-            data = self._validate_source_output(data, text)
+            def analyze_piece(
+                piece: str, split_path: str = "", split_depth: int = 0
+            ) -> list[dict[str, Any]]:
+                split_marker = (
+                    f"\n[[TRUNCATION_SPLIT:{split_path}]]" if split_path else ""
+                )
+                user = SOURCE_ANALYSIS_USER.format(
+                    mode=mode,
+                    filename=filename,
+                    nodes_json=catalog_json,
+                    text=(
+                        f"[[CHUNK:{idx}/{len(chunks)}]]{split_marker}\n{piece}"
+                    ),
+                )
+                try:
+                    return [self.llm.json(SOURCE_ANALYSIS_SYSTEM, user)]
+                except LLMError as exc:
+                    is_truncation = "failure_category=output_truncation" in str(exc)
+                    if not is_truncation or split_depth >= 3:
+                        raise
+                    pieces = chunk_text(piece, max(2000, (len(piece) + 1) // 2))
+                    if len(pieces) < 2:
+                        raise
+                    recovered: list[dict[str, Any]] = []
+                    for split_index, subpiece in enumerate(pieces, 1):
+                        child_path = (
+                            f"{split_path}.{split_index}"
+                            if split_path else str(split_index)
+                        )
+                        recovered.extend(
+                            analyze_piece(subpiece, child_path, split_depth + 1)
+                        )
+                    return recovered
+
+            raw_outputs.extend(analyze_piece(chunk))
+
+        for idx, raw_data in enumerate(raw_outputs, 1):
+            data = self._validate_source_output(raw_data, text)
             if idx == 1:
                 merged["source_metadata"] = data.get("source_metadata") or {}
             for m in data.get("node_matches") or []:

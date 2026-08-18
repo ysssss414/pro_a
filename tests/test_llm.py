@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import pytest
 import requests
 
@@ -23,6 +26,7 @@ def completion(
     finish_reason: str = "stop",
     model: str = "deepseek-chat",
     completion_tokens: int = 3,
+    prompt_tokens: int | None = None,
 ) -> dict:
     return {
         "choices": [
@@ -32,7 +36,10 @@ def completion(
             }
         ],
         "model": model,
-        "usage": {"completion_tokens": completion_tokens},
+        "usage": {
+            "completion_tokens": completion_tokens,
+            **({"prompt_tokens": prompt_tokens} if prompt_tokens is not None else {}),
+        },
     }
 
 
@@ -137,6 +144,38 @@ def test_length_is_reported_as_truncation_before_parse(monkeypatch):
         llm.json("Return JSON.", "synthetic input")
 
     assert len(captured["calls"]) == 1
+
+
+def test_run_003_length_completion_records_parseability_tail_and_limits(monkeypatch):
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures" / "run_003_infrastructure_failures.json").read_text(
+            encoding="utf-8"
+        )
+    )["length_case"]
+    partial = '{"node_matches": [{"node_id": "NODE_X"}'
+    llm, captured = make_llm(
+        monkeypatch,
+        FakeResponse(completion(
+            partial,
+            finish_reason=fixture["finish_reason"],
+            completion_tokens=fixture["completion_tokens"],
+            prompt_tokens=fixture["prompt_tokens"],
+        )),
+        max_output_tokens=fixture["configured_max_tokens"],
+    )
+
+    with pytest.raises(LLMError, match="failure_category=output_truncation"):
+        llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 1
+    attempt = llm.last_call_metadata["attempts"][0]
+    assert attempt["finish_reason"] == "length"
+    assert attempt["prompt_tokens"] == fixture["prompt_tokens"]
+    assert attempt["completion_tokens"] == fixture["completion_tokens"]
+    assert attempt["max_tokens"] == fixture["configured_max_tokens"]
+    assert attempt["raw_response_syntactically_parseable"] is False
+    assert attempt["content_tail"] == partial
+    assert attempt["result"] == "output_truncation"
 
 
 def test_stop_with_empty_content_is_reported_explicitly(monkeypatch):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -32,6 +33,23 @@ class SequenceLLM:
         return self.payloads.pop(0)
 
 
+class TruncationThenLLM:
+    available = True
+
+    def __init__(self, payload):
+        self.payload = payload
+        self.users = []
+
+    def json(self, system, user):
+        self.users.append(user)
+        if len(self.users) == 1:
+            raise LLMError(
+                "LLM output truncated: finish_reason=length; "
+                "failure_category=output_truncation"
+            )
+        return self.payload
+
+
 def source_payload(*, matches=None, candidates=None, claims=None):
     return {
         "source_metadata": {
@@ -48,6 +66,13 @@ def source_payload(*, matches=None, candidates=None, claims=None):
         "claims": claims or [],
         "source_references": [],
     }
+
+
+RUN_003_INFRA_FIXTURE = json.loads(
+    (Path(__file__).parent / "fixtures" / "run_003_infrastructure_failures.json").read_text(
+        encoding="utf-8"
+    )
+)
 
 
 def claim(statement: str, excerpt: str, *, attributed_to: str = "昀冢科技", scope: str = "公司"):
@@ -207,6 +232,53 @@ def test_node_match_without_locatable_evidence_is_not_directly_linked(tmp_path: 
     assert result.rejected_node_matches[0]["validation"]["evidence_validated"] is False
     assert result.rejected_node_matches[0]["validation"]["excerpt_located"] is True
     assert result.rejected_node_matches[0]["validation"]["node_name_or_alias_found"] is False
+
+
+@pytest.mark.parametrize(
+    "case",
+    RUN_003_INFRA_FIXTURE["analyzer_cases"],
+    ids=lambda case: case["call_id"],
+)
+def test_run_003_node_match_without_evidence_is_safely_rejected(
+    tmp_path: Path, case: dict
+):
+    cfg, db = make_config(tmp_path)
+    node_id = db.add_node(f"fixture-{case['call_id']}", "Theme")
+    payload = source_payload(matches=[{
+        "node_id": node_id,
+        "role": "related",
+        "confidence": 0.8,
+        "reason": case["validation_error"],
+    }])
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(payload)
+
+    result = analyzer.analyze_source(case["source"], "unrelated fixture text", "standard")
+
+    assert result.node_matches == []
+    assert len(result.rejected_node_matches) == 1
+    rejected = result.rejected_node_matches[0]
+    assert rejected["node_id"] == node_id
+    assert rejected["evidence_validated"] is False
+    assert rejected["validation"]["errors"] == ["evidence_excerpt_missing"]
+
+
+def test_source_analysis_truncation_recovers_by_splitting_only_that_chunk(
+    tmp_path: Path,
+):
+    cfg, db = make_config(tmp_path)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = TruncationThenLLM(source_payload())
+    text = "x" * (cfg.llm.max_chunk_chars - 1)
+
+    result = analyzer.analyze_source("run_003_length_fixture.docx", text, "standard")
+
+    assert result.claims == []
+    assert len(analyzer.llm.users) == 3
+    assert "[[TRUNCATION_SPLIT:" not in analyzer.llm.users[0]
+    assert "[[TRUNCATION_SPLIT:1]]" in analyzer.llm.users[1]
+    assert "[[TRUNCATION_SPLIT:2]]" in analyzer.llm.users[2]
+    assert cfg.llm.max_output_tokens == 32768
 
 
 def test_claim_cannot_bypass_node_match_evidence_with_semantic_related_node(tmp_path: Path):
