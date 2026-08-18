@@ -25,6 +25,7 @@ class LLMConfig:
     model: str = "deepseek-chat"
     timeout_seconds: int = 120
     temperature: float = 0.1
+    max_output_tokens: int = 8192
     max_chunk_chars: int = 22000
     max_nodes_in_prompt: int = 500
 

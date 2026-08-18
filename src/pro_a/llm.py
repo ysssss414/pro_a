@@ -13,6 +13,17 @@ class LLMError(RuntimeError):
     pass
 
 
+def _completion_details(data: dict[str, Any], choice: dict[str, Any], content: str) -> str:
+    usage = data.get("usage")
+    completion_tokens = usage.get("completion_tokens", "unknown") if isinstance(usage, dict) else "unknown"
+    return (
+        f"finish_reason={choice['finish_reason']}; "
+        f"model={data.get('model', 'unknown')}; "
+        f"completion_tokens={completion_tokens}; "
+        f"content_length={len(content)}"
+    )
+
+
 def _extract_json(text: str) -> dict[str, Any]:
     text = text.strip()
     if text.startswith("```"):
@@ -49,17 +60,49 @@ class ChatLLM:
                 {"role": "user", "content": user},
             ],
             "temperature": self.cfg.temperature,
+            "response_format": {"type": "json_object"},
+            "max_tokens": self.cfg.max_output_tokens,
         }
         headers = {"Authorization": f"Bearer {self.cfg.api_key}", "Content-Type": "application/json"}
         resp = requests.post(endpoint, headers=headers, json=payload, timeout=self.cfg.timeout_seconds)
         if resp.status_code >= 400:
             raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
-        data = resp.json()
         try:
-            content = data["choices"][0]["message"]["content"]
-        except Exception as e:
+            data = resp.json()
+        except ValueError as e:
+            raise LLMError(f"Unexpected LLM response: invalid JSON body: {resp.text[:1000]}") from e
+        try:
+            choice = data["choices"][0]
+            finish_reason = choice["finish_reason"]
+            content = choice["message"]["content"]
+        except (KeyError, IndexError, TypeError) as e:
             raise LLMError(f"Unexpected LLM response: {data}") from e
+
+        if not isinstance(content, str):
+            raise LLMError(f"Unexpected LLM response: {data}")
+
+        details = _completion_details(data, choice, content)
+        if finish_reason == "length":
+            raise LLMError(f"LLM output truncated: {details}")
+        if finish_reason == "content_filter":
+            raise LLMError(f"LLM JSON output blocked: {details}")
+        if finish_reason == "insufficient_system_resource":
+            raise LLMError(f"LLM JSON output interrupted: {details}")
+        if finish_reason == "tool_calls":
+            raise LLMError(f"LLM returned tool calls instead of JSON content: {details}")
+        if finish_reason != "stop":
+            raise LLMError(f"Unexpected LLM finish_reason: {details}")
+        if not content.strip():
+            raise LLMError(f"LLM returned empty JSON content: {details}")
+
         try:
-            return _extract_json(content)
-        except Exception as e:
-            raise LLMError(f"LLM returned non-JSON content: {content[:2000]}") from e
+            parsed = _extract_json(content)
+        except json.JSONDecodeError as e:
+            raise LLMError(
+                f"LLM returned non-JSON content: {details}; "
+                f"JSONDecodeError: {e.msg} at position {e.pos}; "
+                f"content={content[:2000]}"
+            ) from e
+        if not isinstance(parsed, dict):
+            raise LLMError(f"LLM returned non-object JSON content: {details}")
+        return parsed
