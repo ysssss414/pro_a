@@ -19,11 +19,41 @@ _RETRYABLE_EXCEPTIONS = (
     requests.exceptions.SSLError,
     requests.exceptions.ConnectionError,
     requests.exceptions.Timeout,
+    requests.exceptions.ChunkedEncodingError,
+    ConnectionResetError,
+    ConnectionAbortedError,
 )
 
 
 class LLMError(RuntimeError):
     pass
+
+
+def _exception_chain(exc: BaseException) -> list[BaseException]:
+    pending: list[BaseException] = [exc]
+    chain: list[BaseException] = []
+    seen: set[int] = set()
+    while pending:
+        current = pending.pop(0)
+        if id(current) in seen:
+            continue
+        seen.add(id(current))
+        chain.append(current)
+        for linked in (current.__cause__, current.__context__):
+            if isinstance(linked, BaseException):
+                pending.append(linked)
+        values: list[Any] = list(current.args)
+        while values:
+            value = values.pop(0)
+            if isinstance(value, BaseException):
+                pending.append(value)
+            elif isinstance(value, (list, tuple)):
+                values.extend(value)
+    return chain
+
+
+def _is_retryable_transport_exception(exc: BaseException) -> bool:
+    return any(isinstance(item, _RETRYABLE_EXCEPTIONS) for item in _exception_chain(exc))
 
 
 def _completion_details(data: dict[str, Any], choice: dict[str, Any], content: str) -> str:
@@ -94,6 +124,7 @@ class ChatLLM:
         *,
         http_status: int | None = None,
         exception_class: str | None = None,
+        exception_chain: list[str] | None = None,
         will_retry: bool = False,
     ) -> None:
         event = {
@@ -103,6 +134,7 @@ class ChatLLM:
             "max_tokens": self.cfg.max_output_tokens,
             "http_status": http_status,
             "exception_class": exception_class,
+            "exception_chain": exception_chain or [],
             "will_retry": will_retry,
         }
         self._attempt_events.append(event)
@@ -150,19 +182,25 @@ class ChatLLM:
                     json=payload,
                     timeout=self.cfg.timeout_seconds,
                 )
-            except _RETRYABLE_EXCEPTIONS as e:
-                will_retry = attempt_number < max_attempts
+            except Exception as e:
+                retryable = _is_retryable_transport_exception(e)
+                will_retry = retryable and attempt_number < max_attempts
+                exception_chain = [type(item).__name__ for item in _exception_chain(e)]
                 self._record_attempt(
                     attempt_number,
                     exception_class=type(e).__name__,
+                    exception_chain=exception_chain,
                     will_retry=will_retry,
                 )
                 if will_retry:
                     self._sleep_before_retry(attempt_number)
                     continue
+                if not retryable:
+                    raise
                 raise LLMError(
                     "LLM transport failure: failure_category=transport; "
-                    f"attempts={attempt_number}; final_exception_class={type(e).__name__}: {e}"
+                    f"attempts={attempt_number}; final_exception_class={type(e).__name__}; "
+                    f"exception_chain={' -> '.join(exception_chain)}: {e}"
                 ) from e
 
             will_retry = (

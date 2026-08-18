@@ -239,6 +239,77 @@ def test_connection_error_then_success(monkeypatch):
     assert llm.last_call_metadata["attempts"][1]["http_status"] == 200
 
 
+def wrapped_reset_error() -> RuntimeError:
+    try:
+        raise ConnectionResetError(10054, "connection reset")
+    except ConnectionResetError as exc:
+        try:
+            raise RuntimeError("outer transport wrapper") from exc
+        except RuntimeError as wrapped:
+            return wrapped
+
+
+@pytest.mark.parametrize(
+    "transport_error",
+    [
+        ConnectionResetError(10054, "connection reset"),
+        wrapped_reset_error(),
+        requests.exceptions.ChunkedEncodingError(
+            "connection broken", ConnectionResetError(10054, "connection reset")
+        ),
+        ConnectionAbortedError(10053, "connection aborted"),
+    ],
+    ids=["direct-reset", "wrapped-reset", "chunked-nested-reset", "aborted"],
+)
+def test_transient_transport_exception_chain_retries_then_succeeds(
+    monkeypatch, transport_error
+):
+    monkeypatch.setattr("pro_a.llm.time.sleep", lambda _seconds: None)
+    llm, captured = make_llm(
+        monkeypatch,
+        [transport_error, FakeResponse(completion('{"ok": true}'))],
+    )
+
+    assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
+    assert len(captured["calls"]) == 2
+    first = llm.last_call_metadata["attempts"][0]
+    assert first["will_retry"] is True
+    assert "Connection" in " ".join(first["exception_chain"])
+
+
+def test_explicit_non_retriable_exception_is_not_retried(monkeypatch):
+    llm, captured = make_llm(monkeypatch, ValueError("local programming error"))
+
+    with pytest.raises(ValueError, match="local programming error"):
+        llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 1
+    assert llm.last_call_metadata["attempts_used"] == 1
+    assert llm.last_call_metadata["attempts"][0]["will_retry"] is False
+
+
+def test_chunked_connection_reset_retry_exhaustion_is_explicit_terminal_failure(monkeypatch):
+    monkeypatch.setattr("pro_a.llm.time.sleep", lambda _seconds: None)
+    failures = [
+        requests.exceptions.ChunkedEncodingError(
+            "connection broken", ConnectionResetError(10054, "connection reset")
+        )
+        for _ in range(3)
+    ]
+    llm, captured = make_llm(monkeypatch, failures)
+
+    with pytest.raises(
+        LLMError,
+        match=r"failure_category=transport; attempts=3;.*ChunkedEncodingError",
+    ):
+        llm.json("Return JSON.", "synthetic input")
+
+    assert len(captured["calls"]) == 3
+    assert [item["will_retry"] for item in llm.last_call_metadata["attempts"]] == [
+        True, True, False
+    ]
+
+
 def test_two_ssl_errors_then_success(monkeypatch):
     sleep_calls = []
     monkeypatch.setattr("pro_a.llm.time.sleep", sleep_calls.append)

@@ -202,6 +202,27 @@ Initial focus relation types:
 
 ## Acceptance decision
 
+### Runtime Validity Gate
+
+Runtime Validity answers whether the measurement infrastructure and execution are
+trustworthy. It does not grade whether model output is semantically correct.
+
+Terminal, fully audited semantic failures remain scoreable. These include Relation
+Candidate and Node Match rejection, zero valid Relations, and Impact validation
+failure after all configured repair rounds have actually executed. Attribution,
+Evidence, direction, unsupported-entity and required-field failures are semantic
+measurement outcomes when they have an explicit terminal state.
+
+Runtime Validity fails only when execution cannot reliably determine the model
+outcome, including transport exhaustion, parser/runtime crash, unresolved retry,
+missing audit or raw observability, code drift, Gold leakage, database or Source
+mutation, persistence/state-machine failure, or another unclassified execution
+failure. A configured recovery path that did not actually execute is also an
+infrastructure blocker.
+
+This classification does not reduce Relation, Evidence or Impact validation rules,
+and does not increase the configured number of repair rounds.
+
 ### REOPEN B.1
 
 If **Hard Failure > 0**.
