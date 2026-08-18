@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import copy
 import json
 import re
@@ -108,6 +109,32 @@ def evidence_match(excerpt: str, full_text: str) -> dict[str, Any]:
         "normalized_start": start,
         "normalized_end": start + len(normalized_excerpt) if validated else -1,
     }
+
+
+def missing_relation_evidence_rows(full_text: str) -> list[str]:
+    lines = (full_text or "").splitlines()
+    for delimiter in (",", "\t", "|", ";"):
+        try:
+            rows = list(csv.reader(lines, delimiter=delimiter))
+        except csv.Error:
+            continue
+        for header_index, header in enumerate(rows):
+            columns = [canonicalize_text(value).lstrip("\ufeff").lower() for value in header]
+            if "evidence_status" not in columns:
+                continue
+            status_index = columns.index("evidence_status")
+            return [
+                canonicalize_text(delimiter.join(row))
+                for row in rows[header_index + 1:]
+                if len(row) > status_index
+                and canonicalize_text(row[status_index]).lower() == "missing"
+            ]
+    return []
+
+
+def claim_uses_missing_relation_evidence(claim: dict[str, Any], rows: list[str]) -> bool:
+    excerpt = canonicalize_text(str(claim.get("evidence_excerpt") or ""))
+    return bool(excerpt) and any(excerpt in row for row in rows)
 
 
 def attribution_subjects(attributed_to: str) -> list[str]:
@@ -570,9 +597,10 @@ class Analyzer:
         ) == "supported"
 
     def _validate_relation_candidates(
-        self, raw_candidates: Any, claims: list[dict[str, Any]]
+        self, raw_candidates: Any, claims: list[dict[str, Any]], full_text: str = ""
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         candidates = self._list(raw_candidates or [], "relation_candidates")
+        missing_evidence_rows = missing_relation_evidence_rows(full_text)
         claim_by_ref: dict[str, list[tuple[int, dict[str, Any]]]] = {}
         for claim_index, claim in enumerate(claims):
             refs = [claim.get("claim_ref"), *(claim.get("_relation_claim_refs") or [])]
@@ -677,6 +705,15 @@ class Analyzer:
                 resolved = claim_by_ref.get(ref)
                 if not resolved:
                     resolution_error = f"unknown supporting_claim_ref: {ref}"
+                    break
+                if any(
+                    claim_uses_missing_relation_evidence(claim, missing_evidence_rows)
+                    for _, claim in resolved
+                ):
+                    resolution_error = (
+                        "supporting Claim source row marks relation Evidence missing"
+                    )
+                    resolution_stage = "evidence"
                     break
                 validated = [
                     (claim_index, claim) for claim_index, claim in resolved
@@ -937,7 +974,7 @@ class Analyzer:
             claim["rejected_related_node_links"] = rejected_node_links
 
         relation_candidates, rejected_relation_candidates = self._validate_relation_candidates(
-            data.get("relation_candidates") or [], claims,
+            data.get("relation_candidates") or [], claims, full_text,
         )
         data["relation_candidates"] = relation_candidates
         data["rejected_relation_candidates"] = rejected_relation_candidates
@@ -1187,7 +1224,7 @@ class Analyzer:
                 rejected_relation_candidates.append(normalized_rejection)
             merged["source_references"].extend(data.get("source_references") or [])
         merged["relation_candidates"], remap_rejections = self._validate_relation_candidates(
-            merged["relation_candidates"], merged["claims"],
+            merged["relation_candidates"], merged["claims"], text,
         )
         rejected_relation_candidates.extend(remap_rejections)
         return SourceAnalysis(

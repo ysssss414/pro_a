@@ -955,6 +955,33 @@ def test_mock_llm_positive_sample_creates_pending_relation_proposal(tmp_path: Pa
     assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
 
 
+def test_missing_evidence_staging_row_cannot_create_relation_proposal(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    from_node_id, to_node_id = relation_nodes(db)
+    text = (
+        "edge_id,from_name,relation_type,to_name,scope,evidence_required,"
+        "evidence_status,anchor_claim_id,review_status,notes\n"
+        "R1F_0002,Rubin GPU,uses,HBM4,,True,missing,,staged,\n"
+    )
+    evidence_excerpt = "R1F_0002,Rubin GPU,uses,HBM4"
+    pipeline = IngestionPipeline(cfg, db)
+    pipeline.analyzer.llm = StaticLLM(source_payload(
+        claims=[claim("Rubin GPU uses HBM4.", evidence_excerpt)],
+        relation_candidates=[candidate(from_node_id, to_node_id)],
+    ))
+    request = cfg.root / "inbox" / "standard" / "functional.csv"
+    request.write_text(text, encoding="utf-8")
+
+    result = pipeline.process_all()[0]
+
+    assert result["status"] == "analyzed", result.get("error")
+    assert result["relation_proposals"] == []
+    rejection = result["rejected_relation_candidates"][0]
+    assert rejection["stage"] == "evidence"
+    assert rejection["reason"] == "supporting Claim source row marks relation Evidence missing"
+    assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
+
+
 def test_mock_llm_negative_sample_creates_no_relation_proposal(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     from_node_id, to_node_id = relation_nodes(db)
