@@ -1,0 +1,146 @@
+{
+  "provenance": {
+    "run_id": "run_005",
+    "runtime_results_sha256": "da4b79a4e3239b437295f5e5a87ffaab91222f0a8e5e8266a48ed1af02cd13d9",
+    "llm_calls_sha256": "d9191ad4fe045d381074081d0b944beee9a43637f4aa3984b5e5ba09d98aad11",
+    "runtime_validity_sha256": "b7b204bf42fa5d86fff12da0d1a1ecb9c70146dfe4a8ea4df070dfeab8b3c637"
+  },
+  "unknown_node_cases": [
+    {
+      "source_number": 7,
+      "source": "炬光科技20260812_原文.docx",
+      "unknown_node_id": "NODE_20260817_7CC5B5D5",
+      "recorded_error": "Invalid LLM output at node_matches[8].node_id: unknown Node ID 'NODE_20260817_7CC5B5D5'"
+    },
+    {
+      "source_number": 10,
+      "source": "鹏鼎控股20260812_原文.docx",
+      "unknown_node_id": "NODE_20260817_3F4BD876",
+      "recorded_error": "Invalid LLM output at node_matches[10].node_id: unknown Node ID 'NODE_20260817_3F4BD876'"
+    }
+  ],
+  "impact_failures": [
+    {
+      "object_id": "IMP_20260818_4200E503",
+      "source_number": 3,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View one_line_conclusion contains unsupported company/supplier(s): 作为电子"
+    },
+    {
+      "object_id": "IMP_20260818_945EF664",
+      "source_number": 3,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View major_risks[0] must preserve attribution"
+    },
+    {
+      "object_id": "IMP_20260818_5A47AE9D",
+      "source_number": 3,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Product evolution future statement requires a guidance/forecast Claim"
+    },
+    {
+      "object_id": "IMP_20260818_68DA1978",
+      "source_number": 5,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View major_risks cannot be empty"
+    },
+    {
+      "object_id": "IMP_20260818_3FE2F855",
+      "source_number": 5,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View core_logic[2] must preserve attribution"
+    },
+    {
+      "object_id": "IMP_20260818_37BB666B",
+      "source_number": 5,
+      "category": "transport_failure",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 0,
+      "audit_complete": true,
+      "observability_complete": true,
+      "call_id": "R1C_00036",
+      "message": "ChunkedEncodingError wrapping ConnectionResetError(10054)"
+    },
+    {
+      "object_id": "IMP_20260818_18A6C2EE",
+      "source_number": 5,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View contains unsupported company/supplier fragments"
+    },
+    {
+      "object_id": "IMP_20260818_495E6063",
+      "source_number": 6,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View core_logic[0] must preserve attribution"
+    },
+    {
+      "object_id": "IMP_20260818_F3838BF0",
+      "source_number": 6,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Current View core_logic[1] must preserve attribution"
+    },
+    {
+      "object_id": "IMP_20260818_11BA0344",
+      "source_number": 6,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Product investment_implication must state product/industry implications"
+    },
+    {
+      "object_id": "IMP_20260818_1A0D50F7",
+      "source_number": 8,
+      "category": "impact_validation_exhausted",
+      "terminal": true,
+      "configured_recovery_attempts": 2,
+      "recovery_attempts_executed": 2,
+      "audit_complete": true,
+      "observability_complete": true,
+      "message": "Product Current View key_watch_items missing downstream demand"
+    }
+  ]
+}

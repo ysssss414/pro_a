@@ -821,12 +821,34 @@ class Analyzer:
         data["source_metadata"] = metadata
 
         matches = self._list(data.get("node_matches") or [], "node_matches")
+        validated_matches: list[dict[str, Any]] = []
+        rejected_unknown_matches: list[dict[str, Any]] = []
         for index, match in enumerate(matches):
             path = f"node_matches[{index}]"
             match = self._object(match, path)
             node_id = match.get("node_id")
             if not isinstance(node_id, str) or not self.db.get_node(node_id):
-                self._invalid(f"{path}.node_id", f"unknown Node ID {node_id!r}")
+                excerpt = match.get("evidence_excerpt")
+                validation = evidence_match(
+                    excerpt if isinstance(excerpt, str) else "", full_text
+                )
+                model_confidence = match.get("confidence")
+                if isinstance(model_confidence, bool) or not isinstance(
+                    model_confidence, (int, float)
+                ):
+                    model_confidence = None
+                validation.update({
+                    "excerpt_located": validation["evidence_validated"],
+                    "node_name_or_alias_found": False,
+                    "evidence_validated": False,
+                    "model_confidence": model_confidence,
+                    "errors": ["unknown_node_id"],
+                })
+                match["evidence_validated"] = False
+                match["validation"] = validation
+                match["rejection_reason"] = "unknown_node_id"
+                rejected_unknown_matches.append(match)
+                continue
             role = match.get("role") or "related"
             if role not in {"primary", "related"}:
                 self._invalid(f"{path}.role", f"unsupported value {role!r}")
@@ -858,6 +880,9 @@ class Analyzer:
                 ]
             match["evidence_validated"] = validation["evidence_validated"]
             match["validation"] = validation
+            validated_matches.append(match)
+        data["node_matches"] = validated_matches
+        data["rejected_node_matches"] = rejected_unknown_matches
 
         candidates = self._list(data.get("node_candidates") or [], "node_candidates")
         for index, candidate in enumerate(candidates):
@@ -876,13 +901,33 @@ class Analyzer:
             candidate["candidate_kind"] = kind
             self._confidence(candidate, path)
             self._list(candidate.get("aliases") or [], f"{path}.aliases")
-            self._node_ids(
+            parent_ids = self._list(
                 candidate.get("suggested_parent_node_ids") or [],
                 f"{path}.suggested_parent_node_ids",
             )
+            valid_parent_ids: list[str] = []
+            unknown_parent_ids: list[str] = []
+            for parent_index, parent_id in enumerate(parent_ids):
+                if not isinstance(parent_id, str) or not parent_id.strip():
+                    self._invalid(
+                        f"{path}.suggested_parent_node_ids[{parent_index}]",
+                        "must be a non-empty Node ID",
+                    )
+                if self.db.get_node(parent_id):
+                    valid_parent_ids.append(parent_id)
+                else:
+                    unknown_parent_ids.append(parent_id)
+            candidate["suggested_parent_node_ids"] = valid_parent_ids
             quality = self._candidate_quality(
                 candidate, full_text, str(metadata.get("source_rank") or "UNRANKED"),
             )
+            if unknown_parent_ids:
+                quality["eligible"] = False
+                quality["errors"].extend(
+                    f"unknown_suggested_parent_node_id:{node_id}"
+                    for node_id in unknown_parent_ids
+                )
+                candidate["rejected_suggested_parent_node_ids"] = unknown_parent_ids
             candidate["quality_eligible"] = quality["eligible"]
             candidate["quality_validation"] = quality
 
@@ -952,9 +997,26 @@ class Analyzer:
                     "attributed_to": attributed_to,
                     "method": "deterministic_attribution_prefix_or_company_replacement",
                 }
-            related_node_ids = self._node_ids(
+            raw_related_node_ids = self._list(
                 claim.get("related_node_ids") or [], f"{path}.related_node_ids"
             )
+            related_node_ids: list[str] = []
+            rejected_unknown_node_links: list[dict[str, Any]] = []
+            for node_index, node_id in enumerate(raw_related_node_ids):
+                if not isinstance(node_id, str) or not node_id.strip():
+                    self._invalid(
+                        f"{path}.related_node_ids[{node_index}]",
+                        "must be a non-empty Node ID",
+                    )
+                if self.db.get_node(node_id):
+                    related_node_ids.append(node_id)
+                else:
+                    rejected_unknown_node_links.append({
+                        "claim_statement": str(claim.get("statement") or ""),
+                        "node_id": node_id,
+                        "evidence_excerpt": str(claim.get("evidence_excerpt") or ""),
+                        "reason": "unknown_node_id",
+                    })
             self._list(claim.get("related_candidate_names") or [], f"{path}.related_candidate_names")
             validation = evidence_match(str(claim.get("evidence_excerpt") or ""), full_text)
             validated = validation["evidence_validated"]
@@ -967,7 +1029,7 @@ class Analyzer:
                 claim["status"] = "needs_review"
                 claim["confidence"] = 0.0
             accepted_node_ids: list[str] = []
-            rejected_node_links: list[dict[str, Any]] = []
+            rejected_node_links = rejected_unknown_node_links
             for node_id in related_node_ids:
                 node = self.db.get_node(node_id) or {}
                 node_terms = [node.get("canonical_name") or "", *(node.get("aliases") or [])]
@@ -1209,6 +1271,7 @@ class Analyzer:
             data = self._validate_source_output(raw_data, text)
             if idx == 1:
                 merged["source_metadata"] = data.get("source_metadata") or {}
+            rejected_matches.extend(data.get("rejected_node_matches") or [])
             for m in data.get("node_matches") or []:
                 key = str(m.get("node_id", ""))
                 if not m.get("evidence_validated"):
