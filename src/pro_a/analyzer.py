@@ -281,6 +281,59 @@ class Analyzer:
                 errors.append("theme_lacks_cross_source_or_node_value")
         return {"eligible": not errors, "errors": errors}
 
+    def _validate_node_candidate(
+        self,
+        candidate: Any,
+        index: int,
+        full_text: str,
+        source_rank: str,
+    ) -> dict[str, Any]:
+        path = f"node_candidates[{index}]"
+        candidate = self._object(candidate, path)
+        if not normalize_ws(str(candidate.get("canonical_name") or "")):
+            self._invalid(f"{path}.canonical_name", "field is required")
+        primary_type = candidate.get("primary_type")
+        if primary_type not in NODE_TYPES:
+            self._invalid(
+                f"{path}.primary_type", f"unsupported Node Type {primary_type!r}"
+            )
+        kind = candidate.get("candidate_kind") or "normal"
+        if kind not in {"normal", "research_question"}:
+            self._invalid(f"{path}.candidate_kind", f"unsupported value {kind!r}")
+        if (kind == "research_question") != (primary_type == "ResearchQuestion"):
+            self._invalid(path, "ResearchQuestion type and candidate_kind must agree")
+        candidate["candidate_kind"] = kind
+        self._confidence(candidate, path)
+        self._list(candidate.get("aliases") or [], f"{path}.aliases")
+        parent_ids = self._list(
+            candidate.get("suggested_parent_node_ids") or [],
+            f"{path}.suggested_parent_node_ids",
+        )
+        valid_parent_ids: list[str] = []
+        unknown_parent_ids: list[str] = []
+        for parent_index, parent_id in enumerate(parent_ids):
+            if not isinstance(parent_id, str) or not parent_id.strip():
+                self._invalid(
+                    f"{path}.suggested_parent_node_ids[{parent_index}]",
+                    "must be a non-empty Node ID",
+                )
+            if self.db.get_node(parent_id):
+                valid_parent_ids.append(parent_id)
+            else:
+                unknown_parent_ids.append(parent_id)
+        candidate["suggested_parent_node_ids"] = valid_parent_ids
+        quality = self._candidate_quality(candidate, full_text, source_rank)
+        if unknown_parent_ids:
+            quality["eligible"] = False
+            quality["errors"].extend(
+                f"unknown_suggested_parent_node_id:{node_id}"
+                for node_id in unknown_parent_ids
+            )
+            candidate["rejected_suggested_parent_node_ids"] = unknown_parent_ids
+        candidate["quality_eligible"] = quality["eligible"]
+        candidate["quality_validation"] = quality
+        return candidate
+
     @staticmethod
     def _atomic_statement(claim: dict[str, Any], fragment: str) -> str:
         statement = normalize_ws(fragment).strip("，,；;。 ")
@@ -885,51 +938,34 @@ class Analyzer:
         data["rejected_node_matches"] = rejected_unknown_matches
 
         candidates = self._list(data.get("node_candidates") or [], "node_candidates")
+        isolated_candidates: list[dict[str, Any]] = []
         for index, candidate in enumerate(candidates):
             path = f"node_candidates[{index}]"
-            candidate = self._object(candidate, path)
-            if not normalize_ws(str(candidate.get("canonical_name") or "")):
-                self._invalid(f"{path}.canonical_name", "field is required")
-            primary_type = candidate.get("primary_type")
-            if primary_type not in NODE_TYPES:
-                self._invalid(f"{path}.primary_type", f"unsupported Node Type {primary_type!r}")
-            kind = candidate.get("candidate_kind") or "normal"
-            if kind not in {"normal", "research_question"}:
-                self._invalid(f"{path}.candidate_kind", f"unsupported value {kind!r}")
-            if (kind == "research_question") != (primary_type == "ResearchQuestion"):
-                self._invalid(path, "ResearchQuestion type and candidate_kind must agree")
-            candidate["candidate_kind"] = kind
-            self._confidence(candidate, path)
-            self._list(candidate.get("aliases") or [], f"{path}.aliases")
-            parent_ids = self._list(
-                candidate.get("suggested_parent_node_ids") or [],
-                f"{path}.suggested_parent_node_ids",
-            )
-            valid_parent_ids: list[str] = []
-            unknown_parent_ids: list[str] = []
-            for parent_index, parent_id in enumerate(parent_ids):
-                if not isinstance(parent_id, str) or not parent_id.strip():
-                    self._invalid(
-                        f"{path}.suggested_parent_node_ids[{parent_index}]",
-                        "must be a non-empty Node ID",
+            try:
+                isolated_candidates.append(
+                    self._validate_node_candidate(
+                        candidate,
+                        index,
+                        full_text,
+                        str(metadata.get("source_rank") or "UNRANKED"),
                     )
-                if self.db.get_node(parent_id):
-                    valid_parent_ids.append(parent_id)
-                else:
-                    unknown_parent_ids.append(parent_id)
-            candidate["suggested_parent_node_ids"] = valid_parent_ids
-            quality = self._candidate_quality(
-                candidate, full_text, str(metadata.get("source_rank") or "UNRANKED"),
-            )
-            if unknown_parent_ids:
-                quality["eligible"] = False
-                quality["errors"].extend(
-                    f"unknown_suggested_parent_node_id:{node_id}"
-                    for node_id in unknown_parent_ids
                 )
-                candidate["rejected_suggested_parent_node_ids"] = unknown_parent_ids
-            candidate["quality_eligible"] = quality["eligible"]
-            candidate["quality_validation"] = quality
+            except LLMError as exc:
+                rejected = (
+                    copy.deepcopy(candidate)
+                    if isinstance(candidate, dict)
+                    else {"raw_value": copy.deepcopy(candidate)}
+                )
+                rejected["quality_eligible"] = False
+                rejected["quality_validation"] = {
+                    "eligible": False,
+                    "errors": ["invalid_subobject"],
+                    "path": path,
+                    "schema_error": str(exc),
+                }
+                rejected["rejection_reason"] = str(exc)
+                isolated_candidates.append(rejected)
+        data["node_candidates"] = isolated_candidates
 
         raw_claims = self._list(data.get("claims") or [], "claims")
         for index, claim in enumerate(raw_claims):

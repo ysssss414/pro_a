@@ -1,0 +1,8 @@
+decision_id,endpoint,canonical_name,source_class,decision,reason,prohibited_actions
+"B2C-DEFER-001","Doosan","Doosan","CREATE_PROPOSAL","DEFER","Entity legal/group/subsidiary identity is not safe for durable admission.","Do not create; do not guess legal entity; do not fuzzy-map."
+"B2C-DEFER-002","Panasonic","Panasonic","CREATE_PROPOSAL","DEFER","Entity legal/group/subsidiary identity is not safe for durable admission.","Do not create; do not guess legal entity; do not fuzzy-map."
+"B2C-DEFER-003","江苏辉迈","江苏辉迈","CREATE_PROPOSAL","DEFER","Entity legal/group/subsidiary identity is not safe for durable admission.","Do not create; do not guess legal entity; do not fuzzy-map."
+"B2C-DEFER-004","苏州锦逸","苏州锦逸","CREATE_PROPOSAL","DEFER","Entity legal/group/subsidiary identity is not safe for durable admission.","Do not create; do not guess legal entity; do not fuzzy-map."
+"B2C-DEFER-005","OPE","OPE","EXISTING_DEFER","DEFER","Acronym is not expanded or canonically defined.","Do not create; do not infer expansion; do not fuzzy-map."
+"B2C-DEFER-006","PS树脂","PS Resin","EXISTING_DEFER","DEFER","PS is ambiguous without authoritative chemical expansion and application boundary.","Do not create; do not infer chemical identity."
+"B2C-DEFER-007","圣泉封装树脂","Semiconductor Packaging Resin","EXISTING_DEFER","DEFER","Supplier-prefixed label does not establish generic material/product-family identity.","Do not create; retain supplier/application context in Claim scope."

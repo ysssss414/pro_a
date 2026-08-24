@@ -1,0 +1,71 @@
+{
+  "provenance": {
+    "case_id": "AF-007",
+    "source_file": "AI算力框架-海外与国产共振20260810_原文.docx",
+    "run": "run_006",
+    "raw_response_relative_path": "workspace/r1_acceptance/run_006/phase_1/raw_responses/http_0001.json",
+    "raw_response_file_sha256": "ebf6b5f9e86c385f156078319044ecd687042844f3df44fd67f98dc74858d5d9",
+    "raw_response_bytes": 63181,
+    "invalid_zero_based_indices": [13, 14],
+    "observed_terminal_error": "Invalid LLM output at node_candidates[13].primary_type: unsupported Node Type 'Metric'"
+  },
+  "full_raw_counts": {
+    "node_matches": 33,
+    "node_candidates": 16,
+    "claims": 20,
+    "relation_candidates": 31
+  },
+  "offline_replay_after_removing_only_the_two_invalid_candidates": {
+    "valid_node_matches": 10,
+    "evidence_rejected_node_matches": 23,
+    "valid_node_candidates": 1,
+    "quality_rejected_node_candidates": 13,
+    "claims": 20,
+    "evidence_valid_claims": 16,
+    "accepted_relation_candidates": 0,
+    "rejected_relation_candidates": 31,
+    "note": "The frozen relation validator still rejects all 31 raw relation candidates; isolation preserves independent valid matches and claims without weakening relation rules."
+  },
+  "invalid_node_candidates": [
+    {
+      "canonical_name": "OpenAI ARR",
+      "primary_type": "Metric",
+      "aliases": ["OpenAI AR", "OpenAI年化收入"],
+      "description": "OpenAI的年化经常性收入，是衡量AI商业化的重要指标",
+      "suggested_parent_node_ids": ["NODE_20260814_3B4B3308"],
+      "reason": "材料多次提及OpenAI ARR作为观察AI趋势加速的关键指标",
+      "confidence": 0.8,
+      "candidate_kind": "normal",
+      "independent_research_value": true,
+      "maintenance_rationale": "OpenAI ARR是AI商业化进展的核心指标，需要持续跟踪",
+      "is_discrete_event": false,
+      "event_time": "",
+      "evidence_excerpt": "OpenAI的AR年化收入",
+      "long_term_research_value": true,
+      "cross_source_or_node_value": true,
+      "question": "",
+      "importance": "高",
+      "what_would_change_my_mind": ""
+    },
+    {
+      "canonical_name": "Anthropic ARR",
+      "primary_type": "Metric",
+      "aliases": ["s topic", "Anthropic ARR"],
+      "description": "Anthropic的年化经常性收入，是AI商业化的重要指标",
+      "suggested_parent_node_ids": ["NODE_20260814_3B4B3308"],
+      "reason": "材料提及s topic的ARR作为观察coding趋势的关键指标",
+      "confidence": 0.7,
+      "candidate_kind": "normal",
+      "independent_research_value": true,
+      "maintenance_rationale": "Anthropic ARR是AI商业化的重要指标，需要跟踪",
+      "is_discrete_event": false,
+      "event_time": "",
+      "evidence_excerpt": "s topic的ARR",
+      "long_term_research_value": true,
+      "cross_source_or_node_value": true,
+      "question": "",
+      "importance": "中",
+      "what_would_change_my_mind": ""
+    }
+  ]
+}

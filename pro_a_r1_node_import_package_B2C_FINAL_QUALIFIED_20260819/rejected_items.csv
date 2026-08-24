@@ -1,0 +1,4 @@
+decision_id,endpoint,proposed_canonical_name,decision,recommended_representation,reason
+"B2C-REJECT-001","直燃法亚微米球硅","Direct-Fired Submicron Spherical Silica","REJECT_AS_INDEPENDENT_NODE","Silica Powder process/grade Claim: direct-fired; submicron.","Process and particle-size qualifiers are not independent Node identity."
+"B2C-REJECT-002","AI端到端网络解决方案","","REJECT_AS_INDEPENDENT_NODE","Solution/architecture Claim.","Company solution/marketing bundle lacks stable independent Node identity."
+"B2C-REJECT-003","Polyfer原型系统","","REJECT_AS_INDEPENDENT_NODE","Rubin / Rack-Scale AI System prototype Claim.","Prototype/codename and lifecycle state are not stable independent Node identity."

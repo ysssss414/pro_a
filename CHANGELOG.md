@@ -1,5 +1,16 @@
 # Changelog
 
+## Phase 1 Freeze — 2026-08-24
+
+- Release version advanced to `0.3.0`: local canonical knowledge engine for long-term research.
+- B.2C human-approved Production import added 24 Nodes and 2 aliases; frozen Production is 280 Nodes / 706 Aliases / 177 Node Relations at SHA-256 `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`.
+- Retained the AF-007 deterministic Analyzer sub-object isolation fix and run_006 regression fixture: invalid `Metric` or malformed Node Candidates are locally rejected while valid sibling objects survive; Metric remains unsupported.
+- Exact-match fallback and B.2E.1 prompt variants were NO-GO. `NM-002` / `NM-005` remain model-quality backlog; frozen Evidence, direction, identity, collision and Node Type rules were not relaxed.
+- B.2F passed 100 targeted and 283 full tests. run_007 completed 10/10 Sources with no new safety blocker or false-positive accepted Relation and confirmed AF-007 source survivability.
+- Operational Acceptance completed 3/3 new materials; Source / Claim / Node review and staging maintenance backup/apply/receipt/idempotency/rollback passed.
+- Final decision is `PASS_WITH_RELATION_BACKLOG`: Relation validation is operational, but both exact Operational relation probes were omitted by candidate generation, so `RELATION_EXTRACTION_OPERATIONAL_READY = false`.
+- Added the Phase 1 freeze record, synchronized release documentation and preserved the final acceptance/recovery evidence chain. This closure made 0 Production writes, 0 LLM/API calls and 0 IMA calls.
+
 ## post-v0.2.3B.1 baseline — 2026-08-17
 
 - Relation Candidate Evidence Validation 收口完成并合入 `main`。

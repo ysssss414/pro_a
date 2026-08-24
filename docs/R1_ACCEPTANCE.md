@@ -1,5 +1,17 @@
 # R1 Relation Baseline Acceptance
 
+## Completion status — 2026-08-24
+
+R1 and the Phase 1 follow-on acceptance sequence are complete and frozen. The final release decision is `PASS_WITH_RELATION_BACKLOG`; run_007 passed without a new systemic safety blocker, and Operational Acceptance verified Source / Claim / Node review plus controlled staging maintenance. Relation validation remains operational while Relation Candidate generation remains backlog.
+
+Final pointers:
+
+- `docs/PHASE1_FREEZE.md`
+- `workspace/r1_acceptance/run_007/RUN_007_RESULT.json`
+- `workspace/r1_acceptance/phase1_operational_acceptance_20260824_attempt_003/PHASE1_OPERATIONAL_ACCEPTANCE.json`
+
+The specification below is retained unchanged as the historical R1 evaluation contract.
+
 Status: **acceptance specification**
 
 This document defines how to evaluate the post-v0.2.3B.1 Relation Candidate pipeline on real research material. It does not change frozen business rules.

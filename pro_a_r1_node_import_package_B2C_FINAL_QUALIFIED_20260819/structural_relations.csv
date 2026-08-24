@@ -1,0 +1,25 @@
+relation_decision_id,from_ref,from_name,relation_type,to_ref,to_name,scope,review_status,approval_status,reason
+B2C-STRUCT-001,NODE_20260819_E915630F,Large Model Inference,part_of,NODE_20260814_3B4B3308,AI应用,,APPROVED_STRUCTURAL_PATCH_CANDIDATE,NOT_APPROVED_FOR_IMPORT,Application-to-industry parent is type-compatible; activity/Application boundary still merits explicit structural approval.
+B2C-STRUCT-002,NODE_20260819_6D27EC24,Large Model Training,part_of,NODE_20260814_3B4B3308,AI应用,,APPROVED_STRUCTURAL_PATCH_CANDIDATE,NOT_APPROVED_FOR_IMPORT,Application-to-industry parent is type-compatible; activity/Application boundary still merits explicit structural approval.
+B2C-STRUCT-003,NODE_20260819_E734A4B5,Google,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-004,NODE_20260819_15E4B4D6,Lenovo Group,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-005,NODE_20260819_946A9B53,Ruijie Networks,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-006,NODE_20260819_A8362611,ams OSRAM,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-007,NODE_20260819_776DBCC2,凌玮科技,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-008,NODE_20260819_CF15C597,博创科技,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-009,NODE_20260819_92EE2499,台光电子,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-010,NODE_20260819_1F3CCA32,圣泉集团,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-011,NODE_20260819_428B8DFB,炬光科技,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-012,NODE_20260819_ECB183A5,生益科技,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-013,NODE_20260819_74A13516,联瑞新材,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-014,NODE_20260819_DB1996FC,鹏鼎控股,,,,,NO_PARENT_REQUIRED,NOT_APPROVED_FOR_IMPORT,No safe legal/group parent is required or inferred.
+B2C-STRUCT-015,NODE_20260819_D9922340,Copper Foil,part_of,NODE_20260817_F67B36D9,PCB Materials,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Broad material family under the confirmed PCB Materials segment; does not invert Low-Profile Copper Foil granularity.
+B2C-STRUCT-016,NODE_20260819_FC11C8E9,Hydrocarbon Resin,part_of,NODE_20260817_F67B36D9,PCB Materials,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Material-to-segment parent is compatible; formulation grades remain Claim scope.
+B2C-STRUCT-017,NODE_20260819_4E7F0769,Low-Alpha Spherical Silica,,,,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Preferred parent Silica Powder is also new in this package and is not a confirmed frozen-DB parent; no broader substitute is inferred.
+B2C-STRUCT-018,NODE_20260819_8A472924,Photoresist Resin,part_of,NODE_20260817_811BA6BC,Advanced Packaging Materials,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Material-to-segment parent is compatible; does not collapse into existing Advanced Packaging Photoresist.
+B2C-STRUCT-019,NODE_20260819_7E0141C1,Polyphenylene Oxide (PPO),part_of,NODE_20260817_F67B36D9,PCB Materials,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Material-to-segment parent is compatible; modified PPO grades remain Claim scope.
+B2C-STRUCT-020,NODE_20260819_4B13EC49,Silica Powder,part_of,NODE_20260817_F67B36D9,PCB Materials,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,Broad material family under the confirmed PCB Materials segment; process/grade children are not created.
+B2C-STRUCT-021,NODE_20260819_21A40B22,Micro-Prism Lens Array,part_of,NODE_20260817_372BDB38,Micro Optical Lens,,APPROVED_STRUCTURAL_PATCH_CANDIDATE,NOT_APPROVED_FOR_IMPORT,Specific lens-array Product under confirmed Micro Optical Lens Product; architecture detail remains Claim scope.
+B2C-STRUCT-022,NODE_20260819_A9AE1BCB,x86 Server,,,,,DEFER_PARENT_REVIEW,NOT_APPROVED_FOR_IMPORT,No generic Server parent exists; AI Server is narrower and would invert granularity.
+B2C-STRUCT-023,NODE_20260819_9B032E0E,Micro Lens Array,part_of,NODE_20260817_372BDB38,Micro Optical Lens,,APPROVED_STRUCTURAL_PATCH_CANDIDATE,NOT_APPROVED_FOR_IMPORT,Stable lens-array Product under confirmed Micro Optical Lens; channel count is excluded from identity.
+B2C-STRUCT-024,NODE_20260819_D4B733E9,Optical Module PCB,part_of,NODE_20260814_B6C2EE4F,PCB,,APPROVED_STRUCTURAL_PATCH_CANDIDATE,NOT_APPROVED_FOR_IMPORT,Application-specific Product under confirmed PCB segment; speed scope is excluded from identity.

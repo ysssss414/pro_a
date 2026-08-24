@@ -1,0 +1,12 @@
+{
+  "copy_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
+  "copy_pre_import_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+  "created_at": "2026-08-19T14:33:52.169945+08:00",
+  "fresh_directory_reuse": false,
+  "method": "byte-for-byte shutil.copy2 into a newly created, previously absent directory",
+  "source_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+  "source_equals_copy_pre": true,
+  "source_sha256_after": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+  "source_sha256_before": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+  "status": "PASS"
+}

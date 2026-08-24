@@ -1,0 +1,12 @@
+decision_id,endpoint,existing_node_id,canonical_name,primary_type,reuse_mode,alias_candidate,alias_addition_authorized,scope_handling,approval_status
+"B2C-REUSE-001","30层高阶PCB","NODE_20260814_B6C2EE4F","PCB","Segment","REUSE_AS_IS","","false","30层/高阶 retained as Claim configuration scope.","APPROVED_REUSE"
+"B2C-REUSE-002","800G数据中心交换机","NODE_20260817_DA5A102E","AI Network Switch","Product","REUSE_AS_IS","","false","800G/data-center context retained as speed/application scope.","APPROVED_REUSE"
+"B2C-REUSE-003","GB300机架级AI系统","NODE_20260817_865999D6","Rack-Scale AI System","Product","REUSE_AS_IS","","false","GB300 retained as model/generation scope.","APPROVED_REUSE"
+"B2C-REUSE-004","Rubin Ultra NVL576","NODE_20260814_411CD807","Rubin","Product","REUSE_AS_IS","","false","NVL576 retained as model/configuration scope.","APPROVED_REUSE"
+"B2C-REUSE-005","Rubin Ultra NVL72","NODE_20260814_411CD807","Rubin","Product","REUSE_AS_IS","","false","NVL72 retained as model/configuration scope.","APPROVED_REUSE"
+"B2C-REUSE-006","Rubin Ultra NVL72（不可拓展版）","NODE_20260814_411CD807","Rubin","Product","REUSE_AS_IS","","false","NVL72/non-expandable retained as model/configuration scope.","APPROVED_REUSE"
+"B2C-REUSE-007","Rubin Ultra NVL72（可拓展版）","NODE_20260814_411CD807","Rubin","Product","REUSE_AS_IS","","false","NVL72/expandable retained as model/configuration scope.","APPROVED_REUSE"
+"B2C-REUSE-008","第二代低介电布","NODE_20260817_0D00AB0A","Low-Dk Glass Fabric","Material","REUSE_AS_IS","","false","第二代 retained as generation/grade scope.","APPROVED_REUSE"
+"B2C-REUSE-009","第四代低轮廓铜箔","NODE_20260817_1BF137CE","Low-Profile Copper Foil","Material","REUSE_AS_IS","","false","第四代 retained as generation/grade scope.","APPROVED_REUSE"
+"B2C-REUSE-010","高阶HDI","NODE_20260817_FB7D8D51","HDI","Technology","REUSE_AS_IS","","false","高阶 retained as grade/application scope.","APPROVED_REUSE"
+"B2C-REUSE-011","可插拔光模块","NODE_20260817_DA3D351C","Data Center Optical Transceiver","Product","REUSE_WITHOUT_ALIAS","可插拔光模块","false","Known data-center context only; no global scope equivalence.","APPROVED_REUSE"

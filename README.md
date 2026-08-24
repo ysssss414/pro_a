@@ -1,215 +1,93 @@
-# pro_a — post-v0.2.3B.1 baseline
+# pro_a v0.3.0 — Phase 1 frozen baseline
 
-面向长期投研的本地知识处理引擎。核心目标不是“存文档”，而是持续维护可追溯、可验证、可更新的知识状态：
+`pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。它把研究材料维护为可追溯、可验证、可人工审批的知识状态，而不是只保存文档。
 
 ```text
 Source
 → Claim
-→ Knowledge Node
-→ Current View
-→ 新 Evidence 持续更新认知
+→ Existing Node Match / Candidate Node
+→ Relation Candidate
+→ review artifacts
+→ human-approved controlled DB maintenance
 ```
 
-SQLite / pro_a 是 Canonical Knowledge Engine；IMA 未来仅承担文档云存储、Search/RAG 与正式研究成果承载。IMA 当前默认关闭。
+SQLite / `pro_a` 是知识状态的 Source of Truth。IMA 仅预留为文档存储、Search/RAG 与研究成果承载层，Phase 1 保持关闭。
 
-## 当前基线
+## Phase 1 冻结状态
 
-截至 2026-08-17，v0.2.3B.1 / B.1.1 已完成并合入 `main`。
+冻结日期：2026-08-24。
 
-当前已验证的 Relation 链路：
+- Production DB：`workspace/pro_a.db`
+- SHA-256：`8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
+- Nodes：280
+- Aliases：706
+- Node Relations：177（170 条 current `part_of`，7 条 retired migration）
+- IMA：off
+- Release version：`0.3.0`
+- Phase 1 decision：`PASS_WITH_RELATION_BACKLOG`
 
-```text
-LLM Relation Candidate
-→ supporting Claim resolution
-→ atomic Claim / Evidence validation
-→ semantic validation
-→ direction validation
-→ pending node_relation Proposal
-→ human confirmation
-→ formal Relation + relation_evidence_links
-```
+详细冻结记录见 [`docs/PHASE1_FREEZE.md`](docs/PHASE1_FREEZE.md)。
 
-当前 Relation Candidate baseline 的核心安全性质：
+## 已达到 operational ready
 
-- 非结构 Relation 不可绕过 Evidence gate。
-- supporting Claim 必须可解析为真实持久化 Claim。
-- atomic split 后只允许唯一支持该 Relation 的 child Claim 进入 Evidence。
-- directional Relation 对主动/被动方向进行程序校验；明显 reversed direction 必须拒绝。
-- `supporting_claim_refs` 与 `_resolved_supporting_claim_indices` 不进入 Proposal payload。
-- 合法业务文本中的 `C1` / `C2` 不再被清洗或改写。
-- 不同 scope（例如 `C1 stepping` / `C2 stepping`）保持不同 Proposal identity。
-- Proposal 仍须人工确认；系统不得自动 formalize 非结构 Relation。
+- Archive / Standard / Deep Source ingestion、SHA-256 去重与不可变归档。
+- PDF / Word / Excel / PowerPoint / Markdown / TXT 基础解析。
+- Claim 抽取、精确 Evidence 定位、attribution 与 atomicity 校验。
+- Existing Node Match 的 canonical / alias exact-evidence contract。
+- Candidate Node 与 ResearchQuestion Proposal、人工审批和审计 artifact。
+- Relation Candidate 的 supporting Claim、Evidence、semantic 与 direction 程序校验。
+- pending Proposal 路径；非结构 Relation 不会由模型直接 formalize。
+- Production-copy / staging 上的 backup、atomic apply、receipt、幂等重跑与 rollback 工作流。
+- AF-007 source survivability：单个非法 Analyzer `node_candidate` 只做局部拒绝，合法 sibling objects 保留；`Metric` 仍不是合法 Node Type。
 
-B.1.1 合并前基线验证：`213 passed`，`compileall` 通过，`git diff --check` 通过。
+## 已知能力边界
 
-下一阶段不是继续增加启发式规则，而是先执行真实资料 R1 baseline acceptance。详见 `docs/R1_ACCEPTANCE.md`。
+Relation validation 与安全拒绝链路可用，但 Relation Candidate generation 仍存在明显漏召回。Operational probes 的 2 条 exact-endpoint / exact-evidence 简单关系均未形成合法 candidate，因此：
 
-## 已实现
+`RELATION_EXTRACTION_OPERATIONAL_READY = false`
 
-### Source / ingestion
+这属于已记录的 Relation generation / model-quality backlog，不通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。Source / Claim / Node / review / controlled DB maintenance 主链路仍通过 Operational Acceptance。
 
-- `archive` / `standard` / `deep` 三种入库模式。
-- 本地 Inbox 扫描与文件稳定检测。
-- SHA-256 去重、Source ID、不可变本地归档。
-- PDF / Word / Excel / PPT / Markdown / TXT 基础解析。
-- 失败处理保留 Source、processing job 与 receipt。
-- Source 物理只存一次，多 Node 关联保存在 SQLite。
+## 冻结规则摘要
 
-### Claim / Evidence
+完整规则以 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md) 为准：
 
-- Claim 抽取与 Evidence Pointer / Excerpt 校验。
-- Unicode NFKC、Markdown 转义还原、空白标准化后的精确 Evidence 匹配。
-- Claim `attributed_to` 与公司主体确定性约束。
-- Actual / Guidance 等原子化处理。
-- Evidence 无法定位时自动降级为 `needs_review`。
-
-### Knowledge Node
-
-- 冻结 Primary Type：Industry / Segment / Technology / Product / Material / Equipment / Entity / Application / Standard / Policy / Theme / Event / ResearchQuestion。
-- 新 Node 必须 Proposal + 人工确认。
-- Candidate Node 独立研究价值门槛。
-- Existing Node Match 必须有 canonical name / alias Evidence。
-- 父级 / 祖先仅由已确认 `part_of` 推导。
-- AI Hardware Node Universe v0.1 当前正式状态：256 active Nodes、170 条 current `part_of`、7 条 `retired_r1_migration`。
-
-### Relation / Relation Evidence
-
-- `relation_evidence_links` 支持一条 Relation 累积多个 supports / contradicts Claims。
+- Raw Source immutable；同一 Source 物理只存一次。
+- 新 Node 与正式 Current View 变化必须 Proposal + 人工确认。
 - `part_of` 是唯一允许无 Evidence 创建的正式 Relation。
-- 非 `part_of` current Relation 必须至少有 active supporting Claim。
-- Relation seed 仅允许 `part_of`。
-- 手工 Relation Proposal 支持显式 supporting Claim。
-- LLM 可生成 Relation Candidate，但程序必须进行 Evidence / semantic / direction validation 后才允许创建 pending Proposal。
-- stale Relation Proposal recovery 与 Proposal identity 处理已实现。
-
-### Current View / propagation
-
-- Current View 采用不可覆盖的日期版本：`v_YYYYMMDD[_NN]`。
-- 所有正式 Current View 变化必须 Proposal + 人工确认。
-- Minor / Material / Thesis Change 分级。
-- Material / Thesis 存在 Evidence Sufficiency 程序门槛。
-- Initial Current View 支持单一 Source，但执行 Evidence Scope Constraint。
-- Target-Node-centric、attribution、Claim ID、Company→Industry scope 等程序校验。
-- `key_facts` 与 Judgment-backed `core_logic` 分离。
-- Product Current View 支持 applications / demand drivers / supply capacity / pricing / major suppliers / product evolution。
-- Current View 确认后按“上下/结构关系优先，再相关关系”触发 Impact Review；目标 View 无需变化则停止该路径。
-- Impact Review 持久化、retry、stale recovery 与确定性质量门槛已实现。
-
-### Gap / Research Question
-
-- Knowledge Gap 可自动产生。
-- ResearchQuestion 属于新 Node，必须人工确认。
-- Gap 完整生命周期与 RQ Current Answer 自动更新仍属于后续工作。
-
-## 冻结设计边界
-
-冻结业务规则以 `docs/REQUIREMENTS_FROZEN.md` 为准，本文不覆盖或修改冻结规则。
-
-关键边界：
-
-- Raw Source immutable。
-- 新 Node 必须人工确认。
-- 正式 Current View 变化必须人工确认。
-- 非 `part_of` Relation 必须有 Relation-specific supporting Evidence。
+- 非 `part_of` current Relation 必须有 active relation-specific supporting Claim。
+- LLM Relation Candidate 必须经过程序 Evidence / semantic / direction validation。
+- Existing Node Match 必须由 source 中 canonical name 或 alias 的可定位 Evidence 支持。
 - Propagation 传播 Impact Review，不复制结论。
-- SQLite 是知识状态 Source of Truth；IMA 不是知识状态机。
-- IMA 当前保持关闭，除非另行明确启动集成验收。
+- IMA 不是知识状态机。
 
 ## Windows 快速开始
 
-推荐 Python 3.10+。
+推荐 Python 3.10+：
 
 ```powershell
-cd pro_a_v0_1
 powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
-.\.venv\Scripts\pro-a.exe init
 Copy-Item .\config.example.toml .\config.toml
+.\.venv\Scripts\pro-a.exe init
 ```
 
-Standard / Deep 使用兼容 OpenAI Chat Completions 的模型时，例如 DeepSeek：
+Standard / Deep 分析需要项目配置允许的兼容模型，并通过环境变量提供 key；不要把 key 写入仓库：
 
 ```powershell
 $env:PROA_LLM_API_KEY="..."
-```
-
-```toml
-[llm]
-enabled = true
-base_url = "https://api.deepseek.com"
-model = "deepseek-chat"
-api_key_env = "PROA_LLM_API_KEY"
-
-[ima]
-enabled = false
-```
-
-单次入库：
-
-```powershell
 .\.venv\Scripts\pro-a.exe ingest --once
 ```
 
-查看 Source 审计：
+查看 Source 与 Proposal：
 
 ```powershell
 .\.venv\Scripts\pro-a.exe source show SRC_xxx
-```
-
-查看 / 审批 Proposal：
-
-```powershell
 .\.venv\Scripts\pro-a.exe proposals list
 .\.venv\Scripts\pro-a.exe proposals show PROP_xxx
-.\.venv\Scripts\pro-a.exe proposals accept PROP_xxx
-.\.venv\Scripts\pro-a.exe proposals reject PROP_xxx --reason "证据不足"
 ```
 
-人工提出 Relation：
+任何 Production mutation 都应使用明确目标、precondition SHA、独立 backup、单 transaction、receipt、post-write QA 与人工授权。默认验收/实验只在 isolated copy 或 staging 上运行。
 
-```powershell
-.\.venv\Scripts\pro-a.exe relations propose NODE_A uses NODE_B `
-  --scope "Rubin" `
-  --evidence-claim-id CLM_1 `
-  --confidence 0.9 `
-  --reason "Rubin GPU explicitly uses HBM4"
-```
+## 后续里程碑
 
-## 当前开发阶段
-
-当前阶段：**post-v0.2.3B.1 / R1 preparation**。
-
-开发顺序：
-
-```text
-B.1 freeze
-→ R1 Gold Set
-→ R1 baseline acceptance
-→ pipeline-stage error attribution
-→ 决定 B.1 PASS / REOPEN
-→ 由真实失败样本生成 B.2 backlog
-```
-
-安全性错误优先级高于覆盖率问题：错误 Relation 被正式化的风险高于复杂关系被保守拒绝的风险。
-
-详见：
-
-- `docs/REQUIREMENTS_FROZEN.md` — 冻结业务规则
-- `docs/R1_ACCEPTANCE.md` — R1 验收方法与 Hard Failure 定义
-- `docs/RELATION_SEMANTICS.md` — Relation working semantics（未冻结）
-- `docs/ROADMAP.md` — 当前路线与 backlog 组织方式
-- `CODEX_TASK.md` — Codex 恢复后 continuation brief
-
-## 当前明确未完成
-
-- R1 真实资料 Relation baseline acceptance。
-- Relation ontology / type compatibility 的最终冻结矩阵。
-- Claim 语义去重 / 冲突候选检索。
-- Proposal “修改后接受”。
-- Knowledge Gap resolve / reopen / supersede 生命周期。
-- ResearchQuestion Current Answer 自动更新与审批。
-- 更可靠的 PDF 表格 / 图表解析与图片多模态解析。
-- Source Updated Version / Near Duplicate 完整识别。
-- Node-specific Materiality Threshold。
-- 外部互联网 Research Output 回灌。
-- 正式 IMA 集成验收。
-- GUI。
+Phase 1.1 尚未启动。下一候选里程碑是 Expanded Knowledge Universe / R2，详见 [`docs/ROADMAP.md`](docs/ROADMAP.md)。在用户明确启动前，不修改 Phase 1 冻结规则，不自动继续 Recall/prompt 调优。

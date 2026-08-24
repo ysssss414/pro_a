@@ -1,0 +1,3 @@
+decision_id,node_ref,alias,language,synonym_proof,not_model,not_configuration,not_vendor_sku,approval_status
+"B2C-ALIAS-001","NODE_20260819_9B032E0E","微透镜阵列","zh-CN","Explicit bilingual normalized approval: Micro Lens Array / 微透镜阵列.","true","true","true","APPROVED_ALIAS"
+"B2C-ALIAS-002","NODE_20260819_D4B733E9","光模块PCB","zh-CN","Explicit bilingual normalized approval: Optical Module PCB / 光模块PCB.","true","true","true","APPROVED_ALIAS"

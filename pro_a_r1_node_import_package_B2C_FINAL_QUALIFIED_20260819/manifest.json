@@ -1,0 +1,150 @@
+{
+  "authorization": {
+    "current_round": "FRESH_ISOLATED_QUALIFICATION_ONLY",
+    "production_authorized": false,
+    "production_import_executed": false,
+    "production_requires_separate_human_gate": true,
+    "run_007_authorized": false,
+    "single_target_parameter": "DatabasePath"
+  },
+  "baseline_commit": "3ac1563fb12998fadc142a4cec0c4fb97adc81f5",
+  "database_precondition": {
+    "bytes": 466944,
+    "identity": "canonical project Production DB resolved from config.toml",
+    "path_absolute_at_qualification": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "path_relative_to_repo": "workspace/pro_a.db",
+    "pragma_user_version": 0,
+    "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
+    "schema_version": "0.2.1",
+    "sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "table_counts": {
+      "claim_node_links": 0,
+      "claim_relations": 0,
+      "claims": 12,
+      "current_views": 0,
+      "ima_objects": 0,
+      "impact_attempt_audit": 0,
+      "impact_reviews": 0,
+      "knowledge_gaps": 0,
+      "meta": 1,
+      "node_aliases": 704,
+      "node_relations": 177,
+      "nodes": 256,
+      "processing_jobs": 5,
+      "proposals": 9,
+      "research_questions": 0,
+      "side_effect_jobs": 0,
+      "source_node_links": 3,
+      "source_relations": 0,
+      "sources": 2
+    }
+  },
+  "decision_set_sha256": "1b7b7587400fab0aaa4bc80ceb4c3021ae5f8b821386cb701b48c60e32ad0cd1",
+  "derived_output_policy": "Derived qualification evidence is inventoried but excluded from semantic hashes to avoid output/manifest cycles.",
+  "derived_outputs": [
+    "copy_receipt.json",
+    "final_gate.json",
+    "manifest.sha256",
+    "qualification_report.json"
+  ],
+  "expected_isolated_changes": {
+    "accepted_proposal_delta": 0,
+    "all_other_tables": 0,
+    "current_part_of": 0,
+    "current_views": 0,
+    "forbidden_alias": "可插拔光模块",
+    "forbidden_alias_delta": 0,
+    "formal_relations": 0,
+    "node_aliases": 2,
+    "node_relations": 0,
+    "nodes": 24,
+    "proposals": 0,
+    "source_claim_and_link_tables": 0
+  },
+  "frozen_external_artifacts": {
+    "gold_v1_0_0_jsonl_sha256": "6c8d4df7d4d774f5151229f464b86e3e91c0eaee93c3e60f97615487ab487b20",
+    "prior_attempt_002": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 1,
+      "tree_sha256": "824d6ece0d43a270383b68404ced0cc4030afdf412d8a19cb747cd6f427b1470"
+    },
+    "prior_b2c_package": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 14,
+      "tree_sha256": "4604dd9d3014e80c773e4f3c222e9e137d7ffb8758fd00e487a141058e6e5ca0"
+    }
+  },
+  "generated_date": "2026-08-19",
+  "generator": "scripts/generate_b2c_final_qualified.py",
+  "manifest_version": "2.0",
+  "package_id": "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819",
+  "package_status": "FINAL_ISOLATED_QUALIFICATION_PACKAGE__PRODUCTION_NOT_AUTHORIZED",
+  "semantic_input_set_sha256": "8a29ca526dbbad0360eef57e5de6af489631af4b00bb905a215c1726d391d451",
+  "semantic_inputs": {
+    "R1_GOLD_V1_1_ADJUDICATION_PROPOSAL.json": {
+      "bytes": 6782,
+      "role": "non-executable future Gold adjudication overlay",
+      "sha256": "7baf8cd0366c90d266db90d29840508f2690c4d57f02fcc64ada50e300fc6771"
+    },
+    "README.md": {
+      "bytes": 3295,
+      "role": "execution, identity and stop-gate contract",
+      "sha256": "d021403708e6ef0259dd49d25ee3e4d7711634287eefe2b2cd53967e52acc5a0"
+    },
+    "apply_b2c_approved.ps1": {
+      "bytes": 2997,
+      "role": "single-target PowerShell orchestrator",
+      "sha256": "3b02f36c6a163874d8dd62a559a21cbd2603fafc56fdb69eb8c8e24f079e0fac"
+    },
+    "apply_b2c_approved.py": {
+      "bytes": 37872,
+      "role": "transactional deterministic apply and QA engine",
+      "sha256": "06fe30f5dd0990cfb4f8e286869658b7b42f7f2b4cd6f73748519d8744742424"
+    },
+    "approved_aliases.csv": {
+      "bytes": 471,
+      "role": "human-approved stable aliases",
+      "sha256": "4549df672b1a65a06b9b31535f7863f2dfcb2aebd138416420ca89fdff2eb999"
+    },
+    "approved_nodes.csv": {
+      "bytes": 8351,
+      "role": "human-approved CREATE rows",
+      "sha256": "3090a756735b02e15a5fb7a7ff402aa834866ebb760e1a8a97c4dd2ac81e38bd"
+    },
+    "db_resolution.json": {
+      "bytes": 11018,
+      "role": "fresh canonical-Production collision/reuse/parent resolution",
+      "sha256": "0c2501edfb14c03ad4cff4766ae537715d7d5ca9dcf4fb08415f5c69aa69ba0a"
+    },
+    "deferred_items.csv": {
+      "bytes": 1515,
+      "role": "non-import DEFER decisions",
+      "sha256": "18767490ac8600c5d0a789b7eb3ce5e615b27bc98a381120e09550e3834ba242"
+    },
+    "human_decisions.json": {
+      "bytes": 14549,
+      "role": "authoritative human decision and structural freeze envelope",
+      "sha256": "13476a19bb976a7358f2effe1b648d625a28a256d35b1c1ffe14c99d15caf6f6"
+    },
+    "production_identity_audit.json": {
+      "bytes": 7850,
+      "role": "read-only canonical identity and old-package fail-closed audit",
+      "sha256": "72d310cb10c35c6246f534dc096d0d12881e6f04400bb947a22fd01fefd458a0"
+    },
+    "rejected_items.csv": {
+      "bytes": 729,
+      "role": "non-import independent-Node rejections",
+      "sha256": "644ceb77937a4f6c3bc4ce64fee06d8955657790b6ce7a1216500b5cfbde1eb2"
+    },
+    "reuse_mapping.csv": {
+      "bytes": 2229,
+      "role": "approved mapping-only REUSE decisions",
+      "sha256": "2e2a4e0f447285be31373c965340a7dd86b705d7a783f1ca28856c859b0da741"
+    },
+    "structural_relations.csv": {
+      "bytes": 4969,
+      "role": "zero-write structural decision freeze",
+      "sha256": "0551c57f668b50d79e95172abfea8aabed4da87977af9ebbcd61746d8da65a22"
+    }
+  }
+}

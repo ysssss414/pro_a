@@ -1,0 +1,688 @@
+{
+  "counts": {
+    "claim_node_links": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "claim_relations": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "claims": {
+      "after": 12,
+      "before": 12,
+      "delta": 0
+    },
+    "current_views": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "ima_objects": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "impact_attempt_audit": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "impact_reviews": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "knowledge_gaps": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "meta": {
+      "after": 1,
+      "before": 1,
+      "delta": 0
+    },
+    "node_aliases": {
+      "after": 706,
+      "before": 704,
+      "delta": 2
+    },
+    "node_relations": {
+      "after": 177,
+      "before": 177,
+      "delta": 0
+    },
+    "nodes": {
+      "after": 280,
+      "before": 256,
+      "delta": 24
+    },
+    "processing_jobs": {
+      "after": 5,
+      "before": 5,
+      "delta": 0
+    },
+    "proposals": {
+      "after": 9,
+      "before": 9,
+      "delta": 0
+    },
+    "research_questions": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "side_effect_jobs": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "source_node_links": {
+      "after": 3,
+      "before": 3,
+      "delta": 0
+    },
+    "source_relations": {
+      "after": 0,
+      "before": 0,
+      "delta": 0
+    },
+    "sources": {
+      "after": 2,
+      "before": 2,
+      "delta": 0
+    }
+  },
+  "database": {
+    "copy_equality_verified": true,
+    "post_import_sha256": "8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c",
+    "pre_import_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "production_source_absolute_path_at_copy": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "production_source_sha256_at_copy": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
+    "schema_version": "0.2.1"
+  },
+  "expected_vs_actual": {
+    "accepted_proposal_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "current_view_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "deferred_node_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "forbidden_alias_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "formal_relation_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "new_aliases_exact": {
+      "actual": 2,
+      "expected": 2,
+      "match": true
+    },
+    "new_nodes_exact": {
+      "actual": 24,
+      "expected": 24,
+      "match": true
+    },
+    "new_nodes_max": {
+      "actual": 24,
+      "expected": 24,
+      "match": true
+    },
+    "rejected_node_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    },
+    "structural_relation_delta": {
+      "actual": 0,
+      "expected": 0,
+      "match": true
+    }
+  },
+  "external_immutability_proofs": {
+    "prior_attempt_002": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 1,
+      "tree_sha256": "824d6ece0d43a270383b68404ced0cc4030afdf412d8a19cb747cd6f427b1470",
+      "unchanged": true
+    },
+    "prior_b2c_package": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 14,
+      "tree_sha256": "4604dd9d3014e80c773e4f3c222e9e137d7ffb8758fd00e487a141058e6e5ca0",
+      "unchanged": true
+    },
+    "production_db": {
+      "absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+      "actual_sha256_after_qualification": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+      "expected_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+      "unchanged": true
+    }
+  },
+  "final_gate": {
+    "PRODUCTION_IMPORT_EXECUTED": false,
+    "READY_FOR_PRODUCTION_IMPORT_AUTHORIZATION": true,
+    "all_checks_pass": true,
+    "checks": {
+      "all_other_tables_delta_zero": true,
+      "canonical_identity_unequivocal": true,
+      "current_part_of_delta_zero": true,
+      "current_views_delta_zero": true,
+      "deterministic_qa": true,
+      "exact_aliases_delta": true,
+      "exact_nodes_delta": true,
+      "formal_relations_delta_zero": true,
+      "manifest_inventory": true,
+      "manifest_self_hash": true,
+      "manifest_semantic_hashes": true,
+      "node_relations_delta_zero": true,
+      "old_attempt_002_immutable": true,
+      "old_package_immutable": true,
+      "production_unchanged": true,
+      "proposals_delta_zero": true,
+      "qualification_report_pass": true,
+      "run_007_not_started": true,
+      "single_target_path": true,
+      "source_claim_link_tables_delta_zero": true,
+      "source_copy_pre_sha_equal": true,
+      "transaction_committed_on_isolated_only": true,
+      "zero_structural_writes_authorized": true
+    }
+  },
+  "metadata": {
+    "artifact": "B2C isolated/apply deterministic report",
+    "database_path_resolved_absolute": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
+    "decision_set_sha256": "1b7b7587400fab0aaa4bc80ceb4c3021ae5f8b821386cb701b48c60e32ad0cd1",
+    "generated_at_utc": "2026-08-19T06:34:58.805057+00:00",
+    "manifest_sha256": "2974da9a0a03ddd7d36bc18a478e8b17e8e9e1b6fc2b934c955138c336593a80",
+    "package_id": "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819",
+    "semantic_input_set_sha256": "8a29ca526dbbad0360eef57e5de6af489631af4b00bb905a215c1726d391d451",
+    "status": "PASS",
+    "target_identity": "Isolated"
+  },
+  "pre_write_verification": {
+    "apply_script_hash_valid": true,
+    "authorization_token_valid": true,
+    "create_nodes_absent": true,
+    "details": {
+      "accepted_proposals": 0,
+      "approved_alias_collision_count": 0,
+      "create_collision_count": 0,
+      "current_part_of_cycle_count": 0,
+      "current_views": 0,
+      "deferred_rejected_objects_present": 0,
+      "forbidden_alias_present": false,
+      "reuse_targets_uniquely_active": 11,
+      "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
+      "schema_version": "0.2.1"
+    },
+    "manifest_complete_and_valid": true,
+    "reuse_targets_unique": true,
+    "schema_compatible": true,
+    "target_identity_recorded": "Isolated",
+    "target_sha_precondition_match": true,
+    "target_writable": true
+  },
+  "qa": {
+    "accepted_proposals_after": 0,
+    "alias_collision_count": 0,
+    "all_non_import_tables_unchanged": true,
+    "current_formal_relations_after": 0,
+    "current_formal_relations_before": 0,
+    "current_part_of_after": 170,
+    "current_part_of_before": 170,
+    "current_part_of_cycle_count": 0,
+    "current_views_after": 0,
+    "deferred_rejected_objects_present": [],
+    "existing_aliases_unmodified": true,
+    "existing_frozen_nodes_unmodified": true,
+    "forbidden_alias_present": false,
+    "foreign_key_violations": 0,
+    "new_alias_unique_resolution": 2,
+    "new_canonical_unique": 24,
+    "reuse_mapping_unique_resolution": 11,
+    "self_part_of_count": 0,
+    "source_and_claim_tables_unchanged": true,
+    "sqlite_integrity_check": "ok",
+    "structural_endpoint_errors": 0
+  },
+  "semantic_diff": {
+    "claim_node_links": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "claim_relations": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "claims": {
+      "added_rows": [],
+      "after_count": 12,
+      "after_semantic_sha256": "584482b1dd74a46ecb0e363ac246f47f74a1a6042f059cad9fb9421aa3db556a",
+      "before_count": 12,
+      "before_semantic_sha256": "584482b1dd74a46ecb0e363ac246f47f74a1a6042f059cad9fb9421aa3db556a",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "current_views": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "ima_objects": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "impact_attempt_audit": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "impact_reviews": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "knowledge_gaps": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "meta": {
+      "added_rows": [],
+      "after_count": 1,
+      "after_semantic_sha256": "54d8121045ff66df7b8c3678ccfd0da635bfc5b4fd00b05275e6c0e650e28bc5",
+      "before_count": 1,
+      "before_semantic_sha256": "54d8121045ff66df7b8c3678ccfd0da635bfc5b4fd00b05275e6c0e650e28bc5",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "node_aliases": {
+      "added_rows": [
+        {
+          "alias": "光模块PCB",
+          "node_id": "NODE_20260819_D4B733E9"
+        },
+        {
+          "alias": "微透镜阵列",
+          "node_id": "NODE_20260819_9B032E0E"
+        }
+      ],
+      "after_count": 706,
+      "after_semantic_sha256": "884d29bd1fa58f3f80dfb0e402411c42ce8e7630775ff05b52064d937871e8c2",
+      "before_count": 704,
+      "before_semantic_sha256": "d453e7aa13b0cd2497d38971aec76b8b2125df3c7c0b41149a9f8ad2b840b235",
+      "delta": 2,
+      "removed_rows": []
+    },
+    "node_relations": {
+      "added_rows": [],
+      "after_count": 177,
+      "after_semantic_sha256": "4376121889a3dcc1cba8b26c600ade7fc02c088bb6efc2084c7bd605b51c7e82",
+      "before_count": 177,
+      "before_semantic_sha256": "4376121889a3dcc1cba8b26c600ade7fc02c088bb6efc2084c7bd605b51c7e82",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "nodes": {
+      "added_rows": [
+        {
+          "canonical_name": "Copper Foil",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable parent material category with its own supply, pricing, technology and downstream evidence.",
+          "node_id": "NODE_20260819_D9922340",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Google",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent company/entity and recurring customer/platform actor.",
+          "node_id": "NODE_20260819_E734A4B5",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Hydrocarbon Resin",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable electronic-material family with independent capacity, qualification, pricing and application evidence.",
+          "node_id": "NODE_20260819_FC11C8E9",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Large Model Inference",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A recurring AI workload/application with distinct infrastructure demand and economics.",
+          "node_id": "NODE_20260819_E915630F",
+          "primary_type": "Application",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Large Model Training",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A recurring AI workload/application with distinct infrastructure demand and economics.",
+          "node_id": "NODE_20260819_6D27EC24",
+          "primary_type": "Application",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Lenovo Group",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with recurring server/product evidence.",
+          "node_id": "NODE_20260819_15E4B4D6",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Low-Alpha Spherical Silica",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A functionally distinct advanced-packaging material class with separate purity requirements, suppliers and demand drivers.",
+          "node_id": "NODE_20260819_4E7F0769",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Micro Lens Array",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable micro-lens-array product class with recurring optical-system applications, qualification and supply evidence.",
+          "node_id": "NODE_20260819_9B032E0E",
+          "primary_type": "Product",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Micro-Prism Lens Array",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A distinct optical component with recurring CPO/NPO application, transfer and customer evidence.",
+          "node_id": "NODE_20260819_21A40B22",
+          "primary_type": "Product",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Optical Module PCB",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable application-specific PCB product class with distinct process, capacity, customer and revenue evidence.",
+          "node_id": "NODE_20260819_D4B733E9",
+          "primary_type": "Product",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Photoresist Resin",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable upstream material class with independent supply, qualification and application evidence.",
+          "node_id": "NODE_20260819_8A472924",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Polyphenylene Oxide (PPO)",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A recurring electronic-material family with its own capacity, pricing, suppliers and application evolution.",
+          "node_id": "NODE_20260819_7E0141C1",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Ruijie Networks",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with recurring networking-product evidence.",
+          "node_id": "NODE_20260819_946A9B53",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "Silica Powder",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable material family with independent technology routes, grades, suppliers, capacity, pricing and applications.",
+          "node_id": "NODE_20260819_4B13EC49",
+          "primary_type": "Material",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "ams OSRAM",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent company entity that can recur as customer, supplier and competitive actor.",
+          "node_id": "NODE_20260819_A8362611",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "x86 Server",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A durable server product/architecture category with recurring demand, vendor and competitive evidence.",
+          "node_id": "NODE_20260819_A9AE1BCB",
+          "primary_type": "Product",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "凌玮科技",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent company entity with recurring capacity, customer and product evidence.",
+          "node_id": "NODE_20260819_776DBCC2",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "博创科技",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with recurring supplier/customer evidence.",
+          "node_id": "NODE_20260819_CF15C597",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "台光电子",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent company entity and recurring CCL/customer actor.",
+          "node_id": "NODE_20260819_92EE2499",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "圣泉集团",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with multiple durable material businesses.",
+          "node_id": "NODE_20260819_1F3CCA32",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "炬光科技",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with multiple durable product lines.",
+          "node_id": "NODE_20260819_428B8DFB",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "生益科技",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company/entity and recurring CCL/customer actor.",
+          "node_id": "NODE_20260819_ECB183A5",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "联瑞新材",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with recurring material, capacity and customer evidence.",
+          "node_id": "NODE_20260819_74A13516",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        },
+        {
+          "canonical_name": "鹏鼎控股",
+          "created_at": "2026-08-19T00:00:00+08:00",
+          "description": "A persistent listed-company entity with recurring PCB/product evidence.",
+          "node_id": "NODE_20260819_DB1996FC",
+          "primary_type": "Entity",
+          "status": "active",
+          "updated_at": "2026-08-19T00:00:00+08:00"
+        }
+      ],
+      "after_count": 280,
+      "after_semantic_sha256": "e3fc38146874621a1ba1c75f333418a71b87a835de295693883152a3baf7a771",
+      "before_count": 256,
+      "before_semantic_sha256": "66d756c25d723f1a64405aa9b06c8c344f31a2511dbdf25b7367acf0cc99573b",
+      "delta": 24,
+      "removed_rows": []
+    },
+    "processing_jobs": {
+      "added_rows": [],
+      "after_count": 5,
+      "after_semantic_sha256": "50c7492bf17d2f2fc8c1d8cfb3d9f31b09c4c311c5569d68afc189783f73d4eb",
+      "before_count": 5,
+      "before_semantic_sha256": "50c7492bf17d2f2fc8c1d8cfb3d9f31b09c4c311c5569d68afc189783f73d4eb",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "proposals": {
+      "added_rows": [],
+      "after_count": 9,
+      "after_semantic_sha256": "241a69af077509058387661a4f06c48e1393acd3d449f223895b7316ddba30e2",
+      "before_count": 9,
+      "before_semantic_sha256": "241a69af077509058387661a4f06c48e1393acd3d449f223895b7316ddba30e2",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "research_questions": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "side_effect_jobs": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "source_node_links": {
+      "added_rows": [],
+      "after_count": 3,
+      "after_semantic_sha256": "ea00b3b42a713813f90aee89cd0d61d314a1a3788606e38d604cc972bf199c21",
+      "before_count": 3,
+      "before_semantic_sha256": "ea00b3b42a713813f90aee89cd0d61d314a1a3788606e38d604cc972bf199c21",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "source_relations": {
+      "added_rows": [],
+      "after_count": 0,
+      "after_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "before_count": 0,
+      "before_semantic_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "delta": 0,
+      "removed_rows": []
+    },
+    "sources": {
+      "added_rows": [],
+      "after_count": 2,
+      "after_semantic_sha256": "6a7ba053f39464d9ae1c24d6a200dd9666442fff455c36a01fe13a4d7762783a",
+      "before_count": 2,
+      "before_semantic_sha256": "6a7ba053f39464d9ae1c24d6a200dd9666442fff455c36a01fe13a4d7762783a",
+      "delta": 0,
+      "removed_rows": []
+    }
+  },
+  "stop_gate": {
+    "automatic_promotion_performed": false,
+    "b2d_started": false,
+    "gold_v1_0_0_modified": false,
+    "ima_called": false,
+    "production_write_performed": false,
+    "real_llm_called": false,
+    "run_007_started": false
+  },
+  "transaction": {
+    "committed": true,
+    "partial_import": false,
+    "rollback_on_exception": true,
+    "sequence": [
+      "BEGIN IMMEDIATE",
+      "nodes",
+      "aliases",
+      "approved structural relations",
+      "QA",
+      "COMMIT"
+    ]
+  }
+}
