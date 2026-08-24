@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "artifact": "R1_GOLD_V1_1_ADJUDICATION_PROPOSAL",
+    "status": "PREPARE_ONLY_NON_EXECUTABLE",
+    "generated_for": "pro_a R1 B.2C approved node package",
+    "base_gold_version": "1.0.0",
+    "base_gold_jsonl_sha256": "6c8d4df7d4d774f5151229f464b86e3e91c0eaee93c3e60f97615487ab487b20",
+    "base_gold_modified": false,
+    "formal_gold_v1_1_generated": false,
+    "scorer_modified": false
+  },
+  "policy": "Stable Node endpoints only. Model, rate, generation, layer count, configuration, prototype state and supplier/application qualifiers remain protected scope/evidence.",
+  "summary": {
+    "MODIFY_IN_FUTURE_GOLD": 12,
+    "EXCLUDE_FROM_POLICY_SCORE": 4
+  },
+  "cases": [
+    {
+      "case_id": "LX-002",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "联想集团", "relation": "produces", "to": "GB300机架级AI系统", "scope": "当前规模化部署"},
+      "future_stable_representation": "Lenovo Group produces Rack-Scale AI System",
+      "protected_scope_evidence": ["GB300", "当前规模化部署"]
+    },
+    {
+      "case_id": "NM-003",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "高频高速覆铜板", "relation": "uses", "to": "第二代低介电布", "scope": "M8"},
+      "future_stable_representation": "高频高速覆铜板 uses Low-Dk Glass Fabric",
+      "protected_scope_evidence": ["第二代", "M8"]
+    },
+    {
+      "case_id": "NM-013",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "高频高速覆铜板", "relation": "uses", "to": "第四代低轮廓铜箔", "scope": "AI高频高速CCL"},
+      "future_stable_representation": "高频高速覆铜板 uses Low-Profile Copper Foil",
+      "protected_scope_evidence": ["第四代", "AI高频高速CCL"]
+    },
+    {
+      "case_id": "PD-005",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "鹏鼎控股", "relation": "produces", "to": "高阶HDI", "scope": "AI服务器GPU板"},
+      "future_stable_representation": "鹏鼎控股 produces HDI",
+      "protected_scope_evidence": ["高阶", "AI服务器GPU板"]
+    },
+    {
+      "case_id": "PD-006",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "高阶HDI", "relation": "applied_in", "to": "AI服务器", "scope": "GPU板/算力领域"},
+      "future_stable_representation": "HDI applied_in AI Server",
+      "protected_scope_evidence": ["高阶", "GPU板", "算力领域"]
+    },
+    {
+      "case_id": "RJ-001",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "锐捷网络", "relation": "produces", "to": "800G数据中心交换机", "scope": "2026H1 数据中心业务"},
+      "future_stable_representation": "Ruijie Networks produces AI Network Switch",
+      "protected_scope_evidence": ["800G", "2026H1", "数据中心业务"]
+    },
+    {
+      "case_id": "RU-003",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL72（不可拓展版）", "relation": "uses", "to": "Scale-Up交换芯片", "scope": "36颗/单柜"},
+      "future_stable_representation": "Rubin uses Scale-Up交换芯片",
+      "protected_scope_evidence": ["NVL72", "不可拓展版", "36颗/单柜"]
+    },
+    {
+      "case_id": "RU-004",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL72（可拓展版）", "relation": "uses", "to": "Scale-Up交换芯片", "scope": "72颗/单柜/NVL576构件"},
+      "future_stable_representation": "Rubin uses Scale-Up交换芯片",
+      "protected_scope_evidence": ["NVL72", "可拓展版", "72颗/单柜", "NVL576构件"]
+    },
+    {
+      "case_id": "RU-005",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL72（不可拓展版）", "relation": "uses", "to": "直连铜缆（DAC）", "scope": "柜内互联"},
+      "future_stable_representation": "Rubin uses Direct Attach Copper Cable",
+      "protected_scope_evidence": ["NVL72", "不可拓展版", "柜内互联"]
+    },
+    {
+      "case_id": "RU-008",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL72", "relation": "uses", "to": "NVLink", "scope": "柜内scale-up互联"},
+      "future_stable_representation": "Rubin uses NVLink",
+      "protected_scope_evidence": ["NVL72", "柜内", "scale-up"]
+    },
+    {
+      "case_id": "RU-009",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL576", "relation": "uses", "to": "NVLink", "scope": "柜间scale-up互联"},
+      "future_stable_representation": "Rubin uses NVLink",
+      "protected_scope_evidence": ["NVL576", "柜间", "scale-up"]
+    },
+    {
+      "case_id": "RU-010",
+      "action": "MODIFY_IN_FUTURE_GOLD",
+      "current_gold": {"from": "Rubin Ultra NVL72", "relation": "uses", "to": "30层高阶PCB", "scope": "交换/计算托盘"},
+      "future_stable_representation": "Rubin uses PCB",
+      "protected_scope_evidence": ["NVL72", "30层", "高阶", "交换/计算托盘"]
+    },
+    {
+      "case_id": "RJ-005",
+      "action": "EXCLUDE_FROM_POLICY_SCORE",
+      "current_gold": {"from": "AI端到端网络解决方案", "relation": "applied_in", "to": "大模型训练", "scope": "锐捷网络解决方案"},
+      "non_relation_representation": "Claim/Impact assertion about Large Model Training",
+      "protected_scope_evidence": ["AI端到端网络解决方案", "锐捷网络解决方案"]
+    },
+    {
+      "case_id": "RJ-006",
+      "action": "EXCLUDE_FROM_POLICY_SCORE",
+      "current_gold": {"from": "AI端到端网络解决方案", "relation": "applied_in", "to": "大模型推理", "scope": "锐捷网络解决方案"},
+      "non_relation_representation": "Claim/Impact assertion about Large Model Inference",
+      "protected_scope_evidence": ["AI端到端网络解决方案", "锐捷网络解决方案"]
+    },
+    {
+      "case_id": "RU-001",
+      "action": "EXCLUDE_FROM_POLICY_SCORE",
+      "current_gold": {"from": "Rubin Ultra NVL72（可拓展版）", "relation": "part_of", "to": "Rubin Ultra NVL576", "scope": "8柜组成"},
+      "non_relation_representation": "Rubin structured configuration Claim",
+      "protected_scope_evidence": ["NVL72", "可拓展版", "NVL576", "8柜组成"]
+    },
+    {
+      "case_id": "RU-012",
+      "action": "EXCLUDE_FROM_POLICY_SCORE",
+      "current_gold": {"from": "Polyfer原型系统", "relation": "uses", "to": "数据中心光互联", "scope": "二层互联/原型机"},
+      "non_relation_representation": "Rubin / Rack-Scale AI System prototype Claim",
+      "protected_scope_evidence": ["Polyfer", "原型系统", "二层互联", "原型机"]
+    }
+  ],
+  "stop_gate": "Do not generate formal Gold v1.1.0 and do not modify scorer in B.2C."
+}

@@ -62,18 +62,13 @@ def valid_source_payload(node_id: str) -> dict:
 
 @pytest.mark.parametrize(
     "case",
-    ["node_type", "claim_nature", "claim_status", "claim_novelty", "confidence"],
+    ["claim_nature", "claim_status", "claim_novelty", "confidence"],
 )
 def test_source_analysis_rejects_illegal_llm_output(tmp_path: Path, case: str):
     cfg, db = make_config(tmp_path)
     node_id = db.add_node("中际旭创", "Entity")
     payload = valid_source_payload(node_id)
-    if case == "node_type":
-        payload["node_candidates"] = [{
-            "canonical_name": "非法节点", "primary_type": "Company", "aliases": [],
-            "suggested_parent_node_ids": [], "confidence": 0.8, "candidate_kind": "normal",
-        }]
-    elif case == "claim_nature":
+    if case == "claim_nature":
         payload["claims"][0]["nature"] = "opinion"
     elif case == "claim_status":
         payload["claims"][0]["status"] = "trusted"
@@ -88,6 +83,109 @@ def test_source_analysis_rejects_illegal_llm_output(tmp_path: Path, case: str):
         analyzer.analyze_source(
             "sample.txt", "中际旭创预计2026年产能增长20%。", "standard"
         )
+
+
+RUN_006_AF007_FIXTURE = json.loads(
+    (
+        Path(__file__).parent
+        / "fixtures"
+        / "run_006_af007_invalid_node_candidates.json"
+    ).read_text(encoding="utf-8")
+)
+
+
+def test_run_006_af007_invalid_node_candidates_are_locally_isolated(
+    tmp_path: Path,
+):
+    cfg, db = make_config(tmp_path)
+    company_id = db.add_node("中际旭创", "Entity")
+    product_id = db.add_node("光模块", "Product")
+    payload = valid_source_payload(company_id)
+    payload["node_matches"].append({
+        "node_id": product_id,
+        "role": "related",
+        "confidence": 0.95,
+        "reason": "明确提及",
+        "evidence_excerpt": "光模块",
+    })
+    payload["node_candidates"] = [
+        {
+            "canonical_name": "合法材料候选",
+            "primary_type": "Material",
+            "aliases": [],
+            "description": "独立合法候选",
+            "suggested_parent_node_ids": [],
+            "reason": "离线隔离控制对象",
+            "confidence": 0.8,
+            "candidate_kind": "normal",
+            "independent_research_value": True,
+            "maintenance_rationale": "用于验证合法候选仍可独立保留",
+            "is_discrete_event": False,
+            "event_time": "",
+            "evidence_excerpt": "",
+            "long_term_research_value": True,
+            "cross_source_or_node_value": True,
+            "question": "",
+            "importance": "",
+            "what_would_change_my_mind": "",
+        },
+        *RUN_006_AF007_FIXTURE["invalid_node_candidates"],
+        "malformed-node-candidate",
+    ]
+    payload["claims"][0].update({
+        "statement": "中际旭创生产光模块。",
+        "nature": "fact",
+        "related_node_ids": [company_id, product_id],
+        "fact_time": "",
+        "evidence_excerpt": "中际旭创生产光模块。",
+        "attributed_to": "中际旭创",
+        "scope": "公司产品",
+    })
+    payload["relation_candidates"] = [{
+        "from_node_id": company_id,
+        "relation_type": "produces",
+        "to_node_id": product_id,
+        "scope": "公司产品",
+        "supporting_claim_refs": ["C1"],
+        "confidence": 0.9,
+        "reason": "原文明确生产关系",
+    }]
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(payload)
+
+    analysis = analyzer.analyze_source(
+        "af007_offline_replay.txt", "中际旭创生产光模块。", "standard"
+    )
+
+    assert {item["node_id"] for item in analysis.node_matches} == {
+        company_id,
+        product_id,
+    }
+    assert analysis.claims[0]["related_node_ids"] == [company_id, product_id]
+    assert len(analysis.relation_candidates) == 1
+    assert analysis.relation_candidates[0]["relation_type"] == "produces"
+    assert [item["canonical_name"] for item in analysis.node_candidates] == [
+        "合法材料候选"
+    ]
+    rejected = {
+        item["canonical_name"]: item
+        for item in analysis.rejected_node_candidates
+        if "canonical_name" in item
+    }
+    assert set(rejected) == {"OpenAI ARR", "Anthropic ARR"}
+    for item in rejected.values():
+        assert item["primary_type"] == "Metric"
+        assert item["quality_eligible"] is False
+        assert item["quality_validation"]["errors"] == ["invalid_subobject"]
+        assert "unsupported Node Type 'Metric'" in item["rejection_reason"]
+    malformed = [
+        item
+        for item in analysis.rejected_node_candidates
+        if item.get("raw_value") == "malformed-node-candidate"
+    ]
+    assert len(malformed) == 1
+    assert malformed[0]["quality_validation"]["errors"] == ["invalid_subobject"]
+    assert "expected an object" in malformed[0]["rejection_reason"]
 
 
 RUN_005_FIXTURE = json.loads(

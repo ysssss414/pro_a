@@ -1,0 +1,177 @@
+{
+  "canonical_production": {
+    "absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "bytes": 466944,
+    "creation_time_local": "2026-08-13T16:07:16.707116+08:00",
+    "creation_time_utc": "2026-08-13T08:07:16.707116+00:00",
+    "current_config_resolved_db_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "last_write_time_local": "2026-08-17T09:29:54.271666+08:00",
+    "last_write_time_utc": "2026-08-17T01:29:54.271666+00:00",
+    "path_determination_sources": [
+      {
+        "fact": "[workspace] root = './workspace'",
+        "source": "config.toml"
+      },
+      {
+        "fact": "AppConfig.root resolves workspace.root and db_path returns root / 'pro_a.db'",
+        "source": "src/pro_a/config.py"
+      },
+      {
+        "fact": "PRODUCTION_DB is PROJECT_ROOT/workspace/pro_a.db with expected and actual d461 SHA",
+        "source": "run_006/run006.py and phase_0/R1_LAUNCH_GATE.json"
+      }
+    ],
+    "path_relative_to_repo": "workspace/pro_a.db",
+    "pragma_user_version": 0,
+    "relation_type_counts": {
+      "part_of": 177
+    },
+    "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
+    "schema_version": "0.2.1",
+    "sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "table_counts": {
+      "claim_node_links": 0,
+      "claim_relations": 0,
+      "claims": 12,
+      "current_views": 0,
+      "ima_objects": 0,
+      "impact_attempt_audit": 0,
+      "impact_reviews": 0,
+      "knowledge_gaps": 0,
+      "meta": 1,
+      "node_aliases": 704,
+      "node_relations": 177,
+      "nodes": 256,
+      "processing_jobs": 5,
+      "proposals": 9,
+      "research_questions": 0,
+      "side_effect_jobs": 0,
+      "source_node_links": 3,
+      "source_relations": 0,
+      "sources": 2
+    }
+  },
+  "discrepancy_decision": {
+    "a5b05_is_run_006_isolated_runtime": true,
+    "attempt_002_treated_isolated_runtime_as_production_source": true,
+    "canonical_production_changed_from_d461_to_a5b05": false,
+    "decision": "FAIL_CLOSED_OLD_PACKAGE_AND_REQUALIFY_FROM_D461",
+    "frozen_production_candidate_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "legal_mutation_or_promotion_chain_from_d461_to_a5b05": []
+  },
+  "metadata": {
+    "artifact": "B2C Production DB identity verification and old-package qualification audit",
+    "generated_at": "2026-08-19T14:30:28.773412+08:00",
+    "status": "PASS_FAIL_CLOSED_OLD_PACKAGE"
+  },
+  "old_package_audit": {
+    "apply_target_resolution": "One explicit DatabasePath resolved to one absolute file; config.toml is not consulted. Target mechanism is safe but the old manifest precondition is the wrong DB identity for Production.",
+    "attempt_002_copy_source_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
+    "attempt_002_copy_source_basis": "Old manifest/README bind this path; report copy equality and pre-SHA are a5b05; filesystem hash identifies this run_006 runtime DB.",
+    "attempt_002_immutable_baseline": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 1,
+      "tree_sha256": "824d6ece0d43a270383b68404ced0cc4030afdf412d8a19cb747cd6f427b1470"
+    },
+    "attempt_002_pre_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
+    "attempt_002_target_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_approved_20260819_isolated_attempt_002\\pro_a_b2c_dry_run.db",
+    "db_resolution_metadata": {
+      "artifact": "B2C deterministic DB resolution",
+      "database_path_relative_to_repo": "workspace/r1_acceptance/run_006/runtime_workspace/pro_a.db",
+      "database_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
+      "embedding_used_for_identity_or_structure": false,
+      "resolution_method": "SQLite read-only exact NOCASE canonical/alias checks plus Unicode NFKC casefold identity normalization",
+      "resolution_status": "PASS",
+      "resolved_against": "run_006 frozen/current Production source DB",
+      "schema_sha256": "94832424b3da6ddd90a7f0df9752270624a8b7c319c99046a8ede7e081d1f5d4",
+      "schema_version": "0.2.2"
+    },
+    "execution_decision": "DO_NOT_EXECUTE_OLD_PACKAGE_AGAINST_PRODUCTION",
+    "immutable_baseline": {
+      "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
+      "file_count": 14,
+      "tree_sha256": "4604dd9d3014e80c773e4f3c222e9e137d7ffb8758fd00e487a141058e6e5ca0"
+    },
+    "manifest_database_precondition": {
+      "bytes": 2691072,
+      "identity": "run_006 frozen/current Production source DB",
+      "path_relative_to_repo": "workspace/r1_acceptance/run_006/runtime_workspace/pro_a.db",
+      "schema_sha256": "94832424b3da6ddd90a7f0df9752270624a8b7c319c99046a8ede7e081d1f5d4",
+      "schema_version": "0.2.2",
+      "sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
+      "table_counts": {
+        "claim_node_links": 47,
+        "claim_relations": 0,
+        "claims": 572,
+        "current_views": 0,
+        "ima_objects": 0,
+        "impact_attempt_audit": 53,
+        "impact_reviews": 28,
+        "knowledge_gaps": 28,
+        "meta": 1,
+        "node_aliases": 704,
+        "node_relations": 177,
+        "nodes": 256,
+        "processing_jobs": 15,
+        "proposals": 56,
+        "relation_evidence_links": 0,
+        "research_questions": 0,
+        "side_effect_jobs": 0,
+        "source_node_links": 78,
+        "source_relations": 0,
+        "sources": 12
+      }
+    },
+    "package_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\pro_a_r1_node_import_package_B2C_APPROVED_20260819",
+    "readme_source_binding": "workspace/r1_acceptance/run_006/runtime_workspace/pro_a.db"
+  },
+  "run_006": {
+    "isolated_runtime_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
+    "isolated_runtime_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
+    "production": {
+      "actual_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+      "counts": {
+        "claims": 12,
+        "current_views": 0,
+        "impact_reviews": 0,
+        "node_relations": 177,
+        "nodes": 256,
+        "proposals": 9,
+        "sources": 2
+      },
+      "expected_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+      "path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db"
+    },
+    "provenance_chain": [
+      "run006.py defines Production as project workspace/pro_a.db (d461)",
+      "sqlite_backup opens Production with SQLite URI mode=ro",
+      "sqlite_backup copies Production to run_006/runtime_workspace/pro_a.db",
+      "run_006 opens Database(RUNTIME_DB) and mutates only the isolated runtime",
+      "run_006 records Production unchanged and runtime post-SHA a5b05"
+    ],
+    "runtime_summary_hashes": {
+      "production_db_post_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+      "runtime_db_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480"
+    }
+  },
+  "structural_decision_freeze": {
+    "approved_for_import": [],
+    "approved_structural_patch_candidate_relation_ids": [
+      "B2C-STRUCT-001",
+      "B2C-STRUCT-002",
+      "B2C-STRUCT-021",
+      "B2C-STRUCT-023",
+      "B2C-STRUCT-024"
+    ],
+    "defer_parent_review_relation_ids": [
+      "B2C-STRUCT-015",
+      "B2C-STRUCT-016",
+      "B2C-STRUCT-017",
+      "B2C-STRUCT-018",
+      "B2C-STRUCT-019",
+      "B2C-STRUCT-020",
+      "B2C-STRUCT-022"
+    ],
+    "part_of_writes_allowed": 0
+  }
+}

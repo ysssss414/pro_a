@@ -1,0 +1,363 @@
+{
+  "absence_checks": {
+    "deferred_or_rejected_exact_objects_present": [],
+    "forbidden_alias": "可插拔光模块",
+    "forbidden_alias_present": false
+  },
+  "approved_alias_resolution": {
+    "eligible": 2,
+    "requested": 2,
+    "rows": [
+      {
+        "alias": "微透镜阵列",
+        "alias_collision": false,
+        "canonical_collision": false,
+        "node_ref": "NODE_20260819_9B032E0E",
+        "normalized_identity_collision": false
+      },
+      {
+        "alias": "光模块PCB",
+        "alias_collision": false,
+        "canonical_collision": false,
+        "node_ref": "NODE_20260819_D4B733E9",
+        "normalized_identity_collision": false
+      }
+    ]
+  },
+  "blockers": [],
+  "create_resolution": {
+    "alias_collisions": [],
+    "canonical_collisions": [],
+    "downgraded_to_review_required": 0,
+    "eligible": 24,
+    "equivalent_existing_nodes": [],
+    "normalized_identity_collisions": [],
+    "ontology_reuse_candidates": [],
+    "requested": 24,
+    "rows": [
+      {
+        "canonical_name": "Large Model Inference",
+        "decision_id": "B2C-CREATE-001",
+        "primary_type": "Application",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Large Model Training",
+        "decision_id": "B2C-CREATE-002",
+        "primary_type": "Application",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Google",
+        "decision_id": "B2C-CREATE-003",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Lenovo Group",
+        "decision_id": "B2C-CREATE-004",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Ruijie Networks",
+        "decision_id": "B2C-CREATE-005",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "ams OSRAM",
+        "decision_id": "B2C-CREATE-006",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "凌玮科技",
+        "decision_id": "B2C-CREATE-007",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "博创科技",
+        "decision_id": "B2C-CREATE-008",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "台光电子",
+        "decision_id": "B2C-CREATE-009",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "圣泉集团",
+        "decision_id": "B2C-CREATE-010",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "炬光科技",
+        "decision_id": "B2C-CREATE-011",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "生益科技",
+        "decision_id": "B2C-CREATE-012",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "联瑞新材",
+        "decision_id": "B2C-CREATE-013",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "鹏鼎控股",
+        "decision_id": "B2C-CREATE-014",
+        "primary_type": "Entity",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Copper Foil",
+        "decision_id": "B2C-CREATE-015",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Hydrocarbon Resin",
+        "decision_id": "B2C-CREATE-016",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Low-Alpha Spherical Silica",
+        "decision_id": "B2C-CREATE-017",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Photoresist Resin",
+        "decision_id": "B2C-CREATE-018",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Polyphenylene Oxide (PPO)",
+        "decision_id": "B2C-CREATE-019",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Silica Powder",
+        "decision_id": "B2C-CREATE-020",
+        "primary_type": "Material",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Micro-Prism Lens Array",
+        "decision_id": "B2C-CREATE-021",
+        "primary_type": "Product",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "x86 Server",
+        "decision_id": "B2C-CREATE-022",
+        "primary_type": "Product",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Micro Lens Array",
+        "decision_id": "B2C-CREATE-023",
+        "primary_type": "Product",
+        "resolution": "CREATE_ELIGIBLE"
+      },
+      {
+        "canonical_name": "Optical Module PCB",
+        "decision_id": "B2C-CREATE-024",
+        "primary_type": "Product",
+        "resolution": "CREATE_ELIGIBLE"
+      }
+    ]
+  },
+  "fresh_canonical_validation": {
+    "approved_alias_rows_checked": 2,
+    "blockers": [],
+    "create_rows_checked": 24,
+    "deferred_rejected_absence_values_checked": 13,
+    "result": "PASS",
+    "reuse_rows_checked": 11,
+    "structural_parent_rows_checked": 10
+  },
+  "metadata": {
+    "artifact": "B2C final qualification deterministic canonical-Production DB resolution",
+    "database_path_absolute": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "database_path_relative_to_repo": "workspace/pro_a.db",
+    "database_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
+    "embedding_used_for_identity_or_structure": false,
+    "node_identity_table_semantic_sha256": {
+      "node_aliases": "d453e7aa13b0cd2497d38971aec76b8b2125df3c7c0b41149a9f8ad2b840b235",
+      "node_relations": "4376121889a3dcc1cba8b26c600ade7fc02c088bb6efc2084c7bd605b51c7e82",
+      "nodes": "66d756c25d723f1a64405aa9b06c8c344f31a2511dbdf25b7367acf0cc99573b"
+    },
+    "node_identity_tables_equal_to_run_006_runtime": true,
+    "resolution_method": "Fresh SQLite mode=ro exact NOCASE and NFKC/casefold identity checks against d461 canonical Production",
+    "resolution_status": "PASS",
+    "resolved_against": "canonical project Production DB",
+    "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
+    "schema_version": "0.2.1"
+  },
+  "parent_resolution": {
+    "approved_for_import": 0,
+    "approved_structural_patch_candidate": 5,
+    "candidate_relation_decision_ids": [
+      "B2C-STRUCT-001",
+      "B2C-STRUCT-002",
+      "B2C-STRUCT-021",
+      "B2C-STRUCT-023",
+      "B2C-STRUCT-024"
+    ],
+    "confirmed_existing_parent_nodes": [
+      {
+        "canonical_name": "AI应用",
+        "node_id": "NODE_20260814_3B4B3308",
+        "primary_type": "Industry"
+      },
+      {
+        "canonical_name": "PCB Materials",
+        "node_id": "NODE_20260817_F67B36D9",
+        "primary_type": "Segment"
+      },
+      {
+        "canonical_name": "Advanced Packaging Materials",
+        "node_id": "NODE_20260817_811BA6BC",
+        "primary_type": "Segment"
+      },
+      {
+        "canonical_name": "Micro Optical Lens",
+        "node_id": "NODE_20260817_372BDB38",
+        "primary_type": "Product"
+      },
+      {
+        "canonical_name": "PCB",
+        "node_id": "NODE_20260814_B6C2EE4F",
+        "primary_type": "Segment"
+      }
+    ],
+    "defer_parent_relation_decision_ids": [
+      "B2C-STRUCT-015",
+      "B2C-STRUCT-016",
+      "B2C-STRUCT-017",
+      "B2C-STRUCT-018",
+      "B2C-STRUCT-019",
+      "B2C-STRUCT-020",
+      "B2C-STRUCT-022"
+    ],
+    "defer_parent_review": 7,
+    "no_parent_required": 12
+  },
+  "precondition_counts": {
+    "claims": 12,
+    "current_views": 0,
+    "node_aliases": 704,
+    "node_relations": 177,
+    "nodes": 256,
+    "proposals": 9,
+    "sources": 2
+  },
+  "result": "READY_FOR_FRESH_ISOLATED_QUALIFICATION",
+  "reuse_resolution": {
+    "failures": [],
+    "requested": 11,
+    "targets": [
+      {
+        "canonical_name": "PCB",
+        "node_id": "NODE_20260814_B6C2EE4F",
+        "primary_type": "Segment",
+        "status": "active"
+      },
+      {
+        "canonical_name": "AI Network Switch",
+        "node_id": "NODE_20260817_DA5A102E",
+        "primary_type": "Product",
+        "status": "active"
+      },
+      {
+        "canonical_name": "Rack-Scale AI System",
+        "node_id": "NODE_20260817_865999D6",
+        "primary_type": "Product",
+        "status": "active"
+      },
+      {
+        "canonical_name": "Rubin",
+        "node_id": "NODE_20260814_411CD807",
+        "primary_type": "Product",
+        "status": "active"
+      },
+      {
+        "canonical_name": "Low-Dk Glass Fabric",
+        "node_id": "NODE_20260817_0D00AB0A",
+        "primary_type": "Material",
+        "status": "active"
+      },
+      {
+        "canonical_name": "Low-Profile Copper Foil",
+        "node_id": "NODE_20260817_1BF137CE",
+        "primary_type": "Material",
+        "status": "active"
+      },
+      {
+        "canonical_name": "HDI",
+        "node_id": "NODE_20260817_FB7D8D51",
+        "primary_type": "Technology",
+        "status": "active"
+      },
+      {
+        "canonical_name": "Data Center Optical Transceiver",
+        "node_id": "NODE_20260817_DA3D351C",
+        "primary_type": "Product",
+        "status": "active"
+      }
+    ],
+    "uniquely_resolved": 11
+  },
+  "similarity_neighbors": [
+    {
+      "classification": "NARROWER_MATERIAL_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "Low-Profile Copper Foil",
+      "neighbor_node_id": "NODE_20260817_1BF137CE",
+      "proposal": "Copper Foil"
+    },
+    {
+      "classification": "DOWNSTREAM_OR_FORMULATED_MATERIAL_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "Advanced Packaging Photoresist",
+      "neighbor_node_id": "NODE_20260817_D33CCFC0",
+      "proposal": "Photoresist Resin"
+    },
+    {
+      "classification": "PROPOSED_PARENT_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "Micro Optical Lens",
+      "neighbor_node_id": "NODE_20260817_372BDB38",
+      "proposal": "Micro Lens Array"
+    },
+    {
+      "classification": "PROPOSED_PARENT_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "Micro Optical Lens",
+      "neighbor_node_id": "NODE_20260817_372BDB38",
+      "proposal": "Micro-Prism Lens Array"
+    },
+    {
+      "classification": "BROADER_SEGMENT_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "PCB",
+      "neighbor_node_id": "NODE_20260814_B6C2EE4F",
+      "proposal": "Optical Module PCB"
+    },
+    {
+      "classification": "NARROWER_APPLICATION_CLASS_NOT_IDENTITY_EQUIVALENT",
+      "neighbor": "AI Server",
+      "neighbor_node_id": "NODE_20260817_DB4961DB",
+      "proposal": "x86 Server"
+    }
+  ]
+}

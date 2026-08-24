@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pro-a"
-version = "0.2.2.1"
-description = "Research knowledge ingestion engine with IMA sync"
+version = "0.3.0"
+description = "Local canonical knowledge engine for long-term research"
 requires-python = ">=3.10"
 dependencies = [
   "requests>=2.31",
@@ -28,3 +28,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]

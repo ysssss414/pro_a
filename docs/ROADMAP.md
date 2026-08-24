@@ -1,138 +1,68 @@
-# pro_a Roadmap — post-v0.2.3B.1
+# pro_a Roadmap — post-Phase 1 freeze
 
-Status: **working roadmap**
+Status: **Phase 1 complete and frozen; Phase 1.1 not started**
 
-This roadmap organizes the next work after the Relation Candidate baseline. It does not modify frozen business rules.
+## Completed milestone — Phase 1
 
-## Current milestone
-
-### Milestone R1 — Relation Baseline Acceptance
-
-Goal: validate the current Relation Candidate pipeline on real research materials before adding more heuristics or widening recall.
-
-Required sequence:
+Phase 1 已在 2026-08-24 完成：
 
 ```text
-B.1 freeze
-→ build human Gold Set
-→ run R1 baseline in isolated workspace
-→ candidate-level audit
-→ pipeline-stage error attribution
-→ B.1 PASS / REOPEN decision
-→ derive B.2 backlog from real failures
+R1 baseline acceptance
+→ B.2 loss attribution and inventory reconciliation
+→ approved B.2C Production Node import
+→ AF-007 deterministic source-survivability fix
+→ B.2E/B.2E.1 recall decisions
+→ B.2F final regression
+→ run_007
+→ Operational Acceptance
+→ Phase 1 freeze
 ```
 
-Acceptance specification: `docs/R1_ACCEPTANCE.md`.
+最终状态：
 
-## B.1 frozen baseline
+- Production：280 Nodes / 706 Aliases / 177 Node Relations；
+- run_007：PASS，无新系统性 safety blocker；
+- Operational Acceptance：`PASS_WITH_RELATION_BACKLOG`；
+- Source / Claim / Node review / controlled DB maintenance 工作流可用；
+- Relation validation operational，Relation generation 尚未达到 operational ready；
+- IMA off；冻结业务规则未改变。
 
-The following capabilities are considered the baseline under test:
+冻结记录见 `docs/PHASE1_FREEZE.md`，历史验收规范保留在 `docs/R1_ACCEPTANCE.md`。
 
-- Relation-specific Evidence foundation;
-- pending Relation Proposal workflow;
-- stale Proposal recovery;
-- supporting Claim resolution;
-- exact atomic Claim mapping;
-- semantic Evidence validation;
-- directional active/passive validation;
-- rejection audit reasons;
-- Proposal payload hygiene;
-- scope/reason integrity and Proposal identity preservation.
+## Known backlog carried forward
 
-Do not expand B.1 merely to improve recall unless R1 identifies a Hard Failure or a defect that breaks the safety contract.
+- Relation Candidate generation 漏召回；Operational exact probes 0/2。
+- `NM-002` atomic Claim extraction 与 `NM-005` direction generation：`MODEL_QUALITY_BACKLOG`。
+- `NM-001` 与 `NM-006`：contract-constrained false negatives。
+- `RJ-009` / `PD-002` / `HW-001`：Phase 1 不再修复。
+- Claim semantic deduplication / conflict retrieval。
+- Proposal “modify then accept”。
+- Knowledge Gap resolve / reopen / supersede 与 ResearchQuestion Current Answer 生命周期。
+- 更可靠的表格、图表、多模态与 source-version 处理。
+- 正式 IMA integration acceptance 与更高层 review UI。
 
-## B.2 — to be defined by R1
+这些 backlog 不构成已冻结 Phase 1 的追补开发授权。
 
-B.2 is intentionally not frozen in advance.
+## Next candidate milestone — Phase 1.1 / R2
 
-Candidate workstreams may include:
+Phase 1.1 尚未开始，需用户另行授权。候选目标是 **Expanded Knowledge Universe / R2**：
 
-### Relation ontology
+1. 以独立的新材料集扩展 Node/alias universe；
+2. 继续使用 human-gated inventory reconciliation 与 controlled import；
+3. 设计 R2 Gold / operational probes，避免复用 Phase 1 prompt-tuning cases；
+4. 在不放宽 frozen validators 的前提下评估 Relation generation 的 operational usefulness；
+5. 如需 prompt/model 改动，先做受控实验，再进入 targeted regression；
+6. Production mutation 继续要求显式授权、SHA precondition、backup、atomic apply、receipt 与 rollback contract。
 
-- endpoint type compatibility matrix;
-- relation inverse / redundancy rules;
-- Product vs Entity granularity;
-- planned / qualification / production-state semantics;
-- scope identity rules.
+## Decision rule
 
-### Candidate quality
-
-- LLM candidate recall;
-- multilingual / complex syntax coverage;
-- candidate duplication / identity;
-- confidence calibration.
-
-### Endpoint resolution
-
-- alias ambiguity;
-- Product / Technology / Entity disambiguation;
-- Evidence-backed endpoint match improvements.
-
-### Claim / Evidence quality
-
-- atomic Claim extraction;
-- multi-sentence Evidence disambiguation;
-- table / figure Evidence limitations;
-- relation-specific Evidence traceability.
-
-### Observability
-
-- reject reason taxonomy;
-- acceptance metrics;
-- candidate-level audit export;
-- reproducible R1 regression corpus.
-
-Only R1-backed issues should be promoted into implementation tasks.
-
-## Other P0 work after Relation acceptance
-
-These remain important but should not interrupt R1 unless explicitly reprioritized:
-
-1. Replayable Standard / Deep LLM analysis jobs with retry and idempotency.
-2. Claim semantic deduplication and conflict-candidate retrieval without repeatedly sending large Claim history to the model.
-3. Proposal “modify then accept”.
-4. Knowledge Gap lifecycle: resolve / reopen / supersede.
-5. ResearchQuestion Current Answer update and approval rules.
-
-## P1 / later work
-
-1. More reliable PDF table / chart interpretation.
-2. Image multimodal parsing; OCR should not be the default path.
-3. Source Updated Version / Near Duplicate detection.
-4. Node-specific Materiality Threshold configuration.
-5. External web Research Output ingestion.
-6. Formal IMA integration acceptance.
-7. GUI / higher-level review experience.
-
-## IMA boundary
-
-IMA remains disabled during the current acceptance stage.
-
-IMA is expected to serve as:
-
-- document cloud storage;
-- Search / RAG;
-- formal research-output carrier.
-
-IMA is not the source of truth for knowledge state. SQLite / pro_a remains the Canonical Knowledge Engine.
-
-## Development decision rule
-
-When deciding whether to change code, use this order:
-
-1. Is there a Hard Failure that can create wrong canonical knowledge?
-2. If not, is the issue a safe false negative / conservative rejection?
-3. Which pipeline stage actually owns the failure?
-4. Is the proposed fix the smallest change at that stage?
-5. Does the fix preserve existing frozen rules and safety gates?
-
-Avoid compensating for upstream defects by weakening downstream validation.
+优先级保持：错误 canonical knowledge 与 unsafe acceptance 高于 coverage。不得用 fuzzy linking、evidence-free association、Gold-specific hardcode 或 validator weakening 补偿 upstream model loss。
 
 ## Documentation ownership
 
-- `docs/REQUIREMENTS_FROZEN.md`: frozen business rules; change only with explicit user decision.
-- `docs/R1_ACCEPTANCE.md`: R1 evaluation contract.
-- `docs/RELATION_SEMANTICS.md`: working ontology notes; not frozen.
-- `CODEX_TASK.md`: current engineering continuation brief.
-- `CHANGELOG.md`: completed implementation history.
-- `README.md`: current system baseline and operating overview.
+- `docs/PHASE1_FREEZE.md`：Phase 1 release closure 与 artifact pointers。
+- `docs/REQUIREMENTS_FROZEN.md`：冻结业务规则；仅在用户明确决策后修改。
+- `docs/R1_ACCEPTANCE.md`：历史 R1 acceptance contract 与完成状态。
+- `docs/RELATION_SEMANTICS.md`：Relation working semantics；本次 freeze 未修改。
+- `CODEX_TASK.md`：当前 continuation brief。
+- `CHANGELOG.md`：完成历史。

@@ -1,0 +1,475 @@
+{
+  "counts": {
+    "approved_aliases": 2,
+    "approved_structural_patch_candidate": 5,
+    "create": 24,
+    "defer": 7,
+    "defer_parent_review": 7,
+    "no_parent_required": 12,
+    "reject_as_independent_node": 3,
+    "reuse": 11,
+    "structural_approved_for_import": 0
+  },
+  "decision_payload": {
+    "approved_aliases": [
+      {
+        "alias": "微透镜阵列",
+        "decision": "APPROVE_ALIAS",
+        "decision_id": "B2C-ALIAS-001",
+        "node": "Micro Lens Array"
+      },
+      {
+        "alias": "光模块PCB",
+        "decision": "APPROVE_ALIAS",
+        "decision_id": "B2C-ALIAS-002",
+        "node": "Optical Module PCB"
+      }
+    ],
+    "create": [
+      {
+        "canonical_name": "Large Model Inference",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-001",
+        "primary_type": "Application"
+      },
+      {
+        "canonical_name": "Large Model Training",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-002",
+        "primary_type": "Application"
+      },
+      {
+        "canonical_name": "Google",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-003",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "Lenovo Group",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-004",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "Ruijie Networks",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-005",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "ams OSRAM",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-006",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "凌玮科技",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-007",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "博创科技",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-008",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "台光电子",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-009",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "圣泉集团",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-010",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "炬光科技",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-011",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "生益科技",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-012",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "联瑞新材",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-013",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "鹏鼎控股",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-014",
+        "primary_type": "Entity"
+      },
+      {
+        "canonical_name": "Copper Foil",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-015",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Hydrocarbon Resin",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-016",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Low-Alpha Spherical Silica",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-017",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Photoresist Resin",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-018",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Polyphenylene Oxide (PPO)",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-019",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Silica Powder",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-020",
+        "primary_type": "Material"
+      },
+      {
+        "canonical_name": "Micro-Prism Lens Array",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-021",
+        "primary_type": "Product"
+      },
+      {
+        "canonical_name": "x86 Server",
+        "decision": "APPROVE_CREATE",
+        "decision_id": "B2C-CREATE-022",
+        "primary_type": "Product"
+      },
+      {
+        "canonical_name": "Micro Lens Array",
+        "decision": "APPROVE_CREATE_WITH_CANONICAL_NORMALIZATION",
+        "decision_id": "B2C-CREATE-023",
+        "excluded_identity_scope": "high-channel-count / 大通道 / 高通道",
+        "original_proposal": "High-Channel-Count Micro Lens Array",
+        "primary_type": "Product"
+      },
+      {
+        "canonical_name": "Optical Module PCB",
+        "decision": "APPROVE_CREATE_WITH_CANONICAL_NORMALIZATION",
+        "decision_id": "B2C-CREATE-024",
+        "excluded_identity_scope": "high-speed / 高速",
+        "original_proposal": "High-Speed Optical-Module PCB",
+        "primary_type": "Product"
+      }
+    ],
+    "create_defer": [
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-001",
+        "endpoint": "Doosan"
+      },
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-002",
+        "endpoint": "Panasonic"
+      },
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-003",
+        "endpoint": "江苏辉迈"
+      },
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-004",
+        "endpoint": "苏州锦逸"
+      }
+    ],
+    "gold_adjudication_overlay": {
+      "exclude_from_policy_score": [
+        "RJ-005",
+        "RJ-006",
+        "RU-001",
+        "RU-012"
+      ],
+      "gold_v1_0_0_must_remain_immutable": true,
+      "modify_in_future_gold": [
+        "LX-002",
+        "NM-003",
+        "NM-013",
+        "PD-005",
+        "PD-006",
+        "RJ-001",
+        "RU-003",
+        "RU-004",
+        "RU-005",
+        "RU-008",
+        "RU-009",
+        "RU-010"
+      ],
+      "prepare_only": true
+    },
+    "keep_defer": [
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-005",
+        "endpoint": "OPE"
+      },
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-006",
+        "endpoint": "PS树脂"
+      },
+      {
+        "decision": "DEFER",
+        "decision_id": "B2C-DEFER-007",
+        "endpoint": "圣泉封装树脂"
+      }
+    ],
+    "reject_as_independent_node": [
+      {
+        "decision": "REJECT_AS_INDEPENDENT_NODE",
+        "decision_id": "B2C-REJECT-001",
+        "endpoint": "直燃法亚微米球硅",
+        "representation": "Silica Powder process/grade Claim"
+      },
+      {
+        "decision": "REJECT_AS_INDEPENDENT_NODE",
+        "decision_id": "B2C-REJECT-002",
+        "endpoint": "AI端到端网络解决方案",
+        "representation": "solution/architecture Claim"
+      },
+      {
+        "decision": "REJECT_AS_INDEPENDENT_NODE",
+        "decision_id": "B2C-REJECT-003",
+        "endpoint": "Polyfer原型系统",
+        "representation": "Rubin / Rack-Scale AI System prototype Claim"
+      }
+    ],
+    "reuse": [
+      {
+        "decision_id": "B2C-REUSE-001",
+        "endpoint": "30层高阶PCB",
+        "mode": "REUSE_AS_IS",
+        "target": "PCB"
+      },
+      {
+        "decision_id": "B2C-REUSE-002",
+        "endpoint": "800G数据中心交换机",
+        "mode": "REUSE_AS_IS",
+        "target": "AI Network Switch"
+      },
+      {
+        "decision_id": "B2C-REUSE-003",
+        "endpoint": "GB300机架级AI系统",
+        "mode": "REUSE_AS_IS",
+        "target": "Rack-Scale AI System"
+      },
+      {
+        "decision_id": "B2C-REUSE-004",
+        "endpoint": "Rubin Ultra NVL576",
+        "mode": "REUSE_AS_IS",
+        "target": "Rubin"
+      },
+      {
+        "decision_id": "B2C-REUSE-005",
+        "endpoint": "Rubin Ultra NVL72",
+        "mode": "REUSE_AS_IS",
+        "target": "Rubin"
+      },
+      {
+        "decision_id": "B2C-REUSE-006",
+        "endpoint": "Rubin Ultra NVL72（不可拓展版）",
+        "mode": "REUSE_AS_IS",
+        "target": "Rubin"
+      },
+      {
+        "decision_id": "B2C-REUSE-007",
+        "endpoint": "Rubin Ultra NVL72（可拓展版）",
+        "mode": "REUSE_AS_IS",
+        "target": "Rubin"
+      },
+      {
+        "decision_id": "B2C-REUSE-008",
+        "endpoint": "第二代低介电布",
+        "mode": "REUSE_AS_IS",
+        "target": "Low-Dk Glass Fabric"
+      },
+      {
+        "decision_id": "B2C-REUSE-009",
+        "endpoint": "第四代低轮廓铜箔",
+        "mode": "REUSE_AS_IS",
+        "target": "Low-Profile Copper Foil"
+      },
+      {
+        "decision_id": "B2C-REUSE-010",
+        "endpoint": "高阶HDI",
+        "mode": "REUSE_AS_IS",
+        "target": "HDI"
+      },
+      {
+        "decision_id": "B2C-REUSE-011",
+        "endpoint": "可插拔光模块",
+        "forbidden_global_alias": "可插拔光模块",
+        "mode": "REUSE_WITHOUT_ALIAS",
+        "target": "Data Center Optical Transceiver"
+      }
+    ],
+    "structural_relations": {
+      "approved_for_import": [],
+      "approved_structural_patch_candidate": [
+        {
+          "decision": "APPROVED_STRUCTURAL_PATCH_CANDIDATE",
+          "executable_in_this_package": false,
+          "from": "Large Model Inference",
+          "relation_decision_id": "B2C-STRUCT-001",
+          "relation_type": "part_of",
+          "to": "AI应用"
+        },
+        {
+          "decision": "APPROVED_STRUCTURAL_PATCH_CANDIDATE",
+          "executable_in_this_package": false,
+          "from": "Large Model Training",
+          "relation_decision_id": "B2C-STRUCT-002",
+          "relation_type": "part_of",
+          "to": "AI应用"
+        },
+        {
+          "decision": "APPROVED_STRUCTURAL_PATCH_CANDIDATE",
+          "executable_in_this_package": false,
+          "from": "Micro-Prism Lens Array",
+          "relation_decision_id": "B2C-STRUCT-021",
+          "relation_type": "part_of",
+          "to": "Micro Optical Lens"
+        },
+        {
+          "decision": "APPROVED_STRUCTURAL_PATCH_CANDIDATE",
+          "executable_in_this_package": false,
+          "from": "Micro Lens Array",
+          "relation_decision_id": "B2C-STRUCT-023",
+          "relation_type": "part_of",
+          "to": "Micro Optical Lens"
+        },
+        {
+          "decision": "APPROVED_STRUCTURAL_PATCH_CANDIDATE",
+          "executable_in_this_package": false,
+          "from": "Optical Module PCB",
+          "relation_decision_id": "B2C-STRUCT-024",
+          "relation_type": "part_of",
+          "to": "PCB"
+        }
+      ],
+      "defer_parent_review": [
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Copper Foil",
+          "proposed_parent": "PCB Materials",
+          "relation_decision_id": "B2C-STRUCT-015"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Hydrocarbon Resin",
+          "proposed_parent": "PCB Materials",
+          "relation_decision_id": "B2C-STRUCT-016"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Low-Alpha Spherical Silica",
+          "proposed_parent": null,
+          "relation_decision_id": "B2C-STRUCT-017"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Photoresist Resin",
+          "proposed_parent": "Advanced Packaging Materials",
+          "relation_decision_id": "B2C-STRUCT-018"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Polyphenylene Oxide (PPO)",
+          "proposed_parent": "PCB Materials",
+          "relation_decision_id": "B2C-STRUCT-019"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "Silica Powder",
+          "proposed_parent": "PCB Materials",
+          "relation_decision_id": "B2C-STRUCT-020"
+        },
+        {
+          "decision": "DEFER_PARENT_REVIEW",
+          "node": "x86 Server",
+          "proposed_parent": null,
+          "relation_decision_id": "B2C-STRUCT-022"
+        }
+      ],
+      "no_parent_required_count": 12,
+      "rule": "This qualification writes zero part_of; candidate status never authorizes import."
+    }
+  },
+  "decision_set_sha256": "1b7b7587400fab0aaa4bc80ceb4c3021ae5f8b821386cb701b48c60e32ad0cd1",
+  "metadata": {
+    "artifact": "pro_a R1 B.2C final qualification human decision freeze",
+    "authority_source": "User-provided Production DB Identity Verification & Final Import Qualification instruction",
+    "authority_source_sha256": "f84a531c9adbf05a1dad1dd0c973ca29555207721504b30a757b707d1b4c7655",
+    "decision_effective_date": "2026-08-19",
+    "decision_time_precision": "date_only; exact time not supplied",
+    "package_id": "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819",
+    "qualification_effective_date": "2026-08-19",
+    "reviewer": "human user; identity not supplied",
+    "status": "FINAL_QUALIFICATION_DECISIONS_FROZEN"
+  },
+  "prohibitions": [
+    "No Production DB writes",
+    "No run_007",
+    "No Gold v1.0.0 modification",
+    "No IMA",
+    "No real LLM",
+    "No B.2D optimization",
+    "No automatic promotion from isolated dry-run to Production",
+    "No part_of writes in this qualification",
+    "No execution of the prior a5b05-bound package against Production"
+  ],
+  "reviewed_evidence": [
+    {
+      "artifact": "R1_B2C_HUMAN_NODE_REVIEW.json",
+      "sha256": "3292bb22f7c8c4ac2e134ab21072ae1bda0cc66b486031fed59973f8efd448fd"
+    },
+    {
+      "artifact": "R1_B2C_GOLD_ADJUDICATION_REVIEW.json",
+      "sha256": "b7a4bd1f29461e9a2f9f8df19cb52864940c401d68834f77523d7198a68bbfaf"
+    },
+    {
+      "artifact": "R1_B2B_NODE_PROPOSALS_FOR_HUMAN_REVIEW.json",
+      "sha256": "708ad651fbb55352724054f70a980804a2eff865178f99ff460fbf0809ff3496"
+    },
+    {
+      "artifact": "R1_GOLD_SET.jsonl v1.0.0",
+      "sha256": "6c8d4df7d4d774f5151229f464b86e3e91c0eaee93c3e60f97615487ab487b20"
+    },
+    {
+      "artifact": "prior B.2C human decision freeze",
+      "sha256": "878a6d7c51483125fa9b60277cd364798c3c6f00800104e0771977f3cb957c31"
+    },
+    {
+      "artifact": "canonical Production DB",
+      "sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b"
+    },
+    {
+      "artifact": "run_006 launch gate",
+      "sha256": "c0f9809097cd74e9a57bcfb9f98dbee52b5fb9919ac21b889d1265baa66dc32c"
+    }
+  ]
+}
