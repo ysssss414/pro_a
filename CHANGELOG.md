@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 2.0 / Phase 2.1A — 2026-08-25
+
+- Synchronized README, Roadmap and continuation state: Phase 1 complete/frozen; Phase 1.1 AI Hardware Node universe and functional Relation requalification complete; Production at 293 Nodes / 737 Aliases / 181 Relations / 174 current `part_of`; functional Relation import count 0.
+- Started Phase 2 — Knowledge Exploration & Interaction Layer with the ordered objective `Search → Browse → Trace → Research → Ask`; deterministic interaction precedes chatbot work.
+- Added an isolated SQLite read model using URI `mode=ro` plus `query_only`; the HTTP path does not reuse the commit/migration-oriented Phase 1 `Database` connection.
+- Added bounded canonical/alias search, node list/detail, correct `part_of` parent/child direction, current 1-hop neighbors, Node Claims with Source metadata, and deduplicated direct/Claim Source provenance.
+- Added a FastAPI application with explicit Pydantic response models, local-only default binding, health/stats and Node exploration endpoints, plus 404/422/503 behavior.
+- Added deterministic query/API tests backed only by isolated temporary SQLite fixtures. No schema, ingestion, validator, proposal, governance or Production mutation contract changed.
+
 ## Phase 1 Freeze — 2026-08-24
 
 - Release version advanced to `0.3.0`: local canonical knowledge engine for long-term research.
