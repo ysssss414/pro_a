@@ -1,6 +1,6 @@
 # Phase 1.1 — AI Hardware Expanded Knowledge Universe
 
-Status: **STARTED — REQUALIFICATION GATE**
+Status: **PHASE 1.1A COMPLETE — NODE UNIVERSE CLOSED**
 
 Start date: **2026-08-25**
 Base: **Phase 1 frozen v0.3.0 / main**
@@ -12,7 +12,11 @@ Use the Sol Pro AI Hardware foundation package as the candidate source for the P
 
 This milestone is not a direct bulk-import exercise. The candidate package must first be reconciled against the actual frozen Production baseline and re-qualified through the current repository validators.
 
-## Frozen Production baseline
+Phase 1.1A completed the Actual-DB reconciliation, human adjudication, isolated qualification, controlled Production import, and closure of the AI Hardware Node/alias universe. Phase 1.1B functional Relation work has not started.
+
+Closure record: [`PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](PHASE1_1A_NODE_UNIVERSE_CLOSURE.md).
+
+## Phase 1 frozen pre-import baseline
 
 From `docs/PHASE1_FREEZE.md`:
 
@@ -24,6 +28,31 @@ From `docs/PHASE1_FREEZE.md`:
 - Retired R1 migrations: 7
 
 No Phase 1.1 write is authorized unless the live Production precondition still matches the expected baseline or an explicitly reviewed successor baseline.
+
+## Phase 1.1A completed Production transition
+
+The human-approved clean Node package was applied to Production on **2026-08-25** under an explicit, package-limited authorization.
+
+| Metric | Before | After | Delta |
+|---|---:|---:|---:|
+| Nodes | 280 | 293 | +13 |
+| Aliases | 706 | 737 | +31 |
+| Node Relations | 177 | 181 | +4 |
+| Current `part_of` | 170 | 174 | +4 |
+
+- Final CREATE: **13**
+- Final REUSE: **5**
+- Aliases added: **31**
+- Structural `part_of` Relations added: **4**
+- Production pre-SHA-256: `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
+- Production post-SHA-256: `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`
+- Atomic apply: **PASS**
+- Integrity validation: **PASS**
+- Idempotent rerun: **PASS**
+- Rollback contract: **PASS**
+- Functional Relations written: **0**
+
+Formal receipt: `workspace/phase1_1_ai_hardware_production_import_20260825/PRODUCTION_IMPORT_RECEIPT.json`.
 
 ## Input package reviewed
 
@@ -105,7 +134,9 @@ Phase 1.1 universe expansion does not itself authorize Current View creation or 
    - final inventory and counts;
    - AI Hardware Node Baseline v1 freeze artifact.
 
-## Current decision
+## Phase 1.1A final decision
+
+`PHASE1_1A = COMPLETE`
 
 `PHASE1_1_STARTED = true`
 
@@ -113,6 +144,14 @@ Phase 1.1 universe expansion does not itself authorize Current View creation or 
 
 `SOL_PRO_PACKAGE_DIRECT_IMPORT_READY = false`
 
+`PHASE1_1A_NODE_UNIVERSE_COMPLETE = true`
+
+`PHASE1_1A_PRODUCTION_IMPORT_SUCCESS = true`
+
+`PHASE1_1B_FUNCTIONAL_RELATIONS_STARTED = false`
+
+`PHASE1_1B_READY = true`
+
 `PRODUCTION_WRITE_AUTHORIZED = false`
 
-The next executable step is the actual-Production read-only reconciliation of the Sol Pro candidate Node/alias universe against the Phase 1 frozen baseline.
+The original Sol Pro V2 staging package remains unsuitable for direct import as-is. Only the separately reconciled, human-approved, isolated-qualified Phase 1.1A clean Node package was applied. The one-time Production authorization is consumed; no further Production write is authorized by this closure.
