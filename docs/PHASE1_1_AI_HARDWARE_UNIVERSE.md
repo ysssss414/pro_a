@@ -1,6 +1,6 @@
 # Phase 1.1 — AI Hardware Expanded Knowledge Universe
 
-Status: **PHASE 1.1A COMPLETE — NODE UNIVERSE CLOSED**
+Status: **PHASE 1.1 COMPLETE — NODE UNIVERSE CLOSED / FUNCTIONAL RELATIONS REQUALIFIED**
 
 Start date: **2026-08-25**
 Base: **Phase 1 frozen v0.3.0 / main**
@@ -12,9 +12,12 @@ Use the Sol Pro AI Hardware foundation package as the candidate source for the P
 
 This milestone is not a direct bulk-import exercise. The candidate package must first be reconciled against the actual frozen Production baseline and re-qualified through the current repository validators.
 
-Phase 1.1A completed the Actual-DB reconciliation, human adjudication, isolated qualification, controlled Production import, and closure of the AI Hardware Node/alias universe. Phase 1.1B functional Relation work has not started.
+Phase 1.1A completed the Actual-DB reconciliation, human adjudication, isolated qualification, controlled Production import, and closure of the AI Hardware Node/alias universe. Phase 1.1B then requalified the frozen inventory of 26 functional Relation candidates without changing the validator or writing any functional Relation to Production.
 
-Closure record: [`PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](PHASE1_1A_NODE_UNIVERSE_CLOSURE.md).
+Closure records:
+
+- [`PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
+- [`PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 
 ## Phase 1 frozen pre-import baseline
 
@@ -53,6 +56,23 @@ The human-approved clean Node package was applied to Production on **2026-08-25*
 - Functional Relations written: **0**
 
 Formal receipt: `workspace/phase1_1_ai_hardware_production_import_20260825/PRODUCTION_IMPORT_RECEIPT.json`.
+
+## Phase 1.1B functional Relation requalification closure
+
+Phase 1.1B resolved both endpoints for all **26** frozen functional Relation candidates, reconstructed source-local evidence, validated the 11 direct-after-context-expansion Claim candidate drafts, and reproduced the frozen Relation validator's rejection behavior.
+
+Final human adjudication:
+
+| Disposition | Count |
+|---|---:|
+| DEFER | 25 |
+| REJECT | 1 |
+| ACCEPT | 0 |
+| Functional Relations written | 0 |
+
+Ten Claim-PASS candidates were deferred as `CONTRACT_CONSTRAINED_FALSE_NEGATIVE`: expanded context supported the candidate semantics, but no continuous source-faithful span satisfied the frozen validator's exact dual-endpoint and semantic-marker contract. The validator was not modified and no rejection was bypassed. Thirteen other non-direct candidates remained deferred, `R1F_0053` was deferred after Claim-context review, `R1F_0078` was deferred after recording the source-faithful endpoint correction to InP Substrate, and `R1F_0018` was rejected because its source supports physical connection rather than the proposed `uses` Relation.
+
+The Phase 1.1B requalification made no Production, Current View, formal Claim, or functional Relation write. Production therefore remains at **293 Nodes, 737 Aliases, 181 Node Relations, and 174 current `part_of`**, with SHA-256 `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`.
 
 ## Input package reviewed
 
@@ -134,7 +154,7 @@ Phase 1.1 universe expansion does not itself authorize Current View creation or 
    - final inventory and counts;
    - AI Hardware Node Baseline v1 freeze artifact.
 
-## Phase 1.1A final decision
+## Phase 1.1 final decision
 
 `PHASE1_1A = COMPLETE`
 
@@ -148,10 +168,12 @@ Phase 1.1 universe expansion does not itself authorize Current View creation or 
 
 `PHASE1_1A_PRODUCTION_IMPORT_SUCCESS = true`
 
-`PHASE1_1B_FUNCTIONAL_RELATIONS_STARTED = false`
+`PHASE1_1B_FUNCTIONAL_REQUALIFICATION_COMPLETE = true`
 
-`PHASE1_1B_READY = true`
+`PHASE1_1_FUNCTIONAL_RELATION_IMPORT_COUNT = 0`
+
+`PHASE1_1_COMPLETE = true`
 
 `PRODUCTION_WRITE_AUTHORIZED = false`
 
-The original Sol Pro V2 staging package remains unsuitable for direct import as-is. Only the separately reconciled, human-approved, isolated-qualified Phase 1.1A clean Node package was applied. The one-time Production authorization is consumed; no further Production write is authorized by this closure.
+The original Sol Pro V2 staging package remains unsuitable for direct import as-is. Only the separately reconciled, human-approved, isolated-qualified Phase 1.1A clean Node package was applied. Phase 1.1B proved that the completed Node identity universe resolves all 26 functional endpoints, but the available materials do not form a safe import payload under the frozen Relation Evidence contract. That Phase 1 Relation Evidence / Generation backlog does not block Phase 1.1 Node Universe completion. The one-time Phase 1.1A Production authorization is consumed; no further Production write is authorized by this closure.
