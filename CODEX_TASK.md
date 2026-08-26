@@ -1,4 +1,10 @@
-# Codex continuation brief — Phase 2.3D Controlled Claim–Node Activation
+# Codex continuation brief — Phase 2.3E Entity Granularity & Claim Attribution Review
+
+## Phase 2.3E closure
+
+`PHASE2_3E_COMPLETE = true`. The read-only review found no exact canonical or alias match for `昀冢科技`, so a non-applied Company Node proposal uses the frozen `primary_type=Entity` and no inferred aliases. The 11 Phase 2.3D links divide into 3 `MLCC_PRIMARY` Claims and 8 `COMPANY_PRIMARY_MLCC_CONTEXT` Claims; the existing MLCC links remain untouched.
+
+Production currently stores only `claim_node_links.role=related`, which cannot distinguish MLCC as primary subject from MLCC as context. `ROLE_MODEL_SUFFICIENT = NO` and `MLCC_CURRENT_VIEW_READY = PARTIAL`: only the explicit 3-Claim entity-granularity allowlist is eligible, and no Current View was generated. Review artifacts are under `artifacts/phase2_3e/`; the formal report is `docs/PHASE2_3E_ENTITY_GRANULARITY_REVIEW.md`. Production remained byte-identical at SHA-256 `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`.
 
 ## Phase 2.3D closure
 

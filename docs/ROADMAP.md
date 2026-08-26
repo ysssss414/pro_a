@@ -76,9 +76,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete**；`PHASE2_3D_CLAIM_NODE_ACTIVATION_COMPLETE = true`。基于明确人工 adjudication，在单一事务中写入 11 条 `Claim → MLCC`、`role=related` link；电子陶瓷收入 Claim 保持 NO_LINK。Production 现有 1 个 Claim-covered Node、11 条 MLCC-linked Claims、1 条 unlinked Claim；MLCC 达到 `LEVEL_2_EVIDENCE_CONNECTED`。Claim status、Source links、Current Views、RQ、Gap 与 Relations 均未改变。
 
+### Phase 2.3E — Entity Granularity & Claim Attribution Review
+
+状态：**complete (read-only review)**。Production 中不存在 `昀冢科技` 的 exact canonical/alias Node；11 条 MLCC-linked Claims 分为 3 条 `MLCC_PRIMARY` 与 8 条 `COMPANY_PRIMARY_MLCC_CONTEXT`。已生成非执行型 Company Node 与 Claim attribution proposal，所有既有 MLCC links 保持不变。当前仅有 `role=related`，不足以表达 subject/context，因此 `ROLE_MODEL_SUFFICIENT = NO`、`MLCC_CURRENT_VIEW_READY = PARTIAL`；不得把 11 条 linked Claims 整体直接用于 MLCC Current View。
+
 ### Next milestone
 
-不自动启动后续阶段；等待新的显式范围与授权。
+等待显式授权的人审写入阶段：先审批 `昀冢科技` Entity Node，并冻结最小 Claim link role 语义，再新增 8 条 Company subject links、保留 MLCC links 并审查其 context role。不得由 Phase 2.3E 自动写入 Production 或生成 Current View。
 
 ## Carried backlog
 
