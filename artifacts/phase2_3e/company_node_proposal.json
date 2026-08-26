@@ -1,0 +1,23 @@
+{
+  "canonical_name": "昀冢科技",
+  "proposed_type": "Company",
+  "primary_type": "Entity",
+  "entity_kind": "Company",
+  "type_rationale": "Company is not a frozen primary_type; the existing frozen company-compatible primary_type is Entity.",
+  "explicit_aliases": [],
+  "supporting_claim_ids": [
+    "CLM_20260814_0B6E52F8",
+    "CLM_20260814_541F5C31",
+    "CLM_20260814_8E4B9E25",
+    "CLM_20260814_939CAEDD",
+    "CLM_20260814_9A069D06",
+    "CLM_20260814_BA7AC415",
+    "CLM_20260814_E1A48290",
+    "CLM_20260814_E53B8E9C"
+  ],
+  "source_ids": [
+    "SRC_20260814_F6E1EFAD"
+  ],
+  "reason": "Production has no exact canonical/alias match for 昀冢科技, while eight reviewed Claims have the company as PRIMARY_SUBJECT and MLCC as CONTEXT.",
+  "production_write_authorized": false
+}

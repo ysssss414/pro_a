@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.3E Entity Granularity & Claim Attribution Review — 2026-08-26
+
+- Deterministically confirmed that Production has no exact canonical or alias Node for `昀冢科技`; generated a non-applied Company proposal using frozen `primary_type=Entity` and no inferred aliases.
+- Reviewed exactly the 11 Phase 2.3D Claims: 3 are `MLCC_PRIMARY` and 8 are `COMPANY_PRIMARY_MLCC_CONTEXT`; all existing MLCC links remain unchanged.
+- Audited `claim_node_links.role`: Production contains only `related`, while schema/read/frontend/coverage/write paths do not provide governed subject/context semantics. `ROLE_MODEL_SUFFICIENT = NO`.
+- Produced the explicit 3-Claim MLCC Current View entity-granularity allowlist and marked readiness `PARTIAL`; no Current View or Production object was created or modified.
+- Added deterministic review/proposal generation and isolated tests; Production remained byte-identical.
+
 ## Phase 2.3D Controlled Claim–Node Activation — 2026-08-26
 
 - Applied the fixed human-approved allowlist of 11 `Claim → MLCC` links atomically with role `related`; retained the electronic-ceramics revenue Claim as explicit NO_LINK.
