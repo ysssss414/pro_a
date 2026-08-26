@@ -1,0 +1,34 @@
+{
+  "phase": "2.4B",
+  "human_confirmation": true,
+  "human_review_source": "Phase 2.4A + explicit Phase 2.4B approval",
+  "production_pre_sha": "83A109D22EF08D5A230F28A341EF67CC0CA6FF5014BE7E89D7E2AB4DE8CAF895",
+  "production_post_sha": "581978E1C587B065A6EEF9C980013AF3DE1A9E8A8781857385404C9F61105250",
+  "backup_path": "workspace/backups/pro_a_pre_phase2_4b_20260826_172505.db",
+  "backup_sha": "83A109D22EF08D5A230F28A341EF67CC0CA6FF5014BE7E89D7E2AB4DE8CAF895",
+  "targets": [
+    {
+      "node_id": "NODE_20260817_DABE52FE",
+      "canonical_name": "MLCC",
+      "proposal_id": "PROP_20260826_3833593A",
+      "view_id": "VIEW_20260826_6662B69A",
+      "version": "v_20260826",
+      "status": "official",
+      "primary_evidence_claim_ids": ["CLM_20260814_980FA010", "CLM_20260814_BAED6789", "CLM_20260814_D2C7FCD1"],
+      "unresolved_claim_ids": [],
+      "knowledge_sufficiency": "PARTIAL"
+    },
+    {
+      "node_id": "NODE_20260826_BC260F3E",
+      "canonical_name": "昀冢科技",
+      "proposal_id": "PROP_20260826_5639C33E",
+      "view_id": "VIEW_20260826_99D621B2",
+      "version": "v_20260826",
+      "status": "official",
+      "primary_evidence_claim_ids": ["CLM_20260814_541F5C31", "CLM_20260814_8E4B9E25", "CLM_20260814_939CAEDD", "CLM_20260814_9A069D06", "CLM_20260814_BA7AC415", "CLM_20260814_E1A48290"],
+      "unresolved_claim_ids": ["CLM_20260814_0B6E52F8", "CLM_20260814_E53B8E9C"],
+      "knowledge_sufficiency": "PARTIAL"
+    }
+  ],
+  "idempotent_rerun": {"already_applied": true, "write_needed": false, "writes": 0}
+}

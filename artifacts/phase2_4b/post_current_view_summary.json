@@ -1,0 +1,26 @@
+{
+  "current_views_total": 2,
+  "MLCC": {
+    "view_id": "VIEW_20260826_6662B69A",
+    "version": "v_20260826",
+    "status": "official",
+    "primary_evidence_count": 3,
+    "context_direct_evidence_count": 0,
+    "knowledge_sufficiency": "PARTIAL"
+  },
+  "昀冢科技": {
+    "view_id": "VIEW_20260826_99D621B2",
+    "version": "v_20260826",
+    "status": "official",
+    "primary_evidence_count": 6,
+    "needs_review_primary_evidence_count": 0,
+    "knowledge_sufficiency": "PARTIAL"
+  },
+  "knowledge_level_distribution": {
+    "LEVEL_0_STRUCTURE_ONLY": 289,
+    "LEVEL_1_SOURCE_CONNECTED": 3,
+    "LEVEL_2_EVIDENCE_CONNECTED": 0,
+    "LEVEL_3_CANONICAL_VIEW": 2,
+    "LEVEL_4_RESEARCH_ACTIVE": 0
+  }
+}
