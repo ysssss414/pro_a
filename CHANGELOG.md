@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 2.2 Knowledge Explorer MVP — 2026-08-26
+
+- Added a standalone React + TypeScript + Vite frontend backed only by the Phase 2.1A read API, with a local `/api` development proxy and no backend or schema change.
+- Added canonical/alias search with 250 ms debounce and stale-request cancellation, parallel Node selection loading, and restorable `?node=` URL state.
+- Added a desktop-first three-column explorer: Search results, directed current 1-hop Cytoscape graph, and Overview / Claims / Sources detail tabs.
+- Added Claim Evidence/Source rendering and deduplicated direct/claim Source provenance, plus explicit initial, loading, empty, unavailable and retry states.
+- Added typed API client coverage and Vitest/React Testing Library tests for search, graph direction, detail/provenance, offline behavior and StrictMode URL restoration.
+- Verified the real browser flow against the local API, including EML search, Node selection, graph-neighbor focus and direct Source provenance. Production remained read-only.
+
 ## Phase 2.0 / Phase 2.1A — 2026-08-25
 
 - Synchronized README, Roadmap and continuation state: Phase 1 complete/frozen; Phase 1.1 AI Hardware Node universe and functional Relation requalification complete; Production at 293 Nodes / 737 Aliases / 181 Relations / 174 current `part_of`; functional Relation import count 0.

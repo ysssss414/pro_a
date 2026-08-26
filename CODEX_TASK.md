@@ -1,4 +1,4 @@
-# Codex continuation brief — Phase 2 read API foundation
+# Codex continuation brief — Phase 2 Knowledge Explorer MVP
 
 ## Current state
 
@@ -16,7 +16,7 @@ Phase 2 — Knowledge Exploration & Interaction Layer 已启动。目标顺序�
 Search → Browse → Trace → Research → Ask
 ```
 
-Phase 2.0 kickoff documentation 和 Phase 2.1A deterministic read-only query/API foundation 已完成于 `phase2/read-api-foundation`。
+Phase 2.0 kickoff documentation、Phase 2.1A deterministic read-only query/API foundation 和 Phase 2.2 Knowledge Explorer MVP 已完成。
 
 ## Implemented read boundary
 
@@ -28,11 +28,20 @@ Phase 2.0 kickoff documentation 和 Phase 2.1A deterministic read-only query/API
 - API 默认 `127.0.0.1`，可用 `python -m pro_a.api --config config.toml` 启动。
 - Tests 只使用 pytest isolated temporary SQLite fixture，不指向 Production。
 
+## Implemented explorer boundary
+
+- `frontend/` 是独立 React + TypeScript + Vite 应用；Cytoscape 仅渲染所选 Node 的 current 1-hop。
+- UI 数据入口只有 Phase 2.1A read API；Node selection 并行加载 detail、neighbors、claims 与 sources。
+- Search 覆盖 canonical name / alias，使用 250 ms debounce、AbortController 和明确的 loading / empty / error state。
+- 三栏桌面 UI 覆盖 Search、directed graph、Overview / Claims / Sources；Source provenance 区分 direct 与 claim path。
+- `?node=` 保存并恢复选择；API unavailable 状态提供 Retry，不进入白屏。
+- Vitest + React Testing Library 覆盖 API client、Search、graph direction、详情 tabs/provenance、offline 与 StrictMode URL restore。
+
 ## Default continuation behavior
 
 除非用户明确给出后续任务：
 
-- 不扩展到 Phase 2.1B UI、Ask/chatbot、RAG、embedding、vector DB 或 recursive traversal；
+- 不自动扩展到 Phase 2.3、Ask/chatbot、RAG、embedding、vector DB 或 recursive traversal；
 - 不写 Production，不创建 write API，不调用 Proposal acceptance；
 - 不修改 schema、frozen validators、Existing Node Match、Evidence、Relation semantics 或 human approval contract；
 - 不借 Phase 2 修复 Relation backlog 或启用 IMA。
@@ -45,7 +54,9 @@ Phase 2.0 kickoff documentation 和 Phase 2.1A deterministic read-only query/API
 4. `docs/ROADMAP.md`
 5. `src/pro_a/query.py`
 6. `src/pro_a/api.py`
+7. `frontend/src/App.tsx`
+8. `frontend/src/api/client.ts`
 
 ## Next recommended step
 
-在 Phase 2.1A API contract review/merge 后启动 Phase 2.1B：构建最小 read-only browser exploration UI，优先 Search、Node Browse、1-hop Trace 与 Claim/Source provenance navigation。
+在 Phase 2.2 review/merge 后，将 Phase 2.3 **Provenance & Knowledge Detail** 作为下一候选里程碑；先确认具体范围，再继续实现。
