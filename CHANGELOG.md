@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.3B Knowledge Coverage Audit — 2026-08-26
+
+- Added a reusable read-only coverage audit at `src/pro_a/coverage.py` with exact canonical/alias signal matching, ASCII token boundaries, mutually exclusive Node knowledge levels, Source/Claim/Node coverage, hierarchy and relation evidence summaries, cross-layer reachability, and conservative review buckets.
+- Added stable machine-readable outputs: `node_coverage.csv`, `source_coverage.csv`, `claim_coverage.csv` and `unlinked_claims.csv` under `artifacts/phase2_3b/`.
+- Added deterministic isolated-fixture tests for counts, relation direction, canonical/alias matching, short-token boundary safety, multi-Node matches, unlinked classification and high/ambiguous/no-signal buckets.
+- Audited Production without mutation: 293 active Nodes, 737 aliases, 181 stored Relations / 174 current `part_of`, 2 Sources, 12 Claims and 0 Claim → Node links. `CLAIM_NODE_ACTIVATION_READY = NO`.
+- Added `docs/PHASE2_3B_KNOWLEDGE_COVERAGE_AUDIT.md`; no schema, frontend, API, LLM or frozen-contract changes.
+
 ## Phase 2.3A Knowledge Detail & Research Surface — 2026-08-26
 
 - Added read-only Current View, Research Question, Knowledge Gaps and Source Detail queries/endpoints without schema or Production mutation; Current View selection reuses the governed revision ordering.

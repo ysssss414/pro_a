@@ -1,0 +1,294 @@
+node_id,canonical_name,primary_type,alias_count,parent_count,child_count,source_count,claim_count,current_view_count,research_question_count,knowledge_gap_count,part_of_in_count,part_of_out_count,functional_relation_count
+NODE_20260819_E915630F,Large Model Inference,Application,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_6D27EC24,Large Model Training,Application,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_A8362611,ams OSRAM,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_E734A4B5,Google,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_15E4B4D6,Lenovo Group,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_946A9B53,Ruijie Networks,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_68CD6036,中际旭创,Entity,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_776DBCC2,凌玮科技,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_CF15C597,博创科技,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_92EE2499,台光电子,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_1F3CCA32,圣泉集团,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_428B8DFB,炬光科技,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_ECB183A5,生益科技,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_74A13516,联瑞新材,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_D444265B,长光华芯,Entity,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_DB1996FC,鹏鼎控股,Entity,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_EFDF1D1B,Active Alignment Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DA450C32,Advanced Packaging 3D Metrology Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DBA40C61,Advanced Packaging CMP Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_355DDD2A,Advanced Packaging Inspection Equipment,Equipment,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6CA60B46,Advanced Packaging Lithography Equipment,Equipment,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_96D8F2A2,Compound Semiconductor MOCVD Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_BE7CAFF9,Copper Electrochemical Deposition Equipment,Equipment,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_757E2E4B,Fiber Attach Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_BE3AF9CD,Gas Turbine,Equipment,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_5934BF3A,High-Precision Die Bonder,Equipment,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_3CE1A5A0,Hybrid Bonding Equipment,Equipment,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_7B6126DE,Optical Burn-In Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_5ECC84E6,Optical Transceiver Test Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_B1527B19,Photonics Die Bonder,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_4A4C82C3,Photonics Wafer Inspection Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6DAAC3CA,Photonics Wafer Probe Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_8593DC71,RDL Etch Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_AA8C4314,Temporary Bonding & Debonding Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_37E2F7AB,Thermo-Compression Bonder,Equipment,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_9986453D,TSV Barrier/Seed Deposition Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6A3F2E5C,TSV Deep Silicon Etch Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_8CA310ED,Wafer Dicing Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1A2FB98F,Wafer Grinding Equipment,Equipment,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_E7FA7482,FCC规则变化,Event,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_3B4B3308,AI应用,Industry,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_D7E0C145,医药,Industry,1,0,3,0,0,0,0,0,3,0,0
+NODE_20260814_2CF1006E,半导体,Industry,1,0,3,1,0,0,0,0,3,0,0
+NODE_20260814_7BE46440,商业航天,Industry,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_A4CD25D1,智能电网,Industry,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_8D5B9F0E,机器人,Industry,1,0,3,0,0,0,0,0,3,0,0
+NODE_20260814_164548FF,算力,Industry,1,0,3,0,0,0,0,0,3,0,0
+NODE_20260814_1D6371B9,通信,Industry,1,0,2,0,0,0,0,0,2,0,0
+NODE_20260817_E9495387,ABF Build-up Film,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_D33CCFC0,Advanced Packaging Photoresist,Material,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_E18EBAE7,Copper Electroplating Chemical,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_D9922340,Copper Foil,Material,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_679A1AD1,Dielectric Coolant,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_42B0DD93,Dielectric Immersion Fluid,Material,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_2F8C6A63,Electronic Glass Yarn,Material,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_6BF58D0C,Epoxy Molding Compound,Material,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_ECA825B2,GaAs Epitaxial Wafer,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_194B02A2,Gallium Arsenide,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_FB3C88CD,High-Speed Low-Loss CCL,Material,5,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_FC11C8E9,Hydrocarbon Resin,Material,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_2408E066,Indium Phosphide,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_EC332D9E,InP Epitaxial Wafer,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_51A6EB8B,InP Substrate,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_9C0B9CF2,Liquid Cooling Coolant,Material,3,0,3,0,0,0,0,0,3,0,0
+NODE_20260819_4E7F0769,Low-Alpha Spherical Silica,Material,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_38824A9B,Low-CTE Glass Fabric,Material,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_0D00AB0A,Low-Dk Glass Fabric,Material,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1BF137CE,Low-Profile Copper Foil,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_AB188EF6,MLCC Release Film,Material,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_23E37E43,Nickel Powder,Material,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_BB867896,Non-Conductive Film,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_8A472924,Photoresist Resin,Material,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260819_7E0141C1,Polyphenylene Oxide (PPO),Material,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_CAF49323,PTFE Resin,Material,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_F06856F1,Quartz Glass Fabric,Material,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_0873A4EF,RDL Dielectric Material,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_4B13EC49,Silica Powder,Material,1,0,1,0,0,0,0,0,1,0,0
+NODE_20260817_7A9AE357,Silicon-on-Insulator Wafer,Material,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_AAF6E568,Spherical Silica Powder,Material,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_0B264789,Temporary Bonding Adhesive,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_9A288872,Two-Phase Refrigerant,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_397D3280,Underfill Material,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_AE3AD571,Water-Glycol Coolant,Material,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_36FDA0B6,电子布,Material,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_9C390E75,覆铜板,Material,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_3F4BD876,1.6T光模块,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_2FBFF8A5,AC/DC Rectifier Module,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6C7C1EBE,Accelerator Baseboard,Product,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_53C5009E,Active Electrical Cable,Product,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_053F2BA7,Active Optical Cable,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_79128766,Advanced Package Substrate,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_E63659E3,AI Accelerator,Product,3,1,2,0,0,0,0,0,2,1,0
+NODE_20260817_62A90BFE,AI Cluster,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_D9937539,AI Compute Rack,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_23BDA593,AI Data Center,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_DA5A102E,AI Network Switch,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_818CCBCE,AI Network Switch PCB,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DB4961DB,AI Server,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_6DEB0D74,AI Server Motherboard,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_FE318B19,AI Server PCB,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_4D07DCCF,Arrayed Waveguide Grating,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_D6065176,Battery Energy Storage System,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_80FD34BD,CDU Heat Exchanger,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_CBD0B0EA,CDU Pump,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_56D8FDC0,Cold Plate,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_878386C1,Compute Tray,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_EA76314C,Coolant Distribution Unit,Product,4,1,3,0,0,0,0,0,3,1,0
+NODE_20260817_CB6898B6,Cooling Tower,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_E3883A0F,Custom AI ASIC,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_82532589,CW Laser,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1318EF0D,CXL Memory,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_37B69E60,Data Center Busway,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_45F8AA98,Data Center Chiller,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DA3D351C,Data Center Optical Transceiver,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1BA69294,Data Center Switchgear,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_FCA010EE,Data Center Transformer,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_114D3496,Data Center UPS,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_821C253A,DC Busbar,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1749D0FE,DC/DC Power Module,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_38833CDA,DFB Laser,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_A34C4B15,Digital Power Controller,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_AE470EAB,Direct Attach Copper Cable,Product,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_55E7706F,DPU,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_8C717E56,Dry Cooler,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_5AB80250,EML,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_BEBBBC45,Enterprise SSD,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_303FA337,External Laser Source,Product,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_9BB6B80F,Facility Cooling Pump,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_C2A9DC8B,Facility Water System,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_44FCF27F,Fiber Array Unit,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_2549E9DA,Flow Sensor,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_BB407ECE,Gallium Nitride Power Device,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_3BE36B52,GPU Accelerator,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6A9A657D,High Bandwidth Memory,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_9B605642,High-Frequency Transformer,Product,2,1,1,0,0,0,0,0,1,1,0
+NODE_20260817_B8FFCB86,High-Speed Connector,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_8959E9B6,Host CPU,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_2D1F51D8,Hot-Swap Controller,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_D8C05662,Immersion Cooling Tank,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_EEDE33C6,Immersion Heat Exchanger,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_6B5A23A2,Intermediate Bus Converter,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_0326626F,Laser Driver,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_EB763D98,Leak Detection Sensor,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_A57C7231,Liquid Cooling Hose,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6CCB1FE6,Liquid Cooling Pump,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_7F5D260A,Liquid-to-Air CDU,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6F372C28,Liquid-to-Liquid CDU,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_F167C21B,Liquid-to-Refrigerant CDU,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_9B032E0E,Micro Lens Array,Product,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_372BDB38,Micro Optical Lens,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_21A40B22,Micro-Prism Lens Array,Product,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_DABE52FE,MLCC,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_05807938,Modulator Driver,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_4D35629F,MPO,Product,6,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_372D7CA5,Multi-Mode Fiber,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DDAFD039,Network Interface Card,Product,4,1,1,0,0,0,0,0,1,1,0
+NODE_20260814_25C1F227,OCS交换机,Product,5,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_2C7D8647,Optical DSP,Product,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_10C8B297,Optical Engine,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_B1052260,Optical Filter,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_CD111754,Optical Isolator,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_54DB844F,Optical Modulator,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_D4B733E9,Optical Module PCB,Product,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_BA1C8F21,Photodiode,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_F55C6347,Planar Transformer,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_B5A0E405,Point-of-Load Converter,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_CCC0268C,Power Distribution Unit,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_27284569,Power Inductor,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_13A6E275,Power Management IC,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_0FA3FC0D,Power Shelf,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_25976EC8,Power Sidecar,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_4ACD01AD,Pump Laser,Product,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_69653444,Quick Disconnect,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_334BDD5D,Rack Battery Backup Unit,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6388F4CD,Rack Manifold,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_865999D6,Rack-Scale AI System,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_4AA22685,RDL Interposer,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_51176D95,Rear-Door Heat Exchanger,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_345695CD,Retimer,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_3F66AA2E,Ribbon Fiber,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_7CFF011C,Row Manifold,Product,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_411CD807,Rubin,Product,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_5A748C2A,Scale-Up Switch,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_B0EE840E,Server DRAM,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_E8D78E4A,Server Power Supply Unit,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_D7E4A358,Silicon Carbide Power Device,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_3A173B33,Silicon Interposer,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_CB537A81,Silicon Photonics Modulator,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_C9A31651,Silicon Photonics Photodetector,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_A418C71D,Silicon Photonics PIC,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1F2D6DB5,Silicon Power MOSFET,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_D1DCC70F,Single-Mode Fiber,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_454D219A,Solid-State Transformer,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260825_651D018F,Supercapacitor,Product,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_DC71B4C7,SuperNIC,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_696A3A33,Switch ASIC,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_3F5670E2,Tantalum Capacitor,Product,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_2229813A,Transimpedance Amplifier,Product,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_5DE1FC83,VCSEL,Product,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_3890E529,Voltage Regulator Module,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_E43677FE,WDM Multiplexer/Demultiplexer,Product,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260819_A9AE1BCB,x86 Server,Product,0,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_5A4692AF,丝杠,Product,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_6D97F080,交换机,Product,1,0,1,0,0,0,0,0,1,0,0
+NODE_20260814_E727EFB1,减速器,Product,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_68BCF930,灵巧手,Product,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_4452D283,Advanced Packaging,Segment,2,0,18,0,0,0,0,0,18,0,0
+NODE_20260817_E666452F,Advanced Packaging Equipment,Segment,2,0,14,0,0,0,0,0,14,0,0
+NODE_20260817_811BA6BC,Advanced Packaging Materials,Segment,2,0,8,0,0,0,0,0,8,0,0
+NODE_20260817_128F9DBF,AI Compute Silicon,Segment,3,0,1,0,0,0,0,0,1,0,0
+NODE_20260817_87C95A7D,AI Network Interconnect,Segment,3,0,2,0,0,0,0,0,2,0,0
+NODE_20260817_53ECD7A4,AI Server & Network PCB,Segment,3,0,2,0,0,0,0,0,2,0,0
+NODE_20260817_9C3BE01A,Board Power,Segment,3,0,6,0,0,0,0,0,6,0,0
+NODE_20260814_2B910483,CDMO,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6C9B5237,Compound Semiconductor Materials,Segment,2,0,5,0,0,0,0,0,5,0,0
+NODE_20260814_A2CE6F5C,CRO,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_783716D8,Data Center Facility Cooling Equipment,Segment,3,0,5,0,0,0,0,0,5,0,0
+NODE_20260817_6D44DF75,Data Center Liquid Cooling Components,Segment,3,0,9,0,0,0,0,0,9,0,0
+NODE_20260817_D6798861,Data Center Optical Interconnect,Segment,3,0,7,0,0,0,0,0,7,0,0
+NODE_20260817_4DFF5C15,Data Center Power Infrastructure,Segment,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_27DCCBD5,Data Center Thermal Management,Segment,3,0,2,0,0,0,0,0,2,0,0
+NODE_20260817_6FF1B737,Facility Power Equipment,Segment,3,0,7,0,0,0,0,0,7,0,0
+NODE_20260817_BE6E868F,Fiber Optic Connectivity,Segment,3,1,5,0,0,0,0,0,5,1,0
+NODE_20260817_DC2545C0,HBM Manufacturing,Segment,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260825_15C68E58,MLCC Materials,Segment,1,0,1,0,0,0,0,0,1,0,0
+NODE_20260817_F60D3C90,Optical Components,Segment,3,0,13,0,0,0,0,0,13,0,0
+NODE_20260814_B6C2EE4F,PCB,Segment,2,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_F67B36D9,PCB Materials,Segment,3,0,3,0,0,0,0,0,3,0,0
+NODE_20260817_6C4D2DB0,Photonics Manufacturing Equipment,Segment,3,0,8,0,0,0,0,0,8,0,0
+NODE_20260817_AC62A38E,Power Magnetics,Segment,3,0,2,0,0,0,0,0,2,0,0
+NODE_20260817_82E58228,Power Semiconductor,Segment,2,0,4,0,0,0,0,0,4,0,0
+NODE_20260817_7FB6B4CC,Rack Power Equipment,Segment,3,0,6,0,0,0,0,0,6,0,0
+NODE_20260817_7C6BD960,Scale-Out Network,Segment,3,1,6,0,0,0,0,0,6,1,0
+NODE_20260817_6408EB6C,Scale-Up Interconnect,Segment,3,1,3,0,0,0,0,0,3,1,0
+NODE_20260814_EB78D234,光模块,Segment,1,1,2,0,0,0,0,0,2,1,0
+NODE_20260814_248CFC1D,光纤,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_1293304B,创新药,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_3862DDB4,半导体材料,Segment,1,1,0,1,0,0,0,0,0,1,0
+NODE_20260814_85AC57FF,半导体设备,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_2959BA4A,封装,Segment,1,1,1,0,0,0,0,0,1,1,0
+NODE_20260814_B48EDE09,数据中心,Segment,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_6F810700,液冷,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_75F86930,算力租赁,Segment,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_7C89CC59,Compute Express Link,Standard,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_10A98F3C,PCI Express,Standard,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_0080D573,UALink,Standard,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_F356D288,Ultra Ethernet,Standard,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_2E3D3BE2,Universal Chiplet Interconnect Express,Standard,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_D3056377,2.5D Interposer Packaging,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_8006A0B4,3D Stacking,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_36824219,48/54V DC Power Distribution,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_0E7F79B3,800V DC Power Distribution,Technology,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_CB56C000,Chiplet Architecture,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_9B66BB15,CoWoS,Technology,1,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_7CC5B5D5,CPO,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_82BB5FAC,Die-to-Wafer Bonding,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_4AC5683F,Direct-to-Chip Liquid Cooling,Technology,4,1,2,0,0,0,0,0,2,1,0
+NODE_20260817_0476B102,Electro-Absorption Modulator,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_E971A4F1,Ethernet AI Fabric,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_CDE54071,Fan-Out Packaging,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_41F7BCF7,HBM Stack Packaging,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_FB7D8D51,HDI,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_957C4875,High-Speed SerDes,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_6ABA49BC,Hybrid Bonding,Technology,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_103E2D22,Immersion Cooling,Technology,3,1,2,0,0,0,0,0,2,1,0
+NODE_20260817_3EE0CB53,InfiniBand,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DDCDD0C6,Linear Pluggable Optics,Technology,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_F045193B,Linear Receive Optics,Technology,4,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_26638A8E,Mach-Zehnder Modulator,Technology,4,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_ED71CFD6,Microbump Interconnect,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_77D7D7AD,Microring Modulator,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_D6DAC7ED,mSAP,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_68FAF22C,NPO,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1E3B01E3,NVLink,Technology,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_56566337,Panel-Level Packaging,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1C5BC496,Pumped Two-Phase Direct-to-Chip Cooling,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_1C7577DC,Rack-Scale Architecture,Technology,3,0,0,0,0,0,0,0,0,0,0
+NODE_20260817_805C36CB,RDMA,Technology,2,1,1,0,0,0,0,0,1,1,0
+NODE_20260817_F039433D,Redistribution Layer,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_DF1BED7A,RoCE,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_06795867,Single-Phase Direct-to-Chip Cooling,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_94DCA562,Single-Phase Immersion Cooling,Technology,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_3CE5E0F5,Temporary Bonding & Debonding,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_88819808,Thermo-Compression Bonding,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_8D28496F,Thin Wafer Handling,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_6EA7B10F,Through-Silicon Via,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_327F66ED,Two-Phase Immersion Cooling,Technology,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_F584CC61,Wafer Thinning,Technology,2,1,0,0,0,0,0,0,0,1,0
+NODE_20260817_955A2F6D,Wafer-to-Wafer Bonding,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_A1DA7680,硅光,Technology,2,0,3,0,0,0,0,0,3,0,0
+NODE_20260814_E67739ED,薄膜铌酸锂,Technology,3,1,0,0,0,0,0,0,0,1,0
+NODE_20260814_DC006B04,AI算力,Theme,1,0,0,0,0,0,0,0,0,0,0
+NODE_20260814_47198CC3,国产替代,Theme,1,0,0,1,0,0,0,0,0,0,0

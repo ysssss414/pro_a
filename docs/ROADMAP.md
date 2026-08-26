@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.3A complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.3A complete; Phase 2.3B audit complete**
 
 ## Completed — Phase 1
 
@@ -62,9 +62,15 @@ Search
 
 状态：**complete**。新增 Current View、Research Question、Knowledge Gaps 与 Source Detail 的确定性只读 query/API；Explorer 增加 View / Research tabs 和右栏 Source Detail mode。Current View 复用正式 revision ordering，RQ 引用 Claim 可读解析且容忍 missing refs，Gap 保留全部状态并按研究实用性排序，Source Detail 提供 metadata、direct Node links、Source Claims 与 Claim-linked Nodes，不暴露归档路径。前端 core/knowledge 模块独立失败并继续取消 stale requests。
 
-### Next recommended milestone — Phase 2.3B Source & Provenance refinement
+### Phase 2.3B — Knowledge Coverage Audit
 
-在 Phase 2.3A review/merge 后，进一步改善 Source 与 provenance 的审阅密度、Evidence traceability 和 edge-case coverage。继续保持 local-first、deterministic、read-only，不自动扩展到 raw file serving、IMA、Relation provenance、write UI、LLM/RAG 或 Search scope 扩张。
+状态：**complete (audit-only)**。新增 `src/pro_a/coverage.py` 与确定性测试，使用现有 read-only query boundary 对 Production Node / alias / hierarchy / Source / Claim / Current View / Research Question / Knowledge Gap / Relation evidence coverage 做盘点。生成 Node、Source、Claim 和 unlinked Claim 四份稳定 CSV 及正式报告 `docs/PHASE2_3B_KNOWLEDGE_COVERAGE_AUDIT.md`。本阶段没有 write API、schema 变化、自动 Claim → Node linking、LLM 调用或 Production mutation。
+
+Production audit 结果：293 active Nodes、737 aliases、181 stored Relations（174 current `part_of`，0 current functional）、2 Sources、12 Claims、0 Claim → Node links、0 Current Views、0 RQs、0 Gaps。12 Claims 全部未链接，且只有 ambiguous review candidates；`CLAIM_NODE_ACTIVATION_READY = NO`。下一步必须是显式人工 Claim → Node adjudication review package。
+
+### Next recommended milestone — Claim-to-Node activation review package
+
+基于 Phase 2.3B 的 12 条 unlinked Claims，逐条完成 Source evidence、Node scope 与 exact identity 的人工 adjudication，再按既有 controlled maintenance contract 评估 Claim → Node activation。继续保持 local-first、deterministic、human-reviewed；不得用 Source 共现、fuzzy linking 或 evidence-free association 自动补链。
 
 ## Carried backlog
 
