@@ -72,9 +72,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**HUMAN_REVIEW_PACKAGE_READY**。对当前全部 unlinked Claims 生成只读 Markdown/CSV 人审包；候选 Node 仅来自 Source direct link、exact canonical 和 exact alias 的可复现并集。所有 `decision` 均为 `PENDING`，不自动选择 Node、不创建 Claim → Node link、不写 Production。下一步是由人工 reviewer 完成人审表。
 
-### Next recommended milestone — Complete Claim-to-Node human adjudication
+### Phase 2.3D — Controlled Claim–Node Activation
 
-基于 Phase 2.3C 人审包，逐条完成 Source evidence、Node scope 与 exact identity 的人工 adjudication，再按既有 controlled maintenance contract 评估 Claim → Node activation。继续保持 local-first、deterministic、human-reviewed；不得用 Source 共现、fuzzy linking 或 evidence-free association 自动补链。
+状态：**complete**；`PHASE2_3D_CLAIM_NODE_ACTIVATION_COMPLETE = true`。基于明确人工 adjudication，在单一事务中写入 11 条 `Claim → MLCC`、`role=related` link；电子陶瓷收入 Claim 保持 NO_LINK。Production 现有 1 个 Claim-covered Node、11 条 MLCC-linked Claims、1 条 unlinked Claim；MLCC 达到 `LEVEL_2_EVIDENCE_CONNECTED`。Claim status、Source links、Current Views、RQ、Gap 与 Relations 均未改变。
+
+### Next milestone
+
+不自动启动后续阶段；等待新的显式范围与授权。
 
 ## Carried backlog
 

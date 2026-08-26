@@ -1,4 +1,10 @@
-# Codex continuation brief — Phase 2.3C Claim–Node Human Adjudication Package
+# Codex continuation brief — Phase 2.3D Controlled Claim–Node Activation
+
+## Phase 2.3D closure
+
+`PHASE2_3D_CLAIM_NODE_ACTIVATION_COMPLETE = true`. Human adjudication authorized exactly 11 Claims to link to active canonical Node `NODE_20260817_DABE52FE` (`MLCC`) with role `related`; `CLM_20260814_84099D0C` remains explicitly unlinked. The allowlisted links were inserted in one transaction after exact Claim/Source/Node/drift gates and a byte-identical Production backup.
+
+Production now has 11 Claim → MLCC links, one unlinked Claim and one Node at `LEVEL_2_EVIDENCE_CONNECTED`. Claim contents/statuses, Source links, Current Views, Research Questions, Knowledge Gaps and Relations were unchanged. Formal receipt, coverage and activation report are under `artifacts/phase2_3d/` and `docs/PHASE2_3D_CLAIM_NODE_ACTIVATION.md`.
 
 ## Phase 2.3C closure
 
@@ -19,9 +25,10 @@ No schema, frontend, API, LLM, write workflow or Production row changed. The nex
 Phase 1 已完成并冻结，Phase 1.1 已完成。最新正式 Production baseline：
 
 - `workspace/pro_a.db`
-- SHA-256 `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`
+- SHA-256 `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`
 - 293 Nodes / 737 Aliases / 181 Node Relations
 - 174 current `part_of`
+- 11 Claim → MLCC links / 1 unlinked Claim
 - Phase 1.1 functional Relation import count = 0
 
 Phase 2 — Knowledge Exploration & Interaction Layer 已启动。目标顺序：

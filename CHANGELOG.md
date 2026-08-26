@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.3D Controlled Claim–Node Activation — 2026-08-26
+
+- Applied the fixed human-approved allowlist of 11 `Claim → MLCC` links atomically with role `related`; retained the electronic-ceramics revenue Claim as explicit NO_LINK.
+- Added strict Node/Claim/Source/drift gates, exact Source MLCC signal validation, byte-identical backup verification, rollback/idempotency behavior and preserved-table fingerprints.
+- Production moved from 12 to 1 unlinked Claims and from 0 to 1 Nodes with Claims; MLCC is now `LEVEL_2_EVIDENCE_CONNECTED` with 11 linked Claims.
+- Preserved Claim contents/statuses, Source links, Current Views, Research Questions, Knowledge Gaps and Relations; integrity and foreign keys remain valid.
+- Added the human adjudication receipt, post-activation coverage summary and formal activation report. `PHASE2_3D_CLAIM_NODE_ACTIVATION_COMPLETE = true`.
+
 ## Phase 2.3C Claim–Node Human Adjudication Package — 2026-08-26
 
 - Added a read-only deterministic Claim–Node adjudication package generator and isolated tests.
