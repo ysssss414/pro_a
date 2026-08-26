@@ -1,4 +1,10 @@
-# Codex continuation brief — Phase 2.3E Entity Granularity & Claim Attribution Review
+# Codex continuation brief — Phase 2.3F Claim Attribution Semantics & Company Entity Activation
+
+## Phase 2.3F closure
+
+`PHASE2_3F_COMPLETE = true`. The explicitly authorized atomic Production write created active Company Node `NODE_20260826_BC260F3E` (`昀冢科技`, `primary_type=Company`) with zero aliases; inserted 8 Company `role=subject` Claim links; changed 3 MLCC links from `related` to `subject`; and changed 8 MLCC links from `related` to `context`.
+
+The minimal role contract is frozen as `subject / context / related`. Link existence no longer implies primary subject. Node Claims now expose `link_role`, and Explorer renders Subject / Context / Related from stored roles. Production is 294 Nodes / 737 Aliases / 19 Claim links: MLCC has 3 subject + 8 context Claims, and 昀冢科技 has 8 subject Claims. The NO_LINK Claim remains unlinked; Claims, Sources, Source links, Relations, Current Views, RQs and Gaps are unchanged. Pre-SHA `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`; post-SHA `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`.
 
 ## Phase 2.3E closure
 

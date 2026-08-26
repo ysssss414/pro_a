@@ -29,6 +29,7 @@ const detail: NodeDetail = {
 
 const claims: ClaimResult[] = [{
   claim_id: "CLAIM_1",
+  link_role: "subject",
   statement: "EML is used in high-speed optical transmitters.",
   nature: "fact",
   fact_time: "2026-01-10",
@@ -114,6 +115,7 @@ describe("NodeDetailPanel", () => {
 
   it("renders Claim, exact Evidence, and Source metadata", () => {
     renderPanel("claims");
+    expect(screen.getByText("Subject")).toBeInTheDocument();
     expect(screen.getByText("EML is used in high-speed optical transmitters.", { selector: "h3" })).toBeInTheDocument();
     expect(screen.getByText("EML is used in high-speed optical transmitters.", { selector: "blockquote" })).toBeInTheDocument();
     expect(screen.getByText("Optical Components Report")).toBeInTheDocument();

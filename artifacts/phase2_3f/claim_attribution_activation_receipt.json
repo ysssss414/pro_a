@@ -1,0 +1,328 @@
+{
+  "approved_claim_matrix": [
+    {
+      "claim_id": "CLM_20260814_0B6E52F8",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_541F5C31",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_8E4B9E25",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_939CAEDD",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_980FA010",
+      "company_role": null,
+      "context": [],
+      "mlcc_role": "subject",
+      "primary_subject": "MLCC"
+    },
+    {
+      "claim_id": "CLM_20260814_9A069D06",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_BA7AC415",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_BAED6789",
+      "company_role": null,
+      "context": [],
+      "mlcc_role": "subject",
+      "primary_subject": "MLCC"
+    },
+    {
+      "claim_id": "CLM_20260814_D2C7FCD1",
+      "company_role": null,
+      "context": [],
+      "mlcc_role": "subject",
+      "primary_subject": "MLCC"
+    },
+    {
+      "claim_id": "CLM_20260814_E1A48290",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    },
+    {
+      "claim_id": "CLM_20260814_E53B8E9C",
+      "company_role": "subject",
+      "context": [
+        "MLCC"
+      ],
+      "mlcc_role": "context",
+      "primary_subject": "昀冢科技"
+    }
+  ],
+  "backup": {
+    "path": "workspace\\backups\\pro_a_pre_phase2_3f_20260826_161932_225472.db",
+    "sha256": "BAD76DED1584AD22B86CCD8C19B1D6205B048C30103E71BB3E3E800F1F802D54"
+  },
+  "company_node": {
+    "aliases_added": 0,
+    "canonical_name": "昀冢科技",
+    "description": "",
+    "node_id": "NODE_20260826_BC260F3E",
+    "primary_type": "Company",
+    "status": "active"
+  },
+  "human_review_source": "Phase 2.3E",
+  "phase": "2.3F",
+  "post_write_state": {
+    "classification": "ALREADY_APPLIED",
+    "counts": {
+      "claim_node_links": 19,
+      "claims": 12,
+      "current_views": 0,
+      "knowledge_gaps": 0,
+      "node_aliases": 737,
+      "node_relations": 181,
+      "nodes": 294,
+      "relation_evidence_links": null,
+      "research_questions": 0,
+      "source_node_links": 3,
+      "sources": 2
+    },
+    "foreign_key_violations": 0,
+    "integrity_check": "ok",
+    "no_link_claim_link_count": 0,
+    "target_links": [
+      {
+        "claim_id": "CLM_20260814_0B6E52F8",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_0B6E52F8",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_541F5C31",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_541F5C31",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_8E4B9E25",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_8E4B9E25",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_939CAEDD",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_939CAEDD",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_980FA010",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_9A069D06",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_9A069D06",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_BA7AC415",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_BA7AC415",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_BAED6789",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_D2C7FCD1",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_E1A48290",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_E1A48290",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      },
+      {
+        "claim_id": "CLM_20260814_E53B8E9C",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "context"
+      },
+      {
+        "claim_id": "CLM_20260814_E53B8E9C",
+        "node_id": "NODE_20260826_BC260F3E",
+        "role": "subject"
+      }
+    ]
+  },
+  "pre_write_state": {
+    "classification": "CLEAN_NOT_APPLIED",
+    "counts": {
+      "claim_node_links": 11,
+      "claims": 12,
+      "current_views": 0,
+      "knowledge_gaps": 0,
+      "node_aliases": 737,
+      "node_relations": 181,
+      "nodes": 293,
+      "relation_evidence_links": null,
+      "research_questions": 0,
+      "source_node_links": 3,
+      "sources": 2
+    },
+    "no_link_claim_link_count": 0,
+    "target_links": [
+      {
+        "claim_id": "CLM_20260814_0B6E52F8",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_541F5C31",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_8E4B9E25",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_939CAEDD",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_980FA010",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_9A069D06",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_BA7AC415",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_BAED6789",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_D2C7FCD1",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_E1A48290",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      },
+      {
+        "claim_id": "CLM_20260814_E53B8E9C",
+        "node_id": "NODE_20260817_DABE52FE",
+        "role": "related"
+      }
+    ]
+  },
+  "preserved_table_changes": {
+    "claims": false,
+    "current_views": false,
+    "knowledge_gaps": false,
+    "node_relations": false,
+    "relation_evidence_links": false,
+    "research_questions": false,
+    "source_node_links": false,
+    "sources": false
+  },
+  "production_sha256": {
+    "post": "83A109D22EF08D5A230F28A341EF67CC0CA6FF5014BE7E89D7E2AB4DE8CAF895",
+    "pre": "BAD76DED1584AD22B86CCD8C19B1D6205B048C30103E71BB3E3E800F1F802D54"
+  },
+  "production_write_authorized": true,
+  "role_semantics": {
+    "context": "Claim is materially relevant to this Node, but the Node is not the primary factual subject.",
+    "related": "Legacy or generic association whose subject/context attribution is not adjudicated.",
+    "subject": "Claim directly makes an assertion about this Node; the Node is the factual subject."
+  },
+  "write": {
+    "company_links_inserted": 8,
+    "company_node_created": true,
+    "idempotent_already_applied": false,
+    "mlcc_role_updates": 11,
+    "needed": true
+  }
+}

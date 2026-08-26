@@ -307,6 +307,7 @@ class ReadOnlyQuery:
                 """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
                           c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
                           c.evidence_pointer,c.evidence_excerpt,c.source_id,
+                          cnl.role AS link_role,
                           s.title,s.original_name,s.author,s.organization,
                           s.publication_time AS source_publication_time,
                           s.source_type,s.source_rank
@@ -338,6 +339,7 @@ class ReadOnlyQuery:
                     "evidence_pointer",
                     "evidence_excerpt",
                     "source_id",
+                    "link_role",
                 )
             }
             claim["source"] = self._source_metadata(row)

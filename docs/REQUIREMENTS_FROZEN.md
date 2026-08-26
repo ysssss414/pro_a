@@ -11,11 +11,23 @@
 
 ## 2. Node Types
 
-`Industry / Segment / Technology / Product / Material / Equipment / Entity / Application / Standard / Policy / Theme / Event / ResearchQuestion`
+`Industry / Segment / Technology / Product / Material / Equipment / Entity / Company / Application / Standard / Policy / Theme / Event / ResearchQuestion`
 
 一个 Node 只有一个 Primary Type。Type 表达“是什么”；关系表达“处于哪里”。
 
 新 Node 必须用户确认后才能正式创建。
+
+Phase 2.3F 明确确认 `Company` 为 canonical Node Type；这是一项人工授权的最小合同扩展，不改变其他 Node Type。
+
+## 2.1 Claim → Node attribution roles
+
+`subject / context / related`
+
+- `subject`：Node 是 Claim 的事实主体；
+- `context`：Claim 与 Node 实质相关，但 Node 不是事实主体；
+- `related`：legacy / generic association，尚未完成人工 subject/context adjudication。
+
+Claim → Node link 存在不等于该 Node 是 Claim 的 primary subject。后续 Current View candidate 应优先使用目标 Node 的 `role=subject` Claims；`context` Claims 不得直接写成该 Node 自身或行业整体事实。
 
 ## 3. Node Relations
 

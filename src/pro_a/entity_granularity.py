@@ -355,16 +355,15 @@ def build_company_node_proposal(
     ]
     if not supporting:
         return None
-    if "Entity" not in NODE_TYPES or "Company" in NODE_TYPES:
-        raise EntityGranularityError("frozen Node Type convention drift")
+    if "Company" not in NODE_TYPES:
+        raise EntityGranularityError("Phase 2.3F Company Node Type contract missing")
     return {
         "canonical_name": COMPANY_NAME,
         "proposed_type": "Company",
-        "primary_type": "Entity",
+        "primary_type": "Company",
         "entity_kind": "Company",
         "type_rationale": (
-            "Company is not a frozen primary_type; the existing frozen company-compatible "
-            "primary_type is Entity."
+            "Phase 2.3F explicitly added Company to the canonical Node Type contract."
         ),
         "explicit_aliases": [],
         "supporting_claim_ids": supporting,
@@ -458,8 +457,8 @@ The deterministic lookup found no exact `canonical_name` or `node_aliases.alias`
 The existing MLCC links should remain, but their semantic meaning is primary subject for
 three Claims and context for eight Claims.
 
-The Company Node proposal uses frozen `primary_type=Entity`; `Company` is recorded as the
-entity kind/proposed business category because `Company` is not an allowed frozen Node Type.
+The Company Node proposal uses `primary_type=Company`, explicitly added to the canonical
+Node Type contract by Phase 2.3F after the Phase 2.3E read-only review.
 No alias is proposed: the only explicit company string is identical to the proposed canonical
 name.
 

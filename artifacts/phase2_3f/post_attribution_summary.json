@@ -1,0 +1,35 @@
+{
+  "aliases_total": 737,
+  "claim_node_links_total": 19,
+  "claims_total": 12,
+  "current_views_total": 0,
+  "knowledge_gaps_total": 0,
+  "knowledge_level_distribution": {
+    "LEVEL_0_STRUCTURE_ONLY": 289,
+    "LEVEL_1_SOURCE_CONNECTED": 3,
+    "LEVEL_2_EVIDENCE_CONNECTED": 2,
+    "LEVEL_3_CANONICAL_VIEW": 0,
+    "LEVEL_4_RESEARCH_ACTIVE": 0
+  },
+  "mlcc": {
+    "context_claims": 8,
+    "node_id": "NODE_20260817_DABE52FE",
+    "related_claims": 0,
+    "subject_claims": 3,
+    "total_claims": 11
+  },
+  "node_relations_total": 181,
+  "nodes_total": 294,
+  "nodes_with_context_claims": 1,
+  "nodes_with_subject_claims": 2,
+  "research_questions_total": 0,
+  "sources_total": 2,
+  "unlinked_claims": 1,
+  "yunzhong": {
+    "context_claims": 0,
+    "node_id": "NODE_20260826_BC260F3E",
+    "related_claims": 0,
+    "subject_claims": 8,
+    "total_claims": 8
+  }
+}
