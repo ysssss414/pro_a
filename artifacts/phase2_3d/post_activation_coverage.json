@@ -1,0 +1,13 @@
+{
+  "knowledge_level_distribution": {
+    "LEVEL_0_STRUCTURE_ONLY": 289,
+    "LEVEL_1_SOURCE_CONNECTED": 3,
+    "LEVEL_2_EVIDENCE_CONNECTED": 1,
+    "LEVEL_3_CANONICAL_VIEW": 0,
+    "LEVEL_4_RESEARCH_ACTIVE": 0
+  },
+  "mlcc_claim_count": 11,
+  "nodes_with_claims": 1,
+  "nodes_with_sources": 3,
+  "unlinked_claims": 1
+}

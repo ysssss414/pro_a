@@ -1,0 +1,248 @@
+{
+  "backup": {
+    "path": "workspace\\backups\\pro_a_pre_phase2_3d_20260826_150521_099068.db",
+    "sha256": "8A4247B9DA2C3D6F288F8A8AF8519F33673BC45B5A4327A57C50436D39DD50B4"
+  },
+  "decision_source": "human_adjudication",
+  "decisions": [
+    {
+      "claim_id": "CLM_20260814_0B6E52F8",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_541F5C31",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_8E4B9E25",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_939CAEDD",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_980FA010",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_9A069D06",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_BA7AC415",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_BAED6789",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_D2C7FCD1",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_E1A48290",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_E53B8E9C",
+      "decision": "LINK",
+      "reviewer_note": "Human adjudication confirms that the Claim is attributable to MLCC. Broad Source-level links are not inherited as Claim-level attribution.",
+      "selected_node_ids": [
+        "NODE_20260817_DABE52FE"
+      ]
+    },
+    {
+      "claim_id": "CLM_20260814_84099D0C",
+      "decision": "NO_LINK",
+      "reviewer_note": "Electronic ceramics revenue is broader than MLCC. Current evidence does not support attributing the full revenue figure to MLCC.",
+      "selected_node_ids": []
+    }
+  ],
+  "phase": "2.3D",
+  "pre_write_state": {
+    "claims": [
+      {
+        "claim_id": "CLM_20260814_0B6E52F8",
+        "confidence": 0.0,
+        "evidence_excerpt": "高容&超高容占新扩产产能比例70%以上",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技高容和超高容产品占新扩产产能比例70%以上。",
+        "status": "needs_review"
+      },
+      {
+        "claim_id": "CLM_20260814_541F5C31",
+        "confidence": 0.8,
+        "evidence_excerpt": "一期：爬坡进展顺利，当前出货量在80亿颗/月，26年年底满产，预计26Q4出货量达120亿颗/月",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技一期产线当前出货量80亿颗/月，预计2026Q4达120亿颗/月，2026年底满产。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_84099D0C",
+        "confidence": 0.9,
+        "evidence_excerpt": "电子陶瓷整体营收在1.7亿元左右，同比增长154%，收入占比约45%",
+        "nature": "data",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技电子陶瓷整体营收约1.7亿元，同比增长154%，收入占比约45%。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_8E4B9E25",
+        "confidence": 0.8,
+        "evidence_excerpt": "二期：投资7.5亿，预计26年年底开始逐渐导入量产，预计27Q3完成爬坡，27年底月产能达220亿颗",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技二期投资7.5亿元，预计2026年底开始导入量产，2027Q3完成爬坡，2027年底月产能达220亿颗。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_939CAEDD",
+        "confidence": 0.8,
+        "evidence_excerpt": "公司针对超高容的量产计划提前半年开始，原计划27年逐渐导入量产，现计划26H2围绕高容超高容进行扩产",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技针对超高容量产计划提前半年，原计划2027年导入量产，现计划2026H2围绕高容超高容扩产。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_980FA010",
+        "confidence": 0.9,
+        "evidence_excerpt": "26M7、26M8单月价格环比上涨30%+",
+        "nature": "data",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "2026年7月和8月MLCC单月价格环比上涨30%以上。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_9A069D06",
+        "confidence": 0.8,
+        "evidence_excerpt": "三期：投资7.5亿元，预计28年开始量产爬坡，预计28H2陆续达产，28年底月产能超400亿颗",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技三期投资7.5亿元，预计2028年开始量产爬坡，2028H2陆续达产，2028年底月产能超400亿颗。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_BA7AC415",
+        "confidence": 0.8,
+        "evidence_excerpt": "车规级高容产品已完成认证，106、107已进入实验室阶段",
+        "nature": "fact",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技车规级高容产品已完成认证，106、107进入实验室阶段。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_BAED6789",
+        "confidence": 0.7,
+        "evidence_excerpt": "周期持续期将长于上一轮周期",
+        "nature": "expert_judgment",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "本轮MLCC周期持续期将长于上一轮周期。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_D2C7FCD1",
+        "confidence": 0.7,
+        "evidence_excerpt": "整体业绩会听下来国内MLCC原厂也与海外MLCC原厂业绩报中看到的产业趋势相符合，AI挤出效应明显",
+        "nature": "expert_judgment",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "国内MLCC原厂与海外MLCC原厂业绩报中看到的产业趋势相符合，AI挤出效应明显。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_E1A48290",
+        "confidence": 0.9,
+        "evidence_excerpt": "26M6单月营收相较于26M4单月营收将近翻倍",
+        "nature": "data",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "2026年6月MLCC单月营收相较于4月将近翻倍。",
+        "status": "current"
+      },
+      {
+        "claim_id": "CLM_20260814_E53B8E9C",
+        "confidence": 0.0,
+        "evidence_excerpt": "公司原预判上行周期将于26H2开始，受益于AI&存储需求，叠加高容值产品带来的产能挤兑，上行周期提前半年到来",
+        "nature": "company_guidance",
+        "source_id": "SRC_20260814_F6E1EFAD",
+        "statement": "昀冢科技原预判MLCC上行周期于2026H2开始，但实际提前半年到来。",
+        "status": "needs_review"
+      }
+    ],
+    "classification": "CLEAN_NOT_APPLIED",
+    "no_link_claim_link_count": 0,
+    "pre_existing_desired_links": 0,
+    "unexpected_claim_node_links": []
+  },
+  "production_sha256": {
+    "post": "BAD76DED1584AD22B86CCD8C19B1D6205B048C30103E71BB3E3E800F1F802D54",
+    "pre": "8A4247B9DA2C3D6F288F8A8AF8519F33673BC45B5A4327A57C50436D39DD50B4"
+  },
+  "reviewer": "human",
+  "source_validation": {
+    "exact_alias_fields": [
+      "title",
+      "metadata_json"
+    ],
+    "exact_canonical_fields": [
+      "title",
+      "metadata_json"
+    ],
+    "source_id": "SRC_20260814_F6E1EFAD",
+    "status": "analyzed",
+    "title": "财通电子&新科技 昀冢科技业绩说明会更新：MLCC业绩答卷&未来指引双超预期",
+    "validated": true
+  },
+  "target_node_id": "NODE_20260817_DABE52FE",
+  "target_node_name": "MLCC",
+  "write": {
+    "authorized": true,
+    "idempotent_already_applied": false,
+    "links_inserted": 11,
+    "needed": true,
+    "role": "related"
+  }
+}
