@@ -1,4 +1,20 @@
-# Codex continuation brief — Phase 2.3F Claim Attribution Semantics & Company Entity Activation
+# Codex continuation brief — Phase 2.4A Subject-Aware Current View Pilot
+
+## Phase 2.4A closure
+
+`PHASE2_4A_COMPLETE = true`. Exactly two artifact-only `current_view_change` Proposal payloads
+were generated for MLCC and 昀冢科技. Direct factual support is limited to `role=subject`;
+MLCC's 8 company Claims remain `CONTEXT_ONLY`, and `related` is prohibited as direct support.
+The MLCC draft uses 3 primary Claims. The 昀冢科技 draft has 8 subject Claims available, uses
+6 current Claims as primary Evidence, and retains 2 `needs_review` Claims only as unresolved
+review items.
+
+Both proposals pass the subject-aware gate and existing frozen Current View content validator,
+but `MLCC_VIEW_PILOT_READY`, `YUNZHONG_VIEW_PILOT_READY`, and
+`SUBJECT_AWARE_VIEW_MODEL_VALID` remain `PARTIAL` because all Evidence comes from one B-rank
+secondary Source and no draft has human confirmation. No Proposal or Current View row was
+created. Production remains byte-identical at SHA-256
+`83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`.
 
 ## Phase 2.3F closure
 
@@ -37,10 +53,11 @@ No schema, frontend, API, LLM, write workflow or Production row changed. The nex
 Phase 1 已完成并冻结，Phase 1.1 已完成。最新正式 Production baseline：
 
 - `workspace/pro_a.db`
-- SHA-256 `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`
-- 293 Nodes / 737 Aliases / 181 Node Relations
+- SHA-256 `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`
+- 294 Nodes / 737 Aliases / 181 Node Relations
 - 174 current `part_of`
-- 11 Claim → MLCC links / 1 unlinked Claim
+- 19 Claim links: MLCC 3 subject + 8 context; 昀冢科技 8 subject; 1 unlinked Claim
+- 0 Current Views / 0 Current View Proposals
 - Phase 1.1 functional Relation import count = 0
 
 Phase 2 — Knowledge Exploration & Interaction Layer 已启动。目标顺序：
@@ -98,4 +115,6 @@ Phase 2.0 kickoff documentation、Phase 2.1A read-only query/API foundation、Ph
 
 ## Next recommended step
 
-在 Phase 2.3A review/merge 后，将 Phase 2.3B **Source & Provenance refinement** 作为下一候选里程碑；先确认具体范围，再继续实现。
+由人工 reviewer 对 `artifacts/phase2_4a/current_view_pilot_review.json` 中的两个 Current
+View proposal 分别执行 `APPROVE / REVISE / REJECT`。未经明确批准，不写入 Production
+Proposal，也不创建 official Current View。

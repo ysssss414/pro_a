@@ -84,9 +84,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete**。冻结 `subject / context / related` 最小 Claim → Node role 合同；原子创建 `昀冢科技` Company Node（0 aliases），新增 8 条 Company subject links，并将 MLCC 的 3 条 primary Claims 标为 subject、8 条 Company-primary Claims 标为 context。Node Claims API 与 Explorer Claims tab 已显示数据库 role。Production 为 294 Nodes、737 Aliases、19 Claim links；MLCC 为 3 subject + 8 context，昀冢科技为 8 subject；没有创建 Current View、Relation、RQ、Gap 或 Source link。
 
+### Phase 2.4A — Subject-Aware Current View Pilot
+
+状态：**complete (artifact-only pilot)**。仅对 MLCC 与昀冢科技生成两个与正式 `current_view_change` payload 兼容的离线 Proposal。所有 direct factual support 必须来自目标 Node 的 `role=subject` Claim；MLCC 的 8 条 Company Claims 只作为 `CONTEXT_ONLY`，`related` 不得作为直接证据。MLCC 使用 3 条 primary Claims；昀冢科技的 8 条 subject Claims 中 6 条进入 primary Evidence，2 条 `needs_review` 只保留为 unresolved。两个 proposal 均通过 frozen Current View 内容校验、traceability 与 scope-overreach gate，但因证据均来自单一 B-rank secondary Source 且尚未人审，两个 Node 和模型 verdict 均为 `PARTIAL`。Production byte-identical，Current Views 与 Current View Proposals 均保持 0。
+
 ### Next milestone
 
-Review the first subject-aware MLCC / Yunzhong knowledge state, then scope a Current View pilot. 不自动启动该 pilot。
+Human review the two Phase 2.4A proposals independently with `APPROVE / REVISE / REJECT`. 不自动创建 Production Proposal 或 official Current View，也不扩展到其他 Node。
 
 ## Carried backlog
 

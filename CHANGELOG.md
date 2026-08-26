@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.4A Subject-Aware Current View Pilot — 2026-08-26
+
+- Added a deterministic, read-only pilot generator for exactly MLCC and 昀冢科技; it mirrors the frozen `current_view_change` Proposal payload and validates the existing Current View content contract without inserting Production rows.
+- Enforced `role=subject` for direct support, retained all 8 MLCC company Claims as `CONTEXT_ONLY`, rejected `related`, and blocked company capacity/product/certification leakage from the MLCC draft.
+- Preserved `expert_judgment` and `company_guidance` attribution and excluded the two 昀冢科技 `needs_review` Claims from primary Evidence while retaining them as unresolved review items.
+- Generated two artifact-only human-review proposals plus a formal report. Both Node verdicts and the two-node model verdict are `PARTIAL`; no LLM, schema, API, frontend, Proposal DB, or Current View write occurred.
+- Production remained byte-identical at SHA-256 `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`, with zero Current Views and valid integrity/foreign keys.
+
 ## Phase 2.3F Claim Attribution Semantics & Company Entity Activation — 2026-08-26
 
 - Froze the minimal Claim-to-Node role vocabulary as `subject`, `context` and legacy/unadjudicated `related`; added `Company` as the explicitly authorized canonical Node Type.
