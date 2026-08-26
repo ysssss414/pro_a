@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
@@ -108,6 +108,110 @@ class NodeSource(SourceMetadata):
     provenance: list[SourceProvenance]
 
 
+class CurrentViewResult(BaseModel):
+    view_id: str
+    node_id: str
+    version: str
+    status: str
+    change_level: str
+    previous_view_id: str | None
+    content_md: str
+    content_json: dict[str, Any]
+    trigger_source_id: str | None
+    trigger_claim_ids: list[str]
+    revision_date: str
+    revision_seq: int
+    accepted_proposal_id: str
+    created_at: str
+    confirmed_at: str
+
+
+class ResearchClaimSummary(BaseModel):
+    claim_id: str
+    statement: str | None
+    status: str | None
+    confidence: float | None
+
+
+class ResearchQuestionResult(BaseModel):
+    rq_id: str
+    node_id: str
+    question: str
+    importance: str
+    current_answer: str
+    confidence: float | None
+    supporting_claim_ids: list[str]
+    opposing_claim_ids: list[str]
+    key_variables: list[Any]
+    supporting_claims: list[ResearchClaimSummary]
+    opposing_claims: list[ResearchClaimSummary]
+    what_would_change_my_mind: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class KnowledgeGapResult(BaseModel):
+    gap_id: str
+    node_id: str
+    title: str
+    description: str
+    status: str
+    source_claim_ids: list[str]
+    freshness_due: str
+    resolution_claim_id: str
+    superseded_by_gap_id: str
+    created_at: str
+    updated_at: str
+
+
+class SourceLinkedNode(NodeSummary):
+    role: str
+    confidence: float | None
+    link_origin: str
+    derived_from_node_id: str
+    evidence_excerpt: str
+
+
+class SourceClaimNode(NodeSummary):
+    role: str
+
+
+class SourceClaim(BaseModel):
+    claim_id: str
+    statement: str
+    nature: str
+    fact_time: str
+    publication_time: str
+    status: str
+    confidence: float | None
+    novelty_level: str
+    attributed_to: str
+    scope: str
+    evidence_pointer: str
+    evidence_excerpt: str
+    linked_nodes: list[SourceClaimNode]
+
+
+class SourceDetail(BaseModel):
+    source_id: str
+    title: str
+    original_name: str
+    source_type: str
+    source_rank: str
+    origin_type: str
+    author: str
+    organization: str
+    publication_time: str
+    ingested_at: str
+    ingestion_mode: str
+    analysis_mode: str
+    status: str
+    underlying_source_id: str
+    linked_nodes: list[SourceLinkedNode]
+    claims: list[SourceClaim]
+
+
 def create_app(
     db_path: str | Path | None = None,
     *,
@@ -206,6 +310,55 @@ def create_app(
         result = query_model.node_sources(node_id)
         if result is None:
             raise HTTPException(status_code=404, detail="Node not found")
+        return result
+
+    @app.get(
+        "/api/nodes/{node_id}/current-view",
+        response_model=CurrentViewResult | None,
+    )
+    def node_current_view(
+        node_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict | None:
+        try:
+            return query_model.node_current_view(node_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get(
+        "/api/nodes/{node_id}/research-question",
+        response_model=ResearchQuestionResult | None,
+    )
+    def node_research_question(
+        node_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict | None:
+        try:
+            return query_model.node_research_question(node_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get(
+        "/api/nodes/{node_id}/knowledge-gaps",
+        response_model=list[KnowledgeGapResult],
+    )
+    def node_knowledge_gaps(
+        node_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> list[dict]:
+        try:
+            return query_model.node_knowledge_gaps(node_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get("/api/sources/{source_id}", response_model=SourceDetail)
+    def source_detail(
+        source_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        result = query_model.source_detail(source_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Source not found")
         return result
 
     return app

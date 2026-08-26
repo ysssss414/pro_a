@@ -73,26 +73,37 @@ const sources: NodeSource[] = [{
   ],
 }];
 
-function renderPanel(activeTab: DetailTab, onSelect = vi.fn()) {
+function renderPanel(activeTab: DetailTab, onSelect = vi.fn(), onOpenSource = vi.fn()) {
   render(
     <NodeDetailPanel
       selectedNodeId="NODE_EML"
       detail={detail}
       claims={claims}
       sources={sources}
+      currentView={null}
+      researchQuestion={null}
+      knowledgeGaps={[]}
       activeTab={activeTab}
       loading={false}
+      knowledgeLoading={false}
       error={null}
+      knowledgeErrors={{ claims: null, sources: null, view: null, research: null, gaps: null }}
+      selectedSourceId={null}
+      sourceDetail={null}
+      sourceLoading={false}
+      sourceError={null}
       onTabChange={vi.fn()}
       onSelect={onSelect}
+      onOpenSource={onOpenSource}
+      onCloseSource={vi.fn()}
     />,
   );
-  return onSelect;
+  return { onSelect, onOpenSource };
 }
 
 describe("NodeDetailPanel", () => {
   it("renders aliases and navigable parent/child hierarchy", () => {
-    const onSelect = renderPanel("overview");
+    const { onSelect } = renderPanel("overview");
     expect(screen.getByText("电吸收调制激光器")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Optical Components/ }));
@@ -110,10 +121,12 @@ describe("NodeDetailPanel", () => {
   });
 
   it("renders one Source card with direct and Claim provenance", () => {
-    renderPanel("sources");
+    const { onOpenSource } = renderPanel("sources");
     expect(screen.getAllByTestId("source-card")).toHaveLength(1);
     expect(screen.getByText("Direct node link")).toBeInTheDocument();
     expect(screen.getByText("Via Claim")).toBeInTheDocument();
     expect(screen.getByText("CLAIM_1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open Source" }));
+    expect(onOpenSource).toHaveBeenCalledWith("SRC_1");
   });
 });

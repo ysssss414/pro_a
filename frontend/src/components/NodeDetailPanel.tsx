@@ -1,23 +1,49 @@
 import type {
   ClaimResult,
+  CurrentViewResult,
+  KnowledgeGapResult,
   NodeDetail,
   NodeSource,
   NodeSummary,
   RelationResult,
+  ResearchQuestionResult,
+  SourceDetail,
 } from "../api/types";
+import { ResearchTab } from "./ResearchTab";
+import { SourceDetailPanel } from "./SourceDetailPanel";
+import { ViewTab } from "./ViewTab";
 
-export type DetailTab = "overview" | "claims" | "sources";
+export type DetailTab = "overview" | "view" | "research" | "claims" | "sources";
+
+export interface KnowledgeErrors {
+  claims: string | null;
+  sources: string | null;
+  view: string | null;
+  research: string | null;
+  gaps: string | null;
+}
 
 interface NodeDetailPanelProps {
   selectedNodeId: string | null;
   detail: NodeDetail | null;
   claims: ClaimResult[];
   sources: NodeSource[];
+  currentView: CurrentViewResult | null;
+  researchQuestion: ResearchQuestionResult | null;
+  knowledgeGaps: KnowledgeGapResult[];
   activeTab: DetailTab;
   loading: boolean;
+  knowledgeLoading: boolean;
   error: string | null;
+  knowledgeErrors: KnowledgeErrors;
+  selectedSourceId: string | null;
+  sourceDetail: SourceDetail | null;
+  sourceLoading: boolean;
+  sourceError: string | null;
   onTabChange: (tab: DetailTab) => void;
   onSelect: (nodeId: string) => void;
+  onOpenSource: (sourceId: string) => void;
+  onCloseSource: () => void;
 }
 
 function formatConfidence(value: number | null): string {
@@ -106,7 +132,13 @@ function OverviewTab({ detail, onSelect }: { detail: NodeDetail; onSelect: (node
   );
 }
 
-function ClaimsTab({ claims }: { claims: ClaimResult[] }) {
+function ClaimsTab({
+  claims,
+  onOpenSource,
+}: {
+  claims: ClaimResult[];
+  onOpenSource: (sourceId: string) => void;
+}) {
   if (claims.length === 0) {
     return <div className="tab-empty">No Claims are linked to this Node.</div>;
   }
@@ -131,10 +163,10 @@ function ClaimsTab({ claims }: { claims: ClaimResult[] }) {
             <blockquote>{claim.evidence_excerpt || "No evidence excerpt recorded."}</blockquote>
             {claim.evidence_pointer && <small>{claim.evidence_pointer}</small>}
           </div>
-          <div className="source-summary">
+          <button type="button" className="source-summary" onClick={() => onOpenSource(claim.source_id)}>
             <strong>{claim.source.title}</strong>
             <span>{[claim.source.organization, claim.source.publication_time, `Rank ${claim.source.source_rank}`].filter(Boolean).join(" · ")}</span>
-          </div>
+          </button>
           <code>{claim.claim_id}</code>
         </article>
       ))}
@@ -142,7 +174,13 @@ function ClaimsTab({ claims }: { claims: ClaimResult[] }) {
   );
 }
 
-function SourcesTab({ sources }: { sources: NodeSource[] }) {
+function SourcesTab({
+  sources,
+  onOpenSource,
+}: {
+  sources: NodeSource[];
+  onOpenSource: (sourceId: string) => void;
+}) {
   if (sources.length === 0) {
     return <div className="tab-empty">No Sources are linked to this Node.</div>;
   }
@@ -175,7 +213,10 @@ function SourcesTab({ sources }: { sources: NodeSource[] }) {
               </div>
             ))}
           </div>
-          <code>{source.source_id}</code>
+          <div className="source-card-footer">
+            <code>{source.source_id}</code>
+            <button type="button" onClick={() => onOpenSource(source.source_id)}>Open Source</button>
+          </div>
         </article>
       ))}
     </div>
@@ -184,6 +225,8 @@ function SourcesTab({ sources }: { sources: NodeSource[] }) {
 
 const tabs: Array<{ id: DetailTab; label: string }> = [
   { id: "overview", label: "Overview" },
+  { id: "view", label: "View" },
+  { id: "research", label: "Research" },
   { id: "claims", label: "Claims" },
   { id: "sources", label: "Sources" },
 ];
@@ -194,12 +237,36 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
     detail,
     claims,
     sources,
+    currentView,
+    researchQuestion,
+    knowledgeGaps,
     activeTab,
     loading,
+    knowledgeLoading,
     error,
+    knowledgeErrors,
+    selectedSourceId,
+    sourceDetail,
+    sourceLoading,
+    sourceError,
     onTabChange,
     onSelect,
+    onOpenSource,
+    onCloseSource,
   } = props;
+
+  if (selectedSourceId) {
+    return (
+      <SourceDetailPanel
+        sourceId={selectedSourceId}
+        source={sourceDetail}
+        loading={sourceLoading}
+        error={sourceError}
+        onBack={onCloseSource}
+        onSelectNode={onSelect}
+      />
+    );
+  }
 
   return (
     <section className="detail-panel" aria-labelledby="detail-heading">
@@ -246,11 +313,39 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
             id={`panel-${activeTab}`}
             aria-labelledby={`tab-${activeTab}`}
           >
-            {loading && <div className="inline-loading">Refreshing…</div>}
             {error && <div className="inline-error" role="alert">{error}</div>}
             {activeTab === "overview" && <OverviewTab detail={detail} onSelect={onSelect} />}
-            {activeTab === "claims" && <ClaimsTab claims={claims} />}
-            {activeTab === "sources" && <SourcesTab sources={sources} />}
+            {activeTab === "view" && (
+              <ViewTab
+                currentView={currentView}
+                loading={knowledgeLoading}
+                error={knowledgeErrors.view}
+                onOpenSource={onOpenSource}
+              />
+            )}
+            {activeTab === "research" && (
+              <ResearchTab
+                researchQuestion={researchQuestion}
+                knowledgeGaps={knowledgeGaps}
+                loading={knowledgeLoading}
+                researchError={knowledgeErrors.research}
+                gapsError={knowledgeErrors.gaps}
+              />
+            )}
+            {activeTab === "claims" && (
+              knowledgeErrors.claims
+                ? <div className="tab-empty is-error" role="alert">{knowledgeErrors.claims}</div>
+                : knowledgeLoading && claims.length === 0
+                  ? <div className="tab-empty">Loading Claims…</div>
+                  : <ClaimsTab claims={claims} onOpenSource={onOpenSource} />
+            )}
+            {activeTab === "sources" && (
+              knowledgeErrors.sources
+                ? <div className="tab-empty is-error" role="alert">{knowledgeErrors.sources}</div>
+                : knowledgeLoading && sources.length === 0
+                  ? <div className="tab-empty">Loading Sources…</div>
+                  : <SourcesTab sources={sources} onOpenSource={onOpenSource} />
+            )}
           </div>
         </>
       )}
