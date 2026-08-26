@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 2.3A Knowledge Detail & Research Surface — 2026-08-26
+
+- Added read-only Current View, Research Question, Knowledge Gaps and Source Detail queries/endpoints without schema or Production mutation; Current View selection reuses the governed revision ordering.
+- Parsed stored JSON into typed response values with safe empty fallbacks, resolved supporting/opposing Claim summaries without fabricating missing references, and preserved every stored Gap status.
+- Added Source Detail metadata, direct linked Nodes, Source Claims and Claim-linked Nodes while excluding `archived_path` and raw document access.
+- Expanded Explorer tabs to Overview / View / Research / Claims / Sources, with research-first Current View and RQ presentation, Gap status treatment, and right-panel Source Detail cross-navigation.
+- Split Node loading into independent core and knowledge groups using cancellation plus settled results so a Research failure does not remove the selected Node or graph.
+- Added isolated query/API fixtures and frontend component/client/partial-failure coverage; Production browser smoke verified EML empty states and real Source Detail data while remaining read-only.
+
 ## Phase 2.2 Knowledge Explorer MVP — 2026-08-26
 
 - Added a standalone React + TypeScript + Vite frontend backed only by the Phase 2.1A read API, with a local `/api` development proxy and no backend or schema change.

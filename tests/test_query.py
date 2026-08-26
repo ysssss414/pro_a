@@ -13,8 +13,8 @@ def test_stats_use_current_and_open_semantics(read_db_path: Path):
         "current_part_of_count": 1,
         "source_count": 2,
         "claim_count": 2,
-        "current_view_count": 1,
-        "open_knowledge_gap_count": 1,
+        "current_view_count": 2,
+        "open_knowledge_gap_count": 2,
         "open_research_question_count": 1,
     }
 
@@ -103,6 +103,75 @@ def test_node_sources_deduplicate_direct_and_claim_paths(read_db_path: Path):
     assert [item["origin_path"] for item in source_1["provenance"]] == ["direct", "claim"]
     assert source_1["provenance"][0]["link_origin"] == "existing_node_match"
     assert source_1["provenance"][1]["claim_id"] == "CLAIM_1"
+
+
+def test_current_view_uses_official_revision_order_and_parses_json(read_db_path: Path):
+    query = ReadOnlyQuery(read_db_path)
+    result = query.node_current_view("NODE_CHILD")
+
+    assert result["view_id"] == "VIEW_CURRENT"
+    assert result["version"] == "v_20260301_01"
+    assert result["content_json"] == {"thesis": "accelerating", "risks": ["pricing"]}
+    assert result["trigger_claim_ids"] == ["CLAIM_1", "CLAIM_MISSING"]
+    assert query.node_current_view("NODE_PARENT") is None
+    with pytest.raises(KeyError):
+        query.node_current_view("NODE_MISSING")
+
+
+def test_research_question_parses_fields_and_resolves_claims_safely(read_db_path: Path):
+    query = ReadOnlyQuery(read_db_path)
+    result = query.node_research_question("NODE_CHILD")
+
+    assert result["current_answer"].startswith("Adoption is accelerating")
+    assert result["key_variables"][1] == {"variable": "pricing", "direction": "down"}
+    assert result["supporting_claim_ids"] == ["CLAIM_1", "CLAIM_MISSING"]
+    assert result["supporting_claims"][0]["statement"].startswith("EML is used")
+    assert result["supporting_claims"][1] == {
+        "claim_id": "CLAIM_MISSING",
+        "statement": None,
+        "status": None,
+        "confidence": None,
+    }
+    assert result["opposing_claims"][0]["claim_id"] == "CLAIM_2"
+    assert query.node_research_question("NODE_PARENT") is None
+    with pytest.raises(KeyError):
+        query.node_research_question("NODE_MISSING")
+
+
+def test_knowledge_gaps_parse_json_and_prioritize_open_like_statuses(read_db_path: Path):
+    query = ReadOnlyQuery(read_db_path)
+    gaps = query.node_knowledge_gaps("NODE_CHILD")
+
+    assert [gap["gap_id"] for gap in gaps] == ["GAP_REFRESH", "GAP_OPEN", "GAP_DONE"]
+    assert gaps[1]["source_claim_ids"] == ["CLAIM_1", "CLAIM_MISSING"]
+    assert gaps[2]["resolution_claim_id"] == "CLAIM_1"
+    assert query.node_knowledge_gaps("NODE_PARENT") == []
+    with pytest.raises(KeyError):
+        query.node_knowledge_gaps("NODE_MISSING")
+
+
+def test_source_detail_includes_metadata_nodes_claims_and_evidence(read_db_path: Path):
+    query = ReadOnlyQuery(read_db_path)
+    result = query.source_detail("SRC_1")
+
+    assert result["analysis_mode"] == "standard"
+    assert result["origin_type"] == "local_file"
+    assert result["underlying_source_id"] == "SRC_BASE"
+    assert "archived_path" not in result
+    assert result["linked_nodes"] == [{
+        "node_id": "NODE_CHILD",
+        "canonical_name": "Electro-Absorption Modulated Laser",
+        "primary_type": "Product",
+        "role": "primary",
+        "confidence": 0.95,
+        "link_origin": "existing_node_match",
+        "derived_from_node_id": "NODE_PARENT",
+        "evidence_excerpt": "EML",
+    }]
+    assert result["claims"][0]["claim_id"] == "CLAIM_1"
+    assert result["claims"][0]["evidence_excerpt"].startswith("EML is used")
+    assert result["claims"][0]["linked_nodes"][0]["node_id"] == "NODE_CHILD"
+    assert query.source_detail("SRC_MISSING") is None
 
 
 def test_query_connection_rejects_writes(read_db_path: Path):

@@ -1,6 +1,6 @@
-# pro_a Roadmap — Phase 2 Knowledge Explorer
+# pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.2 complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.3A complete**
 
 ## Completed — Phase 1
 
@@ -58,9 +58,13 @@ Search
 
 状态：**complete**。已建立独立 React + TypeScript + Vite UI，覆盖 canonical/alias Search、Node Browse、current 1-hop Cytoscape Trace、Overview / Claims / Sources 与 direct / claim provenance。UI 只消费 Phase 2.1A API，包含 debounce、stale-request abort、并行 Node 数据加载、URL selection state、empty/loading/error/retry 状态及前端单元/组件测试。
 
-### Next recommended milestone — Phase 2.3 Provenance & Knowledge Detail
+### Phase 2.3A — Knowledge Detail & Research Surface
 
-在 Phase 2.2 review/merge 后，深化 Evidence / Source provenance 与 Knowledge Detail 的审阅体验。继续保持 API-only read boundary、current 1-hop 上限和 Production read-only；该候选里程碑不自动授权 write path、chatbot、vector DB、recursive graph traversal 或 frozen contract 变更。
+状态：**complete**。新增 Current View、Research Question、Knowledge Gaps 与 Source Detail 的确定性只读 query/API；Explorer 增加 View / Research tabs 和右栏 Source Detail mode。Current View 复用正式 revision ordering，RQ 引用 Claim 可读解析且容忍 missing refs，Gap 保留全部状态并按研究实用性排序，Source Detail 提供 metadata、direct Node links、Source Claims 与 Claim-linked Nodes，不暴露归档路径。前端 core/knowledge 模块独立失败并继续取消 stale requests。
+
+### Next recommended milestone — Phase 2.3B Source & Provenance refinement
+
+在 Phase 2.3A review/merge 后，进一步改善 Source 与 provenance 的审阅密度、Evidence traceability 和 edge-case coverage。继续保持 local-first、deterministic、read-only，不自动扩展到 raw file serving、IMA、Relation provenance、write UI、LLM/RAG 或 Search scope 扩张。
 
 ## Carried backlog
 
@@ -72,7 +76,7 @@ Search
 - 更可靠的表格、图表、多模态与 source-version 处理；
 - 正式 IMA integration acceptance 与更高层 review UI。
 
-这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.2 Explorer MVP。
+这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.3A Research Surface。
 
 ## Decision rule
 

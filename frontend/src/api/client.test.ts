@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, getHealth, getNode, searchNodes } from "./client";
+import {
+  ApiError,
+  getCurrentView,
+  getHealth,
+  getKnowledgeGaps,
+  getNode,
+  getResearchQuestion,
+  getSourceDetail,
+  searchNodes,
+} from "./client";
 
 describe("API client", () => {
   const fetchMock = vi.fn();
@@ -43,5 +52,21 @@ describe("API client", () => {
     expect(fetchMock.mock.calls[0][0]).toBe(
       "/api/nodes/search?q=EML+%26+optical&limit=20",
     );
+  });
+
+  it("uses the typed knowledge detail endpoints", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => null });
+
+    await getCurrentView("NODE / 1");
+    await getResearchQuestion("NODE / 1");
+    await getKnowledgeGaps("NODE / 1");
+    await getSourceDetail("SRC / 1");
+
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/nodes/NODE%20%2F%201/current-view",
+      "/api/nodes/NODE%20%2F%201/research-question",
+      "/api/nodes/NODE%20%2F%201/knowledge-gaps",
+      "/api/sources/SRC%20%2F%201",
+    ]);
   });
 });

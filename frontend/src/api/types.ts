@@ -92,3 +92,107 @@ export interface SourceProvenance {
 export interface NodeSource extends SourceMetadata {
   provenance: SourceProvenance[];
 }
+
+export interface CurrentViewResult {
+  view_id: string;
+  node_id: string;
+  version: string;
+  status: string;
+  change_level: string;
+  previous_view_id: string | null;
+  content_md: string;
+  content_json: Record<string, unknown>;
+  trigger_source_id: string | null;
+  trigger_claim_ids: string[];
+  revision_date: string;
+  revision_seq: number;
+  accepted_proposal_id: string;
+  created_at: string;
+  confirmed_at: string;
+}
+
+export interface ResearchClaimSummary {
+  claim_id: string;
+  statement: string | null;
+  status: string | null;
+  confidence: number | null;
+}
+
+export interface ResearchQuestionResult {
+  rq_id: string;
+  node_id: string;
+  question: string;
+  importance: string;
+  current_answer: string;
+  confidence: number | null;
+  supporting_claim_ids: string[];
+  opposing_claim_ids: string[];
+  key_variables: unknown[];
+  supporting_claims: ResearchClaimSummary[];
+  opposing_claims: ResearchClaimSummary[];
+  what_would_change_my_mind: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface KnowledgeGapResult {
+  gap_id: string;
+  node_id: string;
+  title: string;
+  description: string;
+  status: string;
+  source_claim_ids: string[];
+  freshness_due: string;
+  resolution_claim_id: string;
+  superseded_by_gap_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SourceLinkedNode extends NodeSummary {
+  role: string;
+  confidence: number | null;
+  link_origin: string;
+  derived_from_node_id: string;
+  evidence_excerpt: string;
+}
+
+export interface SourceClaimNode extends NodeSummary {
+  role: string;
+}
+
+export interface SourceClaim {
+  claim_id: string;
+  statement: string;
+  nature: string;
+  fact_time: string;
+  publication_time: string;
+  status: string;
+  confidence: number | null;
+  novelty_level: string;
+  attributed_to: string;
+  scope: string;
+  evidence_pointer: string;
+  evidence_excerpt: string;
+  linked_nodes: SourceClaimNode[];
+}
+
+export interface SourceDetail {
+  source_id: string;
+  title: string;
+  original_name: string;
+  source_type: string;
+  source_rank: string;
+  origin_type: string;
+  author: string;
+  organization: string;
+  publication_time: string;
+  ingested_at: string;
+  ingestion_mode: string;
+  analysis_mode: string;
+  status: string;
+  underlying_source_id: string;
+  linked_nodes: SourceLinkedNode[];
+  claims: SourceClaim[];
+}

@@ -1,10 +1,14 @@
 import type {
   ClaimResult,
+  CurrentViewResult,
   HealthResponse,
+  KnowledgeGapResult,
   NeighborGraph,
   NodeDetail,
   NodeSearchResult,
   NodeSource,
+  ResearchQuestionResult,
+  SourceDetail,
   StatsResponse,
 } from "./types";
 
@@ -79,6 +83,46 @@ export function getClaims(nodeId: string, signal?: AbortSignal): Promise<ClaimRe
 export function getSources(nodeId: string, signal?: AbortSignal): Promise<NodeSource[]> {
   return request<NodeSource[]>(
     `/api/nodes/${encodeURIComponent(nodeId)}/sources`,
+    signal,
+  );
+}
+
+export function getCurrentView(
+  nodeId: string,
+  signal?: AbortSignal,
+): Promise<CurrentViewResult | null> {
+  return request<CurrentViewResult | null>(
+    `/api/nodes/${encodeURIComponent(nodeId)}/current-view`,
+    signal,
+  );
+}
+
+export function getResearchQuestion(
+  nodeId: string,
+  signal?: AbortSignal,
+): Promise<ResearchQuestionResult | null> {
+  return request<ResearchQuestionResult | null>(
+    `/api/nodes/${encodeURIComponent(nodeId)}/research-question`,
+    signal,
+  );
+}
+
+export function getKnowledgeGaps(
+  nodeId: string,
+  signal?: AbortSignal,
+): Promise<KnowledgeGapResult[]> {
+  return request<KnowledgeGapResult[]>(
+    `/api/nodes/${encodeURIComponent(nodeId)}/knowledge-gaps`,
+    signal,
+  );
+}
+
+export function getSourceDetail(
+  sourceId: string,
+  signal?: AbortSignal,
+): Promise<SourceDetail> {
+  return request<SourceDetail>(
+    `/api/sources/${encodeURIComponent(sourceId)}`,
     signal,
   );
 }

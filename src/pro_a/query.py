@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
+
+from .db import CURRENT_VIEW_ORDER
 
 
 MAX_QUERY_LIMIT = 100
@@ -53,6 +56,26 @@ class ReadOnlyQuery:
             "canonical_name": row[f"{prefix}canonical_name"],
             "primary_type": row[f"{prefix}primary_type"],
         }
+
+    @staticmethod
+    def _json_list(raw: str | None) -> list[Any]:
+        try:
+            value = json.loads(raw or "[]")
+        except (TypeError, json.JSONDecodeError):
+            return []
+        return value if isinstance(value, list) else []
+
+    @staticmethod
+    def _json_object(raw: str | None) -> dict[str, Any]:
+        try:
+            value = json.loads(raw or "{}")
+        except (TypeError, json.JSONDecodeError):
+            return {}
+        return value if isinstance(value, dict) else {}
+
+    @classmethod
+    def _json_string_list(cls, raw: str | None) -> list[str]:
+        return [item for item in cls._json_list(raw) if isinstance(item, str) and item]
 
     @staticmethod
     def _relation(row: sqlite3.Row) -> dict[str, Any]:
@@ -391,3 +414,159 @@ class ReadOnlyQuery:
         items.sort(key=lambda item: item["source_id"])
         items.sort(key=lambda item: item["publication_time"], reverse=True)
         return items
+
+    @staticmethod
+    def _require_node(conn: sqlite3.Connection, node_id: str) -> None:
+        if ReadOnlyQuery._get_node(conn, node_id) is None:
+            raise KeyError(node_id)
+
+    @staticmethod
+    def _claim_summaries(
+        conn: sqlite3.Connection,
+        claim_ids: list[Any],
+    ) -> list[dict[str, Any]]:
+        ids = [item for item in claim_ids if isinstance(item, str) and item]
+        if not ids:
+            return []
+        placeholders = ",".join("?" for _ in set(ids))
+        rows = conn.execute(
+            f"""SELECT claim_id,statement,status,confidence
+                FROM claims WHERE claim_id IN ({placeholders})""",
+            tuple(dict.fromkeys(ids)),
+        ).fetchall()
+        summaries = {row["claim_id"]: dict(row) for row in rows}
+        return [
+            summaries.get(claim_id, {
+                "claim_id": claim_id,
+                "statement": None,
+                "status": None,
+                "confidence": None,
+            })
+            for claim_id in ids
+        ]
+
+    def node_current_view(self, node_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            self._require_node(conn, node_id)
+            row = conn.execute(
+                f"""SELECT * FROM current_views
+                    WHERE node_id=? AND status='official'
+                    ORDER BY {CURRENT_VIEW_ORDER} LIMIT 1""",
+                (node_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        result = dict(row)
+        result["content_json"] = self._json_object(result["content_json"])
+        result["trigger_claim_ids"] = self._json_string_list(
+            result.pop("trigger_claim_ids_json")
+        )
+        return result
+
+    def node_research_question(self, node_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            self._require_node(conn, node_id)
+            row = conn.execute(
+                "SELECT * FROM research_questions WHERE node_id=?",
+                (node_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            result = dict(row)
+            supporting_ids = self._json_string_list(result.pop("supporting_claim_ids_json"))
+            opposing_ids = self._json_string_list(result.pop("opposing_claim_ids_json"))
+            result["key_variables"] = self._json_list(
+                result.pop("key_variables_json")
+            )
+            result["supporting_claim_ids"] = supporting_ids
+            result["opposing_claim_ids"] = opposing_ids
+            result["supporting_claims"] = self._claim_summaries(conn, supporting_ids)
+            result["opposing_claims"] = self._claim_summaries(conn, opposing_ids)
+            return result
+
+    def node_knowledge_gaps(self, node_id: str) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            self._require_node(conn, node_id)
+            rows = conn.execute(
+                """SELECT * FROM knowledge_gaps WHERE node_id=?
+                   ORDER BY
+                     CASE WHEN status IN ('open','reopened','needs_refresh') THEN 0 ELSE 1 END,
+                     CASE WHEN freshness_due='' THEN 1 ELSE 0 END,
+                     freshness_due,
+                     created_at DESC,
+                     gap_id""",
+                (node_id,),
+            ).fetchall()
+        results = []
+        for row in rows:
+            result = dict(row)
+            result["source_claim_ids"] = self._json_string_list(
+                result.pop("source_claim_ids_json")
+            )
+            results.append(result)
+        return results
+
+    def source_detail(self, source_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            source = conn.execute(
+                """SELECT source_id,title,original_name,source_type,source_rank,
+                          origin_type,author,organization,publication_time,ingested_at,
+                          ingestion_mode,analysis_mode,status,underlying_source_id
+                   FROM sources WHERE source_id=?""",
+                (source_id,),
+            ).fetchone()
+            if source is None:
+                return None
+
+            linked_rows = conn.execute(
+                """SELECT n.node_id,n.canonical_name,n.primary_type,
+                          snl.role,snl.confidence,snl.link_origin,
+                          snl.derived_from_node_id,snl.evidence_excerpt
+                   FROM source_node_links snl
+                   JOIN nodes n ON n.node_id=snl.node_id
+                   WHERE snl.source_id=?
+                   ORDER BY n.canonical_name COLLATE NOCASE,n.canonical_name,n.node_id""",
+                (source_id,),
+            ).fetchall()
+            claim_rows = conn.execute(
+                """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
+                          c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
+                          c.evidence_pointer,c.evidence_excerpt,
+                          n.node_id,n.canonical_name,n.primary_type,cnl.role AS node_role
+                   FROM claims c
+                   LEFT JOIN claim_node_links cnl ON cnl.claim_id=c.claim_id
+                   LEFT JOIN nodes n ON n.node_id=cnl.node_id
+                   WHERE c.source_id=?
+                   ORDER BY COALESCE(NULLIF(c.fact_time,''),NULLIF(c.publication_time,''),
+                                     c.ingestion_time,c.created_at) DESC,
+                            c.publication_time DESC,c.claim_id,
+                            n.canonical_name COLLATE NOCASE,n.node_id""",
+                (source_id,),
+            ).fetchall()
+
+        claims: list[dict[str, Any]] = []
+        claims_by_id: dict[str, dict[str, Any]] = {}
+        claim_fields = (
+            "claim_id", "statement", "nature", "fact_time", "publication_time",
+            "status", "confidence", "novelty_level", "attributed_to", "scope",
+            "evidence_pointer", "evidence_excerpt",
+        )
+        for row in claim_rows:
+            claim_id = row["claim_id"]
+            if claim_id not in claims_by_id:
+                claim = {key: row[key] for key in claim_fields}
+                claim["linked_nodes"] = []
+                claims_by_id[claim_id] = claim
+                claims.append(claim)
+            if row["node_id"] is not None:
+                claims_by_id[claim_id]["linked_nodes"].append({
+                    "node_id": row["node_id"],
+                    "canonical_name": row["canonical_name"],
+                    "primary_type": row["primary_type"],
+                    "role": row["node_role"],
+                })
+
+        result = dict(source)
+        result["linked_nodes"] = [dict(row) for row in linked_rows]
+        result["claims"] = claims
+        return result

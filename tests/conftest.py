@@ -185,65 +185,96 @@ def read_db_path(tmp_path: Path) -> Path:
         )
         conn.execute(
             """INSERT INTO source_node_links(
-               source_id,node_id,role,confidence,link_origin,evidence_excerpt
-               ) VALUES(?,?,?,?,?,?)""",
+               source_id,node_id,role,confidence,link_origin,derived_from_node_id,
+               evidence_excerpt) VALUES(?,?,?,?,?,?,?)""",
             (
                 "SRC_1",
                 "NODE_CHILD",
                 "primary",
                 0.95,
                 "existing_node_match",
+                "NODE_PARENT",
                 "EML",
             ),
         )
         conn.execute(
+            """UPDATE sources SET analysis_mode='standard',origin_type='local_file',
+                      status='analyzed',underlying_source_id='SRC_BASE'
+               WHERE source_id='SRC_1'"""
+        )
+        conn.executemany(
             """INSERT INTO current_views(
-               view_id,node_id,version,status,change_level,content_md,created_at
-               ) VALUES(?,?,?,?,?,?,?)""",
-            (
-                "VIEW_1",
-                "NODE_CHILD",
-                "v_20260215",
-                "official",
-                "minor",
-                "Current view",
-                "2026-02-15T00:00:00+00:00",
-            ),
+               view_id,node_id,version,status,change_level,previous_view_id,
+               content_md,content_json,trigger_source_id,trigger_claim_ids_json,
+               revision_date,revision_seq,accepted_proposal_id,created_at,confirmed_at
+               ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            [
+                (
+                    "VIEW_OLD", "NODE_CHILD", "v_20260215", "official", "minor", None,
+                    "Older view", '{"thesis":"older"}', None, "[]", "20260215", 0,
+                    "PROPOSAL_OLD", "2026-04-01T00:00:00+00:00", "2026-04-01T00:00:00+00:00",
+                ),
+                (
+                    "VIEW_CURRENT", "NODE_CHILD", "v_20260301_01", "official", "material",
+                    "VIEW_OLD", "# Current view\n\nOptical demand is accelerating.",
+                    '{"thesis":"accelerating","risks":["pricing"]}', "SRC_1",
+                    '["CLAIM_1","CLAIM_MISSING"]', "20260301", 1,
+                    "PROPOSAL_CURRENT", "2026-03-01T00:00:00+00:00",
+                    "2026-03-02T00:00:00+00:00",
+                ),
+                (
+                    "VIEW_DRAFT", "NODE_CHILD", "v_20990101", "draft", "major", "VIEW_CURRENT",
+                    "Draft view", "{}", None, "[]", "20990101", 0, "",
+                    "2099-01-01T00:00:00+00:00", "",
+                ),
+            ],
         )
         conn.executemany(
             """INSERT INTO knowledge_gaps(
-               gap_id,node_id,title,status,created_at,updated_at
-               ) VALUES(?,?,?,?,?,?)""",
+               gap_id,node_id,title,description,status,source_claim_ids_json,
+               freshness_due,resolution_claim_id,superseded_by_gap_id,created_at,updated_at
+               ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
             [
                 (
-                    "GAP_OPEN",
-                    "NODE_CHILD",
-                    "Open gap",
-                    "open",
-                    "2026-02-15T00:00:00+00:00",
-                    "2026-02-15T00:00:00+00:00",
+                    "GAP_REFRESH", "NODE_CHILD", "Refresh pricing evidence",
+                    "Validate whether pricing pressure has changed.", "needs_refresh",
+                    '["CLAIM_2"]', "2026-04-01", "", "",
+                    "2026-03-10T00:00:00+00:00", "2026-03-10T00:00:00+00:00",
                 ),
                 (
-                    "GAP_DONE",
-                    "NODE_CHILD",
-                    "Resolved gap",
-                    "resolved",
-                    "2026-02-15T00:00:00+00:00",
-                    "2026-02-15T00:00:00+00:00",
+                    "GAP_OPEN", "NODE_CHILD", "Track adoption",
+                    "Measure hyperscaler deployment timing.", "open",
+                    '["CLAIM_1","CLAIM_MISSING"]', "2026-05-01", "", "",
+                    "2026-03-11T00:00:00+00:00", "2026-03-11T00:00:00+00:00",
+                ),
+                (
+                    "GAP_DONE", "NODE_CHILD", "Resolved gap",
+                    "Historical packaging question.", "resolved", '["CLAIM_1"]',
+                    "2026-01-01", "CLAIM_1", "GAP_REFRESH",
+                    "2026-02-15T00:00:00+00:00", "2026-03-12T00:00:00+00:00",
                 ),
             ],
         )
         conn.execute(
             """INSERT INTO research_questions(
-               rq_id,node_id,question,status,created_at,updated_at
-               ) VALUES(?,?,?,?,?,?)""",
+               rq_id,node_id,question,importance,current_answer,confidence,
+               supporting_claim_ids_json,opposing_claim_ids_json,key_variables_json,
+               what_would_change_my_mind,status,created_at,updated_at
+               ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 "RQ_1",
-                "NODE_RQ",
+                "NODE_CHILD",
                 "Will optical interconnect adoption accelerate?",
+                "Material to the demand outlook.",
+                "Adoption is accelerating, with timing uncertainty.",
+                0.72,
+                '["CLAIM_1","CLAIM_MISSING"]',
+                '["CLAIM_2"]',
+                '["hyperscaler capex", {"variable":"pricing","direction":"down"}]',
+                "A sustained deployment delay or falling attach rate.",
                 "open",
                 "2026-02-15T00:00:00+00:00",
-                "2026-02-15T00:00:00+00:00",
+                "2026-03-15T00:00:00+00:00",
             ),
         )
     return path

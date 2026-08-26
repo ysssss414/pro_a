@@ -1,4 +1,4 @@
-# pro_a v0.3.0 — Phase 2 Knowledge Explorer
+# pro_a v0.3.0 — Phase 2 Knowledge Research Surface
 
 `pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `workspace/pro_a.db` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
 
@@ -19,7 +19,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成：
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 
-Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.2 Knowledge Explorer MVP 已完成。目标顺序为：
+Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.3A Knowledge Detail & Research Surface 已完成。目标顺序为：
 
 ```text
 Search
@@ -34,7 +34,7 @@ Search
 ## Phase 2.1A read-only architecture
 
 ```text
-Browser / future UI
+Browser / Explorer UI
         ↓
 Read-only HTTP API
         ↓
@@ -68,19 +68,23 @@ GET /api/nodes/{node_id}
 GET /api/nodes/{node_id}/neighbors
 GET /api/nodes/{node_id}/claims
 GET /api/nodes/{node_id}/sources
+GET /api/nodes/{node_id}/current-view
+GET /api/nodes/{node_id}/research-question
+GET /api/nodes/{node_id}/knowledge-gaps
+GET /api/sources/{source_id}
 ```
 
-Node search 只做 canonical name / alias 的确定性子串匹配；alias 命中仍返回 canonical Node。Node list 和 search 的单次请求上限均为 100。Neighborhood 固定为 current Relations、1 hop。Claim response 直接附 Source metadata；Node Sources 同时覆盖 direct link 与 Claim link，并按 Source 去重保留 provenance。
+Node search 只做 canonical name / alias 的确定性子串匹配；alias 命中仍返回 canonical Node。Node list 和 search 的单次请求上限均为 100。Neighborhood 固定为 current Relations、1 hop。Claim response 直接附 Source metadata；Node Sources 同时覆盖 direct link 与 Claim link，并按 Source 去重保留 provenance。Current View 复用正式 revision selection 语义；Research Question 解析 supporting/opposing Claims；Knowledge Gaps 保留全部真实状态；Source Detail 只返回 metadata 与 structured knowledge links，不暴露本地归档路径。
 
 ## Knowledge Explorer MVP
 
 `frontend/` 提供独立 React + TypeScript + Vite 浏览器应用，所有知识数据只通过上述 read API 获取。桌面界面固定为三栏：
 
 ```text
-Search results | current 1-hop graph | Overview / Claims / Sources
+Search results | current 1-hop graph | Overview / View / Research / Claims / Sources
 ```
 
-Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。Node 详情展示 aliases、parents / children、incoming / outgoing Relations；Claims 展示 Evidence 与 Source metadata；Sources 按 Source 去重并展示 direct / claim provenance。选择状态写入 `?node=`，可直接恢复；API 不可用时显示可重试状态，不进入白屏。
+Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。View 展示正式 Current View content 与 revision metadata；Research 展示 Research Question、Current Answer、key variables、supporting/opposing Claims、falsifier 与 Knowledge Gaps。Sources 可进入右栏 Source Detail，查看 metadata、linked Nodes 和 Source Claims，并可从 Source 反向选择 Node。Core 与 knowledge modules 独立失败，单个 Research endpoint 错误不会清空 Overview；选择状态写入 `?node=`，API 不可用时显示可重试状态。
 
 ## Windows 快速开始
 
@@ -112,6 +116,6 @@ Standard / Deep ingestion 仍使用现有 CLI 和冻结契约。任何 Productio
 
 ## 当前边界
 
-当前 Explorer 是 desktop-first 的本地 MVP，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot 或 schema migration。图固定为所选 Node 的 current 1-hop，生产数据若没有 Node-linked Claim，Claims 页会如实为空。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
+当前 Explorer 是 desktop-first、本地只读的投研知识终端，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot、raw file serving 或 schema migration。图固定为所选 Node 的 current 1-hop；Production 若没有 Current View、Research Question、Knowledge Gap 或 Node-linked Claim，界面会如实显示空态。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
 
 后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。
