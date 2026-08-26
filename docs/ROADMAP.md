@@ -1,6 +1,6 @@
-# pro_a Roadmap — Phase 2 started
+# pro_a Roadmap — Phase 2 Knowledge Explorer
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 started**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.2 complete**
 
 ## Completed — Phase 1
 
@@ -54,9 +54,13 @@ Search
 - FastAPI response models、404/422/503 contract 和本地只读启动方式；
 - isolated temporary SQLite query/API regression tests。
 
-### Next recommended milestone — Phase 2.1B
+### Phase 2.2 — Knowledge Explorer MVP
 
-在 Phase 2.1A API contract review/merge 后，建立最小浏览器 exploration UI，先覆盖 Search、Node browse、1-hop Trace 和 provenance navigation。继续以 API 为唯一 UI 数据入口，不引入 write path、chatbot、vector DB 或 recursive graph algorithms。
+状态：**complete**。已建立独立 React + TypeScript + Vite UI，覆盖 canonical/alias Search、Node Browse、current 1-hop Cytoscape Trace、Overview / Claims / Sources 与 direct / claim provenance。UI 只消费 Phase 2.1A API，包含 debounce、stale-request abort、并行 Node 数据加载、URL selection state、empty/loading/error/retry 状态及前端单元/组件测试。
+
+### Next recommended milestone — Phase 2.3 Provenance & Knowledge Detail
+
+在 Phase 2.2 review/merge 后，深化 Evidence / Source provenance 与 Knowledge Detail 的审阅体验。继续保持 API-only read boundary、current 1-hop 上限和 Production read-only；该候选里程碑不自动授权 write path、chatbot、vector DB、recursive graph traversal 或 frozen contract 变更。
 
 ## Carried backlog
 
@@ -68,7 +72,7 @@ Search
 - 更可靠的表格、图表、多模态与 source-version 处理；
 - 正式 IMA integration acceptance 与更高层 review UI。
 
-这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.1A read path。
+这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.2 Explorer MVP。
 
 ## Decision rule
 

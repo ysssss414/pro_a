@@ -6,3 +6,7 @@ config.toml
 workspace/
 *_validation_*/
 .env
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+coverage/
