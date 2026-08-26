@@ -1,4 +1,12 @@
-# Codex continuation brief — Phase 2 Knowledge Detail & Research Surface
+# Codex continuation brief — Phase 2.3B Knowledge Coverage Audit
+
+## Phase 2.3B closure
+
+Phase 2.3B is complete as a read-only audit. `src/pro_a/coverage.py` uses the existing SQLite `mode=ro` / `query_only` boundary and emits deterministic Node, Source, Claim and unlinked-Claim CSVs under `artifacts/phase2_3b/`. The formal findings are in `docs/PHASE2_3B_KNOWLEDGE_COVERAGE_AUDIT.md`.
+
+Production audit baseline and post-check are identical at SHA-256 `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`: 293 active Nodes, 737 aliases, 181 stored Relations, 174 current `part_of`, 2 Sources, 12 Claims, 0 Claim → Node links, 0 Current Views, 0 Research Questions and 0 Knowledge Gaps. All 12 Claims are unlinked and classified as ambiguous review candidates; exact canonical/alias mentions are review signals only.
+
+No schema, frontend, API, LLM, write workflow or Production row changed. The next authorized decision is a human Claim-to-Node adjudication package, not automatic linking.
 
 ## Current state
 
