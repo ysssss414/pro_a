@@ -29,6 +29,8 @@ Phase 2.3F 明确确认 `Company` 为 canonical Node Type；这是一项人工�
 
 Claim → Node link 存在不等于该 Node 是 Claim 的 primary subject。后续 Current View candidate 应优先使用目标 Node 的 `role=subject` Claims；`context` Claims 不得直接写成该 Node 自身或行业整体事实。
 
+Current View direct factual evidence MUST use `role=subject`. `role=context` is context-only and MUST NOT directly support Node-own factual assertions. `role=related` MUST NOT directly support Current View facts until adjudicated. `needs_review` Claims MUST NOT be primary Current View evidence. `expert_judgment` MUST remain attributed. `company_guidance` MUST preserve company attribution and future-time semantics.
+
 ## 3. Node Relations
 
 标准关系：
