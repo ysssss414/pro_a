@@ -1,68 +1,75 @@
-# pro_a Roadmap — post-Phase 1 freeze
+# pro_a Roadmap — Phase 2 started
 
-Status: **Phase 1 complete and frozen; Phase 1.1 not started**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 started**
 
-## Completed milestone — Phase 1
+## Completed — Phase 1
 
-Phase 1 已在 2026-08-24 完成：
+Phase 1 的 Source → Claim → Node / Relation Candidate → Proposal / Review → controlled Production maintenance 主链路已完成并冻结。Operational Acceptance 为 `PASS_WITH_RELATION_BACKLOG`；Relation validation operational，但 Relation generation 尚未达到 operational ready。
+
+冻结记录见 `docs/PHASE1_FREEZE.md`，冻结业务规则见 `docs/REQUIREMENTS_FROZEN.md`。
+
+## Completed — Phase 1.1 AI Hardware universe
+
+Phase 1.1A 完成经人工 adjudication 的 Node、alias 与四条 structural `part_of` 扩展；Phase 1.1B 完成固定 26 条 functional Relation candidates 的 Evidence reconstruction、frozen-validator diagnosis 与人工 adjudication。
+
+最终 Production baseline：
+
+- Nodes：293；
+- Aliases：737；
+- Node Relations：181；
+- current `part_of`：174；
+- functional Relation import：0；
+- SHA-256：`8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`。
+
+Closure 见 `docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md` 与 `docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`。
+
+## Started — Phase 2 Knowledge Exploration & Interaction Layer
+
+Phase 2 在 canonical SQLite knowledge state 上建立本地交互层，顺序为：
 
 ```text
-R1 baseline acceptance
-→ B.2 loss attribution and inventory reconciliation
-→ approved B.2C Production Node import
-→ AF-007 deterministic source-survivability fix
-→ B.2E/B.2E.1 recall decisions
-→ B.2F final regression
-→ run_007
-→ Operational Acceptance
-→ Phase 1 freeze
+Search
+→ Browse
+→ Trace
+→ Research
+→ Ask
 ```
 
-最终状态：
+优先 deterministic knowledge interaction；`Ask` 晚于可验证的 Search / Browse / Trace / Research，不以 chatbot 作为起点。
 
-- Production：280 Nodes / 706 Aliases / 177 Node Relations；
-- run_007：PASS，无新系统性 safety blocker；
-- Operational Acceptance：`PASS_WITH_RELATION_BACKLOG`；
-- Source / Claim / Node review / controlled DB maintenance 工作流可用；
-- Relation validation operational，Relation generation 尚未达到 operational ready；
-- IMA off；冻结业务规则未改变。
+### Phase 2.0 — kickoff documentation
 
-冻结记录见 `docs/PHASE1_FREEZE.md`，历史验收规范保留在 `docs/R1_ACCEPTANCE.md`。
+状态：**complete**。README、Roadmap、continuation brief 与 Changelog 已同步到最新 Phase 1.1 closure 和 Phase 2 架构边界。
 
-## Known backlog carried forward
+### Phase 2.1A — deterministic read-only query/API foundation
 
-- Relation Candidate generation 漏召回；Operational exact probes 0/2。
-- `NM-002` atomic Claim extraction 与 `NM-005` direction generation：`MODEL_QUALITY_BACKLOG`。
-- `NM-001` 与 `NM-006`：contract-constrained false negatives。
-- `RJ-009` / `PD-002` / `HW-001`：Phase 1 不再修复。
-- Claim semantic deduplication / conflict retrieval。
-- Proposal “modify then accept”。
-- Knowledge Gap resolve / reopen / supersede 与 ResearchQuestion Current Answer 生命周期。
-- 更可靠的表格、图表、多模态与 source-version 处理。
+状态：**complete**。当前能力包括：
+
+- 独立 SQLite `mode=ro` query/read model；
+- stats、canonical/alias search、bounded node list；
+- node detail、正确 `part_of` parent/child direction；
+- current 1-hop neighborhood；
+- Node → Claims → Source metadata；
+- direct / Claim-linked Source provenance 与 Source dedup；
+- FastAPI response models、404/422/503 contract 和本地只读启动方式；
+- isolated temporary SQLite query/API regression tests。
+
+### Next recommended milestone — Phase 2.1B
+
+在 Phase 2.1A API contract review/merge 后，建立最小浏览器 exploration UI，先覆盖 Search、Node browse、1-hop Trace 和 provenance navigation。继续以 API 为唯一 UI 数据入口，不引入 write path、chatbot、vector DB 或 recursive graph algorithms。
+
+## Carried backlog
+
+- Relation Candidate generation 漏召回；
+- contract-constrained functional Relation false negatives；
+- Claim semantic deduplication / conflict retrieval；
+- Proposal “modify then accept”；
+- Knowledge Gap 与 ResearchQuestion 完整生命周期；
+- 更可靠的表格、图表、多模态与 source-version 处理；
 - 正式 IMA integration acceptance 与更高层 review UI。
 
-这些 backlog 不构成已冻结 Phase 1 的追补开发授权。
-
-## Next candidate milestone — Phase 1.1 / R2
-
-Phase 1.1 尚未开始，需用户另行授权。候选目标是 **Expanded Knowledge Universe / R2**：
-
-1. 以独立的新材料集扩展 Node/alias universe；
-2. 继续使用 human-gated inventory reconciliation 与 controlled import；
-3. 设计 R2 Gold / operational probes，避免复用 Phase 1 prompt-tuning cases；
-4. 在不放宽 frozen validators 的前提下评估 Relation generation 的 operational usefulness；
-5. 如需 prompt/model 改动，先做受控实验，再进入 targeted regression；
-6. Production mutation 继续要求显式授权、SHA precondition、backup、atomic apply、receipt 与 rollback contract。
+这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.1A read path。
 
 ## Decision rule
 
-优先级保持：错误 canonical knowledge 与 unsafe acceptance 高于 coverage。不得用 fuzzy linking、evidence-free association、Gold-specific hardcode 或 validator weakening 补偿 upstream model loss。
-
-## Documentation ownership
-
-- `docs/PHASE1_FREEZE.md`：Phase 1 release closure 与 artifact pointers。
-- `docs/REQUIREMENTS_FROZEN.md`：冻结业务规则；仅在用户明确决策后修改。
-- `docs/R1_ACCEPTANCE.md`：历史 R1 acceptance contract 与完成状态。
-- `docs/RELATION_SEMANTICS.md`：Relation working semantics；本次 freeze 未修改。
-- `CODEX_TASK.md`：当前 continuation brief。
-- `CHANGELOG.md`：完成历史。
+错误 canonical knowledge 与 unsafe acceptance 的风险优先于 coverage。不得用 fuzzy linking、evidence-free association、Gold-specific hardcode 或 validator weakening 补偿 upstream model loss。SQLite 继续是唯一 Source of Truth，Phase 2 read layer 不获得 Production write authority。

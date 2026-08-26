@@ -1,65 +1,76 @@
-# pro_a v0.3.0 — Phase 1 frozen baseline
+# pro_a v0.3.0 — Phase 2 knowledge exploration kickoff
 
-`pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。它把研究材料维护为可追溯、可验证、可人工审批的知识状态，而不是只保存文档。
+`pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `workspace/pro_a.db` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
+
+## 当前状态
+
+Phase 1 已完成并冻结，Phase 1.1 已完成：
+
+- AI Hardware expanded Node universe：complete；
+- functional Relation requalification：complete；
+- functional Relation import count：0；
+- Production：293 Nodes / 737 Aliases / 181 Node Relations；
+- current `part_of`：174；
+- Production SHA-256：`8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`。
+
+正式 closure 见：
+
+- [`docs/PHASE1_FREEZE.md`](docs/PHASE1_FREEZE.md)
+- [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
+- [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
+
+Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动，目标顺序为：
+
+```text
+Search
+→ Browse
+→ Trace
+→ Research
+→ Ask
+```
+
+当前优先建立 deterministic knowledge interaction，不先做 chatbot、RAG 或自然语言查询。
+
+## Phase 2.1A read-only architecture
+
+```text
+Browser / future UI
+        ↓
+Read-only HTTP API
+        ↓
+Query / Read Model
+        ↓
+workspace/pro_a.db
+```
+
+Phase 1 知识生产路径保持不变：
 
 ```text
 Source
 → Claim
-→ Existing Node Match / Candidate Node
-→ Relation Candidate
-→ review artifacts
-→ human-approved controlled DB maintenance
+→ Node / Relation Candidate
+→ Proposal / Review
+→ controlled Production maintenance
 ```
 
-SQLite / `pro_a` 是知识状态的 Source of Truth。IMA 仅预留为文档存储、Search/RAG 与研究成果承载层，Phase 1 保持关闭。
+新的 query layer 使用 SQLite URI `mode=ro` 并启用 `query_only`，不复用会 commit 的 `Database.connect()`，也不调用 ingestion、proposal acceptance 或 Production mutation workflow。
 
-## Phase 1 冻结状态
+## Read API
 
-冻结日期：2026-08-24。
+已提供：
 
-- Production DB：`workspace/pro_a.db`
-- SHA-256：`8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
-- Nodes：280
-- Aliases：706
-- Node Relations：177（170 条 current `part_of`，7 条 retired migration）
-- IMA：off
-- Release version：`0.3.0`
-- Phase 1 decision：`PASS_WITH_RELATION_BACKLOG`
+```text
+GET /api/health
+GET /api/stats
+GET /api/nodes
+GET /api/nodes/search?q=
+GET /api/nodes/{node_id}
+GET /api/nodes/{node_id}/neighbors
+GET /api/nodes/{node_id}/claims
+GET /api/nodes/{node_id}/sources
+```
 
-详细冻结记录见 [`docs/PHASE1_FREEZE.md`](docs/PHASE1_FREEZE.md)。
-
-## 已达到 operational ready
-
-- Archive / Standard / Deep Source ingestion、SHA-256 去重与不可变归档。
-- PDF / Word / Excel / PowerPoint / Markdown / TXT 基础解析。
-- Claim 抽取、精确 Evidence 定位、attribution 与 atomicity 校验。
-- Existing Node Match 的 canonical / alias exact-evidence contract。
-- Candidate Node 与 ResearchQuestion Proposal、人工审批和审计 artifact。
-- Relation Candidate 的 supporting Claim、Evidence、semantic 与 direction 程序校验。
-- pending Proposal 路径；非结构 Relation 不会由模型直接 formalize。
-- Production-copy / staging 上的 backup、atomic apply、receipt、幂等重跑与 rollback 工作流。
-- AF-007 source survivability：单个非法 Analyzer `node_candidate` 只做局部拒绝，合法 sibling objects 保留；`Metric` 仍不是合法 Node Type。
-
-## 已知能力边界
-
-Relation validation 与安全拒绝链路可用，但 Relation Candidate generation 仍存在明显漏召回。Operational probes 的 2 条 exact-endpoint / exact-evidence 简单关系均未形成合法 candidate，因此：
-
-`RELATION_EXTRACTION_OPERATIONAL_READY = false`
-
-这属于已记录的 Relation generation / model-quality backlog，不通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。Source / Claim / Node / review / controlled DB maintenance 主链路仍通过 Operational Acceptance。
-
-## 冻结规则摘要
-
-完整规则以 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md) 为准：
-
-- Raw Source immutable；同一 Source 物理只存一次。
-- 新 Node 与正式 Current View 变化必须 Proposal + 人工确认。
-- `part_of` 是唯一允许无 Evidence 创建的正式 Relation。
-- 非 `part_of` current Relation 必须有 active relation-specific supporting Claim。
-- LLM Relation Candidate 必须经过程序 Evidence / semantic / direction validation。
-- Existing Node Match 必须由 source 中 canonical name 或 alias 的可定位 Evidence 支持。
-- Propagation 传播 Impact Review，不复制结论。
-- IMA 不是知识状态机。
+Node search 只做 canonical name / alias 的确定性子串匹配；alias 命中仍返回 canonical Node。Node list 和 search 的单次请求上限均为 100。Neighborhood 固定为 current Relations、1 hop。Claim response 直接附 Source metadata；Node Sources 同时覆盖 direct link 与 Claim link，并按 Source 去重保留 provenance。
 
 ## Windows 快速开始
 
@@ -71,23 +82,18 @@ Copy-Item .\config.example.toml .\config.toml
 .\.venv\Scripts\pro-a.exe init
 ```
 
-Standard / Deep 分析需要项目配置允许的兼容模型，并通过环境变量提供 key；不要把 key 写入仓库：
+启动只读 API：
 
 ```powershell
-$env:PROA_LLM_API_KEY="..."
-.\.venv\Scripts\pro-a.exe ingest --once
+.\.venv\Scripts\python.exe -m pro_a.api --config .\config.toml
 ```
 
-查看 Source 与 Proposal：
+默认只监听 `127.0.0.1:8000`。该启动路径只读取已存在的数据库，不创建 schema 或 workspace。
 
-```powershell
-.\.venv\Scripts\pro-a.exe source show SRC_xxx
-.\.venv\Scripts\pro-a.exe proposals list
-.\.venv\Scripts\pro-a.exe proposals show PROP_xxx
-```
+Standard / Deep ingestion 仍使用现有 CLI 和冻结契约。任何 Production mutation 继续要求明确目标、precondition SHA、独立 backup、单 transaction、receipt、post-write QA 与人工授权。
 
-任何 Production mutation 都应使用明确目标、precondition SHA、独立 backup、单 transaction、receipt、post-write QA 与人工授权。默认验收/实验只在 isolated copy 或 staging 上运行。
+## 当前边界
 
-## 后续里程碑
+本阶段没有前端、write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot 或 schema migration。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
 
-Phase 1.1 尚未启动。下一候选里程碑是 Expanded Knowledge Universe / R2，详见 [`docs/ROADMAP.md`](docs/ROADMAP.md)。在用户明确启动前，不修改 Phase 1 冻结规则，不自动继续 Recall/prompt 调优。
+后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。

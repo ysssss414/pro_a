@@ -1,43 +1,51 @@
-# Codex continuation brief — Phase 1 frozen
+# Codex continuation brief — Phase 2 read API foundation
 
 ## Current state
 
-Phase 1 于 2026-08-24 完成并冻结。当前 release version 为 `0.3.0`，Production baseline 为：
+Phase 1 已完成并冻结，Phase 1.1 已完成。最新正式 Production baseline：
 
 - `workspace/pro_a.db`
-- SHA-256 `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
-- 280 Nodes / 706 Aliases / 177 Node Relations
-- IMA off
+- SHA-256 `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`
+- 293 Nodes / 737 Aliases / 181 Node Relations
+- 174 current `part_of`
+- Phase 1.1 functional Relation import count = 0
 
-run_007 已 PASS；Operational Acceptance 为 `PASS_WITH_RELATION_BACKLOG`，且 `READY_FOR_PHASE1_FREEZE = true`。
+Phase 2 — Knowledge Exploration & Interaction Layer 已启动。目标顺序：
+
+```text
+Search → Browse → Trace → Research → Ask
+```
+
+Phase 2.0 kickoff documentation 和 Phase 2.1A deterministic read-only query/API foundation 已完成于 `phase2/read-api-foundation`。
+
+## Implemented read boundary
+
+- `src/pro_a/query.py` 是独立 read model；SQLite connection 使用 URI `mode=ro` 和 `PRAGMA query_only=ON`。
+- HTTP path 不使用会 commit / migrate 的 `Database.connect()` 或 `Database.init_schema()`。
+- `src/pro_a/api.py` 提供 health、stats、node list/search/detail、1-hop neighbors、claims 和 sources endpoints。
+- Node list/search limit cap 为 100；Neighborhood 仅 current Relations、1 hop。
+- Claim response 附 Source metadata；Node Sources 合并 direct 和 Claim provenance 并按 Source 去重。
+- API 默认 `127.0.0.1`，可用 `python -m pro_a.api --config config.toml` 启动。
+- Tests 只使用 pytest isolated temporary SQLite fixture，不指向 Production。
 
 ## Default continuation behavior
 
-Phase 1.1 未启动。除非用户明确给出新任务，不继续 prompt/Recall 优化、不启动 R2、不写 Production、不启用 IMA。
+除非用户明确给出后续任务：
+
+- 不扩展到 Phase 2.1B UI、Ask/chatbot、RAG、embedding、vector DB 或 recursive traversal；
+- 不写 Production，不创建 write API，不调用 Proposal acceptance；
+- 不修改 schema、frozen validators、Existing Node Match、Evidence、Relation semantics 或 human approval contract；
+- 不借 Phase 2 修复 Relation backlog 或启用 IMA。
 
 恢复工作时先读：
 
-1. `docs/PHASE1_FREEZE.md`
+1. `docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`
 2. `docs/REQUIREMENTS_FROZEN.md`
 3. `README.md`
 4. `docs/ROADMAP.md`
-5. 与用户明确任务直接相关的 final artifact
+5. `src/pro_a/query.py`
+6. `src/pro_a/api.py`
 
-不要重新做 B.2B–B.2F、run_006/run_007 或 Operational forensic analysis。
+## Next recommended step
 
-## Retained Phase 1 fix
-
-AF-007 deterministic sub-object isolation 是唯一 Phase 1 closure production-code change：非法 `Metric` 或 malformed `node_candidate` 仅局部 reject，同一 Analyzer response 的合法 Claims、Node Matches、Relation Candidates 与 sibling candidates 继续处理。Metric type rule、不猜类型与其他 frozen validators 保持不变。
-
-## Known backlog
-
-- `RELATION_EXTRACTION_OPERATIONAL_READY = false`：Relation validation operational，但 generation 漏召回。
-- `NM-002` / `NM-005`：`MODEL_QUALITY_BACKLOG`；受控 prompt variants 均 NO-GO。
-- `NM-001` / `NM-006`：contract-constrained。
-- `RJ-009` / `PD-002` / `HW-001`：Phase 1 不再修复。
-
-不得用 exact-match fallback、fuzzy linking、evidence-free linkage、Gold-specific hardcode 或 direction/evidence gate weakening 处理这些 backlog。
-
-## Production mutation contract
-
-任何 Production write 都需要新的明确人类授权，并至少包含 absolute target、precondition SHA、独立 backup、单 transaction、deterministic QA、正式 receipt、post-write SHA 与 rollback plan。默认诊断和验收只读 Production，并在 isolated copy / staging 上操作。
+在 Phase 2.1A API contract review/merge 后启动 Phase 2.1B：构建最小 read-only browser exploration UI，优先 Search、Node Browse、1-hop Trace 与 Claim/Source provenance navigation。
