@@ -68,9 +68,13 @@ Search
 
 Production audit 结果：293 active Nodes、737 aliases、181 stored Relations（174 current `part_of`，0 current functional）、2 Sources、12 Claims、0 Claim → Node links、0 Current Views、0 RQs、0 Gaps。12 Claims 全部未链接，且只有 ambiguous review candidates；`CLAIM_NODE_ACTIVATION_READY = NO`。下一步必须是显式人工 Claim → Node adjudication review package。
 
-### Next recommended milestone — Claim-to-Node activation review package
+### Phase 2.3C — Claim–Node Human Adjudication Package
 
-基于 Phase 2.3B 的 12 条 unlinked Claims，逐条完成 Source evidence、Node scope 与 exact identity 的人工 adjudication，再按既有 controlled maintenance contract 评估 Claim → Node activation。继续保持 local-first、deterministic、human-reviewed；不得用 Source 共现、fuzzy linking 或 evidence-free association 自动补链。
+状态：**HUMAN_REVIEW_PACKAGE_READY**。对当前全部 unlinked Claims 生成只读 Markdown/CSV 人审包；候选 Node 仅来自 Source direct link、exact canonical 和 exact alias 的可复现并集。所有 `decision` 均为 `PENDING`，不自动选择 Node、不创建 Claim → Node link、不写 Production。下一步是由人工 reviewer 完成人审表。
+
+### Next recommended milestone — Complete Claim-to-Node human adjudication
+
+基于 Phase 2.3C 人审包，逐条完成 Source evidence、Node scope 与 exact identity 的人工 adjudication，再按既有 controlled maintenance contract 评估 Claim → Node activation。继续保持 local-first、deterministic、human-reviewed；不得用 Source 共现、fuzzy linking 或 evidence-free association 自动补链。
 
 ## Carried backlog
 

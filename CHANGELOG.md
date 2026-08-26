@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 2.3C Claim–Node Human Adjudication Package — 2026-08-26
+
+- Added a read-only deterministic Claim–Node adjudication package generator and isolated tests.
+- Generated Markdown and CSV review surfaces for all current unlinked Claims, retaining exact statements/evidence and candidate signal provenance.
+- All reviewer decisions remain `PENDING`; no Claim → Node link, proposal, schema, API, frontend or Production row was changed.
+- Phase status is `HUMAN_REVIEW_PACKAGE_READY` pending human adjudication.
+
 ## Phase 2.3B Knowledge Coverage Audit — 2026-08-26
 
 - Added a reusable read-only coverage audit at `src/pro_a/coverage.py` with exact canonical/alias signal matching, ASCII token boundaries, mutually exclusive Node knowledge levels, Source/Claim/Node coverage, hierarchy and relation evidence summaries, cross-layer reachability, and conservative review buckets.

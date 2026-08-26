@@ -1,4 +1,10 @@
-# Codex continuation brief — Phase 2.3B Knowledge Coverage Audit
+# Codex continuation brief — Phase 2.3C Claim–Node Human Adjudication Package
+
+## Phase 2.3C closure
+
+Phase 2.3C is a read-only human review package for the current unlinked Claims. `src/pro_a/adjudication.py` reads Production through the existing `ReadOnlyQuery` boundary, constructs only the deterministic union of direct Source links and exact canonical/alias signals, and emits `docs/PHASE2_3C_CLAIM_NODE_ADJUDICATION.md` plus `artifacts/phase2_3c/claim_node_adjudication.csv`. Every item remains `PENDING`; no Claim → Node link, proposal, view, gap, relation or decision is written.
+
+The package is ready for reviewer adjudication, not Claim → Node activation.
 
 ## Phase 2.3B closure
 
