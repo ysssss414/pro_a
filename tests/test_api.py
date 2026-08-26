@@ -54,6 +54,7 @@ def test_node_claims(client: TestClient):
     response = client.get("/api/nodes/NODE_CHILD/claims")
     assert response.status_code == 200
     assert response.json()[0]["claim_id"] == "CLAIM_2"
+    assert response.json()[0]["link_role"] == "related"
     assert response.json()[0]["source"]["source_id"] == "SRC_2"
 
 

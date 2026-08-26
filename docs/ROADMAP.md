@@ -80,9 +80,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete (read-only review)**。Production 中不存在 `昀冢科技` 的 exact canonical/alias Node；11 条 MLCC-linked Claims 分为 3 条 `MLCC_PRIMARY` 与 8 条 `COMPANY_PRIMARY_MLCC_CONTEXT`。已生成非执行型 Company Node 与 Claim attribution proposal，所有既有 MLCC links 保持不变。当前仅有 `role=related`，不足以表达 subject/context，因此 `ROLE_MODEL_SUFFICIENT = NO`、`MLCC_CURRENT_VIEW_READY = PARTIAL`；不得把 11 条 linked Claims 整体直接用于 MLCC Current View。
 
+### Phase 2.3F — Claim Attribution Semantics & Company Entity Activation
+
+状态：**complete**。冻结 `subject / context / related` 最小 Claim → Node role 合同；原子创建 `昀冢科技` Company Node（0 aliases），新增 8 条 Company subject links，并将 MLCC 的 3 条 primary Claims 标为 subject、8 条 Company-primary Claims 标为 context。Node Claims API 与 Explorer Claims tab 已显示数据库 role。Production 为 294 Nodes、737 Aliases、19 Claim links；MLCC 为 3 subject + 8 context，昀冢科技为 8 subject；没有创建 Current View、Relation、RQ、Gap 或 Source link。
+
 ### Next milestone
 
-等待显式授权的人审写入阶段：先审批 `昀冢科技` Entity Node，并冻结最小 Claim link role 语义，再新增 8 条 Company subject links、保留 MLCC links 并审查其 context role。不得由 Phase 2.3E 自动写入 Production 或生成 Current View。
+Review the first subject-aware MLCC / Yunzhong knowledge state, then scope a Current View pilot. 不自动启动该 pilot。
 
 ## Carried backlog
 

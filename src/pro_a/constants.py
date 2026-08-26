@@ -1,7 +1,9 @@
 NODE_TYPES = [
     "Industry", "Segment", "Technology", "Product", "Material", "Equipment",
-    "Entity", "Application", "Standard", "Policy", "Theme", "Event", "ResearchQuestion",
+    "Entity", "Company", "Application", "Standard", "Policy", "Theme", "Event", "ResearchQuestion",
 ]
+
+CLAIM_NODE_ROLES = {"subject", "context", "related"}
 
 RELATION_TYPES = [
     "part_of", "upstream_of", "supplies", "produces", "uses", "applied_in",

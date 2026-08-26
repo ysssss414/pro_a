@@ -93,6 +93,7 @@ class ClaimResult(BaseModel):
     evidence_pointer: str
     evidence_excerpt: str
     source_id: str
+    link_role: Literal["subject", "context", "related"]
     source: SourceMetadata
 
 

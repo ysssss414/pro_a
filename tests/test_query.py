@@ -84,6 +84,7 @@ def test_node_neighbors_are_current_one_hop_graph(read_db_path: Path):
 def test_node_claims_include_source_provenance_in_stable_time_order(read_db_path: Path):
     claims = ReadOnlyQuery(read_db_path).node_claims("NODE_CHILD")
     assert [claim["claim_id"] for claim in claims] == ["CLAIM_2", "CLAIM_1"]
+    assert [claim["link_role"] for claim in claims] == ["related", "subject"]
     assert claims[0]["source"] == {
         "source_id": "SRC_2",
         "title": "AI Infrastructure Update",

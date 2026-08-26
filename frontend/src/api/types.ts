@@ -78,6 +78,7 @@ export interface ClaimResult {
   evidence_pointer: string;
   evidence_excerpt: string;
   source_id: string;
+  link_role: "subject" | "context" | "related";
   source: SourceMetadata;
 }
 

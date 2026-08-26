@@ -147,6 +147,7 @@ function ClaimsTab({
       {claims.map((claim) => (
         <article className="claim-card" key={claim.claim_id}>
           <div className="card-badges">
+            <span>{claim.link_role === "subject" ? "Subject" : claim.link_role === "context" ? "Context" : "Related"}</span>
             <span>{claim.nature}</span>
             <span>{claim.status}</span>
             <span>{claim.novelty_level}</span>

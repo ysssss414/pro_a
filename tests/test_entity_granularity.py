@@ -174,7 +174,7 @@ def test_company_and_claim_proposals_are_review_only(tmp_path: Path):
     assert company is not None
     assert company["canonical_name"] == COMPANY_NAME
     assert company["proposed_type"] == "Company"
-    assert company["primary_type"] == "Entity"
+    assert company["primary_type"] == "Company"
     assert company["explicit_aliases"] == []
     assert len(company["supporting_claim_ids"]) == 8
     assert company["production_write_authorized"] is False

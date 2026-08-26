@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.3F Claim Attribution Semantics & Company Entity Activation — 2026-08-26
+
+- Froze the minimal Claim-to-Node role vocabulary as `subject`, `context` and legacy/unadjudicated `related`; added `Company` as the explicitly authorized canonical Node Type.
+- Atomically created active Company Node `NODE_20260826_BC260F3E` (`昀冢科技`) with no aliases, inserted 8 Company subject links, and updated the 11 MLCC roles to 3 subject plus 8 context.
+- Extended Node Claims query/API with `link_role` and added minimal Explorer Subject / Context / Related rendering.
+- Preserved all Claim content/status/confidence, Sources, Source links, Relations, Current Views, Research Questions and Knowledge Gaps; the explicit NO_LINK Claim remains unlinked.
+- Production moved from 293 to 294 Nodes and from 11 to 19 Claim links. Backup/pre-SHA is `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`; post-SHA is `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`.
+
 ## Phase 2.3E Entity Granularity & Claim Attribution Review — 2026-08-26
 
 - Deterministically confirmed that Production has no exact canonical or alias Node for `昀冢科技`; generated a non-applied Company proposal using frozen `primary_type=Entity` and no inferred aliases.
