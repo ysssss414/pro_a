@@ -77,6 +77,15 @@ class ReadOnlyQuery:
     def _json_string_list(cls, raw: str | None) -> list[str]:
         return [item for item in cls._json_list(raw) if isinstance(item, str) and item]
 
+    @classmethod
+    def _current_view_result(cls, row: sqlite3.Row) -> dict[str, Any]:
+        result = dict(row)
+        result["content_json"] = cls._json_object(result["content_json"])
+        result["trigger_claim_ids"] = cls._json_string_list(
+            result.pop("trigger_claim_ids_json")
+        )
+        return result
+
     @staticmethod
     def _relation(row: sqlite3.Row) -> dict[str, Any]:
         return {
@@ -458,12 +467,18 @@ class ReadOnlyQuery:
             ).fetchone()
         if row is None:
             return None
-        result = dict(row)
-        result["content_json"] = self._json_object(result["content_json"])
-        result["trigger_claim_ids"] = self._json_string_list(
-            result.pop("trigger_claim_ids_json")
-        )
-        return result
+        return self._current_view_result(row)
+
+    def node_current_view_history(self, node_id: str) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            self._require_node(conn, node_id)
+            rows = conn.execute(
+                f"""SELECT * FROM current_views
+                    WHERE node_id=? AND status='official'
+                    ORDER BY {CURRENT_VIEW_ORDER}""",
+                (node_id,),
+            ).fetchall()
+        return [self._current_view_result(row) for row in rows]
 
     def node_research_question(self, node_id: str) -> dict[str, Any] | None:
         with self.connect() as conn:

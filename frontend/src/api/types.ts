@@ -112,6 +112,11 @@ export interface CurrentViewResult {
   confirmed_at: string;
 }
 
+export interface CurrentViewHistoryResult {
+  node_id: string;
+  views: CurrentViewResult[];
+}
+
 export interface CurrentViewContent {
   one_line_conclusion?: unknown;
   core_logic?: unknown;

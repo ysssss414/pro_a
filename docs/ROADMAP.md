@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.3A complete; Phase 2.3B audit complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.5A complete**
 
 ## Completed — Phase 1
 
@@ -88,9 +88,25 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete (artifact-only pilot)**。仅对 MLCC 与昀冢科技生成两个与正式 `current_view_change` payload 兼容的离线 Proposal。所有 direct factual support 必须来自目标 Node 的 `role=subject` Claim；MLCC 的 8 条 Company Claims 只作为 `CONTEXT_ONLY`，`related` 不得作为直接证据。MLCC 使用 3 条 primary Claims；昀冢科技的 8 条 subject Claims 中 6 条进入 primary Evidence，2 条 `needs_review` 只保留为 unresolved。两个 proposal 均通过 frozen Current View 内容校验、traceability 与 scope-overreach gate，但因证据均来自单一 B-rank secondary Source 且尚未人审，两个 Node 和模型 verdict 均为 `PARTIAL`。Production byte-identical，Current Views 与 Current View Proposals 均保持 0。
 
+### Phase 2.4B — Human-Approved Current View Activation
+
+状态：**complete**。基于显式人工批准，原子激活 MLCC 与昀冢科技两个 official Current Views；Production 共有 2 个 official Views，SQLite 继续是唯一 canonical Source of Truth。激活有 precondition SHA、backup、transaction、receipt 和 post-write QA，未自动扩展到其他 Node。
+
+### Phase 2.4C — Current View IA Refinement
+
+状态：**complete**；`GENERALIZATION_READY = YES`。Explorer 以共享的 Company/Product presentation helper 渲染 structured `content_json`，提供 evidence boundary、Evidence Claim count、Source action 与治理 metadata，默认不暴露 raw Claim IDs。Product dimension keys 使用人类可读标签；MLCC canonical 重复价格事实仅通过窄且确定性的 presentation rule 避免重复，canonical 内容未改。`DEFER_CANONICAL_CONTENT_DEDUP = true`、`DEFER_EVIDENCE_BOUNDARY_CONTENT_QUALITY = true`、`DEFER_EVIDENCE_QUALITY_METADATA = true` 保持不变。
+
+### Phase 2.5A — Current View History & Version Navigation
+
+状态：**complete**。新增 official-only、Node-scoped、read-only Current View history query/API，严格复用 `CURRENT_VIEW_ORDER`，并复用现有 serializer 对 malformed `content_json` 和 Claim ID JSON 安全 fallback。Explorer 默认显示 latest official View；单版本显示 `Initial View / No previous revision`，多版本可选择任意历史版本并继续复用相同 Company/Product presentation、governance metadata、Evidence count 和 Source action。隔离 SQLite fixture 覆盖 0/1/3 official revisions、previous chain、same-day revision sequence、draft exclusion、malformed JSON、404 与 empty history；没有 schema、write API 或 Production 数据变化。
+
+### Phase 2.5B — Deterministic Historical Compare
+
+状态：**planned**。后续阶段才处理确定性的历史版本 compare。Phase 2.5A 不包含 semantic/fuzzy/LLM comparison、added/removed facts inference、diff UI、timeline 或 thesis-change interpretation。
+
 ### Next milestone
 
-Human review the two Phase 2.4A proposals independently with `APPROVE / REVISE / REJECT`. 不自动创建 Production Proposal 或 official Current View，也不扩展到其他 Node。
+Phase 2.5B 的合同与 acceptance 需另行定义；不得从 Phase 2.5A 顺手启动 compare、diff 或自动解释。
 
 ## Carried backlog
 

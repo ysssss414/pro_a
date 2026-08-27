@@ -81,7 +81,7 @@ function renderPanel(activeTab: DetailTab, onSelect = vi.fn(), onOpenSource = vi
       detail={detail}
       claims={claims}
       sources={sources}
-      currentView={null}
+      currentViews={[]}
       researchQuestion={null}
       knowledgeGaps={[]}
       activeTab={activeTab}

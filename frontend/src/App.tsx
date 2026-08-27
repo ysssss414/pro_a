@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   getClaims,
-  getCurrentView,
+  getCurrentViewHistory,
   getHealth,
   getKnowledgeGaps,
   getNeighbors,
@@ -14,7 +14,7 @@ import {
 } from "./api/client";
 import type {
   ClaimResult,
-  CurrentViewResult,
+  CurrentViewHistoryResult,
   KnowledgeGapResult,
   NeighborGraph,
   NodeDetail,
@@ -44,7 +44,7 @@ export default function App() {
   const [graph, setGraph] = useState<NeighborGraph | null>(null);
   const [claims, setClaims] = useState<ClaimResult[]>([]);
   const [sources, setSources] = useState<NodeSource[]>([]);
-  const [currentView, setCurrentView] = useState<CurrentViewResult | null>(null);
+  const [currentViews, setCurrentViews] = useState<CurrentViewHistoryResult["views"]>([]);
   const [researchQuestion, setResearchQuestion] = useState<ResearchQuestionResult | null>(null);
   const [knowledgeGaps, setKnowledgeGaps] = useState<KnowledgeGapResult[]>([]);
   const [activeTab, setActiveTab] = useState<DetailTab>("overview");
@@ -96,7 +96,7 @@ export default function App() {
     setGraph(null);
     setClaims([]);
     setSources([]);
-    setCurrentView(null);
+    setCurrentViews([]);
     setResearchQuestion(null);
     setKnowledgeGaps([]);
     setActiveTab("overview");
@@ -140,7 +140,7 @@ export default function App() {
     Promise.allSettled([
       getClaims(nodeId, controller.signal),
       getSources(nodeId, controller.signal),
-      getCurrentView(nodeId, controller.signal),
+      getCurrentViewHistory(nodeId, controller.signal),
       getResearchQuestion(nodeId, controller.signal),
       getKnowledgeGaps(nodeId, controller.signal),
     ])
@@ -154,8 +154,8 @@ export default function App() {
         if (sourcesResult.status === "fulfilled") setSources(sourcesResult.value);
         else if ((sourcesResult.reason as Error).name !== "AbortError") errors.sources = "Unable to load Sources.";
 
-        if (viewResult.status === "fulfilled") setCurrentView(viewResult.value);
-        else if ((viewResult.reason as Error).name !== "AbortError") errors.view = "Unable to load Current View.";
+        if (viewResult.status === "fulfilled") setCurrentViews(viewResult.value.views);
+        else if ((viewResult.reason as Error).name !== "AbortError") errors.view = "Unable to load Current View history.";
 
         if (researchResult.status === "fulfilled") setResearchQuestion(researchResult.value);
         else if ((researchResult.reason as Error).name !== "AbortError") errors.research = "Unable to load Research Question.";
@@ -271,7 +271,7 @@ export default function App() {
           detail={detail}
           claims={claims}
           sources={sources}
-          currentView={currentView}
+          currentViews={currentViews}
           researchQuestion={researchQuestion}
           knowledgeGaps={knowledgeGaps}
           activeTab={activeTab}

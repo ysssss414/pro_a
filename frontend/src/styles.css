@@ -1013,6 +1013,36 @@ blockquote {
   font-size: 11px;
 }
 
+.view-history-navigation {
+  display: grid;
+  gap: 4px;
+  margin: -2px 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8ef;
+}
+
+.view-history-navigation label,
+.view-history-navigation strong {
+  color: #405268;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.view-history-navigation select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #c8d3df;
+  border-radius: 5px;
+  background: #fff;
+  color: #34465b;
+  font-size: 10px;
+}
+
+.view-history-navigation span {
+  color: #7d8b9b;
+  font-size: 9px;
+}
+
 .current-view-content {
   margin: 16px 0;
   padding: 16px;

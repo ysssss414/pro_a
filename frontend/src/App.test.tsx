@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   getClaims,
-  getCurrentView,
+  getCurrentViewHistory,
   getHealth,
   getKnowledgeGaps,
   getNeighbors,
@@ -14,11 +14,12 @@ import {
   getSources,
   getStats,
 } from "./api/client";
+import type { CurrentViewHistoryResult, CurrentViewResult, NodeDetail } from "./api/types";
 import App from "./App";
 
 vi.mock("./api/client", () => ({
   getClaims: vi.fn(),
-  getCurrentView: vi.fn(),
+  getCurrentViewHistory: vi.fn(),
   getHealth: vi.fn(),
   getKnowledgeGaps: vi.fn(),
   getNeighbors: vi.fn(),
@@ -39,7 +40,7 @@ describe("App error boundary", () => {
     vi.mocked(getNode).mockRejectedValue(unavailable);
     vi.mocked(getNeighbors).mockRejectedValue(unavailable);
     vi.mocked(getClaims).mockRejectedValue(unavailable);
-    vi.mocked(getCurrentView).mockRejectedValue(unavailable);
+    vi.mocked(getCurrentViewHistory).mockRejectedValue(unavailable);
     vi.mocked(getKnowledgeGaps).mockRejectedValue(unavailable);
     vi.mocked(getResearchQuestion).mockRejectedValue(unavailable);
     vi.mocked(getSourceDetail).mockRejectedValue(unavailable);
@@ -87,7 +88,7 @@ describe("App error boundary", () => {
     });
     vi.mocked(getClaims).mockResolvedValue([]);
     vi.mocked(getSources).mockResolvedValue([]);
-    vi.mocked(getCurrentView).mockResolvedValue(null);
+    vi.mocked(getCurrentViewHistory).mockResolvedValue({ node_id: "NODE_EML", views: [] });
     vi.mocked(getResearchQuestion).mockResolvedValue(null);
     vi.mocked(getKnowledgeGaps).mockResolvedValue([]);
 
@@ -134,7 +135,7 @@ describe("App error boundary", () => {
     });
     vi.mocked(getClaims).mockResolvedValue([]);
     vi.mocked(getSources).mockResolvedValue([]);
-    vi.mocked(getCurrentView).mockResolvedValue(null);
+    vi.mocked(getCurrentViewHistory).mockResolvedValue({ node_id: "NODE_EML", views: [] });
     vi.mocked(getResearchQuestion).mockRejectedValue(new Error("research unavailable"));
     vi.mocked(getKnowledgeGaps).mockResolvedValue([]);
 
@@ -145,5 +146,96 @@ describe("App error boundary", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Research" }));
     expect(await screen.findByText("Unable to load Research Question.")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Overview" })).toBeInTheDocument();
+  });
+
+  it("ignores a stale Current View history response after switching Nodes", async () => {
+    window.history.replaceState(null, "", "/?node=NODE_A");
+    vi.mocked(getHealth).mockResolvedValue({ status: "ok" });
+    vi.mocked(getStats).mockResolvedValue({
+      active_node_count: 2,
+      alias_count: 0,
+      current_relation_count: 0,
+      current_part_of_count: 0,
+      source_count: 0,
+      claim_count: 0,
+      current_view_count: 2,
+      open_knowledge_gap_count: 0,
+      open_research_question_count: 0,
+    });
+    const nodeA: NodeDetail = {
+      node_id: "NODE_A",
+      canonical_name: "Node A",
+      primary_type: "Product",
+      description: "First Node",
+      status: "active",
+      aliases: [],
+      parents: [{ node_id: "NODE_B", canonical_name: "Node B", primary_type: "Product" }],
+      children: [],
+      incoming_relations: [],
+      outgoing_relations: [],
+    };
+    const nodeB: NodeDetail = {
+      ...nodeA,
+      node_id: "NODE_B",
+      canonical_name: "Node B",
+      description: "Second Node",
+      parents: [],
+    };
+    vi.mocked(getNode).mockImplementation(async (nodeId) => nodeId === "NODE_A" ? nodeA : nodeB);
+    vi.mocked(getNeighbors).mockImplementation(async (nodeId) => ({
+      center: nodeId === "NODE_A"
+        ? { node_id: "NODE_A", canonical_name: "Node A", primary_type: "Product" }
+        : { node_id: "NODE_B", canonical_name: "Node B", primary_type: "Product" },
+      nodes: [],
+      edges: [],
+    }));
+    vi.mocked(getClaims).mockResolvedValue([]);
+    vi.mocked(getSources).mockResolvedValue([]);
+    vi.mocked(getResearchQuestion).mockResolvedValue(null);
+    vi.mocked(getKnowledgeGaps).mockResolvedValue([]);
+
+    const viewB: CurrentViewResult = {
+      view_id: "VIEW_B",
+      node_id: "NODE_B",
+      version: "v_20260401",
+      status: "official",
+      change_level: "initial",
+      previous_view_id: null,
+      content_md: "Node B view",
+      content_json: { one_line_conclusion: "Node B Current View." },
+      trigger_source_id: null,
+      trigger_claim_ids: [],
+      revision_date: "20260401",
+      revision_seq: 0,
+      accepted_proposal_id: "PROP_B",
+      created_at: "2026-04-01",
+      confirmed_at: "2026-04-01",
+    };
+    let resolveStaleHistory!: (value: CurrentViewHistoryResult) => void;
+    const staleHistory = new Promise<CurrentViewHistoryResult>((resolve) => {
+      resolveStaleHistory = resolve;
+    });
+    vi.mocked(getCurrentViewHistory).mockImplementation((nodeId) => (
+      nodeId === "NODE_A"
+        ? staleHistory
+        : Promise.resolve({ node_id: "NODE_B", views: [viewB] })
+    ));
+
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Node A" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Node B/ }));
+    expect(await screen.findByRole("heading", { name: "Node B" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "View" }));
+    expect(await screen.findByText("Node B Current View.")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveStaleHistory({
+        node_id: "NODE_A",
+        views: [{ ...viewB, view_id: "VIEW_A", node_id: "NODE_A", content_json: { one_line_conclusion: "Stale Node A View." } }],
+      });
+      await staleHistory;
+    });
+    expect(screen.getByText("Node B Current View.")).toBeInTheDocument();
+    expect(screen.queryByText("Stale Node A View.")).not.toBeInTheDocument();
   });
 });
