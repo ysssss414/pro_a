@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-Phase 1 已完成并冻结，Phase 1.1 已完成：
+Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
 - AI Hardware expanded Node universe：complete；
 - functional Relation requalification：complete；
@@ -18,6 +18,8 @@ Phase 1 已完成并冻结，Phase 1.1 已完成：
 - [`docs/PHASE1_FREEZE.md`](docs/PHASE1_FREEZE.md)
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
+
+当前 Production 已进入 Phase 2.4B：294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 将 Current View 在 Explorer 中以 structured content_json 呈现，canonical 内容保持不变。
 
 Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.3A Knowledge Detail & Research Surface 已完成。目标顺序为：
 
@@ -84,7 +86,7 @@ Node search 只做 canonical name / alias 的确定性子串匹配；alias 命�
 Search results | current 1-hop graph | Overview / View / Research / Claims / Sources
 ```
 
-Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。View 展示正式 Current View content 与 revision metadata；Research 展示 Research Question、Current Answer、key variables、supporting/opposing Claims、falsifier 与 Knowledge Gaps。Sources 可进入右栏 Source Detail，查看 metadata、linked Nodes 和 Source Claims，并可从 Source 反向选择 Node。Core 与 knowledge modules 独立失败，单个 Research endpoint 错误不会清空 Overview；选择状态写入 `?node=`，API 不可用时显示可重试状态。
+Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。View 使用 `content_json` 的 Company/Product structured presentation，并保留 `content_md` fallback 与 compact governance/evidence metadata；Research 展示 Research Question、Current Answer、key variables、supporting/opposing Claims、falsifier 与 Knowledge Gaps。Sources 可进入右栏 Source Detail，查看 metadata、linked Nodes 和 Source Claims，并可从 Source 反向选择 Node。Core 与 knowledge modules 独立失败，单个 Research endpoint 错误不会清空 Overview；选择状态写入 `?node=`，API 不可用时显示可重试状态。
 
 ## Windows 快速开始
 
