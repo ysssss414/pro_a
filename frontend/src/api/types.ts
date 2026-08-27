@@ -117,6 +117,64 @@ export interface CurrentViewHistoryResult {
   views: CurrentViewResult[];
 }
 
+export interface CurrentViewCompareMetadata {
+  view_id: string;
+  version: string;
+  revision_date: string;
+  revision_seq: number;
+  change_level: string;
+  previous_view_id?: string | null;
+  recent_change?: string;
+}
+
+export interface CurrentViewScalarChange {
+  field: string;
+  changed: boolean;
+  before: string;
+  after: string;
+}
+
+export interface CurrentViewListChange {
+  added: string[];
+  removed: string[];
+  unchanged: string[];
+}
+
+export interface CurrentViewDimensionChange extends Partial<CurrentViewListChange> {
+  status: "dimension_added" | "dimension_removed" | "changed" | "unchanged";
+  kind: "list" | "scalar" | "json";
+  changed?: boolean;
+  before?: unknown;
+  after?: unknown;
+}
+
+export interface CurrentViewEvidenceRef {
+  claim_id: string;
+  resolved: boolean;
+  statement: string | null;
+  status: string | null;
+  confidence: number | null;
+  source_id: string | null;
+  source_title: string | null;
+  source_rank: string | null;
+}
+
+export interface CurrentViewCompareResult {
+  node_id: string;
+  base: CurrentViewCompareMetadata;
+  target: CurrentViewCompareMetadata;
+  scalar_changes: CurrentViewScalarChange[];
+  list_changes: Record<string, CurrentViewListChange>;
+  type_specific_changes: Record<string, CurrentViewDimensionChange>;
+  evidence: Record<"added" | "removed" | "unchanged", CurrentViewEvidenceRef[]>;
+  trigger_source_change: {
+    status: "added" | "removed" | "changed" | "unchanged";
+    before: string | null;
+    after: string | null;
+  };
+  has_changes: boolean;
+}
+
 export interface CurrentViewContent {
   one_line_conclusion?: unknown;
   core_logic?: unknown;

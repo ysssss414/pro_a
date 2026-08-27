@@ -10,7 +10,13 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from .config import load_config
-from .query import MAX_QUERY_LIMIT, ReadOnlyDatabaseError, ReadOnlyQuery
+from .current_view_compare import CurrentViewCompareValidationError
+from .query import (
+    MAX_QUERY_LIMIT,
+    CurrentViewCompareNotFoundError,
+    ReadOnlyDatabaseError,
+    ReadOnlyQuery,
+)
 
 
 class HealthResponse(BaseModel):
@@ -130,6 +136,18 @@ class CurrentViewResult(BaseModel):
 class CurrentViewHistoryResult(BaseModel):
     node_id: str
     views: list[CurrentViewResult]
+
+
+class CurrentViewCompareResult(BaseModel):
+    node_id: str
+    base: dict[str, Any]
+    target: dict[str, Any]
+    scalar_changes: list[dict[str, Any]]
+    list_changes: dict[str, dict[str, list[str]]]
+    type_specific_changes: dict[str, dict[str, Any]]
+    evidence: dict[str, list[dict[str, Any]]]
+    trigger_source_change: dict[str, Any]
+    has_changes: bool
 
 
 class ResearchClaimSummary(BaseModel):
@@ -346,6 +364,29 @@ def create_app(
             }
         except KeyError:
             raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get(
+        "/api/nodes/{node_id}/current-view-compare",
+        response_model=CurrentViewCompareResult,
+    )
+    def node_current_view_compare(
+        node_id: str,
+        base_view_id: str = Query(..., min_length=1),
+        target_view_id: str = Query(..., min_length=1),
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        try:
+            return query_model.node_current_view_compare(
+                node_id,
+                base_view_id,
+                target_view_id,
+            )
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Node not found") from None
+        except CurrentViewCompareNotFoundError:
+            raise HTTPException(status_code=404, detail="Current View not found") from None
+        except CurrentViewCompareValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from None
 
     @app.get(
         "/api/nodes/{node_id}/research-question",

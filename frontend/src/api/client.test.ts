@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ApiError,
+  getCurrentViewCompare,
   getCurrentView,
   getCurrentViewHistory,
   getHealth,
@@ -60,6 +61,7 @@ describe("API client", () => {
 
     await getCurrentView("NODE / 1");
     await getCurrentViewHistory("NODE / 1");
+    await getCurrentViewCompare("NODE / 1", "VIEW OLD", "VIEW NEW");
     await getResearchQuestion("NODE / 1");
     await getKnowledgeGaps("NODE / 1");
     await getSourceDetail("SRC / 1");
@@ -67,6 +69,7 @@ describe("API client", () => {
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       "/api/nodes/NODE%20%2F%201/current-view",
       "/api/nodes/NODE%20%2F%201/current-view-history",
+      "/api/nodes/NODE%20%2F%201/current-view-compare?base_view_id=VIEW+OLD&target_view_id=VIEW+NEW",
       "/api/nodes/NODE%20%2F%201/research-question",
       "/api/nodes/NODE%20%2F%201/knowledge-gaps",
       "/api/sources/SRC%20%2F%201",
