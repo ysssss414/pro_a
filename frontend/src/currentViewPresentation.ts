@@ -29,6 +29,10 @@ const PRODUCT_DIMENSION_LABELS: Record<string, string> = {
   inventory: "库存",
 };
 
+export function productDimensionLabel(key: string): string {
+  return PRODUCT_DIMENSION_LABELS[key] ?? key;
+}
+
 const MLCC_ATTRIBUTION_PREFIXES = [
   "据该材料，",
   "据现有财通证券业绩会更新材料，",
@@ -64,8 +68,7 @@ function dimensions(content: CurrentViewContent, keyFacts: string[]): string[] {
     const values = Array.isArray(raw) ? raw.filter((item): item is string => typeof item === "string") : [];
     const remaining = unique(values.filter((item) => !keyFacts.includes(item)));
     if (remaining.length) {
-      const label = PRODUCT_DIMENSION_LABELS[key] ?? key;
-      result.push(`${label}: ${remaining.join("；")}`);
+      result.push(`${productDimensionLabel(key)}: ${remaining.join("；")}`);
     }
   }
   return result;

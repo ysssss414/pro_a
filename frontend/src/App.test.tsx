@@ -19,6 +19,7 @@ import App from "./App";
 
 vi.mock("./api/client", () => ({
   getClaims: vi.fn(),
+  getCurrentViewCompare: vi.fn(),
   getCurrentViewHistory: vi.fn(),
   getHealth: vi.fn(),
   getKnowledgeGaps: vi.fn(),

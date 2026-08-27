@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CurrentViewResult } from "../api/types";
+import { getCurrentViewCompare } from "../api/client";
+import type { CurrentViewCompareResult, CurrentViewResult } from "../api/types";
 import { ViewTab } from "./ViewTab";
+
+vi.mock("../api/client", () => ({ getCurrentViewCompare: vi.fn() }));
 
 const currentView: CurrentViewResult = {
   view_id: "VIEW_1",
@@ -29,14 +32,81 @@ const currentView: CurrentViewResult = {
   confirmed_at: "2026-03-02",
 };
 
+const compareResult: CurrentViewCompareResult = {
+  node_id: "NODE_EML",
+  base: {
+    view_id: "VIEW_OLD",
+    version: "v_20260215",
+    revision_date: "20260215",
+    revision_seq: 0,
+    change_level: "initial",
+  },
+  target: {
+    view_id: "VIEW_LATEST",
+    version: "v_20260301",
+    revision_date: "20260301",
+    revision_seq: 0,
+    change_level: "material",
+    previous_view_id: "VIEW_OLD",
+    recent_change: "Stored official change.",
+  },
+  scalar_changes: [
+    { field: "one_line_conclusion", changed: true, before: "Old conclusion.", after: "New conclusion." },
+    { field: "investment_implication", changed: false, before: "Same.", after: "Same." },
+  ],
+  list_changes: {
+    key_facts: { added: ["New fact."], removed: ["Old fact."], unchanged: [] },
+    key_watch_items: { added: [], removed: [], unchanged: ["Watch."] },
+  },
+  type_specific_changes: {
+    demand_drivers: {
+      status: "changed",
+      kind: "list",
+      added: ["New demand driver."],
+      removed: [],
+      unchanged: ["Existing demand driver."],
+    },
+  },
+  evidence: {
+    added: [{
+      claim_id: "CLAIM_RAW_ADDED",
+      resolved: true,
+      statement: "Resolved evidence statement.",
+      status: "current",
+      confidence: 0.8,
+      source_id: "SRC_1",
+      source_title: "Source title",
+      source_rank: "A",
+    }],
+    removed: [{
+      claim_id: "CLAIM_RAW_REMOVED",
+      resolved: false,
+      statement: null,
+      status: null,
+      confidence: null,
+      source_id: null,
+      source_title: null,
+      source_rank: null,
+    }],
+    unchanged: [],
+  },
+  trigger_source_change: { status: "changed", before: "SRC_OLD", after: "SRC_NEW" },
+  has_changes: true,
+};
+
 describe("ViewTab", () => {
+  beforeEach(() => {
+    vi.mocked(getCurrentViewCompare).mockReset();
+  });
+
   it("renders the Current View content, version, revision, and Source action", () => {
     const onOpenSource = vi.fn();
     render(<ViewTab currentViews={[currentView]} loading={false} error={null} onOpenSource={onOpenSource} />);
 
     expect(screen.getByRole("heading", { name: "Current View" })).toBeInTheDocument();
     expect(screen.getByText("Initial View")).toBeInTheDocument();
-    expect(screen.getByText("No previous revision")).toBeInTheDocument();
+    expect(screen.getByText("No previous revision to compare")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Compare with previous" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "View version" })).not.toBeInTheDocument();
     expect(screen.getByText("v_20260301_01")).toBeInTheDocument();
     expect(screen.getAllByText("Optical demand is accelerating.")).toHaveLength(2);
@@ -163,6 +233,84 @@ describe("ViewTab", () => {
     );
     expect(screen.getByText("Next Node conclusion.")).toBeInTheDocument();
     expect(screen.queryByText("Old Product conclusion.")).not.toBeInTheDocument();
+  });
+
+  it("compares Product versions with exact deltas and clears compare state on Node change", async () => {
+    vi.mocked(getCurrentViewCompare).mockResolvedValue(compareResult);
+    const oldView: CurrentViewResult = {
+      ...currentView,
+      view_id: "VIEW_OLD",
+      version: "v_20260215",
+      revision_date: "20260215",
+    };
+    const latestView: CurrentViewResult = {
+      ...currentView,
+      view_id: "VIEW_LATEST",
+      version: "v_20260301",
+      previous_view_id: "VIEW_OLD",
+      revision_date: "20260301",
+    };
+    const history = [latestView, oldView];
+    const { rerender } = render(
+      <ViewTab currentViews={history} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Compare with previous" }));
+    expect(await screen.findByRole("heading", { name: "Current View Compare" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "BASE version" })).toHaveValue("VIEW_OLD");
+    expect(screen.getByRole("combobox", { name: "TARGET version" })).toHaveValue("VIEW_LATEST");
+    expect(screen.getByText("v_20260215 → v_20260301")).toBeInTheDocument();
+    expect(screen.getByText("Old conclusion.")).toBeInTheDocument();
+    expect(screen.getByText("New conclusion.")).toBeInTheDocument();
+    expect(screen.getByText("New fact.")).toBeInTheDocument();
+    expect(screen.getByText("Old fact.")).toBeInTheDocument();
+    expect(screen.getByText("需求驱动")).toBeInTheDocument();
+    expect(screen.queryByText("demand_drivers")).not.toBeInTheDocument();
+    expect(screen.getByText("新增证据 1 条")).toBeInTheDocument();
+    expect(screen.getByText("移除证据 1 条")).toBeInTheDocument();
+    expect(screen.getByText("Resolved evidence statement.")).toBeInTheDocument();
+    expect(screen.queryByText("CLAIM_RAW_ADDED")).not.toBeInTheDocument();
+    expect(screen.queryByText("CLAIM_RAW_REMOVED")).not.toBeInTheDocument();
+    expect(getCurrentViewCompare).toHaveBeenCalledWith(
+      "NODE_EML", "VIEW_OLD", "VIEW_LATEST", expect.any(AbortSignal),
+    );
+
+    const nextNodeView = {
+      ...currentView,
+      node_id: "NODE_NEXT",
+      view_id: "VIEW_NEXT",
+      previous_view_id: null,
+      content_json: { one_line_conclusion: "Next node normal View." },
+    };
+    rerender(<ViewTab currentViews={[nextNodeView]} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />);
+    expect(await screen.findByText("Next node normal View.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Current View Compare" })).not.toBeInTheDocument();
+    expect(getCurrentViewCompare).toHaveBeenCalledTimes(1);
+  });
+
+  it("uses the Company compare label and exits safely after an API failure", async () => {
+    let rejectCompare: (reason: Error) => void = () => undefined;
+    vi.mocked(getCurrentViewCompare).mockImplementation(() => new Promise((_, reject) => {
+      rejectCompare = reject;
+    }));
+    const oldView = { ...currentView, view_id: "VIEW_OLD", version: "v_old" };
+    const latestView = {
+      ...currentView,
+      view_id: "VIEW_LATEST",
+      version: "v_new",
+      previous_view_id: "VIEW_OLD",
+      content_json: { one_line_conclusion: "Normal Company View.", key_facts: ["Company progress."] },
+    };
+    render(
+      <ViewTab currentViews={[latestView, oldView]} primaryType="Company" loading={false} error={null} onOpenSource={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Compare with previous" }));
+    await waitFor(() => expect(getCurrentViewCompare).toHaveBeenCalledOnce());
+    await act(async () => { rejectCompare(new Error("API failed")); });
+    expect(await screen.findByRole("alert")).toHaveTextContent("Unable to load Current View comparison.");
+    fireEvent.click(screen.getByRole("button", { name: "Exit Compare" }));
+    expect(screen.getByText("Normal Company View.")).toBeInTheDocument();
+    expect(screen.getByText("关键进展")).toBeInTheDocument();
   });
 
   it("renders the explicit no-view state", () => {

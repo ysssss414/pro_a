@@ -1,5 +1,6 @@
 import type {
   ClaimResult,
+  CurrentViewCompareResult,
   CurrentViewHistoryResult,
   CurrentViewResult,
   HealthResponse,
@@ -104,6 +105,22 @@ export function getCurrentViewHistory(
 ): Promise<CurrentViewHistoryResult> {
   return request<CurrentViewHistoryResult>(
     `/api/nodes/${encodeURIComponent(nodeId)}/current-view-history`,
+    signal,
+  );
+}
+
+export function getCurrentViewCompare(
+  nodeId: string,
+  baseViewId: string,
+  targetViewId: string,
+  signal?: AbortSignal,
+): Promise<CurrentViewCompareResult> {
+  const params = new URLSearchParams({
+    base_view_id: baseViewId,
+    target_view_id: targetViewId,
+  });
+  return request<CurrentViewCompareResult>(
+    `/api/nodes/${encodeURIComponent(nodeId)}/current-view-compare?${params.toString()}`,
     signal,
   );
 }

@@ -1043,6 +1043,69 @@ blockquote {
   font-size: 9px;
 }
 
+.view-history-navigation button,
+.view-compare-navigation button {
+  padding: 6px 8px;
+  border: 1px solid #bccce0;
+  border-radius: 5px;
+  background: #fff;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.view-compare-navigation {
+  display: grid;
+  grid-template-columns: auto minmax(110px, 1fr) auto auto minmax(110px, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  margin: -2px 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8ef;
+}
+
+.view-compare-navigation label,
+.view-compare-navigation span {
+  color: #63758a;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.view-compare-navigation select {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #c8d3df;
+  border-radius: 5px;
+  background: #fff;
+  color: #34465b;
+  font-size: 10px;
+}
+
+.compare-version-pair { min-width: 160px; }
+.current-view-compare { display: grid; gap: 1rem; }
+.compare-before-after,
+.compare-delta-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.compare-before-after > div,
+.compare-delta-columns > div,
+.compare-dimension-list > div {
+  padding: .7rem;
+  border: 1px solid #dbe4ee;
+  border-radius: 5px;
+  background: #f8fafc;
+}
+.compare-before-after strong,
+.compare-delta-columns strong,
+.compare-dimension-list > div > strong { color: #405268; font-size: .72rem; }
+.compare-dimension-list { display: grid; gap: .65rem; }
+.compare-dimension-list > div > span { margin-left: .5rem; color: var(--muted); font-size: .7rem; }
+.compare-evidence-summary { display: grid; gap: .5rem; }
+.compare-evidence-summary summary { cursor: pointer; color: #405268; font-weight: 700; }
+.compare-evidence-list { display: grid; gap: .45rem; padding-left: 1.2rem; }
+.compare-evidence-list li { display: grid; gap: .15rem; }
+.compare-evidence-list span { color: var(--muted); font-size: .75rem; }
+.compare-stored-change { margin-top: .75rem; }
+.compare-stored-change p { margin: .25rem 0 0; }
+
 .current-view-content {
   margin: 16px 0;
   padding: 16px;

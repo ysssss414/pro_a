@@ -6,6 +6,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
+from .current_view_compare import (
+    CurrentViewCompareValidationError,
+    compare_current_views,
+)
 from .db import CURRENT_VIEW_ORDER
 
 
@@ -14,6 +18,10 @@ MAX_QUERY_LIMIT = 100
 
 class ReadOnlyDatabaseError(RuntimeError):
     """The configured knowledge database cannot be queried safely."""
+
+
+class CurrentViewCompareNotFoundError(LookupError):
+    """One of the requested Current Views does not exist."""
 
 
 class ReadOnlyQuery:
@@ -479,6 +487,83 @@ class ReadOnlyQuery:
                 (node_id,),
             ).fetchall()
         return [self._current_view_result(row) for row in rows]
+
+    @staticmethod
+    def _evidence_claim_refs(
+        conn: sqlite3.Connection,
+        claim_ids: list[str],
+    ) -> list[dict[str, Any]]:
+        if not claim_ids:
+            return []
+        unique_ids = list(dict.fromkeys(claim_ids))
+        placeholders = ",".join("?" for _ in unique_ids)
+        rows = conn.execute(
+            f"""SELECT c.claim_id,c.statement,c.status,c.confidence,c.source_id,
+                       s.title AS source_title,s.source_rank
+                FROM claims c
+                LEFT JOIN sources s ON s.source_id=c.source_id
+                WHERE c.claim_id IN ({placeholders})""",
+            tuple(unique_ids),
+        ).fetchall()
+        resolved = {row["claim_id"]: dict(row) for row in rows}
+        return [
+            {
+                "claim_id": claim_id,
+                "resolved": claim_id in resolved,
+                "statement": resolved.get(claim_id, {}).get("statement"),
+                "status": resolved.get(claim_id, {}).get("status"),
+                "confidence": resolved.get(claim_id, {}).get("confidence"),
+                "source_id": resolved.get(claim_id, {}).get("source_id"),
+                "source_title": resolved.get(claim_id, {}).get("source_title"),
+                "source_rank": resolved.get(claim_id, {}).get("source_rank"),
+            }
+            for claim_id in claim_ids
+        ]
+
+    def node_current_view_compare(
+        self,
+        node_id: str,
+        base_view_id: str,
+        target_view_id: str,
+    ) -> dict[str, Any]:
+        with self.connect() as conn:
+            self._require_node(conn, node_id)
+            rows = conn.execute(
+                "SELECT * FROM current_views WHERE view_id IN (?,?)",
+                (base_view_id, target_view_id),
+            ).fetchall()
+            views = {row["view_id"]: self._current_view_result(row) for row in rows}
+            if base_view_id not in views or target_view_id not in views:
+                raise CurrentViewCompareNotFoundError("Current View not found")
+
+            base_view = views[base_view_id]
+            target_view = views[target_view_id]
+            if base_view["node_id"] != node_id or target_view["node_id"] != node_id:
+                raise CurrentViewCompareValidationError(
+                    "Current Views must belong to the requested Node"
+                )
+
+            result = compare_current_views(base_view, target_view)
+            base_order = (
+                base_view["revision_date"],
+                base_view["revision_seq"],
+                base_view["view_id"],
+            )
+            target_order = (
+                target_view["revision_date"],
+                target_view["revision_seq"],
+                target_view["view_id"],
+            )
+            if base_order >= target_order:
+                raise CurrentViewCompareValidationError(
+                    "Base Current View must be older than target Current View"
+                )
+
+            result["evidence"] = {
+                status: self._evidence_claim_refs(conn, claim_ids)
+                for status, claim_ids in result["evidence"].items()
+            }
+            return result
 
     def node_research_question(self, node_id: str) -> dict[str, Any] | None:
         with self.connect() as conn:
