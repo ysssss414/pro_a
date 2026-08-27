@@ -1,4 +1,7 @@
-import type { SourceDetail } from "../api/types";
+import { useEffect, useState } from "react";
+
+import { getSourceImpactCandidates } from "../api/client";
+import type { SourceDetail, SourceImpactCandidatesResult } from "../api/types";
 
 interface SourceDetailPanelProps {
   sourceId: string;
@@ -7,6 +10,7 @@ interface SourceDetailPanelProps {
   error: string | null;
   onBack: () => void;
   onSelectNode: (nodeId: string) => void;
+  onOpenView: (nodeId: string) => void;
 }
 
 function formatConfidence(value: number | null): string {
@@ -20,7 +24,32 @@ export function SourceDetailPanel({
   error,
   onBack,
   onSelectNode,
+  onOpenView,
 }: SourceDetailPanelProps) {
+  const [impact, setImpact] = useState<SourceImpactCandidatesResult | null>(null);
+  const [impactLoading, setImpactLoading] = useState(true);
+  const [impactError, setImpactError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setImpact(null);
+    setImpactLoading(true);
+    setImpactError(null);
+    getSourceImpactCandidates(sourceId, controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) setImpact(result);
+      })
+      .catch((requestError) => {
+        if ((requestError as Error).name !== "AbortError") {
+          setImpactError("Unable to load direct Current View candidates.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setImpactLoading(false);
+      });
+    return () => controller.abort();
+  }, [sourceId]);
+
   return (
     <section className="detail-panel source-detail-panel" aria-labelledby="source-detail-heading">
       <div className="panel-heading source-detail-toolbar">
@@ -110,6 +139,49 @@ export function SourceDetailPanel({
                 <code>{claim.claim_id}</code>
               </article>
             ))}
+          </section>
+
+          <section className="source-detail-section impact-review-section">
+            <div className="section-title-row">
+              <h3>Potential Current View Impact</h3>
+              {impact && <span className="count-label">{impact.candidates.length} Views to review</span>}
+            </div>
+            <p className="impact-scope-note">Directly linked through Claims</p>
+            {impactLoading && <p className="empty-inline">Loading direct candidates…</p>}
+            {impactError && <p className="module-error" role="alert">{impactError}</p>}
+            {impact && impact.candidates.length === 0 && (
+              <p className="empty-inline">No directly linked Current Views</p>
+            )}
+            {impact?.candidates.map((candidate) => (
+              <article className="impact-candidate-card" key={candidate.node.node_id}>
+                <div className="impact-candidate-heading">
+                  <div><h4>{candidate.node.canonical_name}</h4><span>{candidate.node.primary_type}</span></div>
+                  <button type="button" onClick={() => onOpenView(candidate.node.node_id)}>Open View</button>
+                </div>
+                <p>{candidate.claims.length} linked Claims</p>
+                <div className="impact-candidate-meta">
+                  {candidate.roles.map((role) => <span key={role}>Attribution role: {role}</span>)}
+                  <span>Current View {candidate.current_view.version}</span>
+                  <span>Revised {candidate.current_view.revision_date || "—"}</span>
+                </div>
+              </article>
+            ))}
+            {impact && impact.linked_nodes_without_current_view.length > 0 && (
+              <div className="impact-without-view">
+                <h4>Linked Nodes without Current View</h4>
+                {impact.linked_nodes_without_current_view.map((item) => (
+                  <article className="impact-candidate-card" key={item.node.node_id}>
+                    <div className="impact-candidate-heading">
+                      <div><h4>{item.node.canonical_name}</h4><span>{item.node.primary_type}</span></div>
+                    </div>
+                    <p>{item.claims.length} linked Claims</p>
+                    <div className="impact-candidate-meta">
+                      {item.roles.map((role) => <span key={role}>Attribution role: {role}</span>)}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       )}

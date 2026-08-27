@@ -14,6 +14,7 @@ from .db import CURRENT_VIEW_ORDER
 
 
 MAX_QUERY_LIMIT = 100
+IMPACT_ROLE_ORDER = {"subject": 0, "context": 1, "related": 2}
 
 
 class ReadOnlyDatabaseError(RuntimeError):
@@ -672,3 +673,134 @@ class ReadOnlyQuery:
         result["linked_nodes"] = [dict(row) for row in linked_rows]
         result["claims"] = claims
         return result
+
+    @staticmethod
+    def _impact_candidates_for_claims(
+        conn: sqlite3.Connection,
+        claim_ids: list[str],
+    ) -> dict[str, list[dict[str, Any]]]:
+        if not claim_ids:
+            return {"candidates": [], "linked_nodes_without_current_view": []}
+
+        unique_ids = list(dict.fromkeys(claim_ids))
+        placeholders = ",".join("?" for _ in unique_ids)
+        rows = conn.execute(
+            f"""WITH latest_official_views AS (
+                    SELECT view_id,node_id,version,change_level,revision_date,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY node_id ORDER BY {CURRENT_VIEW_ORDER}
+                           ) AS view_rank
+                    FROM current_views
+                    WHERE status='official'
+                )
+                SELECT c.claim_id,c.statement,c.status,c.confidence,
+                       c.fact_time,c.publication_time,cnl.role,
+                       n.node_id,n.canonical_name,n.primary_type,
+                       view.view_id AS current_view_id,
+                       view.version AS current_view_version,
+                       view.change_level AS current_view_change_level,
+                       view.revision_date AS current_view_revision_date
+                FROM claims c
+                JOIN claim_node_links cnl ON cnl.claim_id=c.claim_id
+                JOIN nodes n ON n.node_id=cnl.node_id AND n.status='active'
+                LEFT JOIN latest_official_views view
+                  ON view.node_id=n.node_id AND view.view_rank=1
+                WHERE c.claim_id IN ({placeholders})""",
+            tuple(unique_ids),
+        ).fetchall()
+
+        grouped: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            node_id = row["node_id"]
+            if node_id not in grouped:
+                current_view = None
+                if row["current_view_id"] is not None:
+                    current_view = {
+                        "view_id": row["current_view_id"],
+                        "version": row["current_view_version"],
+                        "change_level": row["current_view_change_level"],
+                        "revision_date": row["current_view_revision_date"],
+                    }
+                grouped[node_id] = {
+                    "node": {
+                        "node_id": node_id,
+                        "canonical_name": row["canonical_name"],
+                        "primary_type": row["primary_type"],
+                    },
+                    "current_view": current_view,
+                    "roles": set(),
+                    "claims": [],
+                }
+            grouped[node_id]["roles"].add(row["role"])
+            grouped[node_id]["claims"].append({
+                "claim_id": row["claim_id"],
+                "statement": row["statement"],
+                "status": row["status"],
+                "confidence": row["confidence"],
+                "role": row["role"],
+                "fact_time": row["fact_time"],
+                "publication_time": row["publication_time"],
+            })
+
+        def role_rank(role: str) -> int:
+            return IMPACT_ROLE_ORDER.get(role, len(IMPACT_ROLE_ORDER))
+
+        results = []
+        for item in grouped.values():
+            item["roles"] = sorted(item["roles"], key=lambda role: (role_rank(role), role))
+            item["claims"].sort(
+                key=lambda claim: (role_rank(claim["role"]), claim["claim_id"])
+            )
+            results.append(item)
+        results.sort(key=lambda item: (
+            role_rank(item["roles"][0]),
+            item["node"]["canonical_name"].casefold(),
+            item["node"]["canonical_name"],
+            item["node"]["node_id"],
+        ))
+
+        candidates = []
+        without_view = []
+        for item in results:
+            if item["current_view"] is None:
+                item.pop("current_view")
+                without_view.append(item)
+            else:
+                candidates.append(item)
+        return {
+            "candidates": candidates,
+            "linked_nodes_without_current_view": without_view,
+        }
+
+    def source_impact_candidates(self, source_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            source = conn.execute(
+                "SELECT 1 FROM sources WHERE source_id=?",
+                (source_id,),
+            ).fetchone()
+            if source is None:
+                return None
+            claim_ids = [
+                row["claim_id"]
+                for row in conn.execute(
+                    "SELECT claim_id FROM claims WHERE source_id=? ORDER BY claim_id",
+                    (source_id,),
+                ).fetchall()
+            ]
+            result = self._impact_candidates_for_claims(conn, claim_ids)
+        return {
+            "source_id": source_id,
+            "claim_count": len(claim_ids),
+            **result,
+        }
+
+    def claim_impact_candidates(self, claim_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            claim = conn.execute(
+                "SELECT 1 FROM claims WHERE claim_id=?",
+                (claim_id,),
+            ).fetchone()
+            if claim is None:
+                return None
+            result = self._impact_candidates_for_claims(conn, [claim_id])
+        return {"claim_id": claim_id, **result}

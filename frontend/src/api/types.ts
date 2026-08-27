@@ -276,3 +276,48 @@ export interface SourceDetail {
   linked_nodes: SourceLinkedNode[];
   claims: SourceClaim[];
 }
+
+export type ClaimNodeRole = "subject" | "context" | "related";
+
+export interface ImpactClaimSummary {
+  claim_id: string;
+  statement: string;
+  status: string;
+  confidence: number | null;
+  role: ClaimNodeRole;
+  fact_time: string;
+  publication_time: string;
+}
+
+export interface ImpactCurrentViewSummary {
+  view_id: string;
+  version: string;
+  change_level: string;
+  revision_date: string;
+}
+
+export interface ImpactCandidate {
+  node: NodeSummary;
+  current_view: ImpactCurrentViewSummary;
+  roles: ClaimNodeRole[];
+  claims: ImpactClaimSummary[];
+}
+
+export interface LinkedNodeWithoutCurrentView {
+  node: NodeSummary;
+  roles: ClaimNodeRole[];
+  claims: ImpactClaimSummary[];
+}
+
+export interface SourceImpactCandidatesResult {
+  source_id: string;
+  claim_count: number;
+  candidates: ImpactCandidate[];
+  linked_nodes_without_current_view: LinkedNodeWithoutCurrentView[];
+}
+
+export interface ClaimImpactCandidatesResult {
+  claim_id: string;
+  candidates: ImpactCandidate[];
+  linked_nodes_without_current_view: LinkedNodeWithoutCurrentView[];
+}

@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.5B complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6A complete**
 
 ## Completed — Phase 1
 
@@ -104,9 +104,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete**。新增独立 pure comparator 与 official-only、same-Node、read-only BASE → TARGET compare API；scalar 仅 trim 后 exact before/after，list 使用 exact item added/removed/unchanged 并保持来源顺序，`type_specific` 按 canonical key 做 list/scalar/JSON structural diff。Evidence 使用 record `trigger_claim_ids`，可解析 Claim/Source metadata，missing ref 保留 unresolved；Trigger Source 仅报告状态。Explorer 在既有版本导航内提供 Compare mode、Product 中文维度标签、Evidence delta 与治理 metadata；单个 initial View 明确显示 `No previous revision to compare`。不包含 LLM、semantic/fuzzy matching、投资方向解释、Current View mutation、schema 或 Production 数据变化。
 
+### Phase 2.6A — Direct Impact Candidate Discovery
+
+状态：**complete**。新增 Source/Claim 级 deterministic、read-only discovery，仅沿 `Source → Claim → claim_node_links → active Node → latest official Current View` 发现人工 review candidates。候选按 Node 去重并保留全部 Claims 与 `subject/context/related` roles；无 official View 的 active linked Nodes 单列，inactive Node 与 draft View 不进入候选。Source Detail 增加克制的 Potential Current View Impact panel 与 Open View 导航；不判断 change need、level、方向或强弱，不生成 Proposal，不做 Relation/parent/child propagation。Production browser smoke 基于真实 2 Sources / 12 Claims / 2 Views 通过。
+
 ### Next milestone
 
-Phase 2.5B 已完成并封闭。后续阶段必须另行定义和授权；不得顺手启动 Impact Review、Propagation、AI change summary 或 Evidence quality scoring。
+Phase 2.6B — Human Impact Review Surface：**planned, not started**。Phase 2.7 — Controlled Propagation / View Proposal：**not authorized**。Phase 2.6A 已完成并封闭；不得顺手启动 adjudication controls、Proposal、Current View mutation、propagation、AI change summary 或 Evidence quality scoring。
 
 ## Carried backlog
 

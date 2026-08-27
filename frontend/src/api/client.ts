@@ -1,5 +1,6 @@
 import type {
   ClaimResult,
+  ClaimImpactCandidatesResult,
   CurrentViewCompareResult,
   CurrentViewHistoryResult,
   CurrentViewResult,
@@ -11,6 +12,7 @@ import type {
   NodeSource,
   ResearchQuestionResult,
   SourceDetail,
+  SourceImpactCandidatesResult,
   StatsResponse,
 } from "./types";
 
@@ -151,6 +153,26 @@ export function getSourceDetail(
 ): Promise<SourceDetail> {
   return request<SourceDetail>(
     `/api/sources/${encodeURIComponent(sourceId)}`,
+    signal,
+  );
+}
+
+export function getSourceImpactCandidates(
+  sourceId: string,
+  signal?: AbortSignal,
+): Promise<SourceImpactCandidatesResult> {
+  return request<SourceImpactCandidatesResult>(
+    `/api/sources/${encodeURIComponent(sourceId)}/impact-candidates`,
+    signal,
+  );
+}
+
+export function getClaimImpactCandidates(
+  claimId: string,
+  signal?: AbortSignal,
+): Promise<ClaimImpactCandidatesResult> {
+  return request<ClaimImpactCandidatesResult>(
+    `/api/claims/${encodeURIComponent(claimId)}/impact-candidates`,
     signal,
   );
 }

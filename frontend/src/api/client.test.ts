@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   ApiError,
+  getClaimImpactCandidates,
   getCurrentViewCompare,
   getCurrentView,
   getCurrentViewHistory,
@@ -10,6 +11,7 @@ import {
   getNode,
   getResearchQuestion,
   getSourceDetail,
+  getSourceImpactCandidates,
   searchNodes,
 } from "./client";
 
@@ -65,6 +67,8 @@ describe("API client", () => {
     await getResearchQuestion("NODE / 1");
     await getKnowledgeGaps("NODE / 1");
     await getSourceDetail("SRC / 1");
+    await getSourceImpactCandidates("SRC / 1");
+    await getClaimImpactCandidates("CLAIM / 1");
 
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       "/api/nodes/NODE%20%2F%201/current-view",
@@ -73,6 +77,8 @@ describe("API client", () => {
       "/api/nodes/NODE%20%2F%201/research-question",
       "/api/nodes/NODE%20%2F%201/knowledge-gaps",
       "/api/sources/SRC%20%2F%201",
+      "/api/sources/SRC%20%2F%201/impact-candidates",
+      "/api/claims/CLAIM%20%2F%201/impact-candidates",
     ]);
   });
 });
