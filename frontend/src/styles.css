@@ -1025,6 +1025,19 @@ blockquote {
   white-space: pre-wrap;
 }
 
+.current-view-sections { display: grid; gap: 1rem; }
+.current-view-section { border-top: 1px solid var(--line); padding-top: .85rem; }
+.current-view-section h4 { margin: 0 0 .45rem; color: var(--ink); }
+.current-view-section p { margin: 0; line-height: 1.65; }
+.current-view-section ul { margin: 0; padding-left: 1.25rem; }
+.current-view-section li { margin: .35rem 0; line-height: 1.55; }
+.current-view-fallback { white-space: pre-wrap; font: inherit; line-height: 1.6; }
+.view-evidence-block { display: flex; align-items: center; gap: .65rem; border-top: 1px solid var(--line); margin-top: 1rem; padding-top: .9rem; }
+.view-evidence-block span { color: var(--muted); }
+.view-evidence-block button { margin-left: auto; }
+.view-metadata-details { margin-top: .8rem; color: var(--muted); }
+.view-metadata-details summary { cursor: pointer; font-size: .82rem; }
+
 .view-metadata {
   padding-top: 12px;
   border-top: 1px solid #e2e8ef;

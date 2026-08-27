@@ -102,7 +102,7 @@ export interface CurrentViewResult {
   change_level: string;
   previous_view_id: string | null;
   content_md: string;
-  content_json: Record<string, unknown>;
+  content_json: CurrentViewContent;
   trigger_source_id: string | null;
   trigger_claim_ids: string[];
   revision_date: string;
@@ -110,6 +110,22 @@ export interface CurrentViewResult {
   accepted_proposal_id: string;
   created_at: string;
   confirmed_at: string;
+}
+
+export interface CurrentViewContent {
+  one_line_conclusion?: unknown;
+  core_logic?: unknown;
+  key_facts?: unknown;
+  core_disagreements?: unknown;
+  assumptions_to_verify?: unknown;
+  investment_implication?: unknown;
+  major_risks?: unknown;
+  knowledge_gaps?: unknown;
+  key_watch_items?: unknown;
+  recent_change?: unknown;
+  evidence_claim_ids?: unknown;
+  type_specific?: unknown;
+  [key: string]: unknown;
 }
 
 export interface ResearchClaimSummary {

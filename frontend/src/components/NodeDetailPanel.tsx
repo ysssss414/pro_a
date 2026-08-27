@@ -319,6 +319,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
             {activeTab === "view" && (
               <ViewTab
                 currentView={currentView}
+                primaryType={detail.primary_type}
                 loading={knowledgeLoading}
                 error={knowledgeErrors.view}
                 onOpenSource={onOpenSource}
