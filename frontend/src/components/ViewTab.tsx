@@ -1,15 +1,25 @@
+import { useEffect, useState } from "react";
+
 import type { CurrentViewResult } from "../api/types";
 import { buildCurrentViewPresentation } from "../currentViewPresentation";
 
 interface ViewTabProps {
-  currentView: CurrentViewResult | null;
+  currentViews: CurrentViewResult[];
   primaryType?: string;
   loading: boolean;
   error: string | null;
   onOpenSource: (sourceId: string) => void;
 }
 
-export function ViewTab({ currentView, primaryType = "", loading, error, onOpenSource }: ViewTabProps) {
+export function ViewTab({ currentViews, primaryType = "", loading, error, onOpenSource }: ViewTabProps) {
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
+  useEffect(() => {
+    setSelectedViewId(currentViews[0]?.view_id ?? null);
+  }, [currentViews]);
+
+  const currentView = currentViews.find((view) => view.view_id === selectedViewId)
+    ?? currentViews[0]
+    ?? null;
   if (loading && !currentView) return <div className="tab-empty">Loading Current View…</div>;
   if (error) return <div className="tab-empty is-error" role="alert">{error}</div>;
   if (!currentView) return <div className="tab-empty">No official Current View has been recorded for this Node.</div>;
@@ -24,9 +34,30 @@ export function ViewTab({ currentView, primaryType = "", loading, error, onOpenS
   return (
     <div className="tab-content view-tab">
       <article className="current-view-card">
+        <div className="view-history-navigation" aria-label="Current View version navigation">
+          {currentViews.length === 1 ? (
+            <><strong>Initial View</strong><span>No previous revision</span></>
+          ) : (
+            <>
+              <label htmlFor="current-view-version">View version</label>
+              <select
+                id="current-view-version"
+                value={currentView.view_id}
+                onChange={(event) => setSelectedViewId(event.target.value)}
+              >
+                {currentViews.map((view, index) => (
+                  <option value={view.view_id} key={view.view_id}>
+                    {view.version}{index === 0 ? " — Latest" : ""}
+                  </option>
+                ))}
+              </select>
+              <span>{currentView.view_id === currentViews[0].view_id ? "Latest official View" : "Historical official View"}</span>
+            </>
+          )}
+        </div>
         <div className="research-heading-row">
           <div><p className="eyebrow">Governed knowledge state</p><h3>Current View</h3></div>
-          <div className="view-version"><strong>{currentView.version}</strong><span>{currentView.status}</span></div>
+          <div className="view-version"><strong>{currentView.version}</strong><span>{[currentView.status, currentView.change_level, currentView.revision_date].filter(Boolean).join(" · ")}</span></div>
         </div>
         {presentation.structured ? (
           <div className="current-view-sections">

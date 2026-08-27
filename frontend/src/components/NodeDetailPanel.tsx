@@ -28,7 +28,7 @@ interface NodeDetailPanelProps {
   detail: NodeDetail | null;
   claims: ClaimResult[];
   sources: NodeSource[];
-  currentView: CurrentViewResult | null;
+  currentViews: CurrentViewResult[];
   researchQuestion: ResearchQuestionResult | null;
   knowledgeGaps: KnowledgeGapResult[];
   activeTab: DetailTab;
@@ -238,7 +238,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
     detail,
     claims,
     sources,
-    currentView,
+    currentViews,
     researchQuestion,
     knowledgeGaps,
     activeTab,
@@ -318,7 +318,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
             {activeTab === "overview" && <OverviewTab detail={detail} onSelect={onSelect} />}
             {activeTab === "view" && (
               <ViewTab
-                currentView={currentView}
+                currentViews={currentViews}
                 primaryType={detail.primary_type}
                 loading={knowledgeLoading}
                 error={knowledgeErrors.view}

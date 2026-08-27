@@ -9,8 +9,8 @@ const currentView: CurrentViewResult = {
   node_id: "NODE_EML",
   version: "v_20260301_01",
   status: "official",
-  change_level: "material",
-  previous_view_id: "VIEW_0",
+  change_level: "initial",
+  previous_view_id: null,
   content_md: "Optical demand is accelerating.",
   content_json: {
     one_line_conclusion: "Optical demand is accelerating.",
@@ -32,9 +32,12 @@ const currentView: CurrentViewResult = {
 describe("ViewTab", () => {
   it("renders the Current View content, version, revision, and Source action", () => {
     const onOpenSource = vi.fn();
-    render(<ViewTab currentView={currentView} loading={false} error={null} onOpenSource={onOpenSource} />);
+    render(<ViewTab currentViews={[currentView]} loading={false} error={null} onOpenSource={onOpenSource} />);
 
     expect(screen.getByRole("heading", { name: "Current View" })).toBeInTheDocument();
+    expect(screen.getByText("Initial View")).toBeInTheDocument();
+    expect(screen.getByText("No previous revision")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "View version" })).not.toBeInTheDocument();
     expect(screen.getByText("v_20260301_01")).toBeInTheDocument();
     expect(screen.getAllByText("Optical demand is accelerating.")).toHaveLength(2);
     expect(screen.getByText("投资含义")).toBeInTheDocument();
@@ -58,7 +61,7 @@ describe("ViewTab", () => {
       major_risks: ["公司指引仍需验证。"],
       type_specific: {},
     }};
-    render(<ViewTab currentView={view} primaryType="Company" loading={false} error={null} onOpenSource={vi.fn()} />);
+    render(<ViewTab currentViews={[view]} primaryType="Company" loading={false} error={null} onOpenSource={vi.fn()} />);
     expect(screen.getByText("关键进展")).toBeInTheDocument();
     expect(screen.queryByText("最近变化")).not.toBeInTheDocument();
     expect(screen.getAllByText("一期产线出货。")).toHaveLength(1);
@@ -79,7 +82,7 @@ describe("ViewTab", () => {
         product_evolution: [],
       },
     }};
-    render(<ViewTab currentView={view} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />);
+    render(<ViewTab currentViews={[view]} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />);
     expect(screen.queryByText(/pricing:/)).not.toBeInTheDocument();
     expect(screen.queryByText(/applications:/)).not.toBeInTheDocument();
     expect(screen.getByText(/需求驱动: AI需求形成挤出效应。/)).toBeInTheDocument();
@@ -99,13 +102,71 @@ describe("ViewTab", () => {
         pricing: ["据该材料，2026年7月和8月MLCC单月价格环比均上涨30%以上。"],
       },
     }};
-    render(<ViewTab currentView={view} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />);
+    render(<ViewTab currentViews={[view]} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />);
     expect(screen.getAllByText(/2026年7月和8月MLCC单月价格环比均上涨30%以上/)).toHaveLength(1);
     expect(screen.queryByText("关键变化")).not.toBeInTheDocument();
   });
 
+  it("navigates versions with the shared Product presentation and resets on Node change", () => {
+    const oldView: CurrentViewResult = {
+      ...currentView,
+      view_id: "VIEW_OLD",
+      version: "v_20260215",
+      content_json: {
+        one_line_conclusion: "Old Product conclusion.",
+        key_facts: ["Old Product fact."],
+        type_specific: { demand_drivers: ["Old demand driver."] },
+      },
+      trigger_claim_ids: ["CLAIM_OLD"],
+      revision_date: "20260215",
+    };
+    const latestView: CurrentViewResult = {
+      ...currentView,
+      view_id: "VIEW_LATEST",
+      version: "v_20260301",
+      change_level: "material",
+      previous_view_id: "VIEW_OLD",
+      content_json: {
+        one_line_conclusion: "Latest Product conclusion.",
+        key_facts: ["Latest Product fact."],
+        type_specific: { demand_drivers: ["Latest demand driver."] },
+      },
+      trigger_claim_ids: ["CLAIM_LATEST"],
+      revision_date: "20260301",
+    };
+
+    const { rerender } = render(
+      <ViewTab currentViews={[latestView, oldView]} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />,
+    );
+    expect(screen.getByText("Latest Product conclusion.")).toBeInTheDocument();
+    expect(screen.getByText(/需求驱动: Latest demand driver./)).toBeInTheDocument();
+    expect(screen.getByText("1 primary Claims")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "View version" }), {
+      target: { value: "VIEW_OLD" },
+    });
+    expect(screen.getByText("Old Product conclusion.")).toBeInTheDocument();
+    expect(screen.getByText(/需求驱动: Old demand driver./)).toBeInTheDocument();
+    expect(screen.queryByText("Latest Product conclusion.")).not.toBeInTheDocument();
+    expect(screen.queryByText("CLAIM_OLD")).not.toBeInTheDocument();
+
+    const nextNodeView: CurrentViewResult = {
+      ...latestView,
+      view_id: "VIEW_NEXT_NODE",
+      node_id: "NODE_NEXT",
+      version: "v_20260401",
+      previous_view_id: null,
+      content_json: { one_line_conclusion: "Next Node conclusion." },
+    };
+    rerender(
+      <ViewTab currentViews={[nextNodeView]} primaryType="Product" loading={false} error={null} onOpenSource={vi.fn()} />,
+    );
+    expect(screen.getByText("Next Node conclusion.")).toBeInTheDocument();
+    expect(screen.queryByText("Old Product conclusion.")).not.toBeInTheDocument();
+  });
+
   it("renders the explicit no-view state", () => {
-    render(<ViewTab currentView={null} loading={false} error={null} onOpenSource={vi.fn()} />);
+    render(<ViewTab currentViews={[]} loading={false} error={null} onOpenSource={vi.fn()} />);
     expect(screen.getByText("No official Current View has been recorded for this Node.")).toBeInTheDocument();
   });
 });

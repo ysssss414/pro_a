@@ -127,6 +127,11 @@ class CurrentViewResult(BaseModel):
     confirmed_at: str
 
 
+class CurrentViewHistoryResult(BaseModel):
+    node_id: str
+    views: list[CurrentViewResult]
+
+
 class ResearchClaimSummary(BaseModel):
     claim_id: str
     statement: str | None
@@ -323,6 +328,22 @@ def create_app(
     ) -> dict | None:
         try:
             return query_model.node_current_view(node_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get(
+        "/api/nodes/{node_id}/current-view-history",
+        response_model=CurrentViewHistoryResult,
+    )
+    def node_current_view_history(
+        node_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        try:
+            return {
+                "node_id": node_id,
+                "views": query_model.node_current_view_history(node_id),
+            }
         except KeyError:
             raise HTTPException(status_code=404, detail="Node not found") from None
 

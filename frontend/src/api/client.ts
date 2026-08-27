@@ -1,5 +1,6 @@
 import type {
   ClaimResult,
+  CurrentViewHistoryResult,
   CurrentViewResult,
   HealthResponse,
   KnowledgeGapResult,
@@ -93,6 +94,16 @@ export function getCurrentView(
 ): Promise<CurrentViewResult | null> {
   return request<CurrentViewResult | null>(
     `/api/nodes/${encodeURIComponent(nodeId)}/current-view`,
+    signal,
+  );
+}
+
+export function getCurrentViewHistory(
+  nodeId: string,
+  signal?: AbortSignal,
+): Promise<CurrentViewHistoryResult> {
+  return request<CurrentViewHistoryResult>(
+    `/api/nodes/${encodeURIComponent(nodeId)}/current-view-history`,
     signal,
   );
 }

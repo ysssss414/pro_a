@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
   getCurrentView,
+  getCurrentViewHistory,
   getHealth,
   getKnowledgeGaps,
   getNode,
@@ -58,12 +59,14 @@ describe("API client", () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => null });
 
     await getCurrentView("NODE / 1");
+    await getCurrentViewHistory("NODE / 1");
     await getResearchQuestion("NODE / 1");
     await getKnowledgeGaps("NODE / 1");
     await getSourceDetail("SRC / 1");
 
     expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       "/api/nodes/NODE%20%2F%201/current-view",
+      "/api/nodes/NODE%20%2F%201/current-view-history",
       "/api/nodes/NODE%20%2F%201/research-question",
       "/api/nodes/NODE%20%2F%201/knowledge-gaps",
       "/api/sources/SRC%20%2F%201",
