@@ -236,6 +236,49 @@ class SourceDetail(BaseModel):
     claims: list[SourceClaim]
 
 
+class ImpactClaimSummary(BaseModel):
+    claim_id: str
+    statement: str
+    status: str
+    confidence: float | None
+    role: Literal["subject", "context", "related"]
+    fact_time: str
+    publication_time: str
+
+
+class ImpactCurrentViewSummary(BaseModel):
+    view_id: str
+    version: str
+    change_level: str
+    revision_date: str
+
+
+class ImpactCandidate(BaseModel):
+    node: NodeSummary
+    current_view: ImpactCurrentViewSummary
+    roles: list[Literal["subject", "context", "related"]]
+    claims: list[ImpactClaimSummary]
+
+
+class LinkedNodeWithoutCurrentView(BaseModel):
+    node: NodeSummary
+    roles: list[Literal["subject", "context", "related"]]
+    claims: list[ImpactClaimSummary]
+
+
+class SourceImpactCandidatesResult(BaseModel):
+    source_id: str
+    claim_count: int
+    candidates: list[ImpactCandidate]
+    linked_nodes_without_current_view: list[LinkedNodeWithoutCurrentView]
+
+
+class ClaimImpactCandidatesResult(BaseModel):
+    claim_id: str
+    candidates: list[ImpactCandidate]
+    linked_nodes_without_current_view: list[LinkedNodeWithoutCurrentView]
+
+
 def create_app(
     db_path: str | Path | None = None,
     *,
@@ -422,6 +465,32 @@ def create_app(
         result = query_model.source_detail(source_id)
         if result is None:
             raise HTTPException(status_code=404, detail="Source not found")
+        return result
+
+    @app.get(
+        "/api/sources/{source_id}/impact-candidates",
+        response_model=SourceImpactCandidatesResult,
+    )
+    def source_impact_candidates(
+        source_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        result = query_model.source_impact_candidates(source_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Source not found")
+        return result
+
+    @app.get(
+        "/api/claims/{claim_id}/impact-candidates",
+        response_model=ClaimImpactCandidatesResult,
+    )
+    def claim_impact_candidates(
+        claim_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        result = query_model.claim_impact_candidates(claim_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Claim not found")
         return result
 
     return app

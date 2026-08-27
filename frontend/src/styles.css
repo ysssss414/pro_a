@@ -1388,6 +1388,67 @@ blockquote {
   font-size: 8px;
 }
 
+.impact-scope-note {
+  margin: 4px 0 10px;
+  color: #768598;
+  font-size: 9px;
+}
+
+.impact-candidate-card {
+  margin-top: 8px;
+  padding: 11px;
+  border: 1px solid #dce4ec;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.impact-candidate-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.impact-candidate-heading h4,
+.impact-without-view > h4 {
+  margin: 0;
+  color: #33465b;
+  font-size: 11px;
+}
+
+.impact-candidate-heading span,
+.impact-candidate-card > p,
+.impact-candidate-meta {
+  color: #768598;
+  font-size: 8px;
+}
+
+.impact-candidate-card > p {
+  margin: 8px 0;
+}
+
+.impact-candidate-heading button {
+  padding: 5px 8px;
+  border: 1px solid #b7c9dc;
+  border-radius: 4px;
+  background: #f7fafc;
+  color: var(--accent-dark);
+  cursor: pointer;
+  font-size: 8px;
+}
+
+.impact-candidate-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.impact-without-view {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e4eaf0;
+}
+
 .source-node-link blockquote,
 .source-claim-card blockquote {
   margin: 9px 0;

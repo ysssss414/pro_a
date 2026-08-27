@@ -203,6 +203,11 @@ export default function App() {
     setSourceError(null);
   }, []);
 
+  const openNodeView = useCallback((nodeId: string) => {
+    selectNode(nodeId);
+    setActiveTab("view");
+  }, [selectNode]);
+
   useEffect(() => {
     void loadStatus();
     return () => statusController.current?.abort();
@@ -285,6 +290,7 @@ export default function App() {
           sourceError={sourceError}
           onTabChange={setActiveTab}
           onSelect={selectNode}
+          onOpenView={openNodeView}
           onOpenSource={openSource}
           onCloseSource={closeSource}
         />

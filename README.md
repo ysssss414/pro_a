@@ -19,7 +19,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 
-当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare。canonical 内容保持不变。
+当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery。canonical 内容保持不变。
 
 Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.3A Knowledge Detail & Research Surface 已完成。目标顺序为：
 
@@ -76,9 +76,11 @@ GET /api/nodes/{node_id}/current-view-compare?base_view_id=&target_view_id=
 GET /api/nodes/{node_id}/research-question
 GET /api/nodes/{node_id}/knowledge-gaps
 GET /api/sources/{source_id}
+GET /api/sources/{source_id}/impact-candidates
+GET /api/claims/{claim_id}/impact-candidates
 ```
 
-Node search 只做 canonical name / alias 的确定性子串匹配；alias 命中仍返回 canonical Node。Node list 和 search 的单次请求上限均为 100。Neighborhood 固定为 current Relations、1 hop。Claim response 直接附 Source metadata；Node Sources 同时覆盖 direct link 与 Claim link，并按 Source 去重保留 provenance。Current View latest 与 history 均只读取 official Views 并复用同一正式 revision ordering；compare 仅允许同 Node 的 official BASE → TARGET，并对 structured content、Evidence references 与 Trigger Source 做 exact deterministic diff。Research Question 解析 supporting/opposing Claims；Knowledge Gaps 保留全部真实状态；Source Detail 只返回 metadata 与 structured knowledge links，不暴露本地归档路径。
+Node search 只做 canonical name / alias 的确定性子串匹配；alias 命中仍返回 canonical Node。Node list 和 search 的单次请求上限均为 100。Neighborhood 固定为 current Relations、1 hop。Claim response 直接附 Source metadata；Node Sources 同时覆盖 direct link 与 Claim link，并按 Source 去重保留 provenance。Current View latest 与 history 均只读取 official Views 并复用同一正式 revision ordering；compare 仅允许同 Node 的 official BASE → TARGET，并对 structured content、Evidence references 与 Trigger Source 做 exact deterministic diff。Impact discovery 只沿 Source/Claim 的 canonical `claim_node_links` 找到 active Node 的 latest official View，按 Node 去重、保留 roles/Claims，并单列无 View 的 linked Nodes。Research Question 解析 supporting/opposing Claims；Knowledge Gaps 保留全部真实状态；Source Detail 只返回 metadata 与 structured knowledge links，不暴露本地归档路径。
 
 ## Knowledge Explorer MVP
 
@@ -88,7 +90,7 @@ Node search 只做 canonical name / alias 的确定性子串匹配；alias 命�
 Search results | current 1-hop graph | Overview / View / Research / Claims / Sources
 ```
 
-Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。View 使用 `content_json` 的共享 Company/Product structured presentation，并保留 `content_md` fallback、版本导航与 compact governance/evidence metadata；单版本明确标识 initial/no previous revision，多版本默认 latest 并可选择历史 official View 或进入 BASE → TARGET Compare mode，查看 exact added/removed/changed 内容与 Evidence delta。Research 展示 Research Question、Current Answer、key variables、supporting/opposing Claims、falsifier 与 Knowledge Gaps。Sources 可进入右栏 Source Detail，查看 metadata、linked Nodes 和 Source Claims，并可从 Source 反向选择 Node。Core 与 knowledge modules 独立失败，单个 Research endpoint 错误不会清空 Overview；选择状态写入 `?node=`，API 不可用时显示可重试状态。
+Search 支持 canonical name 与 alias、250 ms debounce 和 stale-request abort；Cytoscape 图保留 Relation 方向并支持点击邻居继续聚焦。View 使用 `content_json` 的共享 Company/Product structured presentation，并保留 `content_md` fallback、版本导航与 compact governance/evidence metadata；单版本明确标识 initial/no previous revision，多版本默认 latest 并可选择历史 official View 或进入 BASE → TARGET Compare mode，查看 exact added/removed/changed 内容与 Evidence delta。Research 展示 Research Question、Current Answer、key variables、supporting/opposing Claims、falsifier 与 Knowledge Gaps。Sources 可进入右栏 Source Detail，查看 metadata、linked Nodes 和 Source Claims；Potential Current View Impact 仅显示直接 Claim attribution candidates、聚合 Claim count/roles 与 Open View，不做影响判断。Core 与 knowledge modules 独立失败，单个 Research 或 impact endpoint 错误不会清空正常 Source/Node 内容；选择状态写入 `?node=`，API 不可用时显示可重试状态。
 
 ## Windows 快速开始
 
@@ -120,6 +122,6 @@ Standard / Deep ingestion 仍使用现有 CLI 和冻结契约。任何 Productio
 
 ## 当前边界
 
-当前 Explorer 是 desktop-first、本地只读的投研知识终端，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot、raw file serving 或 schema migration。Current View Compare 只做 exact structured diff，不包含 semantic/fuzzy/LLM comparison、AI change summary、timeline 或 thesis-change interpretation。图固定为所选 Node 的 current 1-hop；Production 若没有 Current View、Research Question、Knowledge Gap 或 Node-linked Claim，界面会如实显示空态。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
+当前 Explorer 是 desktop-first、本地只读的投研知识终端，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot、raw file serving 或 schema migration。Current View Compare 只做 exact structured diff；impact discovery 只发现 direct candidates。两者均不包含 semantic/fuzzy/LLM interpretation、影响方向、change-level 判断、Proposal、Current View mutation 或 propagation。图固定为所选 Node 的 current 1-hop；Production 若没有 Current View、Research Question、Knowledge Gap 或 Node-linked Claim，界面会如实显示空态。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
 
 后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。

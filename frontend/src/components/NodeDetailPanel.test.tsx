@@ -95,6 +95,7 @@ function renderPanel(activeTab: DetailTab, onSelect = vi.fn(), onOpenSource = vi
       sourceError={null}
       onTabChange={vi.fn()}
       onSelect={onSelect}
+      onOpenView={vi.fn()}
       onOpenSource={onOpenSource}
       onCloseSource={vi.fn()}
     />,

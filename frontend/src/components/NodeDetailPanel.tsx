@@ -42,6 +42,7 @@ interface NodeDetailPanelProps {
   sourceError: string | null;
   onTabChange: (tab: DetailTab) => void;
   onSelect: (nodeId: string) => void;
+  onOpenView: (nodeId: string) => void;
   onOpenSource: (sourceId: string) => void;
   onCloseSource: () => void;
 }
@@ -252,6 +253,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
     sourceError,
     onTabChange,
     onSelect,
+    onOpenView,
     onOpenSource,
     onCloseSource,
   } = props;
@@ -265,6 +267,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
         error={sourceError}
         onBack={onCloseSource}
         onSelectNode={onSelect}
+        onOpenView={onOpenView}
       />
     );
   }

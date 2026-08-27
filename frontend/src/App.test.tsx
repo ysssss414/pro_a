@@ -11,10 +11,16 @@ import {
   getNode,
   getResearchQuestion,
   getSourceDetail,
+  getSourceImpactCandidates,
   getSources,
   getStats,
 } from "./api/client";
-import type { CurrentViewHistoryResult, CurrentViewResult, NodeDetail } from "./api/types";
+import type {
+  CurrentViewHistoryResult,
+  CurrentViewResult,
+  NodeDetail,
+  SourceDetail,
+} from "./api/types";
 import App from "./App";
 
 vi.mock("./api/client", () => ({
@@ -27,6 +33,7 @@ vi.mock("./api/client", () => ({
   getNode: vi.fn(),
   getResearchQuestion: vi.fn(),
   getSourceDetail: vi.fn(),
+  getSourceImpactCandidates: vi.fn(),
   getSources: vi.fn(),
   getStats: vi.fn(),
   searchNodes: vi.fn(),
@@ -45,6 +52,7 @@ describe("App error boundary", () => {
     vi.mocked(getKnowledgeGaps).mockRejectedValue(unavailable);
     vi.mocked(getResearchQuestion).mockRejectedValue(unavailable);
     vi.mocked(getSourceDetail).mockRejectedValue(unavailable);
+    vi.mocked(getSourceImpactCandidates).mockRejectedValue(unavailable);
     vi.mocked(getSources).mockRejectedValue(unavailable);
   });
 
@@ -238,5 +246,138 @@ describe("App error boundary", () => {
     });
     expect(screen.getByText("Node B Current View.")).toBeInTheDocument();
     expect(screen.queryByText("Stale Node A View.")).not.toBeInTheDocument();
+  });
+
+  it("opens a discovered candidate directly in its existing View tab", async () => {
+    window.history.replaceState(null, "", "/?node=NODE_SOURCE");
+    vi.mocked(getHealth).mockResolvedValue({ status: "ok" });
+    vi.mocked(getStats).mockResolvedValue({
+      active_node_count: 2,
+      alias_count: 0,
+      current_relation_count: 0,
+      current_part_of_count: 0,
+      source_count: 1,
+      claim_count: 1,
+      current_view_count: 1,
+      open_knowledge_gap_count: 0,
+      open_research_question_count: 0,
+    });
+    const sourceNode: NodeDetail = {
+      node_id: "NODE_SOURCE",
+      canonical_name: "Source Node",
+      primary_type: "Product",
+      description: "Starting Node",
+      status: "active",
+      aliases: [],
+      parents: [],
+      children: [],
+      incoming_relations: [],
+      outgoing_relations: [],
+    };
+    const candidateNode: NodeDetail = {
+      ...sourceNode,
+      node_id: "NODE_CANDIDATE",
+      canonical_name: "Candidate Node",
+      description: "Direct candidate",
+    };
+    vi.mocked(getNode).mockImplementation(async (nodeId) => (
+      nodeId === "NODE_SOURCE" ? sourceNode : candidateNode
+    ));
+    vi.mocked(getNeighbors).mockImplementation(async (nodeId) => ({
+      center: nodeId === "NODE_SOURCE"
+        ? { node_id: "NODE_SOURCE", canonical_name: "Source Node", primary_type: "Product" }
+        : { node_id: "NODE_CANDIDATE", canonical_name: "Candidate Node", primary_type: "Product" },
+      nodes: [],
+      edges: [],
+    }));
+    vi.mocked(getClaims).mockResolvedValue([]);
+    vi.mocked(getResearchQuestion).mockResolvedValue(null);
+    vi.mocked(getKnowledgeGaps).mockResolvedValue([]);
+    vi.mocked(getSources).mockImplementation(async (nodeId) => nodeId === "NODE_SOURCE" ? [{
+      source_id: "SRC_IMPACT",
+      title: "Impact Source",
+      original_name: "impact.md",
+      author: "Analyst",
+      organization: "Research Org",
+      publication_time: "2026-02-01",
+      source_type: "research_report",
+      source_rank: "A",
+      provenance: [{
+        origin_path: "claim",
+        role: "subject",
+        link_origin: "claim",
+        evidence_excerpt: "Direct evidence",
+        claim_id: "CLAIM_IMPACT",
+      }],
+    }] : []);
+    const candidateView: CurrentViewResult = {
+      view_id: "VIEW_CANDIDATE",
+      node_id: "NODE_CANDIDATE",
+      version: "v_20260201",
+      status: "official",
+      change_level: "initial",
+      previous_view_id: null,
+      content_md: "Candidate View",
+      content_json: { one_line_conclusion: "Candidate Current View conclusion." },
+      trigger_source_id: null,
+      trigger_claim_ids: [],
+      revision_date: "20260201",
+      revision_seq: 0,
+      accepted_proposal_id: "PROP_CANDIDATE",
+      created_at: "2026-02-01",
+      confirmed_at: "2026-02-01",
+    };
+    vi.mocked(getCurrentViewHistory).mockImplementation(async (nodeId) => ({
+      node_id: nodeId,
+      views: nodeId === "NODE_CANDIDATE" ? [candidateView] : [],
+    }));
+    const sourceDetail: SourceDetail = {
+      source_id: "SRC_IMPACT",
+      title: "Impact Source",
+      original_name: "impact.md",
+      source_type: "research_report",
+      source_rank: "A",
+      origin_type: "local_file",
+      author: "Analyst",
+      organization: "Research Org",
+      publication_time: "2026-02-01",
+      ingested_at: "2026-02-02",
+      ingestion_mode: "standard",
+      analysis_mode: "standard",
+      status: "analyzed",
+      underlying_source_id: "",
+      linked_nodes: [],
+      claims: [],
+    };
+    vi.mocked(getSourceDetail).mockResolvedValue(sourceDetail);
+    vi.mocked(getSourceImpactCandidates).mockResolvedValue({
+      source_id: "SRC_IMPACT",
+      claim_count: 1,
+      candidates: [{
+        node: { node_id: "NODE_CANDIDATE", canonical_name: "Candidate Node", primary_type: "Product" },
+        current_view: { view_id: "VIEW_CANDIDATE", version: "v_20260201", change_level: "initial", revision_date: "20260201" },
+        roles: ["subject"],
+        claims: [{
+          claim_id: "CLAIM_IMPACT",
+          statement: "Direct evidence",
+          status: "current",
+          confidence: 0.9,
+          role: "subject",
+          fact_time: "2026-01-31",
+          publication_time: "2026-02-01",
+        }],
+      }],
+      linked_nodes_without_current_view: [],
+    });
+
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Source Node" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /^Sources/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open Source" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open View" }));
+
+    expect(await screen.findByText("Candidate Current View conclusion.")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "View" })).toHaveAttribute("aria-selected", "true");
+    expect(new URLSearchParams(window.location.search).get("node")).toBe("NODE_CANDIDATE");
   });
 });
