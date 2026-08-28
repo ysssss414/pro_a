@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6B in progress**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6B complete**
 
 ## Completed — Phase 1
 
@@ -110,11 +110,11 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 ### Phase 2.6B — Human Impact Review Surface
 
-状态：**in progress**。在 2.6A deterministic candidates 上增加右栏 Human Impact Review。用户可对 Source → Candidate Node → latest official Current View 形成 `NO_CHANGE`、`MINOR`、`MATERIAL` 或 `THESIS` 判断；Subject / Context / Related attribution boundary 与 Primary Evidence eligibility 保持冻结，Reason 和 Thesis structured reason 做最小确定性校验。Draft 只写浏览器 localStorage，并可导出 `NON-CANONICAL HANDOFF ARTIFACT` JSON；target View 与 candidate Claim-role snapshot 发生变化时阻止 READY export。该阶段不写 `impact_reviews`、Proposal、Current View 或 Production DB，不调用 propagation / recovery / LLM。详见 `docs/PHASE2_6B_HUMAN_IMPACT_REVIEW.md`。
+状态：**complete**。在 2.6A deterministic candidates 上增加右栏 Human Impact Review。用户可对 Source → Candidate Node → latest official Current View 形成 `NO_CHANGE`、`MINOR`、`MATERIAL` 或 `THESIS` 判断；Subject / Context / Related attribution boundary 与 Primary Evidence eligibility 保持冻结，Reason 和 Thesis structured reason 做最小确定性校验。Draft 只写浏览器 localStorage，并可导出 `NON-CANONICAL HANDOFF ARTIFACT` JSON；target View 与 candidate Claim-role snapshot 发生变化时阻止 READY export。该阶段不写 `impact_reviews`、Proposal、Current View 或 Production DB，不调用 propagation / recovery / LLM。真实 FastAPI + frontend Production smoke、384 项 pytest、前端 9 文件 / 37 测试、build 和 compileall 均通过，Production 前后 SHA 完全一致；分支已推送并创建 Draft PR #34。详见 `docs/PHASE2_6B_HUMAN_IMPACT_REVIEW.md`。
 
 ### Next milestone
 
-Phase 2.7A — Controlled Human Review Intake / View Proposal：**planned, not authorized**。Phase 2.6A 已完成并封闭；Phase 2.6B 只允许 local non-canonical review/export，不得 import exported Review、创建 Proposal、修改 Current View、propagate、生成 AI change summary 或 Evidence quality scoring。
+Phase 2.7A — Controlled Human Review Intake / View Proposal：**ready for planning, implementation not authorized**。Phase 2.6A / 2.6B 已完成并封闭；Phase 2.6B 只允许 local non-canonical review/export，不得 import exported Review、创建 Proposal、修改 Current View、propagate、生成 AI change summary 或 Evidence quality scoring。
 
 ## Carried backlog
 

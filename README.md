@@ -19,7 +19,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 
-当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery；Phase 2.6B 正在增加仅浏览器 localStorage 的 Human Impact Review draft/export surface。canonical 内容保持不变。
+当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery；Phase 2.6B 已完成仅浏览器 localStorage 的 Human Impact Review draft/export surface 及真实 Production 只读验收。canonical 内容保持不变。
 
 Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.3A Knowledge Detail & Research Surface 已完成。目标顺序为：
 

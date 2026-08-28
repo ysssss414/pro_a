@@ -2,13 +2,17 @@
 
 ## Status
 
-`PHASE2_6B_COMPLETE = false` — technical acceptance passed; commit, push, and Draft PR verification pending.
+`PHASE2_6B_COMPLETE = true` — technical acceptance, implementation commit, branch push, and Draft PR verification passed.
 
 This phase adds a local-only, non-canonical review surface on top of the deterministic Phase 2.6A Source → Claim → Node → Current View candidates. It records a human handoff artifact in browser `localStorage` and exports JSON from the browser. It does not write Production knowledge.
 
 Branch: `phase2/human-impact-review`
 
 Base: `9967328` — merged Phase 2.6A commit (PR #33).
+
+Implementation commit: `928f033cf741a7b92bac2d7197f104869b4498d6` — `feat: add human impact review surface`.
+
+Draft PR: [#34 — Phase 2.6B: Human Impact Review](https://github.com/ysssss414/pro_a/pull/34), verified `OPEN`, `isDraft=true`, base `main`, head `phase2/human-impact-review`. The pushed implementation SHA matched the local commit before closing acceptance. This follow-up changes acceptance documentation only.
 
 ## Mandatory architecture audit
 
@@ -97,7 +101,7 @@ Still prohibited in this phase: Current View mutation, Proposal intake, Producti
 
 ## Acceptance block
 
-Validated on 2026-08-28 against the real Production database and existing FastAPI API. Final Git publication remains a separate closure gate.
+Validated on 2026-08-28 against the real Production database and existing FastAPI API. All required technical and Git publication gates passed; the PR remains Draft.
 
 ```text
 Human Review Surface = PASS
@@ -129,14 +133,14 @@ Production post-SHA = 581978E1C587B065A6EEF9C980013AF3DE1A9E8A8781857385404C9F61
 Integrity check = ok (before and after)
 Foreign-key violations = 0 (before and after)
 
-PHASE2_7A_READY = NO (pending final Git publication)
+PHASE2_7A_READY = YES
 ```
 
 ### Recovered test environment
 
 Python executable: `.codex-phase26b-venv/Scripts/python.exe` in the repository, using Python **3.12.13**. The original `.venv` Python 3.13 executable no longer exists. The temporary environment reuses all **38 dependency versions** recorded in the original `.venv` distribution metadata; no project dependency definition or application code was changed for recovery. `pip check` reports no broken requirements. The temporary environment remains untracked and excluded from staging.
 
-Full pytest used the existing `tests` collection, an explicit fresh workspace basetemp, workspace-local `TEMP`/`TMP`, and no cache provider:
+Full pytest used the existing `tests` collection (including the unchanged historical untracked `tests/test_direct_impact_candidates.py`, which was not staged), an explicit fresh workspace basetemp, workspace-local `TEMP`/`TMP`, and no cache provider:
 
 ```powershell
 $env:PYTHONPATH = (Resolve-Path src).Path
