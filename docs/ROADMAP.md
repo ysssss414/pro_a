@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6B complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.7A complete**
 
 ## Completed — Phase 1
 
@@ -112,9 +112,11 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete**。在 2.6A deterministic candidates 上增加右栏 Human Impact Review。用户可对 Source → Candidate Node → latest official Current View 形成 `NO_CHANGE`、`MINOR`、`MATERIAL` 或 `THESIS` 判断；Subject / Context / Related attribution boundary 与 Primary Evidence eligibility 保持冻结，Reason 和 Thesis structured reason 做最小确定性校验。Draft 只写浏览器 localStorage，并可导出 `NON-CANONICAL HANDOFF ARTIFACT` JSON；target View 与 candidate Claim-role snapshot 发生变化时阻止 READY export。该阶段不写 `impact_reviews`、Proposal、Current View 或 Production DB，不调用 propagation / recovery / LLM。真实 FastAPI + frontend Production smoke、384 项 pytest、前端 9 文件 / 37 测试、build 和 compileall 均通过，Production 前后 SHA 完全一致；分支已推送并创建 Draft PR #34。详见 `docs/PHASE2_6B_HUMAN_IMPACT_REVIEW.md`。
 
-### Next milestone
+### Phase 2.7A — Controlled Human Review Intake / View Proposal
 
-Phase 2.7A — Controlled Human Review Intake / View Proposal：**ready for planning, implementation not authorized**。Phase 2.6A / 2.6B 已完成并封闭；Phase 2.6B 只允许 local non-canonical review/export，不得 import exported Review、创建 Proposal、修改 Current View、propagate、生成 AI change summary 或 Evidence quality scoring。
+状态：**complete**。新增独立文件 intake：严格验证 Phase 2.6B READY v1 export，PREPARE 只读重验 Source / active Node / latest official View / exact Claim-role snapshot；NO_CHANGE 生成无写入 receipt，其余 decision 原样复制目标 View 为 non-canonical draft。SUBMIT 要求人工实际内容修改，通过现有 deterministic compare helpers 与 frozen Current View validator，并在同一事务内重复 stale/eligibility gates、执行 exact idempotency/conflict 检查，仅在显式 isolated DB 中创建 pending `current_view_change` Proposal。Human provenance 保存在 `payload_json.human_review_handoff`，legacy identifiers 保持空。109 项隔离测试、493 项完整 pytest、前端 9 文件 / 37 测试、build、compileall 与 15 项真实 Production 只读 smoke 均通过；Production 前后 SHA 和全部表计数不变。详见 `docs/PHASE2_7A_HUMAN_REVIEW_INTAKE.md`。
+
+本阶段严格止于 pending Proposal；Production Proposal write 未授权。没有 acceptance UI、official View creation、propagation/recovery、impact queue write、IMA/LLM、Gap/RQ、自动改写或评分。三个既有 content/evidence defer 保持不变；后续行为须另行明确授权。
 
 ## Carried backlog
 

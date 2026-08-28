@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 2.7A Controlled Human Review Intake / View Proposal — 2026-08-28
+
+- Added a dedicated strict v1 human-review file intake and PREPARE/SUBMIT CLI. NO_CHANGE produces a noncanonical no-op receipt; change decisions copy the exact official target into an explicitly human-edit-required draft without rewriting content.
+- Revalidate Source, active Node, latest View via `CURRENT_VIEW_ORDER`, exact candidate Claim-role snapshot and Subject-only Primary eligibility in both phases. Reuse the existing deterministic comparison helpers and frozen Current View validator; preserve guidance/judgment attribution and unresolved evidence boundaries.
+- Store provenance in the existing `current_view_change` payload's `human_review_handoff`. Create pending Proposals only in explicitly isolated databases, with empty legacy identifiers, exact idempotency, conflict rejection, and transactional revalidation/INSERT through `Database.add_proposal`.
+- Keep schema, acceptance, frozen validators, legacy impact/propagation/recovery, frontend and dependencies unchanged. No Production write, official View, impact/audit row, side-effect job, Gap/RQ, LLM, automatic summary or Evidence scoring is created by intake. The three existing content/evidence deferrals remain open.
+- Acceptance: 109 isolated tests; 493 full pytest tests; 9 frontend files / 37 tests; frontend build and compileall passed. Fifteen Production read-only smoke cases passed for MLCC and 昀冢科技. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, with all table counts unchanged, integrity `ok` and zero FK violations.
+
 ## Phase 2.4A Subject-Aware Current View Pilot — 2026-08-26
 
 - Added a deterministic, read-only pilot generator for exactly MLCC and 昀冢科技; it mirrors the frozen `current_view_change` Proposal payload and validates the existing Current View content contract without inserting Production rows.

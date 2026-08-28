@@ -741,7 +741,15 @@ class Database:
         ))
 
     def add_proposal(self, proposal_type: str, payload: dict[str, Any], target_node_id: str | None = None,
-                     reason: str = "", propagation_batch_id: str = "", source_impact_id: str = "") -> str:
+                     reason: str = "", propagation_batch_id: str = "", source_impact_id: str = "", *,
+                     _conn: sqlite3.Connection | None = None) -> str:
+        # Allow intake to keep revalidation and persistence in one caller-owned transaction.
+        # Existing legacy and relation call paths retain their transaction semantics.
+        if _conn is not None and (
+            proposal_type != "current_view_change" or propagation_batch_id or source_impact_id
+            or not _conn.in_transaction
+        ):
+            raise ValueError("Caller transaction requires an isolated current_view_change Proposal")
         if proposal_type == "node_relation":
             if propagation_batch_id or source_impact_id:
                 raise ValueError(
@@ -767,7 +775,8 @@ class Database:
             if existing:
                 return existing["proposal_id"]
         proposal_id = make_id("PROP")
-        self.execute(
+        execute = _conn.execute if _conn is not None else self.execute
+        execute(
             """INSERT INTO proposals(proposal_id,proposal_type,target_node_id,payload_json,status,reason,
                propagation_batch_id,source_impact_id,created_at) VALUES(?,?,?,?,?,?,?,?,?)""",
             (proposal_id, proposal_type, target_node_id, json.dumps(payload, ensure_ascii=False), "pending", reason,
