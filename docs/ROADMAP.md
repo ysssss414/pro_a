@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.7A complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.7C complete**
 
 ## Completed — Phase 1
 
@@ -125,6 +125,14 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 新增仅 GET 的 Human View Proposal queue/detail、原目标 official View → proposed content 确定性 diff 与 computed canonical alignment，Explorer 提供明确 nonofficial/pending、无 acceptance action 的只读 review surface，历史 legacy Proposals 不进入队列。89 项 2.7B、109 项 2.7A、582 项完整 pytest、前端 10 文件 / 49 测试、build、compileall、Production-copy 写入与真实 Production 只读浏览器验收均通过。
 
 **Production write path implemented and isolated-copy validated. No live Production Proposal was created during Phase 2.7B acceptance.** `LIVE_PRODUCTION_PROPOSAL_APPLY_AUTHORIZED = false`；Production 前后 SHA 和全部表计数不变。Proposal modify/revision/reject/accept、official View activation、propagation/recovery、browser write API 与三个既有 content/evidence defer 继续保留；Phase 2.7C 未开展。详见 `docs/PHASE2_7B_PRODUCTION_PROPOSAL_GATEWAY.md`。
+
+### Phase 2.7C — Human Proposal Resolution & Direct Current View Activation
+
+状态：**complete**。新增独立 `human_proposal_resolution` resolver 与严格 v1 `ACCEPT`/`REJECT` resolution artifact。Resolver 在单一事务内重复 2.7A/2.7B canonical、stale、candidate-role、Subject Evidence、actual-change 与 frozen-content gates；ACCEPT 只直接插入一个 official `current_views` row 并更新 Proposal，REJECT 只更新 Proposal。`result_json.human_resolution` 保留完整 artifact、reason 与 terminal metadata；exact replay 幂等，冲突终态阻断。未调用 Proposal/Propagation/Recovery/IMA/LLM manager，不写 side-effect、Impact、Gap、RQ、Markdown 或 schema。
+
+Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与可验证的 resolution metadata；Explorer 仅允许本地草拟/导出 resolution JSON，ACCEPT stale 时阻断，REJECT 仍可导出；没有浏览器写 API。两个 fresh Production copies 已用真实 2.7B gateway → 2.7C CLI 验证 ACCEPT（Proposals 11→12→12，Views 2→3）与 REJECT（11→12→12，Views 2→2）；ACCEPT 除 proposals/current_views 外全部行不变，REJECT 除 proposals 外全部行不变。完整 pytest 657、2.7C 联合后端 273、前端 11 文件 / 56 测试、build、compileall 和 live Production read-only pre/post audit 通过；live Production SHA/全部表计数不变。Playwright Edge 验证真实空队列、隔离副本本地 artifact 导出、ACCEPT 历史及准确 official View 导航、REJECT 历史，只有 GET 请求，控制台零错误。`LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`；Phase 2.7D 未开展。详见 `docs/PHASE2_7C_HUMAN_PROPOSAL_RESOLUTION.md`。
+
+`LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`。Phase 2.7D 仅保留技术 handoff，未开始、未授权。
 
 ## Carried backlog
 

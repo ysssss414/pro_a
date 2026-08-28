@@ -177,6 +177,8 @@ class ViewProposalSummary(BaseModel):
 
 
 class ViewProposalDetail(ViewProposalSummary):
+    proposal_snapshot: dict[str, Any]
+    resolution: dict[str, str] | None
     canonical_alignment: str
     target_official_view: dict[str, Any] | None
     before_current_view: dict[str, Any] | None
@@ -493,9 +495,10 @@ def create_app(
     def view_proposals(
         limit: int = Query(50, ge=1, le=MAX_QUERY_LIMIT),
         offset: int = Query(0, ge=0),
+        status: Literal["pending", "accepted", "rejected"] = "pending",
         query_model: ReadOnlyQuery = Depends(read_model),
     ) -> list[dict]:
-        return query_model.list_view_proposals(limit=limit, offset=offset)
+        return query_model.list_view_proposals(limit=limit, offset=offset, status=status)
 
     @app.get("/api/view-proposals/{proposal_id}", response_model=ViewProposalDetail)
     def view_proposal_detail(

@@ -609,13 +609,15 @@ class ReadOnlyQuery:
             results.append(result)
         return results
 
-    def list_view_proposals(self, *, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+    def list_view_proposals(self, *, limit: int = 50, offset: int = 0, status: str = "pending") -> list[dict[str, Any]]:
         from .view_proposal_review import list_view_proposals
 
         self._validate_page(limit, offset)
+        if status not in {"pending", "accepted", "rejected"}:
+            raise ValueError("status must be pending, accepted or rejected")
         with self.connect() as conn:
             conn.execute("BEGIN")
-            return list_view_proposals(conn, limit, offset)
+            return list_view_proposals(conn, limit, offset, status)
 
     def view_proposal_detail(self, proposal_id: str) -> dict[str, Any] | None:
         from .view_proposal_review import view_proposal_detail

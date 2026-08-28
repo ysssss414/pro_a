@@ -7,9 +7,14 @@ import { ViewProposalReview } from "./components/ViewProposalReview";
 
 vi.mock("./api/client", () => ({ getViewProposal: vi.fn(), getViewProposals: vi.fn() }));
 
-function proposal(decision: "minor" | "material" | "thesis" = "minor", id = "PROP_1"): ViewProposalDetail {
+function proposal(decisionOrOverrides: "minor" | "material" | "thesis" | Partial<ViewProposalDetail> = "minor", id = "PROP_1"): ViewProposalDetail {
+  const overrides = typeof decisionOrOverrides === "string" ? {} : decisionOrOverrides;
+  const decision = typeof decisionOrOverrides === "string" ? decisionOrOverrides : "minor";
+  const proposalId = typeof decisionOrOverrides === "string" ? id : "PROP_1";
   return {
-    proposal_id: id, status: "pending", node_id: "NODE_1", node_name: "MLCC", node_type: "Product",
+    proposal_id: proposalId, status: "pending", node_id: "NODE_1", node_name: "MLCC", node_type: "Product",
+    proposal_snapshot: { proposal_type: "current_view_change", target_node_id: "NODE_1", created_at: "2026-08-28",
+      payload: { proposed_current_view: { one_line_conclusion: "Human proposed conclusion" } } }, resolution: null,
     node_status: "active", node_resolved: true, decision, reason: "Explicit human review reason",
     trigger_source_id: "SRC_1", trigger_source: { source_id: "SRC_1", title: "Reviewed Source",
       publication_time: "2026-08-28", source_rank: "B", source_type: "md", origin_type: "secondary", resolved: true },
@@ -28,6 +33,7 @@ function proposal(decision: "minor" | "material" | "thesis" = "minor", id = "PRO
     context_evidence: [{ claim_id: "CLM_2", resolved: true, statement: "Company Context fact", status: "current", confidence: 0.7,
       source_id: "SRC_1", source_title: "Reviewed Source", source_rank: "B", nature: "company_guidance", attributed_to: "Company", scope: "公司", role: "context" }],
     candidate_claims: [{ claim_id: "CLM_1", role: "subject" }, { claim_id: "CLM_2", role: "context" }],
+    ...overrides,
   };
 }
 
@@ -74,7 +80,7 @@ describe("read-only Human View Proposal review", () => {
       expect(within(detail).getByText("Human logic failure")).toBeInTheDocument();
       expect(within(detail).getByText("Human conclusion change")).toBeInTheDocument();
     }
-    for (const name of [/accept/i, /approve/i, /activate/i, /reject/i, /modify/i, /save/i, /submit/i, /rebase/i, /generate/i]) {
+    for (const name of [/approve/i, /activate/i, /modify/i, /save/i, /submit/i, /rebase/i, /generate/i]) {
       expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
     }
     fireEvent.click(within(detail).getByRole("button", { name: "Open Source" }));
@@ -116,5 +122,51 @@ describe("read-only Human View Proposal review", () => {
     expect(signal?.aborted).toBe(true);
     await act(async () => resolveOld(proposal()));
     expect(screen.getByText("Human invalidated assumption")).toBeInTheDocument();
+  });
+
+  it("revalidates before local ACCEPT export and exports no write request", async () => {
+    const reviewed = proposal();
+    vi.mocked(getViewProposals).mockResolvedValue([reviewed]);
+    vi.mocked(getViewProposal).mockResolvedValue(reviewed);
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    render(<ViewProposalReview onOpenSource={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /MLCC · MINOR/ }));
+    fireEvent.change(await screen.findByLabelText("Resolution action"), { target: { value: "ACCEPT" } });
+    fireEvent.change(screen.getByLabelText("Resolution Reason"), { target: { value: "Human accepted" } });
+    fireEvent.click(screen.getByRole("button", { name: "Export Resolution JSON" }));
+    expect(await screen.findByText(/READY resolution exported locally/)).toBeInTheDocument();
+    expect(getViewProposal).toHaveBeenCalledTimes(2);
+    expect(createUrl).toHaveBeenCalled();
+    expect(click).toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it("blocks ACCEPT after fresh stale alignment while leaving REJECT export available", async () => {
+    const reviewed = proposal();
+    const stale = { ...reviewed, canonical_alignment: "STALE_TARGET_VIEW" };
+    vi.mocked(getViewProposals).mockResolvedValue([reviewed]);
+    vi.mocked(getViewProposal).mockResolvedValueOnce(reviewed).mockResolvedValueOnce(stale);
+    render(<ViewProposalReview onOpenSource={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /MLCC · MINOR/ }));
+    fireEvent.change(await screen.findByLabelText("Resolution action"), { target: { value: "ACCEPT" } });
+    fireEvent.change(screen.getByLabelText("Resolution Reason"), { target: { value: "Human decision" } });
+    fireEvent.click(screen.getByRole("button", { name: "Export Resolution JSON" }));
+    expect(await screen.findByText(/ACCEPT READY export blocked/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export Resolution JSON" })).toBeDisabled();
+  });
+
+  it("hides resolution controls for accepted history and shows the direct View result", async () => {
+    const accepted = proposal({ status: "accepted", resolution: {
+      action: "ACCEPT", reason: "Human accepted", resolved_at: "2026-08-28T12:00:00", activation_scope: "DIRECT_VIEW_ONLY",
+      view_id: "VIEW_NEW", version: "v_20260828_01",
+    } });
+    vi.mocked(getViewProposals).mockResolvedValue([accepted]);
+    vi.mocked(getViewProposal).mockResolvedValue(accepted);
+    render(<ViewProposalReview onOpenSource={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: /MLCC · MINOR/ }));
+    expect(await screen.findByText("Official Current View created · Direct View Activation Only")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Resolution action")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Export Resolution JSON" })).not.toBeInTheDocument();
   });
 });

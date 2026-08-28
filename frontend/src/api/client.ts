@@ -16,6 +16,7 @@ import type {
   StatsResponse,
   ViewProposalDetail,
   ViewProposalSummary,
+  ProposalStatus,
 } from "./types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -179,8 +180,9 @@ export function getClaimImpactCandidates(
   );
 }
 
-export function getViewProposals(signal?: AbortSignal, offset = 0): Promise<ViewProposalSummary[]> {
-  return request<ViewProposalSummary[]>(`/api/view-proposals?limit=50&offset=${offset}`, signal);
+export function getViewProposals(signal?: AbortSignal, offset = 0, status: ProposalStatus = "pending"): Promise<ViewProposalSummary[]> {
+  const filter = status === "pending" ? "" : `&status=${status}`;
+  return request<ViewProposalSummary[]>(`/api/view-proposals?limit=50&offset=${offset}${filter}`, signal);
 }
 
 export function getViewProposal(proposalId: string, signal?: AbortSignal): Promise<ViewProposalDetail> {

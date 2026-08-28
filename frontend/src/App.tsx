@@ -38,6 +38,7 @@ function emptyKnowledgeErrors(): KnowledgeErrors {
 
 export default function App() {
   const [surface, setSurface] = useState("explorer");
+  const [requestedViewId, setRequestedViewId] = useState<string | null>(null);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -88,6 +89,7 @@ export default function App() {
   }, []);
 
   const selectNode = useCallback((nodeId: string) => {
+    setRequestedViewId(null);
     selectionController.current?.abort();
     sourceController.current?.abort();
     const controller = new AbortController();
@@ -216,6 +218,13 @@ export default function App() {
     openSource(sourceId);
   }, [selectNode, openSource]);
 
+  const openOfficialView = useCallback((nodeId: string, viewId: string) => {
+    selectNode(nodeId);
+    setRequestedViewId(viewId);
+    setActiveTab("view");
+    setSurface("explorer");
+  }, [selectNode]);
+
   useEffect(() => {
     void loadStatus();
     return () => statusController.current?.abort();
@@ -275,7 +284,7 @@ export default function App() {
         </div>
       )}
 
-      {surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} /> : <main className="workspace-grid">
+      {surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
         <SearchPanel selectedNodeId={selectedNodeId} onSelect={selectNode} />
         <GraphPanel
           graph={graph}
@@ -289,6 +298,7 @@ export default function App() {
           claims={claims}
           sources={sources}
           currentViews={currentViews}
+          requestedViewId={requestedViewId}
           researchQuestion={researchQuestion}
           knowledgeGaps={knowledgeGaps}
           activeTab={activeTab}

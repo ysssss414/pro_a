@@ -56,13 +56,25 @@ def _summary(conn: sqlite3.Connection, row: sqlite3.Row, payload: dict) -> dict:
     }
 
 
-def list_view_proposals(conn: sqlite3.Connection, limit: int, offset: int) -> list[dict]:
+def proposal_snapshot(row: sqlite3.Row, payload: dict) -> dict:
+    return {"proposal_type": row["proposal_type"], "target_node_id": row["target_node_id"],
+            "created_at": row["created_at"], "payload": payload}
+
+
+def list_view_proposals(conn: sqlite3.Connection, limit: int, offset: int, status: str = "pending") -> list[dict]:
     # Filter provenance before pagination: malformed/legacy rows never occupy queue slots.
+    from .human_proposal_resolution import resolution_result
+
+    terminal_result = resolution_result if status in {"accepted", "rejected"} else None
     rows = conn.execute(
-        """SELECT * FROM proposals WHERE proposal_type='current_view_change' AND status='pending'
-           ORDER BY created_at DESC,proposal_id DESC""",
+        """SELECT * FROM proposals WHERE proposal_type='current_view_change' AND status=?
+           ORDER BY created_at DESC,proposal_id DESC""", (status,),
     )
-    valid = [(row, payload) for row in rows if (payload := _human_payload(row)) is not None]
+    valid = []
+    for row in rows:
+        payload = _human_payload(row)
+        if payload is not None and (terminal_result is None or terminal_result(conn, row, payload) is not None):
+            valid.append((row, payload))
     return [_summary(conn, row, payload) for row, payload in valid[offset:offset + limit]]
 
 
@@ -79,6 +91,8 @@ def _evidence(conn: sqlite3.Connection, ids: list[str], node_id: str) -> list[di
 
 
 def view_proposal_detail(conn: sqlite3.Connection, proposal_id: str) -> dict[str, Any] | None:
+    from .human_proposal_resolution import resolution_result
+
     row = conn.execute("SELECT * FROM proposals WHERE proposal_id=?", (proposal_id,)).fetchone()
     if row is None or (payload := _human_payload(row)) is None:
         return None
@@ -93,8 +107,17 @@ def view_proposal_detail(conn: sqlite3.Connection, proposal_id: str) -> dict[str
         (payload["previous_view_id"], payload["node_id"], payload["previous_version"]),
     ).fetchone()
     base_view = ReadOnlyQuery._current_view_result(base) if base else None
+    result = resolution_result(conn, row, payload) if row["status"] in {"accepted", "rejected"} else None
+    if row["status"] in {"accepted", "rejected"} and result is None:
+        return None
+    resolution = None
+    if result:
+        resolution = {key: result["human_resolution"][key] for key in ("action", "reason", "resolved_at")}
+        resolution.update(activation_scope=result["activation_scope"], view_id=result.get("view_id", ""),
+                          version=result.get("version", ""))
     return {
         **_summary(conn, row, payload), "canonical_alignment": alignment,
+        "proposal_snapshot": proposal_snapshot(row, payload), "resolution": resolution,
         "target_official_view": ({key: base_view[key] for key in
                                   ("view_id", "node_id", "version", "revision_date", "change_level")} if base_view else None),
         "before_current_view": base_view["content_json"] if base_view else None,

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 
 import { getViewProposal, getViewProposals } from "../api/client";
-import type { ProposalEvidence, ViewProposalDetail, ViewProposalSummary } from "../api/types";
+import type { ProposalEvidence, ProposalStatus, ViewProposalDetail, ViewProposalSummary } from "../api/types";
 import { buildCurrentViewPresentation } from "../currentViewPresentation";
 import { CurrentViewContentChanges } from "./CurrentViewCompare";
+import { ProposalResolutionDraft } from "./ProposalResolutionDraft";
 
 function Evidence({ title, items }: { title: string; items: ProposalEvidence[] }) {
   return (
@@ -20,9 +21,11 @@ function Evidence({ title, items }: { title: string; items: ProposalEvidence[] }
   );
 }
 
-export function ViewProposalReview({ onOpenSource }: {
+export function ViewProposalReview({ onOpenSource, onOpenOfficialView }: {
   onOpenSource: (sourceId: string, nodeId: string) => void;
+  onOpenOfficialView?: (nodeId: string, viewId: string) => void;
 }) {
+  const [status, setStatus] = useState<ProposalStatus>("pending");
   const [proposals, setProposals] = useState<ViewProposalSummary[]>([]);
   const [offset, setOffset] = useState(0);
   const [listLoading, setListLoading] = useState(true);
@@ -38,12 +41,12 @@ export function ViewProposalReview({ onOpenSource }: {
     setListError(null);
     setProposals([]);
     setSelectedId(null);
-    getViewProposals(controller.signal, offset)
+    getViewProposals(controller.signal, offset, status)
       .then((rows) => { if (!controller.signal.aborted) setProposals(rows); })
       .catch(() => { if (!controller.signal.aborted) setListError("Unable to load Human View Proposals."); })
       .finally(() => { if (!controller.signal.aborted) setListLoading(false); });
     return () => controller.abort();
-  }, [offset]);
+  }, [offset, status]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,11 +72,16 @@ export function ViewProposalReview({ onOpenSource }: {
       <section className="proposal-list-panel" aria-labelledby="proposal-queue-heading">
         <div className="panel-heading"><div><p className="eyebrow">Read-only review</p>
           <h2 id="proposal-queue-heading">Human View Proposals</h2></div></div>
-        <p>Pending proposals only. No acceptance action in Phase 2.7B.</p>
+        <p>Read-only canonical data. Resolution drafting and export stay local.</p>
+        <nav className="proposal-status-filter" aria-label="Proposal status">
+          {(["pending", "accepted", "rejected"] as const).map((value) => <button type="button" key={value}
+            aria-pressed={status === value} onClick={() => { setStatus(value); setOffset(0); }}>
+            {value[0].toUpperCase() + value.slice(1)}</button>)}
+        </nav>
         {listLoading && <p role="status">Loading Human View Proposals…</p>}
         {listError && <p role="alert">{listError}</p>}
         {!listLoading && !listError && proposals.length === 0 && (
-          <p className="tab-empty">{offset === 0 ? "No pending Human View Proposals" : "No pending Human View Proposals on this page"}</p>
+          <p className="tab-empty">No {status} Human View Proposals{offset === 0 ? "" : " on this page"}</p>
         )}
         <ul className="proposal-list">
           {proposals.map((proposal) => <li key={proposal.proposal_id}>
@@ -95,12 +103,28 @@ export function ViewProposalReview({ onOpenSource }: {
         {detailError && <p role="alert">{detailError}</p>}
         {detail && <>
           <div className="panel-heading"><div><p className="eyebrow">{detail.node_type}</p><h2>{detail.node_name}</h2></div></div>
-          <p className="proposal-boundary">{detail.status.toUpperCase()} — NOT OFFICIAL CURRENT VIEW</p>
-          <p>No acceptance action in Phase 2.7B</p>
+          <p className="proposal-boundary">{detail.status === "pending" ? "PENDING — NOT OFFICIAL CURRENT VIEW" : detail.status.toUpperCase()}</p>
+          {detail.status === "pending" ? <ProposalResolutionDraft key={detail.proposal_id} proposal={detail} /> :
+            <section className="current-view-section" aria-label="Human Resolution">
+              <h3>Human Resolution</h3>
+              {detail.resolution ? <>
+                <p>{detail.resolution.action} · {detail.resolution.resolved_at}</p>
+                <p>{detail.resolution.reason}</p>
+                {detail.resolution.activation_scope === "DIRECT_VIEW_ONLY" ? <>
+                  <p>Official Current View created · Direct View Activation Only</p>
+                  <p>Propagation not run · Filesystem materialization deferred</p>
+                  <p>{detail.resolution.view_id} · {detail.resolution.version}</p>
+                  {onOpenOfficialView && <button type="button" onClick={() =>
+                    onOpenOfficialView(detail.node_id, detail.resolution!.view_id)}>Open Official View</button>}
+                </> : <p>No Current View created</p>}
+              </> : <p>Resolution provenance unavailable.</p>}
+            </section>}
           <p className={detail.canonical_alignment === "CURRENT" ? "proposal-alignment" : "proposal-alignment is-stale"}
             role={detail.canonical_alignment === "CURRENT" ? "status" : "alert"}>
             Canonical alignment: <strong>{detail.canonical_alignment}</strong>
-            {detail.canonical_alignment !== "CURRENT" && " — Canonical state changed. No automatic rebase or status update."}
+            {detail.canonical_alignment !== "CURRENT" && (detail.status === "pending"
+              ? " — Canonical state changed. No automatic rebase or status update."
+              : " — Alignment compares the original review target; terminal history is unchanged.")}
           </p>
           <dl className="metadata-grid view-metadata">
             <div><dt>Proposal</dt><dd>{detail.proposal_id}</dd></div>

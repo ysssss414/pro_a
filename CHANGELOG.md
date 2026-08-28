@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 2.7C Human Proposal Resolution & Direct Current View Activation — 2026-08-28
+
+- Added a strict `human_view_proposal_resolution` v1 artifact and an independent ACCEPT/REJECT resolver. Resolution revalidates the 2.7A/2.7B canonical, stale, candidate-role, Subject Evidence, actual-change and frozen-content gates; exact terminal replay is idempotent and conflicting terminal decisions are blocked.
+- ACCEPT directly inserts one official `current_views` record through `create_official_view_record` and updates only Proposal status/result/resolved_at. REJECT updates only Proposal status/result/resolved_at. Human resolution provenance and reason are preserved; legacy identifiers, payload/reason, side-effect/impact tables, schema, propagation, IMA/LLM and Markdown files remain untouched.
+- Added GET-only pending/accepted/rejected Proposal history and terminal resolution metadata. The Explorer can only revalidate and export a local resolution JSON; stale ACCEPT is blocked, REJECT remains available, and direct official View navigation is exposed for accepted history.
+- Acceptance: full pytest **657 passed**; Phase 2.7C joint backend **273 passed**; frontend **11 files / 56 tests passed**; build and compileall passed. Fresh isolated-copy lifecycle passed ACCEPT (Proposals 11→12→12, Views 2→3) and REJECT (11→12→12, Views 2→2). ACCEPT preserved all rows outside proposals/current_views; REJECT preserved all rows outside proposals. No Current View Markdown was generated.
+- Live Production was read-only: pre/post SHA `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, all table counts unchanged, integrity `ok`, zero FK violations and no sidecars. Playwright Edge smoke passed the live empty queue, isolated local artifact export/read-only preview, accepted history/exact official View navigation, and rejected history. All API requests were GET; console errors/warnings were zero. Temporary browser/services were closed and the final Production and copy hashes remained unchanged.
+- `LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`; no live resolution was applied. Phase 2.7D remains a separate, unauthorized technical handoff.
+
 ## Phase 2.7B Controlled Production Proposal Gateway & Read-Only Review — 2026-08-28
 
 - Added explicit configured-Production preview/apply CLI with shared Phase 2.7A validation, transaction-bound stale checks, exact pending idempotency/conflict protection and an INSERT-proposals-only SQLite authorizer. Preserved the isolated submission boundary and frozen content validator.
