@@ -1,11 +1,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getSourceImpactCandidates } from "../api/client";
+import { getCurrentView, getSourceImpactCandidates } from "../api/client";
 import type { SourceDetail, SourceImpactCandidatesResult } from "../api/types";
 import { SourceDetailPanel } from "./SourceDetailPanel";
 
-vi.mock("../api/client", () => ({ getSourceImpactCandidates: vi.fn() }));
+vi.mock("../api/client", () => ({ getCurrentView: vi.fn(), getSourceImpactCandidates: vi.fn() }));
 
 const source: SourceDetail = {
   source_id: "SRC_1",
@@ -100,12 +100,31 @@ function renderPanel(
 
 describe("SourceDetailPanel", () => {
   beforeEach(() => {
+    window.localStorage.clear();
+    vi.mocked(getCurrentView).mockReset();
     vi.mocked(getSourceImpactCandidates).mockReset();
     vi.mocked(getSourceImpactCandidates).mockResolvedValue({
       source_id: "SRC_1",
       claim_count: 1,
       candidates: [],
       linked_nodes_without_current_view: [],
+    });
+    vi.mocked(getCurrentView).mockResolvedValue({
+      view_id: "VIEW_ALPHA",
+      node_id: "NODE_ALPHA",
+      version: "v_20260201",
+      status: "official",
+      change_level: "minor",
+      previous_view_id: null,
+      content_md: "Alpha Current View",
+      content_json: { one_line_conclusion: "Alpha current judgment." },
+      trigger_source_id: null,
+      trigger_claim_ids: [],
+      revision_date: "20260201",
+      revision_seq: 0,
+      accepted_proposal_id: "PROP_ALPHA",
+      created_at: "2026-02-01",
+      confirmed_at: "2026-02-01",
     });
   });
 
@@ -198,5 +217,61 @@ describe("SourceDetailPanel", () => {
     });
     expect(screen.queryByText("Alpha Product")).not.toBeInTheDocument();
     expect(screen.getByText("Beta Company")).toBeInTheDocument();
+  });
+
+  it("opens a local-only Human Impact Review with empty decision and role boundaries", async () => {
+    vi.mocked(getSourceImpactCandidates).mockResolvedValue({
+      source_id: "SRC_1",
+      claim_count: 2,
+      candidates: [impactResult.candidates[0]],
+      linked_nodes_without_current_view: [],
+    });
+    renderPanel();
+
+    fireEvent.click(await screen.findByRole("button", { name: "Review Impact" }));
+    expect(await screen.findByRole("heading", { name: "Human Impact Review" })).toBeInTheDocument();
+    expect(screen.getByText(/Local draft — not canonical/)).toBeInTheDocument();
+    expect(screen.getByText("Alpha current judgment.")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "No Change" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Minor" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Select primary evidence/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Select context evidence/ })).not.toBeChecked();
+    expect(screen.queryByText("IMPACT_RAW_ID_1")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: "No Change" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Reason" }), {
+      target: { value: "The existing View remains adequate." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Draft Locally" }));
+    expect(await screen.findByText("Local draft saved — not canonical.")).toBeInTheDocument();
+    expect(window.localStorage.length).toBe(1);
+  });
+
+  it("exports only a READY local review artifact", async () => {
+    vi.mocked(getSourceImpactCandidates).mockResolvedValue({
+      source_id: "SRC_1",
+      claim_count: 1,
+      candidates: [impactResult.candidates[0]],
+      linked_nodes_without_current_view: [],
+    });
+    const createObjectURL = vi.fn(() => "blob:review");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
+    const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+
+    renderPanel();
+    fireEvent.click(await screen.findByRole("button", { name: "Review Impact" }));
+    fireEvent.click(await screen.findByRole("radio", { name: "No Change" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Reason" }), {
+      target: { value: "No official View change is required." },
+    });
+    const exportButton = screen.getByRole("button", { name: "Export Review JSON" });
+    expect(exportButton).toBeEnabled();
+    fireEvent.click(exportButton);
+    expect(createObjectURL).toHaveBeenCalledTimes(1);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:review");
+    expect(anchorClick).toHaveBeenCalledTimes(1);
+    anchorClick.mockRestore();
   });
 });

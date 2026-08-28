@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { getSourceImpactCandidates } from "../api/client";
 import type { SourceDetail, SourceImpactCandidatesResult } from "../api/types";
+import { HumanImpactReview } from "./HumanImpactReview";
 
 interface SourceDetailPanelProps {
   sourceId: string;
@@ -29,12 +30,14 @@ export function SourceDetailPanel({
   const [impact, setImpact] = useState<SourceImpactCandidatesResult | null>(null);
   const [impactLoading, setImpactLoading] = useState(true);
   const [impactError, setImpactError] = useState<string | null>(null);
+  const [reviewCandidate, setReviewCandidate] = useState<SourceImpactCandidatesResult["candidates"][number] | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     setImpact(null);
     setImpactLoading(true);
     setImpactError(null);
+    setReviewCandidate(null);
     getSourceImpactCandidates(sourceId, controller.signal)
       .then((result) => {
         if (!controller.signal.aborted) setImpact(result);
@@ -49,6 +52,17 @@ export function SourceDetailPanel({
       });
     return () => controller.abort();
   }, [sourceId]);
+
+  if (source && reviewCandidate) {
+    return (
+      <HumanImpactReview
+        source={source}
+        candidate={reviewCandidate}
+        onCancel={() => setReviewCandidate(null)}
+        onOpenView={onOpenView}
+      />
+    );
+  }
 
   return (
     <section className="detail-panel source-detail-panel" aria-labelledby="source-detail-heading">
@@ -156,7 +170,10 @@ export function SourceDetailPanel({
               <article className="impact-candidate-card" key={candidate.node.node_id}>
                 <div className="impact-candidate-heading">
                   <div><h4>{candidate.node.canonical_name}</h4><span>{candidate.node.primary_type}</span></div>
-                  <button type="button" onClick={() => onOpenView(candidate.node.node_id)}>Open View</button>
+                  <div className="impact-candidate-actions">
+                    <button type="button" onClick={() => setReviewCandidate(candidate)}>Review Impact</button>
+                    <button type="button" onClick={() => onOpenView(candidate.node.node_id)}>Open View</button>
+                  </div>
                 </div>
                 <p>{candidate.claims.length} linked Claims</p>
                 <div className="impact-candidate-meta">
