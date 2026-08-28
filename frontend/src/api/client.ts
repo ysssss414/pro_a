@@ -14,6 +14,8 @@ import type {
   SourceDetail,
   SourceImpactCandidatesResult,
   StatsResponse,
+  ViewProposalDetail,
+  ViewProposalSummary,
 } from "./types";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -175,4 +177,12 @@ export function getClaimImpactCandidates(
     `/api/claims/${encodeURIComponent(claimId)}/impact-candidates`,
     signal,
   );
+}
+
+export function getViewProposals(signal?: AbortSignal, offset = 0): Promise<ViewProposalSummary[]> {
+  return request<ViewProposalSummary[]>(`/api/view-proposals?limit=50&offset=${offset}`, signal);
+}
+
+export function getViewProposal(proposalId: string, signal?: AbortSignal): Promise<ViewProposalDetail> {
+  return request<ViewProposalDetail>(`/api/view-proposals/${encodeURIComponent(proposalId)}`, signal);
 }

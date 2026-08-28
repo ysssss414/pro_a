@@ -157,6 +157,38 @@ class ResearchClaimSummary(BaseModel):
     confidence: float | None
 
 
+class ViewProposalSummary(BaseModel):
+    proposal_id: str
+    status: str
+    node_id: str
+    node_name: str
+    node_type: str
+    node_status: str | None
+    node_resolved: bool
+    decision: Literal["minor", "material", "thesis"]
+    reason: str
+    trigger_source_id: str
+    trigger_source: dict[str, Any]
+    previous_view_id: str
+    previous_version: str
+    created_at: str
+    resolved_at: str | None
+    human_review_origin: Literal[True]
+
+
+class ViewProposalDetail(ViewProposalSummary):
+    canonical_alignment: str
+    target_official_view: dict[str, Any] | None
+    before_current_view: dict[str, Any] | None
+    proposed_current_view: dict[str, Any]
+    diff: dict[str, Any] | None
+    human_review_handoff: dict[str, Any]
+    thesis_break: dict[str, str]
+    primary_evidence: list[dict[str, Any]]
+    context_evidence: list[dict[str, Any]]
+    candidate_claims: list[dict[str, str]]
+
+
 class ResearchQuestionResult(BaseModel):
     rq_id: str
     node_id: str
@@ -456,6 +488,24 @@ def create_app(
             return query_model.node_knowledge_gaps(node_id)
         except KeyError:
             raise HTTPException(status_code=404, detail="Node not found") from None
+
+    @app.get("/api/view-proposals", response_model=list[ViewProposalSummary])
+    def view_proposals(
+        limit: int = Query(50, ge=1, le=MAX_QUERY_LIMIT),
+        offset: int = Query(0, ge=0),
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> list[dict]:
+        return query_model.list_view_proposals(limit=limit, offset=offset)
+
+    @app.get("/api/view-proposals/{proposal_id}", response_model=ViewProposalDetail)
+    def view_proposal_detail(
+        proposal_id: str,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        result = query_model.view_proposal_detail(proposal_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="Human View Proposal not found")
+        return result
 
     @app.get("/api/sources/{source_id}", response_model=SourceDetail)
     def source_detail(

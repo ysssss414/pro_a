@@ -609,6 +609,21 @@ class ReadOnlyQuery:
             results.append(result)
         return results
 
+    def list_view_proposals(self, *, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        from .view_proposal_review import list_view_proposals
+
+        self._validate_page(limit, offset)
+        with self.connect() as conn:
+            conn.execute("BEGIN")
+            return list_view_proposals(conn, limit, offset)
+
+    def view_proposal_detail(self, proposal_id: str) -> dict[str, Any] | None:
+        from .view_proposal_review import view_proposal_detail
+
+        with self.connect() as conn:
+            conn.execute("BEGIN")
+            return view_proposal_detail(conn, proposal_id)
+
     def source_detail(self, source_id: str) -> dict[str, Any] | None:
         with self.connect() as conn:
             source = conn.execute(
