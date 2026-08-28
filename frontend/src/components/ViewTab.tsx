@@ -7,13 +7,14 @@ import { CurrentViewCompare } from "./CurrentViewCompare";
 
 interface ViewTabProps {
   currentViews: CurrentViewResult[];
+  requestedViewId?: string | null;
   primaryType?: string;
   loading: boolean;
   error: string | null;
   onOpenSource: (sourceId: string) => void;
 }
 
-export function ViewTab({ currentViews, primaryType = "", loading, error, onOpenSource }: ViewTabProps) {
+export function ViewTab({ currentViews, requestedViewId, primaryType = "", loading, error, onOpenSource }: ViewTabProps) {
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [baseViewId, setBaseViewId] = useState("");
@@ -26,13 +27,13 @@ export function ViewTab({ currentViews, primaryType = "", loading, error, onOpen
     && currentViews.some((view) => view.view_id === targetViewId);
 
   useEffect(() => {
-    setSelectedViewId(currentViews[0]?.view_id ?? null);
+    setSelectedViewId(requestedViewId ?? currentViews[0]?.view_id ?? null);
     setCompareMode(false);
     setBaseViewId("");
     setTargetViewId("");
     setCompare(null);
     setCompareError(null);
-  }, [currentViews]);
+  }, [currentViews, requestedViewId]);
 
   useEffect(() => {
     if (!compareMode || !nodeId || !comparePairAvailable) return;
@@ -61,6 +62,9 @@ export function ViewTab({ currentViews, primaryType = "", loading, error, onOpen
     ?? null;
   if (loading && !currentView) return <div className="tab-empty">Loading Current View…</div>;
   if (error) return <div className="tab-empty is-error" role="alert">{error}</div>;
+  if (!loading && requestedViewId && !currentViews.some((view) => view.view_id === requestedViewId)) {
+    return <div className="tab-empty is-error" role="alert">Requested official View is unavailable.</div>;
+  }
   if (!currentView) return <div className="tab-empty">No official Current View has been recorded for this Node.</div>;
 
   const previousOfficialView = (targetId: string): CurrentViewResult | null => {

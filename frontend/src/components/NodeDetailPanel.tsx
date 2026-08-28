@@ -29,6 +29,7 @@ interface NodeDetailPanelProps {
   claims: ClaimResult[];
   sources: NodeSource[];
   currentViews: CurrentViewResult[];
+  requestedViewId?: string | null;
   researchQuestion: ResearchQuestionResult | null;
   knowledgeGaps: KnowledgeGapResult[];
   activeTab: DetailTab;
@@ -322,6 +323,7 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
             {activeTab === "view" && (
               <ViewTab
                 currentViews={currentViews}
+                requestedViewId={props.requestedViewId}
                 primaryType={detail.primary_type}
                 loading={knowledgeLoading}
                 error={knowledgeErrors.view}

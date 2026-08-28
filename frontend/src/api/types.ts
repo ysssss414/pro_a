@@ -325,6 +325,25 @@ export interface ClaimImpactCandidatesResult {
 export type CurrentViewContentDiff = Pick<CurrentViewCompareResult,
   "scalar_changes" | "list_changes" | "type_specific_changes" | "has_changes">;
 
+export type ProposalStatus = "pending" | "accepted" | "rejected";
+
+export interface ProposalSnapshot {
+  proposal_type: "current_view_change";
+  target_node_id: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ProposalResolutionArtifact {
+  document_type: "human_view_proposal_resolution";
+  schema_version: "1";
+  status: "READY";
+  proposal_id: string;
+  action: "ACCEPT" | "REJECT";
+  reason: string;
+  proposal_snapshot: ProposalSnapshot;
+}
+
 export interface ViewProposalSummary {
   proposal_id: string;
   status: string;
@@ -360,6 +379,9 @@ export interface ProposalEvidence extends CurrentViewEvidenceRef {
 }
 
 export interface ViewProposalDetail extends ViewProposalSummary {
+  proposal_snapshot: ProposalSnapshot;
+  resolution: { action: "ACCEPT" | "REJECT"; reason: string; resolved_at: string;
+    activation_scope: "DIRECT_VIEW_ONLY" | "NO_VIEW_CREATED"; view_id: string; version: string } | null;
   canonical_alignment: string;
   target_official_view: { view_id: string; node_id: string; version: string; revision_date: string; change_level: string } | null;
   before_current_view: CurrentViewContent | null;
