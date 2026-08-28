@@ -171,20 +171,8 @@ def _view_metadata(view: dict[str, Any], *, target: bool = False) -> dict[str, A
     return result
 
 
-def compare_current_views(
-    base_view: dict[str, Any],
-    target_view: dict[str, Any],
-) -> dict[str, Any]:
-    """Compare BASE → TARGET using exact structured Current View values only."""
-    if base_view.get("status") != "official" or target_view.get("status") != "official":
-        raise CurrentViewCompareValidationError("Only official Current Views can be compared")
-    if base_view.get("node_id") != target_view.get("node_id"):
-        raise CurrentViewCompareValidationError("Current Views must belong to the same Node")
-    if base_view.get("view_id") == target_view.get("view_id"):
-        raise CurrentViewCompareValidationError("Base and target Current Views must be different")
-
-    base_content = base_view.get("content_json")
-    target_content = target_view.get("content_json")
+def compare_view_content(base_content: Any, target_content: Any) -> dict[str, Any]:
+    """Pure content diff; neither value is represented as an official View record."""
     base_content = base_content if isinstance(base_content, dict) else {}
     target_content = target_content if isinstance(target_content, dict) else {}
 
@@ -203,6 +191,31 @@ def compare_current_views(
         base_content.get("type_specific"),
         target_content.get("type_specific"),
     )
+    return {
+        "scalar_changes": scalar_changes,
+        "list_changes": list_changes,
+        "type_specific_changes": type_specific_changes,
+        "has_changes": (
+            any(change["changed"] for change in scalar_changes)
+            or any(change["added"] or change["removed"] for change in list_changes.values())
+            or any(change["status"] != "unchanged" for change in type_specific_changes.values())
+        ),
+    }
+
+
+def compare_current_views(
+    base_view: dict[str, Any],
+    target_view: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare BASE → TARGET using exact structured Current View values only."""
+    if base_view.get("status") != "official" or target_view.get("status") != "official":
+        raise CurrentViewCompareValidationError("Only official Current Views can be compared")
+    if base_view.get("node_id") != target_view.get("node_id"):
+        raise CurrentViewCompareValidationError("Current Views must belong to the same Node")
+    if base_view.get("view_id") == target_view.get("view_id"):
+        raise CurrentViewCompareValidationError("Base and target Current Views must be different")
+
+    content_diff = compare_view_content(base_view.get("content_json"), target_view.get("content_json"))
     evidence = _list_delta(
         _claim_refs(base_view.get("trigger_claim_ids")),
         _claim_refs(target_view.get("trigger_claim_ids")),
@@ -212,9 +225,7 @@ def compare_current_views(
         target_view.get("trigger_source_id"),
     )
     has_changes = (
-        any(change["changed"] for change in scalar_changes)
-        or any(change["added"] or change["removed"] for change in list_changes.values())
-        or any(change["status"] != "unchanged" for change in type_specific_changes.values())
+        content_diff["has_changes"]
         or bool(evidence["added"] or evidence["removed"])
         or trigger_source_change["status"] != "unchanged"
     )
@@ -222,9 +233,7 @@ def compare_current_views(
         "node_id": base_view.get("node_id"),
         "base": _view_metadata(base_view),
         "target": _view_metadata(target_view, target=True),
-        "scalar_changes": scalar_changes,
-        "list_changes": list_changes,
-        "type_specific_changes": type_specific_changes,
+        **content_diff,
         "evidence": evidence,
         "trigger_source_change": trigger_source_change,
         "has_changes": has_changes,

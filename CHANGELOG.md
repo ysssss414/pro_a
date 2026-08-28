@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 2.7B Controlled Production Proposal Gateway & Read-Only Review — 2026-08-28
+
+- Added explicit configured-Production preview/apply CLI with shared Phase 2.7A validation, transaction-bound stale checks, exact pending idempotency/conflict protection and an INSERT-proposals-only SQLite authorizer. Preserved the isolated submission boundary and frozen content validator.
+- Added pre-insert SQLite backup and post-commit receipt with DB identity, hashes, target/evidence and integrity results. Receipt failure explicitly reports a committed pending Proposal rather than claiming rollback.
+- Added GET-only human-provenance Proposal list/detail, original official BASE to proposed-content deterministic diff and computed canonical alignment without status mutation. Historical legacy rows remain excluded and unchanged.
+- Added a small Explorer review surface with pending/nonofficial warnings, reason/Thesis, Evidence and Source navigation; no modify, reject, acceptance or browser write controls. No schema, runtime manager, official View, propagation or impact side effects were introduced.
+- Acceptance: 89 targeted tests, 109 Phase 2.7A regressions, 582 full pytest tests, 10 frontend files / 49 tests, build and compileall passed. The actual CLI write path inserted exactly one pending row in an isolated Production copy; all other copy tables stayed unchanged. Edge browser smoke verified real Production empty state and copy detail/Source navigation using GET only.
+- `LIVE_PRODUCTION_PROPOSAL_APPLY_AUTHORIZED = false`: no live Proposal was created. Production pre/post SHA remained `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, all table counts matched, integrity was `ok` and FK violations were zero. Proposal modify/acceptance and the three existing content/evidence deferrals remain open; Phase 2.7C was not started.
+
 ## Phase 2.7A Controlled Human Review Intake / View Proposal — 2026-08-28
 
 - Added a dedicated strict v1 human-review file intake and PREPARE/SUBMIT CLI. NO_CHANGE produces a noncanonical no-op receipt; change decisions copy the exact official target into an explicitly human-edit-required draft without rewriting content.

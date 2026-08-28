@@ -30,12 +30,14 @@ import {
   type KnowledgeErrors,
 } from "./components/NodeDetailPanel";
 import { SearchPanel } from "./components/SearchPanel";
+import { ViewProposalReview } from "./components/ViewProposalReview";
 
 function emptyKnowledgeErrors(): KnowledgeErrors {
   return { claims: null, sources: null, view: null, research: null, gaps: null };
 }
 
 export default function App() {
+  const [surface, setSurface] = useState("explorer");
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
@@ -208,6 +210,12 @@ export default function App() {
     setActiveTab("view");
   }, [selectNode]);
 
+  const openProposalSource = useCallback((sourceId: string, nodeId: string) => {
+    setSurface("explorer");
+    selectNode(nodeId);
+    openSource(sourceId);
+  }, [selectNode, openSource]);
+
   useEffect(() => {
     void loadStatus();
     return () => statusController.current?.abort();
@@ -232,6 +240,10 @@ export default function App() {
             <span>Knowledge Explorer</span>
           </div>
         </div>
+        <nav className="surface-nav" aria-label="Research surfaces">
+          <button type="button" aria-pressed={surface === "explorer"} onClick={() => setSurface("explorer")}>Explorer</button>
+          <button type="button" aria-pressed={surface === "proposals"} onClick={() => setSurface("proposals")}>Human View Proposals</button>
+        </nav>
         <div className="header-status">
           {stats && (
             <div className="stats-summary" aria-label="Knowledge statistics">
@@ -263,7 +275,7 @@ export default function App() {
         </div>
       )}
 
-      <main className="workspace-grid">
+      {surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} /> : <main className="workspace-grid">
         <SearchPanel selectedNodeId={selectedNodeId} onSelect={selectNode} />
         <GraphPanel
           graph={graph}
@@ -294,7 +306,7 @@ export default function App() {
           onOpenSource={openSource}
           onCloseSource={closeSource}
         />
-      </main>
+      </main>}
     </div>
   );
 }

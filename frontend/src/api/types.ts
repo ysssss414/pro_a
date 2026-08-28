@@ -321,3 +321,53 @@ export interface ClaimImpactCandidatesResult {
   candidates: ImpactCandidate[];
   linked_nodes_without_current_view: LinkedNodeWithoutCurrentView[];
 }
+
+export type CurrentViewContentDiff = Pick<CurrentViewCompareResult,
+  "scalar_changes" | "list_changes" | "type_specific_changes" | "has_changes">;
+
+export interface ViewProposalSummary {
+  proposal_id: string;
+  status: string;
+  node_id: string;
+  node_name: string;
+  node_type: string;
+  node_status: string | null;
+  node_resolved: boolean;
+  decision: "minor" | "material" | "thesis";
+  reason: string;
+  trigger_source_id: string;
+  trigger_source: {
+    source_id: string;
+    title: string;
+    publication_time: string;
+    source_rank: string;
+    source_type: string;
+    origin_type: string;
+    resolved: boolean;
+  };
+  previous_view_id: string;
+  previous_version: string;
+  created_at: string;
+  resolved_at: string | null;
+  human_review_origin: true;
+}
+
+export interface ProposalEvidence extends CurrentViewEvidenceRef {
+  nature: string | null;
+  attributed_to: string | null;
+  scope: string | null;
+  role: ClaimNodeRole | null;
+}
+
+export interface ViewProposalDetail extends ViewProposalSummary {
+  canonical_alignment: string;
+  target_official_view: { view_id: string; node_id: string; version: string; revision_date: string; change_level: string } | null;
+  before_current_view: CurrentViewContent | null;
+  proposed_current_view: CurrentViewContent;
+  diff: CurrentViewContentDiff | null;
+  human_review_handoff: Record<string, unknown>;
+  thesis_break: { invalidated_core_assumption: string; logic_chain_failure: string; conclusion_change: string };
+  primary_evidence: ProposalEvidence[];
+  context_evidence: ProposalEvidence[];
+  candidate_claims: { claim_id: string; role: ClaimNodeRole }[];
+}

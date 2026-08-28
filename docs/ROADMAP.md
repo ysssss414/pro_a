@@ -118,6 +118,14 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 本阶段严格止于 pending Proposal；Production Proposal write 未授权。没有 acceptance UI、official View creation、propagation/recovery、impact queue write、IMA/LLM、Gap/RQ、自动改写或评分。三个既有 content/evidence defer 保持不变；后续行为须另行明确授权。
 
+### Phase 2.7B — Controlled Production Proposal Gateway & Read-Only Review
+
+状态：**complete**。复用 2.7A transaction-safe validation/idempotency helpers，新增显式 configured Production `preview` / `apply-production` CLI；单一事务内重验 canonical/stale/Evidence/actual-change/frozen-content gates，通过窄 SQLite authorizer 仅允许 pending `current_view_change` INSERT。保留 2.7A isolated boundary，写前 SQLite backup、写后 receipt 和 pending conflict protection；无 schema 或 validator 变化。
+
+新增仅 GET 的 Human View Proposal queue/detail、原目标 official View → proposed content 确定性 diff 与 computed canonical alignment，Explorer 提供明确 nonofficial/pending、无 acceptance action 的只读 review surface，历史 legacy Proposals 不进入队列。89 项 2.7B、109 项 2.7A、582 项完整 pytest、前端 10 文件 / 49 测试、build、compileall、Production-copy 写入与真实 Production 只读浏览器验收均通过。
+
+**Production write path implemented and isolated-copy validated. No live Production Proposal was created during Phase 2.7B acceptance.** `LIVE_PRODUCTION_PROPOSAL_APPLY_AUTHORIZED = false`；Production 前后 SHA 和全部表计数不变。Proposal modify/revision/reject/accept、official View activation、propagation/recovery、browser write API 与三个既有 content/evidence defer 继续保留；Phase 2.7C 未开展。详见 `docs/PHASE2_7B_PRODUCTION_PROPOSAL_GATEWAY.md`。
+
 ## Carried backlog
 
 - Relation Candidate generation 漏召回；

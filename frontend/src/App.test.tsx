@@ -15,6 +15,7 @@ import {
   getSourceImpactCandidates,
   getSources,
   getStats,
+  getViewProposals,
 } from "./api/client";
 import type {
   CurrentViewHistoryResult,
@@ -38,6 +39,8 @@ vi.mock("./api/client", () => ({
   getSourceImpactCandidates: vi.fn(),
   getSources: vi.fn(),
   getStats: vi.fn(),
+  getViewProposals: vi.fn(),
+  getViewProposal: vi.fn(),
   searchNodes: vi.fn(),
 }));
 
@@ -64,6 +67,15 @@ describe("App error boundary", () => {
     expect(await screen.findByText("Knowledge API unavailable.")).toBeInTheDocument();
     expect(screen.getByText("Start the local pro_a API and retry.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
+  });
+
+  it("opens the read-only Human View Proposal surface", async () => {
+    vi.mocked(getViewProposals).mockResolvedValue([]);
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Human View Proposals" }));
+    expect(await screen.findByText("No pending Human View Proposals")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Explorer" }));
     expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
   });
 

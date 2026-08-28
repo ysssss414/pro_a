@@ -1,5 +1,6 @@
 import type {
   CurrentViewCompareResult,
+  CurrentViewContentDiff,
   CurrentViewDimensionChange,
   CurrentViewEvidenceRef,
   CurrentViewListChange,
@@ -38,7 +39,7 @@ function DeltaItems({ change }: { change: CurrentViewListChange }) {
   );
 }
 
-function DimensionChange({ change }: { change: CurrentViewDimensionChange }) {
+function DimensionChange({ change, targetLabel = "After" }: { change: CurrentViewDimensionChange; targetLabel?: string }) {
   if (change.kind === "list") {
     return <DeltaItems change={{
       added: change.added ?? [],
@@ -53,7 +54,7 @@ function DimensionChange({ change }: { change: CurrentViewDimensionChange }) {
   return (
     <div className="compare-before-after">
       <div><strong>Before</strong><p>{renderValue(change.before)}</p></div>
-      <div><strong>After</strong><p>{renderValue(change.after)}</p></div>
+      <div><strong>{targetLabel}</strong><p>{renderValue(change.after)}</p></div>
     </div>
   );
 }
@@ -76,14 +77,16 @@ function EvidenceDetails({ items }: { items: CurrentViewEvidenceRef[] }) {
   );
 }
 
-export function CurrentViewCompare({ compare, primaryType }: CurrentViewCompareProps) {
+export function CurrentViewContentChanges({ compare, primaryType, targetLabel = "After" }: {
+  compare: CurrentViewContentDiff; primaryType: string; targetLabel?: string;
+}) {
   const changedScalars = compare.scalar_changes.filter((change) => change.changed);
   const changedLists = Object.entries(compare.list_changes)
     .filter(([, change]) => change.added.length > 0 || change.removed.length > 0);
   const changedDimensions = Object.entries(compare.type_specific_changes)
     .filter(([, change]) => change.status !== "unchanged");
   return (
-    <div className="current-view-compare" aria-label="Current View comparison">
+    <>
       {!compare.has_changes && <p className="tab-empty">No exact structured changes.</p>}
 
       {changedScalars.map((change) => (
@@ -93,7 +96,7 @@ export function CurrentViewCompare({ compare, primaryType }: CurrentViewCompareP
             : primaryType === "Company" ? "投资逻辑变化" : "投资含义变化"}</h4>
           <div className="compare-before-after">
             <div><strong>Before</strong><p>{change.before || "—"}</p></div>
-            <div><strong>After</strong><p>{change.after || "—"}</p></div>
+            <div><strong>{targetLabel}</strong><p>{change.after || "—"}</p></div>
           </div>
         </section>
       ))}
@@ -113,13 +116,21 @@ export function CurrentViewCompare({ compare, primaryType }: CurrentViewCompareP
               <div key={key}>
                 <strong>{productDimensionLabel(key)}</strong>
                 <span>{change.status}</span>
-                <DimensionChange change={change} />
+                <DimensionChange change={change} targetLabel={targetLabel} />
               </div>
             ))}
           </div>
         </section>
       )}
 
+    </>
+  );
+}
+
+export function CurrentViewCompare({ compare, primaryType }: CurrentViewCompareProps) {
+  return (
+    <div className="current-view-compare" aria-label="Current View comparison">
+      <CurrentViewContentChanges compare={compare} primaryType={primaryType} />
       <section className="current-view-section">
         <h4>Evidence Delta</h4>
         <div className="compare-evidence-summary">

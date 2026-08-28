@@ -14,10 +14,7 @@ from .constants import CLAIM_NODE_ROLES
 from .current_view_compare import (
     LIST_FIELDS,
     SCALAR_FIELDS,
-    _content_items,
-    _list_delta,
-    _scalar_delta,
-    _type_specific_delta,
+    compare_view_content,
 )
 from .current_view_pilot import CurrentViewPilotError, _validate_frozen_content_contract
 from .db import CURRENT_VIEW_ORDER, Database
@@ -211,14 +208,7 @@ def prepare_review(db_path: str | Path, review: dict[str, Any]) -> dict[str, Any
 def _has_content_change(before: dict, after: dict) -> bool:
     # Reuse the Phase 2.5B value comparators without pretending a draft is an official View.
     # Governance / evidence metadata alone is deliberately not a human content edit.
-    return (
-        any(_scalar_delta(before.get(k), after.get(k))["changed"] for k in SCALAR_FIELDS)
-        or any(delta["added"] or delta["removed"] for delta in (
-            _list_delta(_content_items(before.get(k)), _content_items(after.get(k))) for k in LIST_FIELDS
-        ))
-        or any(d["status"] != "unchanged" for d in
-               _type_specific_delta(before.get("type_specific"), after.get("type_specific")).values())
-    )
+    return compare_view_content(before, after)["has_changes"]
 
 
 def _validate_content(node: dict, view: dict, claims: list[dict], payload: dict) -> None:
@@ -270,37 +260,53 @@ def submit_review(db_path: str | Path, draft: dict[str, Any], *, isolated: bool 
     production = load_config().db_path.resolve()
     _require(path != production and not (production.exists() and path.samefile(production)),
              "PRODUCTION_WRITE_NOT_AUTHORIZED", "use an isolated fixture or copy")
+    db = Database(path)
+    with db.transaction(immediate=True) as conn:
+        payload = _validate_submission(conn, draft)
+        return _persist_submission(db, conn, payload)
+
+
+def _validate_submission(conn: sqlite3.Connection, draft: dict[str, Any]) -> dict[str, Any]:
+    """Shared deterministic gates, using the caller's current transaction snapshot."""
     _require(isinstance(draft, dict) and isinstance(draft.get("payload"), dict),
              "INVALID_ARTIFACT", "SUBMIT requires a change Proposal draft, not a NO_CHANGE receipt")
     payload = draft["payload"]
     review = payload.get("human_review_handoff")
-    db = Database(path)
-    with db.transaction(immediate=True) as conn:
-        node, view, claims = _canonical_state(conn, review)
-        _require(review["decision"] != "no_change", "NO_PROPOSAL", "NO_CHANGE cannot create a Proposal")
-        expected = _prepared(review, view)
-        _require("proposed_current_view" in payload, "INVALID_ARTIFACT", "missing proposed_current_view")
-        expected["payload"]["proposed_current_view"] = payload["proposed_current_view"]
-        _require(draft == expected, "DRAFT_ENVELOPE_CHANGED", "only proposed_current_view is editable")
-        _validate_content(node, view, claims, payload)
-        existing_id = None
-        for row in conn.execute(
-            """SELECT * FROM proposals WHERE proposal_type='current_view_change'
-               AND target_node_id=? AND status='pending' ORDER BY proposal_id""", (review["node_id"],),
-        ):
-            try:
-                stored = json.loads(row["payload_json"])
-            except ValueError as exc:
-                raise HumanReviewIntakeError("INVALID_PENDING_PROPOSAL", row["proposal_id"]) from exc
-            if not isinstance(stored, dict) or stored.get("human_review_handoff") != review:
-                continue
-            _require(stored == payload and row["propagation_batch_id"] == "" and row["source_impact_id"] == "",
-                     "PENDING_PROPOSAL_CONFLICT", f"pending Proposal {row['proposal_id']} differs; human resolution required")
-            existing_id = existing_id or row["proposal_id"]
-        if existing_id:
-            return {"status": "pending", "proposal_id": existing_id, "created": False}
-        proposal_id = db.add_proposal(
-            "current_view_change", deepcopy(payload), target_node_id=review["node_id"],
-            reason=review["reason"], propagation_batch_id="", source_impact_id="", _conn=conn,
-        )
-        return {"status": "pending", "proposal_id": proposal_id, "created": True}
+    node, view, claims = _canonical_state(conn, review)
+    _require(review["decision"] != "no_change", "NO_PROPOSAL", "NO_CHANGE cannot create a Proposal")
+    expected = _prepared(review, view)
+    _require("proposed_current_view" in payload, "INVALID_ARTIFACT", "missing proposed_current_view")
+    expected["payload"]["proposed_current_view"] = payload["proposed_current_view"]
+    _require(draft == expected, "DRAFT_ENVELOPE_CHANGED", "only proposed_current_view is editable")
+    _validate_content(node, view, claims, payload)
+    return payload
+
+
+def _find_pending_submission(conn: sqlite3.Connection, payload: dict[str, Any]) -> str | None:
+    review = payload["human_review_handoff"]
+    existing_id = None
+    for row in conn.execute(
+        """SELECT * FROM proposals WHERE proposal_type='current_view_change'
+           AND target_node_id=? AND status='pending' ORDER BY proposal_id""", (review["node_id"],),
+    ):
+        try:
+            stored = json.loads(row["payload_json"])
+        except ValueError as exc:
+            raise HumanReviewIntakeError("INVALID_PENDING_PROPOSAL", row["proposal_id"]) from exc
+        if not isinstance(stored, dict) or stored.get("human_review_handoff") != review:
+            continue
+        _require(stored == payload and row["propagation_batch_id"] == "" and row["source_impact_id"] == "",
+                 "PENDING_PROPOSAL_CONFLICT", f"pending Proposal {row['proposal_id']} differs; human resolution required")
+        existing_id = existing_id or row["proposal_id"]
+    return existing_id
+
+
+def _persist_submission(db: Database, conn: sqlite3.Connection, payload: dict[str, Any]) -> dict[str, Any]:
+    existing_id = _find_pending_submission(conn, payload)
+    if existing_id:
+        return {"status": "pending", "proposal_id": existing_id, "created": False}
+    proposal_id = db.add_proposal(
+        "current_view_change", deepcopy(payload), target_node_id=payload["node_id"],
+        reason=payload["human_review_handoff"]["reason"], propagation_batch_id="", source_impact_id="", _conn=conn,
+    )
+    return {"status": "pending", "proposal_id": proposal_id, "created": True}

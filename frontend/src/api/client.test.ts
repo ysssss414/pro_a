@@ -13,6 +13,8 @@ import {
   getSourceDetail,
   getSourceImpactCandidates,
   searchNodes,
+  getViewProposal,
+  getViewProposals,
 } from "./client";
 
 describe("API client", () => {
@@ -35,6 +37,21 @@ describe("API client", () => {
       "/api/health",
       expect.objectContaining({ headers: { Accept: "application/json" } }),
     );
+  });
+
+  it("only makes GET requests for the Human Proposal review API", async () => {
+    fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+    const controller = new AbortController();
+    await getViewProposals(controller.signal, 50);
+    await getViewProposal("PROP / 1", controller.signal);
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      "/api/view-proposals?limit=50&offset=50", "/api/view-proposals/PROP%20%2F%201",
+    ]);
+    for (const [, options] of fetchMock.mock.calls) {
+      expect(options.method ?? "GET").toBe("GET");
+      expect(options.body).toBeUndefined();
+      expect(options.signal).toBe(controller.signal);
+    }
   });
 
   it("throws a typed error for non-2xx responses", async () => {
