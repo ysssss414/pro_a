@@ -11,9 +11,13 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
     path = cfg.root / "generated" / "receipts" / f"{job_id}.md"
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"# Ingestion Receipt — {job_id}", ""]
-    for key in ["status", "mode", "source_id", "title", "archived_path", "ima_status"]:
+    for key in ["status", "mode", "source_id", "title", "source_type", "archived_path", "ima_status"]:
         if key in data:
             lines.append(f"- **{key}**: {data.get(key)}")
+    if data.get("parse_diagnostics") is not None:
+        lines += ["", "## Source Format / Parse Quality", "",
+                  f"- parse_diagnostics: `{json.dumps(data['parse_diagnostics'], ensure_ascii=False)}`"]
+        lines += [f"- {warning}" for warning in data.get("parse_warnings", [])]
     audit = data.get("audit") or {}
     source = audit.get("source") or {}
     nodes = audit.get("nodes") or []

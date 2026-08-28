@@ -105,6 +105,37 @@ def test_source_not_found(client: TestClient):
     assert response.json() == {"detail": "Source not found"}
 
 
+def test_source_parse_observability_allowlists_metadata_and_preserves_pointer(read_db_path: Path, tmp_path: Path):
+    import json
+    from pro_a.db import Database
+    from pro_a.parsers import parse_source_with_diagnostics
+    from multiformat_helpers import write_source
+
+    path = tmp_path / "fixture.pdf"
+    write_source(path)
+    diag = parse_source_with_diagnostics(path).diagnostics
+    db = Database(read_db_path)
+    db.execute("UPDATE sources SET metadata_json=? WHERE source_id='SRC_1'", (json.dumps({
+        "parse_diagnostics": {**diag, "local_path": "PRIVATE_SECRET", "error": "PRIVATE_SECRET"},
+        "ima_credentials": "PRIVATE_SECRET", "analysis_quality": {"path": "PRIVATE_SECRET"},
+    }),))
+    db.execute("UPDATE claims SET structured_json=? WHERE claim_id='CLAIM_1'", (json.dumps({
+        "validation": {"source_locator": {"status": "resolved", "locator": "PAGE:2", "secret": "PRIVATE_SECRET"}},
+        "private": "PRIVATE_SECRET",
+    }),))
+    with TestClient(create_app(read_db_path)) as client:
+        detail = client.get("/api/sources/SRC_1")
+        claims = client.get("/api/nodes/NODE_CHILD/claims")
+    assert detail.status_code == claims.status_code == 200
+    assert detail.json()["parse_diagnostics"] == diag
+    assert detail.json()["claims"][0]["source_locator"]["locator"] == "PAGE:2"
+    node_claim = next(c for c in claims.json() if c["claim_id"] == "CLAIM_1")
+    assert node_claim["source_locator"]["locator"] == "PAGE:2"
+    assert node_claim["evidence_pointer"] == detail.json()["claims"][0]["evidence_pointer"]
+    assert "PRIVATE_SECRET" not in detail.text + claims.text
+    assert "metadata_json" not in detail.text and "archived_path" not in detail.text
+
+
 @pytest.mark.parametrize(
     "path",
     [

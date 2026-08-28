@@ -11,6 +11,7 @@ import type {
 } from "../api/types";
 import { ResearchTab } from "./ResearchTab";
 import { SourceDetailPanel } from "./SourceDetailPanel";
+import { SourceLocatorLabel } from "./SourceLocatorLabel";
 import { ViewTab } from "./ViewTab";
 
 export type DetailTab = "overview" | "view" | "research" | "claims" | "sources";
@@ -164,6 +165,7 @@ function ClaimsTab({
           <div className="evidence-block">
             <span>Evidence</span>
             <blockquote>{claim.evidence_excerpt || "No evidence excerpt recorded."}</blockquote>
+            <SourceLocatorLabel locator={claim.source_locator} />
             {claim.evidence_pointer && <small>{claim.evidence_pointer}</small>}
           </div>
           <button type="button" className="source-summary" onClick={() => onOpenSource(claim.source_id)}>

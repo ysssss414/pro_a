@@ -1,5 +1,14 @@
 # Changelog
 
+## Phase 3A Multi-format Source Ingestion Operational Acceptance — 2026-08-28
+
+- Closed Phase 2: Search, Browse, Trace, Research and Human Current View maintenance are complete. Ask remains deferred until corpus breadth and Source coverage support meaningful retrieval/answer validation.
+- Reused existing text, PDF and Office parsers with a compatible `parse_source` wrapper and deterministic diagnostics. Empty extraction fails before LLM/Inbox consumption; partial PDF page errors remain explicit. Archive and exact-SHA duplicate/upgrade semantics are unchanged.
+- Added locator-aware Source chunking and normalized-exact Evidence locator resolution, including ambiguity. Persisted diagnostics alongside existing Source metadata and locators under Claim validation; preserved existing Evidence pointers and frozen validators/prompts/schema.
+- Added receipt parse summaries and allowlisted read-only Source Detail diagnostics, plus Explorer format/quality and Evidence locator presentation. No viewer, file download, OCR, multimodal parsing, new dependencies or IMA changes.
+- Acceptance: 265 targeted and 731 full pytest tests passed; frontend 11 files / 66 tests, build and compileall passed. PDF/DOCX/XLSX/PPTX standard/deep isolated pipeline smoke and GET-only Edge browser checks passed; six screenshots were visually inspected and temporary services closed.
+- Production stayed byte-identical at `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; all 19 table counts matched, integrity was `ok`, FK violations were 0. No live Production ingestion or IMA sync was authorized or performed. Phase 3B is ready for planning, not authorized.
+
 ## Phase 2.7C Human Proposal Resolution & Direct Current View Activation — 2026-08-28
 
 - Added a strict `human_view_proposal_resolution` v1 artifact and an independent ACCEPT/REJECT resolver. Resolution revalidates the 2.7A/2.7B canonical, stale, candidate-role, Subject Evidence, actual-change and frozen-content gates; exact terminal replay is idempotent and conflicting terminal decisions are blocked.

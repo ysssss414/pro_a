@@ -85,6 +85,28 @@ class SourceMetadata(BaseModel):
     source_rank: str
 
 
+class SourceLocator(BaseModel):
+    status: Literal["resolved", "ambiguous", "unresolved"]
+    locator: str | None = None
+    locators: list[str] | None = None
+
+
+class ParseDiagnostics(BaseModel):
+    format: str
+    parser: str
+    locator_scheme: str
+    unit_type: str
+    file_size: int
+    total_units: int
+    text_units: int
+    error_units: int
+    empty_units: int
+    extracted_chars: int
+    empty_extraction: bool
+    partial_parse: bool
+    image_only_or_no_extractable_text: bool
+
+
 class ClaimResult(BaseModel):
     claim_id: str
     statement: str
@@ -98,6 +120,7 @@ class ClaimResult(BaseModel):
     scope: str
     evidence_pointer: str
     evidence_excerpt: str
+    source_locator: SourceLocator | None = None
     source_id: str
     link_role: Literal["subject", "context", "related"]
     source: SourceMetadata
@@ -248,6 +271,7 @@ class SourceClaim(BaseModel):
     scope: str
     evidence_pointer: str
     evidence_excerpt: str
+    source_locator: SourceLocator | None = None
     linked_nodes: list[SourceClaimNode]
 
 
@@ -266,6 +290,8 @@ class SourceDetail(BaseModel):
     analysis_mode: str
     status: str
     underlying_source_id: str
+    parse_diagnostics: ParseDiagnostics | None = None
+    parse_warnings: list[str]
     linked_nodes: list[SourceLinkedNode]
     claims: list[SourceClaim]
 

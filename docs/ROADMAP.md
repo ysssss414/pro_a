@@ -1,6 +1,8 @@
-# pro_a Roadmap — Phase 2 Knowledge Research Surface
+# pro_a Roadmap — Source Expansion & External Knowledge Integration
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.7C complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete**
+
+Next: **Phase 3B — IMA Integration Operational Acceptance: ready for planning; not authorized.**
 
 ## Completed — Phase 1
 
@@ -23,7 +25,7 @@ Phase 1.1A 完成经人工 adjudication 的 Node、alias 与四条 structural `p
 
 Closure 见 `docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md` 与 `docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`。
 
-## Started — Phase 2 Knowledge Exploration & Interaction Layer
+## Completed — Phase 2 Knowledge Exploration & Interaction Layer
 
 Phase 2 在 canonical SQLite knowledge state 上建立本地交互层，顺序为：
 
@@ -35,7 +37,15 @@ Search
 → Ask
 ```
 
-优先 deterministic knowledge interaction；`Ask` 晚于可验证的 Search / Browse / Trace / Research，不以 chatbot 作为起点。
+收口依据：Search = complete；Browse = complete；Trace = complete；Research = complete；Human Current View maintenance workflow = complete（含 2.7A–2.7C 的人工 review → Proposal → resolution / direct official View activation）。
+
+**Ask = deferred，不是取消。**
+
+Ask is intentionally deferred until corpus breadth and Source coverage improve.
+Building an answer layer over the current very small Production corpus would not
+provide meaningful retrieval/answer quality validation.
+
+`DEFER_ASK_UNTIL_CORPUS_EXPANSION = true`。以下保留 Phase 2 各子阶段的历史验收记录；其历史 handoff 不构成新的阶段授权。
 
 ### Phase 2.0 — kickoff documentation
 
@@ -132,7 +142,41 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与可验证的 resolution metadata；Explorer 仅允许本地草拟/导出 resolution JSON，ACCEPT stale 时阻断，REJECT 仍可导出；没有浏览器写 API。两个 fresh Production copies 已用真实 2.7B gateway → 2.7C CLI 验证 ACCEPT（Proposals 11→12→12，Views 2→3）与 REJECT（11→12→12，Views 2→2）；ACCEPT 除 proposals/current_views 外全部行不变，REJECT 除 proposals 外全部行不变。完整 pytest 657、2.7C 联合后端 273、前端 11 文件 / 56 测试、build、compileall 和 live Production read-only pre/post audit 通过；live Production SHA/全部表计数不变。Playwright Edge 验证真实空队列、隔离副本本地 artifact 导出、ACCEPT 历史及准确 official View 导航、REJECT 历史，只有 GET 请求，控制台零错误。`LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`；Phase 2.7D 未开展。详见 `docs/PHASE2_7C_HUMAN_PROPOSAL_RESOLUTION.md`。
 
-`LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`。Phase 2.7D 仅保留技术 handoff，未开始、未授权。
+`LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`。历史 Phase 2.7D 技术 handoff 未开始、未授权；Phase 2 已总体收口，当前路线转入 Source 扩张。
+
+## Phase 3 — Source Expansion & External Knowledge Integration
+
+### Phase 3A — Multi-format Source Ingestion Operational Acceptance (PDF-first)
+
+状态：**complete**。复用所有既有 parser，新增 backward-compatible diagnostics API，明确 standard/deep parse-before-consume 与 empty-extraction fail-closed 合同；PDF 页错误保留稳定标记并允许有有效文本的 partial extraction。archive、SHA duplicate 与 archive → standard → deep 的既有升级语义不变。
+
+新增 locator-aware 主分块和 deterministic normalized-exact Evidence locator；歧义不选择首个命中，已有 pointer 不覆盖。diagnostics 与既有 Source metadata 合并，receipt 和只读 Source Detail 可观察；Explorer 显示格式、解析质量、partial warning 和 Evidence 定位。没有 schema、LLM extraction contract、frozen validator、IMA semantics 或 Production 变化。
+
+验收：265 项联合 targeted、731 项完整 pytest、前端 11 文件 / 66 项测试、build、compileall 通过；四种 PDF/Office 格式完成隔离 standard/deep 真实 pipeline smoke。Edge 只读浏览器验收和六张截图检查通过；Production 实际 pre/post SHA、全部表计数相同，integrity `ok`，FK 违规 0。详见 `docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md`。
+
+### Phase 3B — IMA Integration Operational Acceptance
+
+状态：**ready for planning; not authorized**。仅确认现有归档原件仍保留扩展名和原始字节，可作为未来 IMA upload input。真实 `create_media`、COS upload、`add_knowledge`、KB 修改与 live sync 均未执行；必须独立规划和授权。
+
+### Later — not started
+
+Scanned PDF / image / multimodal、source-version handling、table/chart extraction quality 留待后续。Phase 3A 不授权 OCR、vision model、RAG、Ask/chatbot、embedding/vector DB、PDF viewer 或 schema migration。
+
+```text
+DEFER_ASK_UNTIL_CORPUS_EXPANSION = true
+DEFER_SCANNED_PDF_OCR = true
+DEFER_IMAGE_MULTIMODAL = true
+DEFER_PDF_TABLE_STRUCTURE_EXTRACTION = true
+DEFER_CHART_EXTRACTION = true
+DEFER_LIVE_IMA_SYNC = true
+DEFER_PROPOSAL_MODIFY = true
+DEFER_PROPAGATION = true
+DEFER_CURRENT_VIEW_FILE_MATERIALIZATION = true
+DEFER_BROWSER_PRODUCTION_WRITE = true
+DEFER_CANONICAL_CONTENT_DEDUP = true
+DEFER_EVIDENCE_BOUNDARY_CONTENT_QUALITY = true
+DEFER_EVIDENCE_QUALITY_METADATA = true
+```
 
 ## Carried backlog
 
@@ -144,7 +188,7 @@ Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与�
 - 更可靠的表格、图表、多模态与 source-version 处理；
 - 正式 IMA integration acceptance 与更高层 review UI。
 
-这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 2.3A Research Surface。
+这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 3A 验收范围。
 
 ## Decision rule
 

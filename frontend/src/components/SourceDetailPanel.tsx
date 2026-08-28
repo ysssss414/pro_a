@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getSourceImpactCandidates } from "../api/client";
 import type { SourceDetail, SourceImpactCandidatesResult } from "../api/types";
 import { HumanImpactReview } from "./HumanImpactReview";
+import { SourceLocatorLabel } from "./SourceLocatorLabel";
 
 interface SourceDetailPanelProps {
   sourceId: string;
@@ -16,6 +17,11 @@ interface SourceDetailPanelProps {
 
 function formatConfidence(value: number | null): string {
   return value === null ? "—" : `${Math.round(value * 100)}%`;
+}
+
+function formatUnits(unit: string, count: number): string {
+  const labels: Record<string, string> = { page: "page", slide: "slide", row: "row", paragraph_or_table_row: "paragraph / table row", document: "document" };
+  return `${count} ${labels[unit] ?? "unit"}${count === 1 ? "" : "s"}`;
 }
 
 export function SourceDetailPanel({
@@ -106,6 +112,24 @@ export function SourceDetailPanel({
           </article>
 
           <section className="source-detail-section">
+            <h3>Source Format / Parse Quality</h3>
+            {source.parse_diagnostics ? (
+              <>
+                <p><strong>{source.parse_diagnostics.format.toUpperCase()}</strong> · {formatUnits(source.parse_diagnostics.unit_type, source.parse_diagnostics.total_units)}</p>
+                <dl className="source-metadata">
+                  <div><dt>Text units</dt><dd>{source.parse_diagnostics.text_units}</dd></div>
+                  <div><dt>Parse errors</dt><dd>{source.parse_diagnostics.error_units}</dd></div>
+                  <div><dt>Empty units</dt><dd>{source.parse_diagnostics.empty_units}</dd></div>
+                  <div><dt>Locator</dt><dd>{source.parse_diagnostics.locator_scheme}</dd></div>
+                </dl>
+                {source.parse_diagnostics.partial_parse && <p className="module-error">Partial extraction · {formatUnits(source.parse_diagnostics.unit_type, source.parse_diagnostics.error_units)} could not be parsed.</p>}
+                {source.parse_diagnostics.empty_extraction && <p className="module-error">No extractable text</p>}
+                {source.parse_diagnostics.image_only_or_no_extractable_text && <p className="empty-inline">OCR / multimodal parsing not available yet</p>}
+              </>
+            ) : <p className="empty-inline">Parse diagnostics unavailable for this legacy or archive-only Source.</p>}
+          </section>
+
+          <section className="source-detail-section">
             <div className="section-title-row">
               <h3>Linked Nodes</h3>
               <span className="count-label">{source.linked_nodes.length}</span>
@@ -140,6 +164,7 @@ export function SourceDetailPanel({
                 <div className="card-badges"><span>{claim.nature}</span><span>{claim.status}</span><span>{formatConfidence(claim.confidence)}</span></div>
                 <h4>{claim.statement}</h4>
                 <blockquote>{claim.evidence_excerpt || "No evidence excerpt recorded."}</blockquote>
+                <SourceLocatorLabel locator={claim.source_locator} />
                 {claim.linked_nodes.length > 0 && (
                   <div className="claim-node-links">
                     <span>Linked Nodes</span>

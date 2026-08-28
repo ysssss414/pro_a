@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getCurrentView, getSourceImpactCandidates } from "../api/client";
-import type { SourceDetail, SourceImpactCandidatesResult } from "../api/types";
+import type { ParseDiagnostics, SourceDetail, SourceImpactCandidatesResult, SourceLocator } from "../api/types";
 import { SourceDetailPanel } from "./SourceDetailPanel";
 
 vi.mock("../api/client", () => ({ getCurrentView: vi.fn(), getSourceImpactCandidates: vi.fn() }));
@@ -83,11 +83,12 @@ const impactResult: SourceImpactCandidatesResult = {
 function renderPanel(
   sourceId = "SRC_1",
   onOpenView = vi.fn(),
+  sourceData = source,
 ) {
   const result = render(
     <SourceDetailPanel
       sourceId={sourceId}
-      source={source}
+      source={sourceData}
       loading={false}
       error={null}
       onBack={vi.fn()}
@@ -126,6 +127,61 @@ describe("SourceDetailPanel", () => {
       created_at: "2026-02-01",
       confirmed_at: "2026-02-01",
     });
+  });
+
+  const diagnostics: ParseDiagnostics = {
+    format: "pdf", parser: "pypdf", locator_scheme: "PAGE", unit_type: "page",
+    file_size: 1000, total_units: 3, text_units: 3, error_units: 0, empty_units: 0,
+    extracted_chars: 100, empty_extraction: false, partial_parse: false,
+    image_only_or_no_extractable_text: false,
+  };
+
+  it("shows format, parse quality and a resolved Evidence page", async () => {
+    renderPanel("SRC_1", vi.fn(), {
+      ...source, parse_diagnostics: diagnostics,
+      claims: [{ ...source.claims[0], source_locator: { status: "resolved", locator: "PAGE:8" } }],
+    });
+    expect(screen.getByText("Source Format / Parse Quality")).toBeInTheDocument();
+    expect(screen.getByText(/3 pages/)).toBeInTheDocument();
+    expect(screen.getByText("PAGE")).toBeInTheDocument();
+    expect(screen.getByText("Source locator: Page 8")).toBeInTheDocument();
+    expect(screen.queryByText(/Partial extraction/)).not.toBeInTheDocument();
+    await screen.findByText("No directly linked Current Views");
+  });
+
+  it("shows partial extraction and empty PDF limitations without claiming scanned status", async () => {
+    const partial = { ...source, parse_diagnostics: { ...diagnostics, text_units: 2, error_units: 1, partial_parse: true } };
+    const { rerender } = renderPanel("SRC_1", vi.fn(), partial);
+    expect(screen.getByText(/Partial extraction · 1 page could not be parsed/)).toBeInTheDocument();
+    rerender(<SourceDetailPanel sourceId="SRC_1" source={{ ...source, parse_diagnostics: {
+      ...diagnostics, text_units: 0, empty_units: 3, extracted_chars: 0,
+      empty_extraction: true, image_only_or_no_extractable_text: true,
+    } }} loading={false} error={null} onBack={vi.fn()} onSelectNode={vi.fn()} onOpenView={vi.fn()} />);
+    expect(screen.getByText("No extractable text")).toBeInTheDocument();
+    expect(screen.getByText("OCR / multimodal parsing not available yet")).toBeInTheDocument();
+    expect(screen.queryByText(/scanned/i)).not.toBeInTheDocument();
+    await screen.findByText("No directly linked Current Views");
+  });
+
+  it.each<[SourceLocator, string]>([
+    [{ status: "resolved", locator: "SHEET:Capacity:ROW:31" }, "Source locator: Sheet: Capacity · Row: 31"],
+    [{ status: "resolved", locator: "TABLE:2:ROW:5" }, "Source locator: Table 2 · Row: 5"],
+    [{ status: "resolved", locator: "PARA:17" }, "Source locator: Paragraph 17"],
+    [{ status: "resolved", locator: "SLIDE:8" }, "Source locator: Slide 8"],
+    [{ status: "resolved", locator: "TEXT" }, "Source locator: Text document"],
+    [{ status: "ambiguous", locators: ["PAGE:1", "PAGE:3"] }, "Source locator ambiguous: Page 1; Page 3"],
+    [{ status: "unresolved" }, "Source locator unresolved"],
+  ])("presents locator status without choosing an ambiguous match", async (locator, expected) => {
+    renderPanel("SRC_1", vi.fn(), { ...source, claims: [{ ...source.claims[0], source_locator: locator }] });
+    expect(screen.getByText(expected)).toBeInTheDocument();
+    await screen.findByText("No directly linked Current Views");
+  });
+
+  it("keeps missing legacy diagnostics explicit", async () => {
+    renderPanel();
+    expect(screen.getByText(/Parse diagnostics unavailable/)).toBeInTheDocument();
+    expect(screen.queryByText(/Source locator:/)).not.toBeInTheDocument();
+    await screen.findByText("No directly linked Current Views");
   });
 
   it("renders metadata, linked Nodes and Claims, and supports navigation/back", async () => {
