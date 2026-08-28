@@ -282,6 +282,13 @@ export interface SourceClaim {
   linked_nodes: SourceClaimNode[];
 }
 
+export interface SourceIMASync {
+  status: "synced" | "not_synced" | "sync_failed" | "remote_state_uncertain" | "name_conflict_unresolved" | "local_mapping_conflict";
+  target_configured: boolean;
+  mapped: boolean;
+  message: string;
+}
+
 export interface SourceDetail {
   source_id: string;
   title: string;
@@ -299,6 +306,7 @@ export interface SourceDetail {
   underlying_source_id: string;
   parse_diagnostics?: ParseDiagnostics | null;
   parse_warnings?: string[];
+  ima_sync?: SourceIMASync;
   linked_nodes: SourceLinkedNode[];
   claims: SourceClaim[];
 }

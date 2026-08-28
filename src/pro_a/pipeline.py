@@ -10,7 +10,8 @@ from .audit import build_source_audit
 from .config import AppConfig
 from .db import Database, now_iso
 from .ids import make_id
-from .ima import IMAClient, IMAError
+from .ima import IMAClient
+from .ima_sync import sync_source
 from .parsers import ParseError, parse_source_with_diagnostics, parse_warnings
 from .propagation import PropagationManager
 from .receipts import write_proposal, write_receipt
@@ -146,23 +147,7 @@ class IngestionPipeline:
         )
 
     def _sync_source_to_ima(self, source_id: str, archived: Path, original_name: str) -> dict[str, Any]:
-        if not (self.ima.available and self.cfg.ima.upload_originals and self.cfg.ima.source_kb_id):
-            return {"status": "disabled"}
-        title = f"[{source_id}] {original_name}"
-        try:
-            result = self.ima.upload_file(archived, self.cfg.ima.source_kb_id, self.cfg.ima.source_folder_id, title=title)
-            media_id = result.get("media_id", "")
-            self.db.execute("UPDATE sources SET ima_media_id=?,ima_kb_id=? WHERE source_id=?",
-                            (media_id, self.cfg.ima.source_kb_id, source_id))
-            self.db.execute(
-                """INSERT OR REPLACE INTO ima_objects(mapping_id,local_object_type,local_object_id,ima_kb_id,ima_folder_id,
-                   ima_media_id,title,synced_at,status) VALUES(?,?,?,?,?,?,?,?,?)""",
-                (make_id("IMA"), "source", source_id, self.cfg.ima.source_kb_id, self.cfg.ima.source_folder_id,
-                 media_id, title, now_iso(), "synced" if not result.get("skipped") else "skipped_same_name"),
-            )
-            return {"status": "synced", **result}
-        except IMAError as e:
-            return {"status": "failed", "error": str(e)}
+        return sync_source(self.cfg, source_id, client=self.ima)
 
     def _merged_source_metadata(self, source_id: str, updates: dict[str, Any]) -> str:
         source = self.db.one("SELECT metadata_json FROM sources WHERE source_id=?", (source_id,))
@@ -493,7 +478,11 @@ class IngestionPipeline:
                 self.db.execute("UPDATE processing_jobs SET source_id=? WHERE job_id=?", (source_id, job_id))
                 ima_result = self._sync_source_to_ima(source_id, archived, original_name)
                 if ima_result.get("status") == "failed":
-                    warnings.append("IMA source sync failed: " + ima_result.get("error", ""))
+                    warnings.append("IMA source sync failed: " + ima_result.get("result_classification", "IMA_ERROR"))
+                elif ima_result.get("status") == "name_conflict_unresolved":
+                    warnings.append("IMA remote name exists but local media identity is unresolved.")
+                elif ima_result.get("status") == "remote_state_uncertain":
+                    warnings.append("IMA remote state is uncertain; reconciliation required before retry.")
 
             if mode == "archive":
                 self.db.execute("UPDATE sources SET status='archived' WHERE source_id=?", (source_id,))

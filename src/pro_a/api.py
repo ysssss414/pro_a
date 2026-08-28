@@ -275,6 +275,13 @@ class SourceClaim(BaseModel):
     linked_nodes: list[SourceClaimNode]
 
 
+class SourceIMASync(BaseModel):
+    status: Literal["synced", "not_synced", "sync_failed", "remote_state_uncertain", "name_conflict_unresolved", "local_mapping_conflict"]
+    target_configured: bool
+    mapped: bool
+    message: str
+
+
 class SourceDetail(BaseModel):
     source_id: str
     title: str
@@ -292,6 +299,7 @@ class SourceDetail(BaseModel):
     underlying_source_id: str
     parse_diagnostics: ParseDiagnostics | None = None
     parse_warnings: list[str]
+    ima_sync: SourceIMASync
     linked_nodes: list[SourceLinkedNode]
     claims: list[SourceClaim]
 
@@ -343,6 +351,7 @@ def create_app(
     db_path: str | Path | None = None,
     *,
     config_path: str | Path | None = None,
+    ima_source_kb_id: str | None = None,
 ) -> FastAPI:
     app = FastAPI(title="pro_a read-only knowledge API")
     explicit_db_path = Path(db_path) if db_path is not None else None
@@ -350,9 +359,10 @@ def create_app(
 
     def read_model() -> ReadOnlyQuery:
         if explicit_db_path is not None:
-            return ReadOnlyQuery(explicit_db_path)
+            return ReadOnlyQuery(explicit_db_path, ima_source_kb_id=ima_source_kb_id)
         try:
-            return ReadOnlyQuery(load_config(configured_path).db_path)
+            cfg = load_config(configured_path)
+            return ReadOnlyQuery(cfg.db_path, ima_source_kb_id=cfg.ima.source_kb_id)
         except (OSError, ValueError) as exc:
             raise ReadOnlyDatabaseError(
                 "Knowledge database configuration is unavailable"
@@ -591,7 +601,7 @@ def main(argv: list[str] | None = None) -> None:
 
     import uvicorn
 
-    uvicorn.run(create_app(config.db_path), host=args.host, port=args.port)
+    uvicorn.run(create_app(config_path=args.config), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

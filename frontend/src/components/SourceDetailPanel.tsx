@@ -112,6 +112,18 @@ export function SourceDetailPanel({
           </article>
 
           <section className="source-detail-section">
+            <h3>IMA</h3>
+            <p><strong>{source.ima_sync?.status === "synced" ? "Synced" :
+              ["remote_state_uncertain", "name_conflict_unresolved", "local_mapping_conflict"].includes(source.ima_sync?.status ?? "")
+                ? "Needs reconciliation" : "Not synced"}</strong></p>
+            <p className="empty-inline">{source.ima_sync?.message ?? "IMA sync status unavailable"}</p>
+            <dl className="source-metadata">
+              <div><dt>Target configured</dt><dd>{source.ima_sync?.target_configured ? "Yes" : "No"}</dd></div>
+              <div><dt>Mapped</dt><dd>{source.ima_sync?.mapped ? "Yes" : "No"}</dd></div>
+            </dl>
+          </section>
+
+          <section className="source-detail-section">
             <h3>Source Format / Parse Quality</h3>
             {source.parse_diagnostics ? (
               <>
