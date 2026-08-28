@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete.** Phase 3B — IMA Integration Operational Acceptance 已 ready for planning，尚未授权。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete.** Phase 3B 已完成 Source 原件到 IMA Source KB 的隔离 simulator acceptance；真实 IMA mutation 和 read-only probe 均未授权、未执行。Phase 3C Controlled Live Corpus Expansion Pilot 仅 ready for planning。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 

@@ -12,6 +12,7 @@ from .current_view_compare import (
     compare_current_views,
 )
 from .db import CURRENT_VIEW_ORDER
+from .ima_sync import source_ima_observability
 from .parsers import FORMAT_DETAILS, LOCATOR_PATTERN, parse_warnings
 
 
@@ -30,8 +31,9 @@ class CurrentViewCompareNotFoundError(LookupError):
 class ReadOnlyQuery:
     """Deterministic read model backed by a SQLite read-only connection."""
 
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, *, ima_source_kb_id: str | None = None):
         self.path = Path(path)
+        self.ima_source_kb_id = ima_source_kb_id
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
@@ -673,12 +675,17 @@ class ReadOnlyQuery:
             source = conn.execute(
                 """SELECT source_id,title,original_name,source_type,source_rank,
                           origin_type,author,organization,publication_time,ingested_at,
-                          ingestion_mode,analysis_mode,status,underlying_source_id,metadata_json
+                          ingestion_mode,analysis_mode,status,underlying_source_id,metadata_json,ima_media_id,ima_kb_id
                    FROM sources WHERE source_id=?""",
                 (source_id,),
             ).fetchone()
             if source is None:
                 return None
+
+            ima_mappings = [dict(row) for row in conn.execute(
+                "SELECT * FROM ima_objects WHERE local_object_type='source' AND local_object_id=? ORDER BY mapping_id",
+                (source_id,),
+            )]
 
             linked_rows = conn.execute(
                 """SELECT n.node_id,n.canonical_name,n.primary_type,
@@ -730,6 +737,9 @@ class ReadOnlyQuery:
                 })
 
         result = dict(source)
+        result["ima_sync"] = source_ima_observability(result, ima_mappings, self.ima_source_kb_id)
+        result.pop("ima_media_id")
+        result.pop("ima_kb_id")
         result["parse_diagnostics"] = self._parse_diagnostics(result.pop("metadata_json"))
         result["parse_warnings"] = parse_warnings(result["parse_diagnostics"] or {})
         result["linked_nodes"] = [dict(row) for row in linked_rows]

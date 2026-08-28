@@ -1,5 +1,13 @@
 # Changelog
 
+## Phase 3B IMA Integration Operational Acceptance — 2026-08-28
+
+- Operationalized the existing IMA Source-original path with deterministic preflight, `[SRC_xxx] original_filename` identity, local idempotency and fail-closed mapping consistency checks.
+- Added staged HTTP/COS diagnostics, secret-free errors, create/add response validation, durable remote-state uncertainty protection, safe retry boundaries and stable `ima_objects.mapping_id` updates.
+- Added explicit `scripts/phase3b_ima_sync.py` preview/sync CLI with configured-Production DB authority, separate non-secret receipts and a narrow SQLite write authorizer. Preview is local read-only; no browser IMA mutation endpoint exists.
+- Added read-only Source Detail/Explorer IMA status and simulator-backed PDF/Office/full-pipeline acceptance. Current View sync/materialization, propagation, canonical contracts and schema remain deferred/unchanged.
+- Acceptance used no live IMA write or read-only probe. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; Phase 3C remains planning-only.
+
 ## Phase 3A Multi-format Source Ingestion Operational Acceptance — 2026-08-28
 
 - Closed Phase 2: Search, Browse, Trace, Research and Human Current View maintenance are complete. Ask remains deferred until corpus breadth and Source coverage support meaningful retrieval/answer validation.

@@ -1,8 +1,8 @@
 # pro_a Roadmap — Source Expansion & External Knowledge Integration
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete**
 
-Next: **Phase 3B — IMA Integration Operational Acceptance: ready for planning; not authorized.**
+Next: **Phase 3C — Controlled Live Corpus Expansion Pilot: ready for planning; not authorized.**
 
 ## Completed — Phase 1
 
@@ -156,7 +156,13 @@ Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与�
 
 ### Phase 3B — IMA Integration Operational Acceptance
 
-状态：**ready for planning; not authorized**。仅确认现有归档原件仍保留扩展名和原始字节，可作为未来 IMA upload input。真实 `create_media`、COS upload、`add_knowledge`、KB 修改与 live sync 均未执行；必须独立规划和授权。
+状态：**complete**。IMA Source sync path implemented and simulator-validated. No live IMA mutation was performed during Phase 3B acceptance.
+
+复用现有 IMA client、media type/size preflight、COS SDK 和 `ima_objects` mapping；新增 Source 原件专用 deterministic preflight、stable identity、local idempotency、column-level mapping write guard、阶段诊断、same-name unresolved protection 和 remote/local uncertainty reservation。IMA 失败不影响 canonical Source ingestion；Source Detail / Explorer 只读显示 Synced / Not synced / Needs reconciliation，Mutation 仅保留给显式 `sync-production-source` CLI。
+
+隔离测试覆盖 HTTP/COS simulator、PDF 与 Office full sync、全部 Phase 3A 文件格式 preflight、safe retry 与 uncertain retry blocking、mapping ID 稳定性、pipeline outage/same-name continuation、API/Explorer GET-only observability。没有 schema、Claim/Node/Relation/Current View/Proposal/Propagation 变化。
+
+`LIVE_IMA_WRITE_AUTHORIZED = false`；`LIVE_IMA_READONLY_PROBE_AUTHORIZED = false`。Phase 3C Controlled Live Corpus Expansion Pilot 仅 ready for planning，不授权执行。
 
 ### Later — not started
 

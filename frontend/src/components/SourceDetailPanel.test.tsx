@@ -136,6 +136,24 @@ describe("SourceDetailPanel", () => {
     image_only_or_no_extractable_text: false,
   };
 
+  it.each([
+    ["synced", "Synced", true, "Synced to IMA"],
+    ["not_synced", "Not synced", false, "Not synced to IMA"],
+    ["sync_failed", "Not synced", false, "IMA sync failed"],
+    ["name_conflict_unresolved", "Needs reconciliation", false, "IMA object exists by name, but remote identity is unresolved"],
+    ["remote_state_uncertain", "Needs reconciliation", false, "IMA remote state is uncertain; reconciliation required"],
+    ["local_mapping_conflict", "Needs reconciliation", false, "IMA local mapping is inconsistent; reconciliation required"],
+  ] as const)("shows %s IMA status without write controls", async (status, label, mapped, message) => {
+    renderPanel("SRC_1", vi.fn(), { ...source, ima_sync: { status, target_configured: true, mapped, message } });
+    expect(screen.getByRole("heading", { name: "IMA" })).toBeInTheDocument();
+    expect(screen.getByText(label, { exact: true })).toBeInTheDocument();
+    expect(screen.getByText(message)).toBeInTheDocument();
+    expect(screen.getByText("Target configured").nextElementSibling).toHaveTextContent("Yes");
+    expect(screen.getByText("Mapped").nextElementSibling).toHaveTextContent(mapped ? "Yes" : "No");
+    expect(screen.queryByRole("button", { name: /sync|retry|delete from ima|credentials/i })).not.toBeInTheDocument();
+    await screen.findByText("No directly linked Current Views");
+  });
+
   it("shows format, parse quality and a resolved Evidence page", async () => {
     renderPanel("SRC_1", vi.fn(), {
       ...source, parse_diagnostics: diagnostics,
