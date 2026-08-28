@@ -64,6 +64,28 @@ export interface SourceMetadata {
   source_rank: string;
 }
 
+export interface SourceLocator {
+  status: "resolved" | "ambiguous" | "unresolved";
+  locator?: string | null;
+  locators?: string[] | null;
+}
+
+export interface ParseDiagnostics {
+  format: string;
+  parser: string;
+  locator_scheme: string;
+  unit_type: string;
+  file_size: number;
+  total_units: number;
+  text_units: number;
+  error_units: number;
+  empty_units: number;
+  extracted_chars: number;
+  empty_extraction: boolean;
+  partial_parse: boolean;
+  image_only_or_no_extractable_text: boolean;
+}
+
 export interface ClaimResult {
   claim_id: string;
   statement: string;
@@ -77,6 +99,7 @@ export interface ClaimResult {
   scope: string;
   evidence_pointer: string;
   evidence_excerpt: string;
+  source_locator?: SourceLocator | null;
   source_id: string;
   link_role: "subject" | "context" | "related";
   source: SourceMetadata;
@@ -255,6 +278,7 @@ export interface SourceClaim {
   scope: string;
   evidence_pointer: string;
   evidence_excerpt: string;
+  source_locator?: SourceLocator | null;
   linked_nodes: SourceClaimNode[];
 }
 
@@ -273,6 +297,8 @@ export interface SourceDetail {
   analysis_mode: string;
   status: string;
   underlying_source_id: string;
+  parse_diagnostics?: ParseDiagnostics | null;
+  parse_warnings?: string[];
   linked_nodes: SourceLinkedNode[];
   claims: SourceClaim[];
 }

@@ -1,8 +1,10 @@
-# pro_a v0.3.0 — Phase 2 Knowledge Research Surface
+# pro_a v0.3.0 — Phase 3 Source Expansion
 
 `pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `workspace/pro_a.db` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
 
 ## 当前状态
+
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete.** Phase 3B — IMA Integration Operational Acceptance 已 ready for planning，尚未授权。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -21,7 +23,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 
 当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery；Phase 2.6B 已完成仅浏览器 localStorage 的 Human Impact Review draft/export surface 及真实 Production 只读验收。canonical 内容保持不变。
 
-Phase 2 — **Knowledge Exploration & Interaction Layer** 已启动；Phase 2.3A Knowledge Detail & Research Surface 已完成。目标顺序为：
+Phase 2 — **Knowledge Exploration & Interaction Layer** 已收口：Search、Browse、Trace、Research 与 Human Current View maintenance workflow 均 complete。原目标顺序为：
 
 ```text
 Search
@@ -31,7 +33,17 @@ Search
 → Ask
 ```
 
-当前优先建立 deterministic knowledge interaction，不先做 chatbot、RAG 或自然语言查询。
+`Ask` 保留但延后，`DEFER_ASK_UNTIL_CORPUS_EXPANSION = true`。当前 Production corpus 很小，需先扩充 Source 覆盖，才能有意义地检验 retrieval / answer quality；这不是取消 Ask。
+
+## Phase 3A — Multi-format Source Ingestion Operational Acceptance
+
+复用已有 TXT / MD / Markdown / CSV、PDF（pypdf）、DOCX、XLSX / XLSM、PPTX parsers。`parse_source(path)` 仍返回 `(text, source_type)`；新 diagnostics API 记录格式、parser、定位方案、文本/空白/错误单元及提取字符数。standard/deep 对空提取返回 `PARSE_TEXT_EMPTY`，在 LLM 与 Inbox 消费之前失败；部分 PDF 页失败但仍有文本时继续分析并给出告警。archive 仍不要求解析。
+
+主 Source 分块优先保持 page / paragraph / table-row / sheet-row / slide 边界，超长单元遵守原字符上限拆分。Evidence locator 复用既有 normalized exact canonicalization，确定性标记 resolved / ambiguous / unresolved，写入 `structured_json.validation.source_locator`；不覆盖 `evidence_pointer`。解析诊断合并到 `sources.metadata_json`，与 analysis quality / Source references 共存。
+
+Explorer Source Detail 增加 **Source Format / Parse Quality**，Claim Evidence 显示页/段落/表格行/工作表行/幻灯片定位。只读 API 使用字段白名单，不暴露归档路径或任意 metadata。没有文件下载、PDF viewer、OCR 或新依赖。
+
+四种 PDF/Office 格式均完成真实 `process_file` 的隔离 standard/deep 验收，模型使用 deterministic stub；Production 与 IMA 均未改变。完整合同、限制和验收证据见 [`docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md`](docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md)。未来真实材料的 live ingestion 必须单独明确授权。
 
 ## Phase 2.1A read-only architecture
 

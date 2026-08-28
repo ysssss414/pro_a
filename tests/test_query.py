@@ -180,3 +180,18 @@ def test_query_connection_rejects_writes(read_db_path: Path):
     with pytest.raises(ReadOnlyDatabaseError):
         with query.connect() as conn:
             conn.execute("CREATE TABLE forbidden(value TEXT)")
+
+
+@pytest.mark.parametrize("raw", [None, "broken", "[]", '{"parse_diagnostics":[]}',
+                                  '{"parse_diagnostics":{"format":[]}}',
+                                  '{"parse_diagnostics":{"format":"pdf","file_size":true}}'])
+def test_legacy_or_malformed_parse_metadata_is_not_presented_as_success(raw):
+    assert ReadOnlyQuery._parse_diagnostics(raw) is None
+
+
+@pytest.mark.parametrize("value", [None, [], {"status": "resolved", "locator": "C:/private/file.pdf"},
+                                    {"status": "resolved", "locator": "SHEET:C:/private"},
+                                    {"status": "ambiguous", "locators": ["PAGE:1", "PAGE:1"]}])
+def test_malformed_source_locator_is_not_exposed(value):
+    import json
+    assert ReadOnlyQuery._source_locator(json.dumps({"validation": {"source_locator": value}})) is None

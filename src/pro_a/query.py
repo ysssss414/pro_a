@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
@@ -11,6 +12,7 @@ from .current_view_compare import (
     compare_current_views,
 )
 from .db import CURRENT_VIEW_ORDER
+from .parsers import FORMAT_DETAILS, LOCATOR_PATTERN, parse_warnings
 
 
 MAX_QUERY_LIMIT = 100
@@ -81,6 +83,45 @@ class ReadOnlyQuery:
         except (TypeError, json.JSONDecodeError):
             return {}
         return value if isinstance(value, dict) else {}
+
+    @classmethod
+    def _parse_diagnostics(cls, raw: str | None) -> dict[str, Any] | None:
+        value = cls._json_object(raw).get("parse_diagnostics")
+        if not isinstance(value, dict) or not isinstance(value.get("format"), str):
+            return None
+        details = FORMAT_DETAILS.get(value["format"])
+        if details is None or tuple(value.get(key) for key in ("parser", "locator_scheme", "unit_type")) != details:
+            return None
+        counts = ("file_size", "total_units", "text_units", "error_units", "empty_units", "extracted_chars")
+        flags = ("empty_extraction", "partial_parse", "image_only_or_no_extractable_text")
+        if any(type(value.get(key)) is not int or value[key] < 0 for key in counts):
+            return None
+        if any(type(value.get(key)) is not bool for key in flags):
+            return None
+        # Explicit allowlist: never serialize arbitrary metadata or parser errors.
+        return {key: value[key] for key in ("format", "parser", "locator_scheme", "unit_type", *counts, *flags)}
+
+    @classmethod
+    def _source_locator(cls, raw: str | None) -> dict[str, Any] | None:
+        validation = cls._json_object(raw).get("validation")
+        value = validation.get("source_locator") if isinstance(validation, dict) else None
+        if not isinstance(value, dict):
+            return None
+
+        def valid(locator: Any) -> bool:
+            return isinstance(locator, str) and re.fullmatch("TEXT|" + LOCATOR_PATTERN, locator) is not None
+
+        if value.get("status") == "resolved" and valid(value.get("locator")):
+            return {"status": "resolved", "locator": value["locator"]}
+        if value.get("status") == "ambiguous":
+            locators = value.get("locators")
+            if isinstance(locators, list) and all(valid(item) for item in locators):
+                unique = list(dict.fromkeys(locators))
+                if len(unique) > 1:
+                    return {"status": "ambiguous", "locators": unique}
+        if value.get("status") == "unresolved":
+            return {"status": "unresolved"}
+        return None
 
     @classmethod
     def _json_string_list(cls, raw: str | None) -> list[str]:
@@ -324,7 +365,7 @@ class ReadOnlyQuery:
             rows = conn.execute(
                 """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
                           c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
-                          c.evidence_pointer,c.evidence_excerpt,c.source_id,
+                          c.evidence_pointer,c.evidence_excerpt,c.source_id,c.structured_json,
                           cnl.role AS link_role,
                           s.title,s.original_name,s.author,s.organization,
                           s.publication_time AS source_publication_time,
@@ -361,6 +402,7 @@ class ReadOnlyQuery:
                 )
             }
             claim["source"] = self._source_metadata(row)
+            claim["source_locator"] = self._source_locator(row["structured_json"])
             claims.append(claim)
         return claims
 
@@ -631,7 +673,7 @@ class ReadOnlyQuery:
             source = conn.execute(
                 """SELECT source_id,title,original_name,source_type,source_rank,
                           origin_type,author,organization,publication_time,ingested_at,
-                          ingestion_mode,analysis_mode,status,underlying_source_id
+                          ingestion_mode,analysis_mode,status,underlying_source_id,metadata_json
                    FROM sources WHERE source_id=?""",
                 (source_id,),
             ).fetchone()
@@ -651,7 +693,7 @@ class ReadOnlyQuery:
             claim_rows = conn.execute(
                 """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
                           c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
-                          c.evidence_pointer,c.evidence_excerpt,
+                          c.evidence_pointer,c.evidence_excerpt,c.structured_json,
                           n.node_id,n.canonical_name,n.primary_type,cnl.role AS node_role
                    FROM claims c
                    LEFT JOIN claim_node_links cnl ON cnl.claim_id=c.claim_id
@@ -675,6 +717,7 @@ class ReadOnlyQuery:
             claim_id = row["claim_id"]
             if claim_id not in claims_by_id:
                 claim = {key: row[key] for key in claim_fields}
+                claim["source_locator"] = self._source_locator(row["structured_json"])
                 claim["linked_nodes"] = []
                 claims_by_id[claim_id] = claim
                 claims.append(claim)
@@ -687,6 +730,8 @@ class ReadOnlyQuery:
                 })
 
         result = dict(source)
+        result["parse_diagnostics"] = self._parse_diagnostics(result.pop("metadata_json"))
+        result["parse_warnings"] = parse_warnings(result["parse_diagnostics"] or {})
         result["linked_nodes"] = [dict(row) for row in linked_rows]
         result["claims"] = claims
         return result

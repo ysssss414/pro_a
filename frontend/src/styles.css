@@ -1827,6 +1827,11 @@ blockquote {
   text-align: right;
 }
 
+.source-locator {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

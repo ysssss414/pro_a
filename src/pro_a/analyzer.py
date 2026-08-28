@@ -15,7 +15,7 @@ from .constants import (
 )
 from .db import Database
 from .llm import ChatLLM, LLMError
-from .parsers import chunk_text
+from .parsers import chunk_source_text, chunk_text, source_units
 from .prompts import (
     CANDIDATE_BACKFILL_SYSTEM, CANDIDATE_BACKFILL_USER,
     CLAIM_COMPARE_SYSTEM, CLAIM_COMPARE_USER, IMPACT_SYSTEM, IMPACT_USER,
@@ -109,6 +109,20 @@ def evidence_match(excerpt: str, full_text: str) -> dict[str, Any]:
         "normalized_start": start,
         "normalized_end": start + len(normalized_excerpt) if validated else -1,
     }
+
+
+def resolve_evidence_locator(full_text: str, evidence_excerpt: str) -> dict[str, Any]:
+    """Locate normalized exact Evidence without changing its validation verdict."""
+    excerpt = canonicalize_text(evidence_excerpt)
+    locators = list(dict.fromkeys(
+        locator for locator, body in source_units(full_text)
+        if excerpt and excerpt in canonicalize_text(body)
+    ))
+    if len(locators) == 1:
+        return {"status": "resolved", "locator": locators[0]}
+    if locators:
+        return {"status": "ambiguous", "locators": locators}
+    return {"status": "unresolved"}
 
 
 def relation_evidence_rows(full_text: str) -> list[dict[str, str]]:
@@ -1251,7 +1265,7 @@ class Analyzer:
     def analyze_source(self, filename: str, text: str, mode: str) -> SourceAnalysis:
         if not self.available:
             raise LLMError("LLM unavailable")
-        chunks = chunk_text(text, self.cfg.llm.max_chunk_chars)
+        chunks = chunk_source_text(text, self.cfg.llm.max_chunk_chars)
         catalog_json = json.dumps(self.node_catalog(), ensure_ascii=False)
         merged = {
             "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [],

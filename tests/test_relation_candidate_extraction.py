@@ -644,7 +644,7 @@ def test_chunk_merge_recomputes_global_relation_child_index(
         ),
     )
     monkeypatch.setattr(
-        "pro_a.analyzer.chunk_text", lambda text, max_chars: [unrelated, atomic_text],
+        "pro_a.analyzer.chunk_source_text", lambda text, max_chars: [unrelated, atomic_text],
     )
 
     result = analyzer.analyze_source(

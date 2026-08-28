@@ -40,6 +40,7 @@ const claims: ClaimResult[] = [{
   attributed_to: "Research Org",
   scope: "optical transmitters",
   evidence_pointer: "p.3",
+  source_locator: { status: "resolved", locator: "PAGE:3" },
   evidence_excerpt: "EML is used in high-speed optical transmitters.",
   source_id: "SRC_1",
   source: {
@@ -117,6 +118,8 @@ describe("NodeDetailPanel", () => {
   it("renders Claim, exact Evidence, and Source metadata", () => {
     renderPanel("claims");
     expect(screen.getByText("Subject")).toBeInTheDocument();
+    expect(screen.getByText("Source locator: Page 3")).toBeInTheDocument();
+    expect(screen.getByText("p.3")).toBeInTheDocument();
     expect(screen.getByText("EML is used in high-speed optical transmitters.", { selector: "h3" })).toBeInTheDocument();
     expect(screen.getByText("EML is used in high-speed optical transmitters.", { selector: "blockquote" })).toBeInTheDocument();
     expect(screen.getByText("Optical Components Report")).toBeInTheDocument();

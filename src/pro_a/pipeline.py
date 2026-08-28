@@ -5,13 +5,13 @@ import time
 from pathlib import Path
 from typing import Any
 
-from .analyzer import Analyzer, normalize_ws
+from .analyzer import Analyzer, normalize_ws, resolve_evidence_locator
 from .audit import build_source_audit
 from .config import AppConfig
 from .db import Database, now_iso
 from .ids import make_id
 from .ima import IMAClient, IMAError
-from .parsers import parse_source
+from .parsers import ParseError, parse_source_with_diagnostics, parse_warnings
 from .propagation import PropagationManager
 from .receipts import write_proposal, write_receipt
 from .storage import archive_file, ensure_workspace, sha256_file
@@ -164,6 +164,17 @@ class IngestionPipeline:
         except IMAError as e:
             return {"status": "failed", "error": str(e)}
 
+    def _merged_source_metadata(self, source_id: str, updates: dict[str, Any]) -> str:
+        source = self.db.one("SELECT metadata_json FROM sources WHERE source_id=?", (source_id,))
+        try:
+            metadata = json.loads(source["metadata_json"])
+        except (TypeError, json.JSONDecodeError):
+            metadata = {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        metadata.update(updates)
+        return json.dumps(metadata, ensure_ascii=False)
+
     def _update_source_metadata(
         self, source_id: str, source_type: str, meta: dict[str, Any],
         refs: list[dict[str, Any]], analysis_quality: dict[str, Any] | None = None,
@@ -179,7 +190,7 @@ class IngestionPipeline:
                author=?,organization=?,publication_time=?,metadata_json=?,status='analyzed' WHERE source_id=?""",
             (title, title, source_type, meta.get("source_rank") or "UNRANKED", meta.get("source_origin_type") or "unknown",
              meta.get("author") or "", meta.get("organization") or "", meta.get("publication_time") or "",
-             json.dumps(metadata, ensure_ascii=False), source_id),
+             self._merged_source_metadata(source_id, metadata), source_id),
         )
         for ref in refs:
             ref_title = (ref.get("title") or "").strip()
@@ -195,7 +206,7 @@ class IngestionPipeline:
                 )
 
     def _insert_claims(
-        self, source_id: str, analysis, publication_time: str
+        self, source_id: str, analysis, publication_time: str, full_text: str
     ) -> tuple[list[str], dict[int, str]]:
         claim_ids: list[str] = []
         claim_id_by_index: dict[int, str] = {}
@@ -216,6 +227,9 @@ class IngestionPipeline:
                 "model_confidence": c.get("confidence"),
                 "errors": [] if c.get("evidence_validated") else ["evidence_excerpt_not_found"],
             })
+            structured["validation"]["source_locator"] = resolve_evidence_locator(
+                full_text, c.get("evidence_excerpt") or "",
+            )
             self.db.execute(
                 """INSERT INTO claims(claim_id,statement,nature,fact_time,publication_time,ingestion_time,source_id,
                    evidence_pointer,evidence_excerpt,attributed_to,scope,assumption_text,status,confidence,novelty_level,
@@ -412,6 +426,10 @@ class IngestionPipeline:
         job_id = self._start_job(input_path, mode)
         source_id = ""
         warnings: list[str] = []
+        parse_info: dict[str, Any] = {
+            "source_type": "xlsx" if input_path.suffix.lower() == ".xlsm" else input_path.suffix.lower().lstrip("."),
+            "parse_diagnostics": None, "parse_warnings": [],
+        }
         try:
             sha = sha256_file(input_path)
             duplicate = self.db.one(
@@ -429,6 +447,13 @@ class IngestionPipeline:
                     "ima_status": "not_reuploaded", "warnings": ["Exact SHA-256 duplicate; incoming copy removed."],
                     "node_matches": [], "node_proposals": [], "claims": [], "current_view_proposals": [], "knowledge_gaps": [],
                 }
+                if mode != "archive":
+                    metadata = json.loads(self._merged_source_metadata(duplicate["source_id"], {}))
+                    diagnostics = metadata.get("parse_diagnostics")
+                    receipt.update(
+                        source_type=duplicate["source_type"], parse_diagnostics=diagnostics,
+                        parse_warnings=parse_warnings(diagnostics) if isinstance(diagnostics, dict) else [],
+                    )
                 self._finish_job(job_id, "duplicate", duplicate["source_id"])
                 return self._complete_receipt(job_id, duplicate["source_id"], receipt)
 
@@ -440,7 +465,15 @@ class IngestionPipeline:
 
             if mode != "archive":
                 # Do not consume the Inbox request until parsing succeeds.
-                text, source_type = parse_source(input_path)
+                parsed = parse_source_with_diagnostics(input_path)
+                text, source_type = parsed.text, parsed.source_type
+                parse_info = {
+                    "source_type": source_type, "parse_diagnostics": parsed.diagnostics,
+                    "parse_warnings": parse_warnings(parsed.diagnostics),
+                }
+                warnings.extend(parse_info["parse_warnings"])
+                if parsed.diagnostics["empty_extraction"]:
+                    raise ParseError("PARSE_TEXT_EMPTY: No extractable text.")
 
             if duplicate:
                 requested_mode = (
@@ -472,10 +505,18 @@ class IngestionPipeline:
                 self._finish_job(job_id, "done", source_id)
                 return self._complete_receipt(job_id, source_id, receipt)
 
+            self.db.execute(
+                "UPDATE sources SET source_type=?,metadata_json=? WHERE source_id=?",
+                (source_type, self._merged_source_metadata(source_id, {
+                    "parse_diagnostics": parse_info["parse_diagnostics"],
+                }), source_id),
+            )
+
             if not self.analyzer.available:
                 warnings.append("LLM disabled/missing key; Source stored but Standard/Deep analysis not run.")
                 self.db.execute("UPDATE sources SET source_type=?,status='needs_llm' WHERE source_id=?", (source_type, source_id))
                 receipt = {
+                    **parse_info,
                     "status": "needs_llm", "mode": mode, "source_id": source_id, "title": original_name,
                     "archived_path": str(archived), "ima_status": ima_result.get("status"), "warnings": warnings,
                     "node_matches": [], "node_proposals": [], "claims": [], "current_view_proposals": [], "knowledge_gaps": [],
@@ -498,7 +539,7 @@ class IngestionPipeline:
             }
             self._apply_node_matches(source_id, analysis.node_matches)
             claim_ids, claim_id_by_index = self._insert_claims(
-                source_id, analysis, meta.get("publication_time") or "",
+                source_id, analysis, meta.get("publication_time") or "", text,
             )
             self._derive_source_ancestor_links(source_id)
             linked_nodes = [
@@ -542,6 +583,7 @@ class IngestionPipeline:
             node_proposals.extend(rq_proposals)
 
             receipt = {
+                **parse_info,
                 "status": "analyzed", "mode": mode, "source_id": source_id,
                 "title": meta.get("title") or original_name, "archived_path": str(archived),
                 "ima_status": ima_result.get("status"), "warnings": warnings,
@@ -574,6 +616,8 @@ class IngestionPipeline:
                 "knowledge_gaps": [],
                 "job_id": job_id,
             }
+            if mode != "archive":
+                receipt.update(parse_info)
             if source_exists:
                 return self._complete_receipt(job_id, source_id, receipt)
             if self.cfg.pipeline.write_receipts:
