@@ -1,6 +1,6 @@
 # pro_a Roadmap — Phase 2 Knowledge Research Surface
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6A complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2.6B in progress**
 
 ## Completed — Phase 1
 
@@ -108,9 +108,13 @@ Production audit 结果：293 active Nodes、737 aliases、181 stored Relations�
 
 状态：**complete**。新增 Source/Claim 级 deterministic、read-only discovery，仅沿 `Source → Claim → claim_node_links → active Node → latest official Current View` 发现人工 review candidates。候选按 Node 去重并保留全部 Claims 与 `subject/context/related` roles；无 official View 的 active linked Nodes 单列，inactive Node 与 draft View 不进入候选。Source Detail 增加克制的 Potential Current View Impact panel 与 Open View 导航；不判断 change need、level、方向或强弱，不生成 Proposal，不做 Relation/parent/child propagation。Production browser smoke 基于真实 2 Sources / 12 Claims / 2 Views 通过。
 
+### Phase 2.6B — Human Impact Review Surface
+
+状态：**in progress**。在 2.6A deterministic candidates 上增加右栏 Human Impact Review。用户可对 Source → Candidate Node → latest official Current View 形成 `NO_CHANGE`、`MINOR`、`MATERIAL` 或 `THESIS` 判断；Subject / Context / Related attribution boundary 与 Primary Evidence eligibility 保持冻结，Reason 和 Thesis structured reason 做最小确定性校验。Draft 只写浏览器 localStorage，并可导出 `NON-CANONICAL HANDOFF ARTIFACT` JSON；target View 与 candidate Claim-role snapshot 发生变化时阻止 READY export。该阶段不写 `impact_reviews`、Proposal、Current View 或 Production DB，不调用 propagation / recovery / LLM。详见 `docs/PHASE2_6B_HUMAN_IMPACT_REVIEW.md`。
+
 ### Next milestone
 
-Phase 2.6B — Human Impact Review Surface：**planned, not started**。Phase 2.7 — Controlled Propagation / View Proposal：**not authorized**。Phase 2.6A 已完成并封闭；不得顺手启动 adjudication controls、Proposal、Current View mutation、propagation、AI change summary 或 Evidence quality scoring。
+Phase 2.7A — Controlled Human Review Intake / View Proposal：**planned, not authorized**。Phase 2.6A 已完成并封闭；Phase 2.6B 只允许 local non-canonical review/export，不得 import exported Review、创建 Proposal、修改 Current View、propagate、生成 AI change summary 或 Evidence quality scoring。
 
 ## Carried backlog
 

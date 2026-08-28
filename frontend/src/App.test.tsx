@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   getClaims,
+  getCurrentView,
   getCurrentViewHistory,
   getHealth,
   getKnowledgeGaps,
@@ -25,6 +26,7 @@ import App from "./App";
 
 vi.mock("./api/client", () => ({
   getClaims: vi.fn(),
+  getCurrentView: vi.fn(),
   getCurrentViewCompare: vi.fn(),
   getCurrentViewHistory: vi.fn(),
   getHealth: vi.fn(),
@@ -49,6 +51,7 @@ describe("App error boundary", () => {
     vi.mocked(getNeighbors).mockRejectedValue(unavailable);
     vi.mocked(getClaims).mockRejectedValue(unavailable);
     vi.mocked(getCurrentViewHistory).mockRejectedValue(unavailable);
+    vi.mocked(getCurrentView).mockRejectedValue(unavailable);
     vi.mocked(getKnowledgeGaps).mockRejectedValue(unavailable);
     vi.mocked(getResearchQuestion).mockRejectedValue(unavailable);
     vi.mocked(getSourceDetail).mockRejectedValue(unavailable);
