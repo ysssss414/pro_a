@@ -1,11 +1,19 @@
 # Changelog
 
+## Phase 3D Production Path Promotion closure — 2026-09-02
+
+- Closed Phase 3C correctness/generalization and Phase 3D Production Path Promotion after one successful exact, one-time Production promotion.
+- Delivered deterministic payload and artifact convergence, Source materialization, explicit `CREATE` / `REUSE` / `DEFER` / `REJECT` decisions, human authorization binding, collision/baseline validation, shadow qualification, rollback, a one-time executor, immutable authorization consumption, and terminal journal/receipt evidence.
+- Froze the new schema `0.2.1` baseline at 302 Nodes, 745 aliases, 181 Node Relations, 3 Sources, 116 Claims, 19 Claim–Node links, 3 Source–Node links, and 2 Current Views; integrity is `ok` with zero foreign-key violations and no SQLite sidecar.
+- Preserved seven Node deferrals and ten rejected Relation observations. Schema `0.2.2` / `relation_evidence_links`, noisy Source and audio/ASR ingestion, local-model preprocessing, IMA live integration, and higher-level review UI remain separate backlog.
+- Recommended Phase 3E Operational New-Source Ingestion as the next planning stage. No continuing Production authority, version bump, or release tag is created by this documentation-only closure.
+
 ## Phase 3C Controlled Live Corpus Expansion Pilot - Stage 1 - 2026-08-28
 
 - Added a pilot-safe extraction bundle and Human Extraction Review draft path that runs the existing parser, frozen Analyzer, and configured real LLM against an isolated Production DB copy without canonical DB mutation or legacy ingestion/propagation/proposal/impact/IMA side effects.
 - Added exact bundle binding, stable proposed Source/Claim IDs, immutable Claim review content, Evidence-gated `KEEP`, `DROP` / `KEEP_NEEDS_REVIEW` decisions, Markdown review output, and deterministic metrics.
 - Added a controlled READY-bundle apply path with archive copy semantics, exact duplicate/idempotency/conflict handling, filesystem/SQLite failure boundaries, and a narrow SQLite authorizer; configured Production apply remains blocked.
-- Stage 1 TGV run passed: 8 PDF pages, 53 Claims / 7 Evidence-valid / 46 `needs_review`, 4 LLM attempts recorded, Production byte-identical, IMA untouched. `光互连研究方法与框架20260819.pdf` was not run. Human Extraction Review is required before any future apply.
+- Stage 1 clean-source run passed: 8 PDF pages, 53 Claims / 7 Evidence-valid / 46 `needs_review`, 4 LLM attempts recorded, Production byte-identical, IMA untouched. A reserved second clean-source PDF was not run. Human Extraction Review is required before any future apply.
 
 ## Phase 3B IMA Integration Operational Acceptance — 2026-08-28
 
@@ -13,7 +21,7 @@
 - Added staged HTTP/COS diagnostics, secret-free errors, create/add response validation, durable remote-state uncertainty protection, safe retry boundaries and stable `ima_objects.mapping_id` updates.
 - Added explicit `scripts/phase3b_ima_sync.py` preview/sync CLI with configured-Production DB authority, separate non-secret receipts and a narrow SQLite write authorizer. Preview is local read-only; no browser IMA mutation endpoint exists.
 - Added read-only Source Detail/Explorer IMA status and simulator-backed PDF/Office/full-pipeline acceptance. Current View sync/materialization, propagation, canonical contracts and schema remain deferred/unchanged.
-- Acceptance used no live IMA write or read-only probe. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; Phase 3C is now in progress at Stage 1 extraction review.
+- Acceptance used no live IMA write or read-only probe. Production remained byte-identical; its exact identity stays in local evidence. Phase 3C then entered Stage 1 extraction review.
 
 ## Phase 3A Multi-format Source Ingestion Operational Acceptance — 2026-08-28
 
@@ -22,7 +30,7 @@
 - Added locator-aware Source chunking and normalized-exact Evidence locator resolution, including ambiguity. Persisted diagnostics alongside existing Source metadata and locators under Claim validation; preserved existing Evidence pointers and frozen validators/prompts/schema.
 - Added receipt parse summaries and allowlisted read-only Source Detail diagnostics, plus Explorer format/quality and Evidence locator presentation. No viewer, file download, OCR, multimodal parsing, new dependencies or IMA changes.
 - Acceptance: 265 targeted and 731 full pytest tests passed; frontend 11 files / 66 tests, build and compileall passed. PDF/DOCX/XLSX/PPTX standard/deep isolated pipeline smoke and GET-only Edge browser checks passed; six screenshots were visually inspected and temporary services closed.
-- Production stayed byte-identical at `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; all 19 table counts matched, integrity was `ok`, FK violations were 0. No live Production ingestion or IMA sync was authorized or performed. Phase 3B is ready for planning, not authorized.
+- Production stayed byte-identical; all 19 table counts matched, integrity was `ok`, and FK violations were 0. The exact identity stays in local evidence. No live Production ingestion or IMA sync was authorized or performed. Phase 3B was ready for planning, not authorized.
 
 ## Phase 2.7C Human Proposal Resolution & Direct Current View Activation — 2026-08-28
 
@@ -30,7 +38,7 @@
 - ACCEPT directly inserts one official `current_views` record through `create_official_view_record` and updates only Proposal status/result/resolved_at. REJECT updates only Proposal status/result/resolved_at. Human resolution provenance and reason are preserved; legacy identifiers, payload/reason, side-effect/impact tables, schema, propagation, IMA/LLM and Markdown files remain untouched.
 - Added GET-only pending/accepted/rejected Proposal history and terminal resolution metadata. The Explorer can only revalidate and export a local resolution JSON; stale ACCEPT is blocked, REJECT remains available, and direct official View navigation is exposed for accepted history.
 - Acceptance: full pytest **657 passed**; Phase 2.7C joint backend **273 passed**; frontend **11 files / 56 tests passed**; build and compileall passed. Fresh isolated-copy lifecycle passed ACCEPT (Proposals 11→12→12, Views 2→3) and REJECT (11→12→12, Views 2→2). ACCEPT preserved all rows outside proposals/current_views; REJECT preserved all rows outside proposals. No Current View Markdown was generated.
-- Live Production was read-only: pre/post SHA `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, all table counts unchanged, integrity `ok`, zero FK violations and no sidecars. Playwright Edge smoke passed the live empty queue, isolated local artifact export/read-only preview, accepted history/exact official View navigation, and rejected history. All API requests were GET; console errors/warnings were zero. Temporary browser/services were closed and the final Production and copy hashes remained unchanged.
+- Live Production was read-only: pre/post byte identity matched, all table counts were unchanged, integrity was `ok`, FK violations were zero, and no sidecars existed. Exact identities stay in local evidence. Playwright Edge smoke passed the live empty queue, isolated local artifact export/read-only preview, accepted history/exact official View navigation, and rejected history. All API requests were GET; console errors/warnings were zero. Temporary browser/services were closed and the final Production and copy identities remained unchanged.
 - `LIVE_PRODUCTION_RESOLUTION_APPLY_AUTHORIZED = false`; no live resolution was applied. Phase 2.7D remains a separate, unauthorized technical handoff.
 
 ## Phase 2.7B Controlled Production Proposal Gateway & Read-Only Review — 2026-08-28
@@ -40,7 +48,7 @@
 - Added GET-only human-provenance Proposal list/detail, original official BASE to proposed-content deterministic diff and computed canonical alignment without status mutation. Historical legacy rows remain excluded and unchanged.
 - Added a small Explorer review surface with pending/nonofficial warnings, reason/Thesis, Evidence and Source navigation; no modify, reject, acceptance or browser write controls. No schema, runtime manager, official View, propagation or impact side effects were introduced.
 - Acceptance: 89 targeted tests, 109 Phase 2.7A regressions, 582 full pytest tests, 10 frontend files / 49 tests, build and compileall passed. The actual CLI write path inserted exactly one pending row in an isolated Production copy; all other copy tables stayed unchanged. Edge browser smoke verified real Production empty state and copy detail/Source navigation using GET only.
-- `LIVE_PRODUCTION_PROPOSAL_APPLY_AUTHORIZED = false`: no live Proposal was created. Production pre/post SHA remained `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, all table counts matched, integrity was `ok` and FK violations were zero. Proposal modify/acceptance and the three existing content/evidence deferrals remain open; Phase 2.7C was not started.
+- `LIVE_PRODUCTION_PROPOSAL_APPLY_AUTHORIZED = false`: no live Proposal was created. Production pre/post byte identity matched, all table counts matched, integrity was `ok`, and FK violations were zero; exact identities stay in local evidence. Proposal modify/acceptance and the three existing content/evidence deferrals remained open; Phase 2.7C had not started.
 
 ## Phase 2.7A Controlled Human Review Intake / View Proposal — 2026-08-28
 
@@ -48,7 +56,7 @@
 - Revalidate Source, active Node, latest View via `CURRENT_VIEW_ORDER`, exact candidate Claim-role snapshot and Subject-only Primary eligibility in both phases. Reuse the existing deterministic comparison helpers and frozen Current View validator; preserve guidance/judgment attribution and unresolved evidence boundaries.
 - Store provenance in the existing `current_view_change` payload's `human_review_handoff`. Create pending Proposals only in explicitly isolated databases, with empty legacy identifiers, exact idempotency, conflict rejection, and transactional revalidation/INSERT through `Database.add_proposal`.
 - Keep schema, acceptance, frozen validators, legacy impact/propagation/recovery, frontend and dependencies unchanged. No Production write, official View, impact/audit row, side-effect job, Gap/RQ, LLM, automatic summary or Evidence scoring is created by intake. The three existing content/evidence deferrals remain open.
-- Acceptance: 109 isolated tests; 493 full pytest tests; 9 frontend files / 37 tests; frontend build and compileall passed. Fifteen Production read-only smoke cases passed for MLCC and 昀冢科技. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, with all table counts unchanged, integrity `ok` and zero FK violations.
+- Acceptance: 109 isolated tests; 493 full pytest tests; 9 frontend files / 37 tests; frontend build and compileall passed. Fifteen Production read-only smoke cases passed for MLCC and 昀冢科技. Production remained byte-identical, with all table counts unchanged, integrity `ok` and zero FK violations; the exact identity stays in local evidence.
 
 ## Phase 2.4A Subject-Aware Current View Pilot — 2026-08-26
 
@@ -56,7 +64,7 @@
 - Enforced `role=subject` for direct support, retained all 8 MLCC company Claims as `CONTEXT_ONLY`, rejected `related`, and blocked company capacity/product/certification leakage from the MLCC draft.
 - Preserved `expert_judgment` and `company_guidance` attribution and excluded the two 昀冢科技 `needs_review` Claims from primary Evidence while retaining them as unresolved review items.
 - Generated two artifact-only human-review proposals plus a formal report. Both Node verdicts and the two-node model verdict are `PARTIAL`; no LLM, schema, API, frontend, Proposal DB, or Current View write occurred.
-- Production remained byte-identical at SHA-256 `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`, with zero Current Views and valid integrity/foreign keys.
+- Production remained byte-identical, with zero Current Views and valid integrity/foreign keys; the exact identity stays in local evidence.
 
 ## Phase 2.3F Claim Attribution Semantics & Company Entity Activation — 2026-08-26
 
@@ -64,7 +72,7 @@
 - Atomically created active Company Node `NODE_20260826_BC260F3E` (`昀冢科技`) with no aliases, inserted 8 Company subject links, and updated the 11 MLCC roles to 3 subject plus 8 context.
 - Extended Node Claims query/API with `link_role` and added minimal Explorer Subject / Context / Related rendering.
 - Preserved all Claim content/status/confidence, Sources, Source links, Relations, Current Views, Research Questions and Knowledge Gaps; the explicit NO_LINK Claim remains unlinked.
-- Production moved from 293 to 294 Nodes and from 11 to 19 Claim links. Backup/pre-SHA is `bad76ded1584ad22b86ccd8c19b1d6205b048c30103e71bb3e3e800f1f802d54`; post-SHA is `83a109d22ef08d5a230f28a341ef67cc0ca6ff5014be7e89d7e2ab4de8caf895`.
+- Production moved from 293 to 294 Nodes and from 11 to 19 Claim links. Exact backup, pre-state, and post-state identities stay in local evidence.
 
 ## Phase 2.3E Entity Granularity & Claim Attribution Review — 2026-08-26
 
@@ -127,7 +135,7 @@
 ## Phase 1 Freeze — 2026-08-24
 
 - Release version advanced to `0.3.0`: local canonical knowledge engine for long-term research.
-- B.2C human-approved Production import added 24 Nodes and 2 aliases; frozen Production is 280 Nodes / 706 Aliases / 177 Node Relations at SHA-256 `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`.
+- B.2C human-approved Production import added 24 Nodes and 2 aliases; frozen Production was 280 Nodes / 706 Aliases / 177 Node Relations. Its exact identity stays in local evidence.
 - Retained the AF-007 deterministic Analyzer sub-object isolation fix and run_006 regression fixture: invalid `Metric` or malformed Node Candidates are locally rejected while valid sibling objects survive; Metric remains unsupported.
 - Exact-match fallback and B.2E.1 prompt variants were NO-GO. `NM-002` / `NM-005` remain model-quality backlog; frozen Evidence, direction, identity, collision and Node Type rules were not relaxed.
 - B.2F passed 100 targeted and 283 full tests. run_007 completed 10/10 Sources with no new safety blocker or false-positive accepted Relation and confirmed AF-007 source survivability.
