@@ -1,10 +1,10 @@
 # Phase 3D — Production Path Promotion / Apply Readiness
 
-Status: **Stage 3D.0 + 3D.1 + 3D.2 complete; STOP gate active; Production apply not authorized**
+Status: **Stage 3D.0 through 3D.3B complete; Source materialization blocked; Production apply not authorized**
 
 Inspection date: `2026-09-02` (Asia/Shanghai)
 
-This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, and records the completed Stage 3D.2 deterministic payload and shadow-apply qualification. Stage 3D.2 did not migrate or change Production and does not authorize a Production write.
+This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, records the completed Stage 3D.2 deterministic payload and shadow-apply qualification, and closes the Stage 3D.3A/3D.3B authorization-preparation and human Node-review binding. The exact Source bytes remain unavailable, no final Production payload was generated, and Production apply is not authorized.
 
 ```text
 PHASE3D_STARTED = true
@@ -670,3 +670,42 @@ PRODUCTION_APPLY_ATTEMPTED = false
 ```
 
 Recommended next gate: design a separately authorized Stage 3D.3 Production-authorization package that first resolves the Source archive-materialization blocker and obtains explicit Node/Relation operation review. Do not enable or attempt Production apply until that gate is independently approved and qualified.
+
+## 12. Stage 3D.3A / 3D.3B authorization-state closure
+
+Stage 3D.3A generated a deterministic 26-record Node operation review surface bound to `PROMO_2938849C91722C57`. It retained all prior Node and Relation rejection inventory, excluded the three table-ineligible Claims, and left every human decision `PENDING`. Its deterministic suggestions were advisory only.
+
+Stage 3D.3B bound the user's explicit human review without changing the Stage 3D.3A draft in place:
+
+```text
+HUMAN_REVIEW_ID = HUMAN_NODE_REVIEW_169C617EB1D94B70
+HUMAN_REVIEW_SHA256 = 169c617eb1d94b70dcbfa2d961a33afefff41a7aa703dd7298bcae660a78995b
+DECISION_AUTHORITY = USER_HUMAN_REVIEW
+LLM_AUTHORIZATION_USED = false
+HUMAN_REVIEW_UNIVERSE = 26
+NODE_REUSE = 6
+NODE_CREATE = 8
+NODE_DEFER = 7
+NODE_REJECT = 5
+RELATION_REJECT = 10
+RELATION_REVIEW_REOPENED = false
+```
+
+The seven `DEFER` decisions remain unrepaired and non-executable. The five newly reviewed `REJECT` decisions cannot create Nodes. The eight reviewed CREATE identities passed the current-baseline Node-ID, canonical, alias, SQLite `NOCASE`, Unicode NFKC/casefold, and package-internal collision checks. The six REUSE decisions remain bound to their exact active targets. These reviewed operations are authorization inputs only; the closure artifact is explicitly non-executable.
+
+The exact Source PDF remains unavailable. Only a file with SHA256 `572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a` can clear archive-materialization readiness. No regenerated, re-downloaded byte-different, OCR, text, screenshot, or semantically equivalent substitute is acceptable.
+
+```text
+PHASE3D_STAGE3D3A_COMPLETE = true
+PHASE3D_STAGE3D3B_COMPLETE = true
+HUMAN_NODE_REVIEW_COMPLETE = true
+SOURCE_FILE_FOUND = false
+SOURCE_SHA_MATCH = false
+SOURCE_ARCHIVE_MATERIALIZATION_READY = false
+FINAL_PRODUCTION_PAYLOAD_GENERATED = false
+PRODUCTION_APPLY_AUTHORIZED = false
+PRODUCTION_CHANGED = NO
+PRODUCTION_APPLY_ATTEMPTED = false
+```
+
+The next gate remains blocked on recovery of the exact Source bytes. Stage 3D.3C, final payload generation, final shadow rehearsal, archive materialization, and Production apply are outside this closure and require separate authorization.
