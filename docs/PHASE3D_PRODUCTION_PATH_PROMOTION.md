@@ -1,16 +1,16 @@
 # Phase 3D — Production Path Promotion / Apply Readiness
 
-Status: **Stage 3D.0 through 3D.3C complete; final shadow qualification passed; Production apply not authorized**
+Status: **Phase 3D complete; authorized one-time Production apply completed; authorization consumed**
 
 Inspection date: `2026-09-02` (Asia/Shanghai)
 
-This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, records the completed Stage 3D.2 deterministic payload and shadow-apply qualification, closes the Stage 3D.3A/3D.3B authorization-preparation and human Node-review binding, and records the Stage 3D.3C exact-Source, authorization-bound payload, and final shadow rehearsal. Production apply remains explicitly unauthorized.
+This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, records the completed Stage 3D.2 deterministic payload and shadow-apply qualification, closes the Stage 3D.3A/3D.3B authorization-preparation and human Node-review binding, records the Stage 3D.3C exact-Source qualification, and closes the later executor/release/apply stages. Sections 1–13 remain point-in-time pre-apply records; Section 14 is the terminal Phase 3D state.
 
 ```text
-PHASE3D_STARTED = true
-PHASE3D_STAGE3D2_IMPLEMENTATION_STARTED = true
-PRODUCTION_CHANGED = NO
-PRODUCTION_APPLY_ATTEMPTED = false
+PHASE3D_COMPLETE = true
+ONE_TIME_PRODUCTION_APPLY = COMPLETE
+AUTHORIZATION_STATE = CONSUMED
+CONTINUING_PRODUCTION_WRITE_AUTHORITY = false
 ```
 
 ## 1. Baseline
@@ -67,10 +67,10 @@ The noisy-transcript boundary is unchanged and is not a blocker for this stage.
 Production was read through a SQLite URI using `mode=ro&immutable=1` and `PRAGMA query_only=ON`. No application `Database` helper, migration, checkpoint, vacuum, or write-capable command was used.
 
 ```text
-PRODUCTION_PATH = D:\ej\材料\codex\get_knowledge\pro_a_v0_1\workspace\pro_a.db
-PRODUCTION_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+PRODUCTION_PATH = <production-db>
+PRODUCTION_SHA256 = <historical-production-sha256>
 PRODUCTION_SCHEMA_VERSION = 0.2.1
-PRODUCTION_SCHEMA_SHA256 = 7ed86feec81b96bf5e91fd015bb1244d0e55946ae178ab73dee53a309f3ab496
+PRODUCTION_SCHEMA_SHA256 = <historical-schema-sha256>
 PRODUCTION_NODE_COUNT = 294
 PRODUCTION_ALIAS_COUNT = 737
 PRODUCTION_RELATION_COUNT = 181
@@ -535,7 +535,7 @@ Metadata binds the repository baseline, Production byte SHA, schema version, sch
 Stage 3D.2 standardizes the schema digest on the proven Phase 1 algorithm: canonical JSON over `type,name,tbl_name,sql` for every non-SQLite `sqlite_master` object, ordered by type/name. That algorithm yields:
 
 ```text
-PRODUCTION_SCHEMA_SHA256_PHASE1_CANONICAL = 1732ae65db9b56bed1c98a99824ab8e71f9fe65d5fa3cb52eb393f407e107ac2
+PRODUCTION_SCHEMA_SHA256_PHASE1_CANONICAL = <canonical-schema-sha256>
 ```
 
 The different `7ed86f...` value in the Stage 3D.0 census used its inspection-time schema projection. The Production byte SHA, schema version, tables, counts, integrity, and FK state did not change; payload generation and apply use the now-explicit Phase 1 canonical algorithm consistently.
@@ -546,10 +546,10 @@ The adapter binds these byte hashes before interpreting content:
 
 | Role | SHA-256 |
 |---|---|
-| `phase3c_rebound_bundle` | `1e94c5db8a67dd556a617fb13dcca9f4fc54e3d5cf51810c7f9b722b82ccc02f` |
-| `table_claim_safety_boundary` | `3fa68e26c0580657c4c26040ac6c0ea870d416e9d251b8f74cad9f12ff301121` |
-| `delegated_reviewer_signoff` | `b5ac42cc44dcc54f02321a643ef399d621a88667a7153da0ee06c954783012d5` |
-| `generic_extraction_review_draft` | `28de1f878905910b6bc9fa50ee75b27bedc829737643073abfaa8f2e02f56411` |
+| `phase3c_rebound_bundle` | `<artifact-sha256>` |
+| `table_claim_safety_boundary` | `<artifact-sha256>` |
+| `delegated_reviewer_signoff` | `<artifact-sha256>` |
+| `generic_extraction_review_draft` | `<artifact-sha256>` |
 
 It then proves identical run/Source identity, exact Claim coverage/order, unique Claim IDs, immutable Evidence excerpts, unchanged raw Claim projection, an exact eligible/ineligible partition, the signed 104-Claim review surface, 104 `KEEP` decisions, and zero semantic/attribution failures.
 
@@ -598,17 +598,17 @@ The generic operation helper proves explicit reviewed `CREATE` and exact reviewe
 Qualification output is under:
 
 ```text
-workspace/phase3d/STAGE3D2_QUALIFICATION_F6A9ECB_V2/
+<qualification-directory>
 ```
 
 The exact Production file was copied before any write-capable shadow connection was opened. The shadow stayed on schema `0.2.1`; no schema initialization or migration ran. All 105 intended inserts ran in one transaction under a narrow authorizer. Postflight proved the exact semantic delta:
 
 ```text
-PAYLOAD_ID = PROMO_2938849C91722C57
-PAYLOAD_SHA256 = 2938849c91722c578b11c18bf6056d46d906d4c1839707da3ae10f473c6a647d
+PAYLOAD_ID = <payload-id>
+PAYLOAD_SHA256 = <payload-sha256>
 
-SHADOW_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
-SHADOW_POST_SHA256 = 5fb927ea5dd89ed6ed9794165165554ad2ea24c0621b30cc4055d8e80aac1187
+SHADOW_PRE_SHA256 = <shadow-pre-sha256>
+SHADOW_POST_SHA256 = <shadow-post-sha256>
 CHANGED_TABLES = sources:+1/-0, claims:+104/-0
 SHADOW_FK_VIOLATIONS = 0
 SHADOW_INTEGRITY = ok
@@ -623,8 +623,8 @@ The transaction rollback drill injected a failure after the second insert and pr
 Production preflight and postflight were both immutable/read-only. The configured database was never passed to the write-capable path.
 
 ```text
-PRODUCTION_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
-PRODUCTION_POST_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+PRODUCTION_PRE_SHA256 = <historical-production-sha256>
+PRODUCTION_POST_SHA256 = <historical-production-sha256>
 PRODUCTION_SIDECARS_PRE = absent
 PRODUCTION_SIDECARS_POST = absent
 PRODUCTION_INTEGRITY = ok
@@ -678,8 +678,8 @@ Stage 3D.3A generated a deterministic 26-record Node operation review surface bo
 Stage 3D.3B bound the user's explicit human review without changing the Stage 3D.3A draft in place:
 
 ```text
-HUMAN_REVIEW_ID = HUMAN_NODE_REVIEW_169C617EB1D94B70
-HUMAN_REVIEW_SHA256 = 169c617eb1d94b70dcbfa2d961a33afefff41a7aa703dd7298bcae660a78995b
+HUMAN_REVIEW_ID = <human-review-id>
+HUMAN_REVIEW_SHA256 = <human-review-sha256>
 DECISION_AUTHORITY = USER_HUMAN_REVIEW
 LLM_AUTHORIZATION_USED = false
 HUMAN_REVIEW_UNIVERSE = 26
@@ -693,7 +693,7 @@ RELATION_REVIEW_REOPENED = false
 
 The seven `DEFER` decisions remain unrepaired and non-executable. The five newly reviewed `REJECT` decisions cannot create Nodes. The eight reviewed CREATE identities passed the current-baseline Node-ID, canonical, alias, SQLite `NOCASE`, Unicode NFKC/casefold, and package-internal collision checks. The six REUSE decisions remain bound to their exact active targets. These reviewed operations are authorization inputs only; the closure artifact is explicitly non-executable.
 
-The exact Source PDF remains unavailable. Only a file with SHA256 `572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a` can clear archive-materialization readiness. No regenerated, re-downloaded byte-different, OCR, text, screenshot, or semantically equivalent substitute is acceptable.
+The exact Source PDF remained unavailable at this historical gate. Only the locally recorded exact Source byte identity could clear archive-materialization readiness. No regenerated, re-downloaded byte-different, OCR, text, screenshot, or semantically equivalent substitute was acceptable.
 
 ```text
 PHASE3D_STAGE3D3A_COMPLETE = true
@@ -712,13 +712,13 @@ The next gate remains blocked on recovery of the exact Source bytes. Stage 3D.3C
 
 ## 13. Stage 3D.3C final qualification
 
-Stage 3D.3C supersedes the prior Source blocker without rewriting its historical receipt. The recovered PDF was frozen into the ignored qualification package independently of the external Downloads path:
+Stage 3D.3C supersedes the prior Source blocker without rewriting its historical receipt. The recovered PDF was frozen into the ignored local qualification package independently of its external source location:
 
 ```text
-QUALIFICATION_DIRECTORY = workspace/phase3d/STAGE3D3C_FINAL_QUALIFICATION_A2AC028/
-SOURCE_PACKAGE = source/SRC_20260902_FDA400A0__20260629-华安证券-聚辰股份（688123.SH）：深耕EEPROM与SPD全球领先，卡位企业级eSSD和CXL用VPD，构筑新型AI存力优势.pdf
-SOURCE_PACKAGE_SIZE = 3261556
-SOURCE_PACKAGE_SHA256 = 572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a
+QUALIFICATION_DIRECTORY = <qualification-directory>
+SOURCE_PACKAGE = <source-package>
+SOURCE_PACKAGE_SIZE = <source-size>
+SOURCE_PACKAGE_SHA256 = <source-sha256>
 SOURCE_PACKAGE_FROZEN = true
 ```
 
@@ -730,8 +730,8 @@ The final candidate payload binds the exact Phase 3C artifact hashes, Stage 3D.2
 
 ```text
 DOCUMENT_TYPE = phase3d_authorization_bound_promotion_payload
-FINAL_PAYLOAD_ID = PROMO_F2C6A1A0B0527D5E
-FINAL_PAYLOAD_SHA256 = f2c6a1a0b0527d5e37f6f3ac4a85d64ad7bea75c390fd24f2766d550609b1c7e
+FINAL_PAYLOAD_ID = <payload-id>
+FINAL_PAYLOAD_SHA256 = <payload-sha256>
 REPOSITORY_COMMIT = a2ac028ac90f4eea2b8d9c916d6538ac14fe7aea
 QUALIFIED_EXECUTION_TARGET = SHADOW_ONLY
 DECISION_AUTHORITY = USER_HUMAN_REVIEW
@@ -768,13 +768,13 @@ Supporting Claim IDs remain audit provenance. Neither the Phase 3C artifacts nor
 A fresh exact Production copy and a separate disposable filesystem root exercised Source materialization plus the complete DB transaction:
 
 ```text
-FINAL_SHADOW_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
-FINAL_SHADOW_POST_SHA256 = 3c0007f38b136686cb1e0e73e2ad2f389983f61ae2c81679fcf5067835c4eba0
+FINAL_SHADOW_PRE_SHA256 = <shadow-pre-sha256>
+FINAL_SHADOW_POST_SHA256 = <shadow-post-sha256>
 CHANGED_TABLES = sources:+1/-0, claims:+104/-0, nodes:+8/-0, node_aliases:+8/-0
 FINAL_SHADOW_FK_VIOLATIONS = 0
 FINAL_SHADOW_INTEGRITY = ok
 FINAL_SHADOW_ARCHIVE_FILES = 1
-FINAL_SHADOW_ARCHIVE_SHA256 = 572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a
+FINAL_SHADOW_ARCHIVE_SHA256 = <source-sha256>
 ```
 
 Exact replay returned `ALREADY_APPLIED` for the DB and `ALREADY_MATERIALIZED` for the archive with no delta. A conflicting replay failed closed. The controlled DB failure rolled back all semantic DB mutations and removed the newly materialized disposable Source. The Source-copy failure cleaned its staged bytes before any DB mutation. The restore drill recovered the exact Production byte SHA, semantic state, integrity, FK state, and empty pre-apply disposable archive state.
@@ -784,8 +784,8 @@ Exact replay returned `ALREADY_APPLIED` for the DB and `ALREADY_MATERIALIZED` fo
 Production was inspected only through immutable/read-only connections. No schema initializer, migration, IMA, Proposal, Current View, propagation, Relation, or Production archive path was invoked.
 
 ```text
-PRODUCTION_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
-PRODUCTION_POST_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+PRODUCTION_PRE_SHA256 = <historical-production-sha256>
+PRODUCTION_POST_SHA256 = <historical-production-sha256>
 PRODUCTION_INTEGRITY = ok
 PRODUCTION_FK_VIOLATIONS = 0
 PRODUCTION_SIDECARS = absent
@@ -807,3 +807,46 @@ compileall = PASS
 git diff --check = PASS
 Frontend tests = not run; no API or frontend behavior changed
 ```
+
+## 14. Phase 3D terminal closure
+
+Phase 3D is complete. The release path delivered a deterministic promotion payload, exact multi-artifact admission convergence, a Source provenance/materialization contract, an explicit `CREATE` / `REUSE` / `DEFER` / `REJECT` operation layer, human Node authorization, Phase 1-style collision and baseline validation, shadow qualification, rollback/restore qualification, a dedicated one-time Production executor, an immutable authorization artifact, durable journal/receipt consumption state, and one successful exact Production promotion.
+
+The successful apply was limited to the frozen payload, Source identity, repository baseline, database baseline, schema, and reviewed operations. Its authorization is terminal and consumed. It grants no reusable executor invocation, generic ingestion authority, browser write authority, IMA authority, schema authority, or permission for a second apply.
+
+### 14.1 Frozen Production baseline
+
+The new baseline uses schema `0.2.1` and has the following canonical counts:
+
+| Surface | Count |
+|---|---:|
+| Nodes | 302 |
+| Node aliases | 745 |
+| Node Relations | 181 |
+| Sources | 3 |
+| Claims | 116 |
+| Claim–Node links | 19 |
+| Source–Node links | 3 |
+| Claim Relations | 0 |
+| Source Relations | 0 |
+| Proposals | 11 |
+| Current Views | 2 |
+| Processing jobs | 5 |
+| Side-effect jobs | 2 |
+| Meta rows | 1 |
+
+Integrity is `ok`, foreign-key violations are zero, and no SQLite sidecar is present. The exact Production byte identity and the authorization, journal, receipt, backup, Source materialization, and rollback evidence remain in the controlled local runtime evidence set; they are intentionally not duplicated in public documentation.
+
+### 14.2 Preserved non-executable backlog
+
+- Seven Node decisions remain `DEFER`: AI算力, TS芯片, 摄像头马达驱动芯片, NFC芯片, EDSFF eSSD模组, 聚辰股份, and AI推理存储需求.
+- Ten Relation observations remain `REJECT`; no Relation was promoted or queued for replay.
+- Schema `0.2.2` and `relation_evidence_links` remain a separate migration/evidence-model stage.
+- Noisy Source, audio/ASR ingestion, and local-model preprocessing remain separate future quality stages.
+- IMA live integration and higher-level review UI remain separately scoped and unauthorized.
+
+### 14.3 Recommended next stage
+
+Proceed next with **Phase 3E — Operational New-Source Ingestion**. Phase 3C and Phase 3D now prove the clean-source extraction, review, deterministic promotion, and guarded apply chain end to end. Turning that chain into a repeatable, per-Source authorized operating procedure is the shortest path to useful daily operation; broader UI, IMA, schema, and local-model work can follow without being coupled to this closure.
+
+The repository version and latest tag are both `v0.3.0`. Because this closure changes documentation/governance only, it does not trigger an automatic version bump or tag; versioning should be reconsidered with the next executable release.

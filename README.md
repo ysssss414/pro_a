@@ -1,10 +1,10 @@
 # pro_a v0.3.0 — Phase 3 Source Expansion
 
-`pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `workspace/pro_a.db` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
+`pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `<production-db>` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C correctness/generalization complete.** Phase 3C 已完成独立 clean-source generalization：Evidence v2 / bounded local-subspan repair、`NARRATIVE_FIRST_TABLE_SUPPRESSION`、PyMuPDF structure sidecar 与 `TABLE_DERIVED_CLAIM_SAFETY_BOUNDARY_V1` 均通过独立 Pilot #6。最终 delegated review 为 104/104 KEEP、0 true semantic failures、0 attribution errors。该 reviewer authority 为 `USER_DELEGATED_AI_REVIEW`，不是 human-executed review。**Production apply 仍未授权；下一 gate 是 Production Path Promotion / Apply Readiness。**
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete.** Phase 3C 已关闭 clean-source correctness/generalization，Phase 3D 已完成 deterministic promotion、human authorization binding、shadow qualification、rollback drill 与一次性 exact Production apply。该授权已随成功执行消费，不构成持续或通用 Production write authority。下一建议阶段是 Phase 3E Operational New-Source Ingestion，目前仅为路线建议，尚未开始或授权。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -13,7 +13,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - functional Relation import count：0；
 - Production：293 Nodes / 737 Aliases / 181 Node Relations；
 - current `part_of`：174；
-- Production SHA-256：`8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`。
+- Phase 1 exact Production byte identity：保存在本地受控 evidence 中。
 
 正式 closure 见：
 
@@ -21,8 +21,9 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 - [`docs/PHASE3C_CORRECTNESS_CLOSURE.md`](docs/PHASE3C_CORRECTNESS_CLOSURE.md)
+- [`docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`](docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md)
 
-当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery；Phase 2.6B 已完成仅浏览器 localStorage 的 Human Impact Review draft/export surface 及真实 Production 只读验收。canonical 内容保持不变。
+当前 Production baseline 为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 个 official Current Views。Phase 2 的 deterministic read surfaces 与 Phase 3 的 controlled Source expansion 路径均保留原边界。
 
 Phase 2 — **Knowledge Exploration & Interaction Layer** 已收口：Search、Browse、Trace、Research 与 Human Current View maintenance workflow 均 complete。原目标顺序为：
 
@@ -59,18 +60,24 @@ Phase 3C 建立并验证了 clean-source corpus expansion 的 non-canonical corr
 - `TABLE_DERIVED_CLAIM_SAFETY_BOUNDARY_V1`：post-binding 只依据 authoritative Evidence + native table geometry 判定 origin eligibility；
 - raw table-derived Claims / Evidence 继续保留供审计，不作为 semantic failure 删除。
 
-Independent Pilot #6：107 raw Claims → 3 `TABLE_DERIVED_CLAIM_INELIGIBLE` → 104 review-eligible Claims；Source independence、table suppression、table-claim safety、Evidence artifact、mechanical gate 全部 PASS；delegated semantic review 为 104 KEEP / 0 DROP、true semantic failure 0.00%、`ATTRIBUTION_ERROR = 0`。Production SQLite 全程保持 SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`，integrity `ok`，FK violations `0`。
+Independent Pilot #6：107 raw Claims → 3 `TABLE_DERIVED_CLAIM_INELIGIBLE` → 104 review-eligible Claims；Source independence、table suppression、table-claim safety、Evidence artifact、mechanical gate 全部 PASS；delegated semantic review 为 104 KEEP / 0 DROP、true semantic failure 0.00%、`ATTRIBUTION_ERROR = 0`。Production SQLite 全程 byte-identical，integrity `ok`，FK violations `0`；精确 byte identity 保存在本地 evidence 中。
 
-Phase 3C correctness/generalization 因此关闭，但**没有获得 Production write authority**：
+Phase 3C correctness/generalization 因此关闭；其 artifacts 与 review decisions 随后由 Phase 3D promotion contract 绑定，而非直接获得 Production write authority：
 
 ```text
 PHASE3C_COMPLETE = true
-PRODUCTION_APPLY_READY = NO
-LIVE_PRODUCTION_APPLY_AUTHORIZED = false
-PHASE3C_NEXT_GATE = Production Path Promotion / Apply Readiness
+PHASE3C_HANDOFF_TO_PHASE3D = complete
 ```
 
 详见 [`docs/PHASE3C_CORRECTNESS_CLOSURE.md`](docs/PHASE3C_CORRECTNESS_CLOSURE.md)。
+
+## Phase 3D — Production Path Promotion Closure
+
+Phase 3D 建立并验证了 deterministic promotion payload、exact multi-artifact admission convergence、Source provenance/materialization contract、`CREATE` / `REUSE` / `DEFER` / `REJECT` operation layer、human Node authorization、Phase 1-style collision/baseline validation、shadow qualification、rollback/restore qualification、dedicated one-time executor、immutable authorization artifact 与 durable journal/receipt consumption state。已授权的 frozen payload 对 exact baseline 成功执行一次；授权随后终止，不能重用于其他 payload、baseline、Source 或后续 ingest。
+
+公开文档仅冻结 schema、计数、操作边界和结论。精确 Production byte identity、Source 原件、authorization、journal、receipt、backup 及运行时路径继续保存在本地受控证据中。7 个 Node DEFER 与 10 个 Relation REJECT 均未执行；schema `0.2.2` / `relation_evidence_links`、noisy Source / audio / ASR、local-model preprocessing、IMA live integration 和更高层 review UI 都是独立 backlog。
+
+推荐下一阶段为 Phase 3E Operational New-Source Ingestion：把已证明的逐 Source 路径整理为可重复、显式授权的日常流程；该建议本身不授权任何 Production mutation。详见 [`docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`](docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md) 与 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
 ## Phase 2.1A read-only architecture
 
@@ -81,7 +88,7 @@ Read-only HTTP API
         ↓
 Query / Read Model
         ↓
-workspace/pro_a.db
+<production-db>
 ```
 
 Phase 1 知识生产路径保持不变：
@@ -157,12 +164,12 @@ npm run dev
 
 打开 `http://127.0.0.1:5173`。开发服务器将 `/api` 代理到 `http://127.0.0.1:8000`；如需覆盖 API 地址，可设置 `VITE_API_BASE_URL`。
 
-Standard / Deep legacy ingestion 仍使用既有 CLI 和 frozen contracts；Phase 3C clean-source correctness path 尚未获得 normal Production-path promotion。任何 Production mutation 继续要求明确目标、precondition SHA、独立 backup、single transaction、receipt、post-write QA 与显式用户授权。
+Standard / Deep legacy ingestion 仍使用既有 CLI 和 frozen contracts。Phase 3D 的成功 apply 仅证明一个 exact、一次性 promotion；任何新 Production mutation 仍要求独立的明确目标、baseline precondition、backup、single transaction、receipt、post-write QA 与显式用户授权。
 
 ## 当前边界
 
 当前 Explorer 是 desktop-first、本地只读的投研知识终端，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot、raw file serving 或 schema migration。Current View Compare 只做 exact structured diff；impact discovery 只发现 direct candidates；Human Impact Review 只保存 browser-local non-canonical draft 并导出 handoff JSON。三者均不包含 semantic/fuzzy/LLM interpretation、自动影响方向或 change-level 判断、Proposal、Current View mutation 或 propagation。图固定为所选 Node 的 current 1-hop；Production 若没有 Current View、Research Question、Knowledge Gap 或 Node-linked Claim，界面会如实显示空态。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
 
-Phase 3C correctness complete 不等于 live corpus write ready。PyMuPDF licensing/deployment、normal ingestion promotion、Production dry-run/backup/transaction/receipt/post-write QA 仍属于下一 gate。
+Phase 3D closure 不把 Explorer、legacy ingestion、IMA 或未来 Source 变为 Production write-enabled。PyMuPDF licensing/deployment、可重复 operational ingestion、schema migration 与各 backlog 均须作为独立阶段重新验证和授权。
 
 后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。

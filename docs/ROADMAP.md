@@ -1,8 +1,8 @@
 # pro_a Roadmap — Source Expansion & External Knowledge Integration
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete**
 
-Next: **Phase 3C — Controlled Live Corpus Expansion Pilot: IN PROGRESS — Stage 1 extraction review required.**
+Next recommended: **Phase 3E — Operational New-Source Ingestion. Planning only; not started or authorized.**
 
 ## Completed — Phase 1
 
@@ -21,7 +21,7 @@ Phase 1.1A 完成经人工 adjudication 的 Node、alias 与四条 structural `p
 - Node Relations：181；
 - current `part_of`：174；
 - functional Relation import：0；
-- SHA-256：`8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`。
+- exact Production byte identity：保存在本地受控 evidence 中。
 
 Closure 见 `docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md` 与 `docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`。
 
@@ -162,15 +162,29 @@ Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与�
 
 隔离测试覆盖 HTTP/COS simulator、PDF 与 Office full sync、全部 Phase 3A 文件格式 preflight、safe retry 与 uncertain retry blocking、mapping ID 稳定性、pipeline outage/same-name continuation、API/Explorer GET-only observability。没有 schema、Claim/Node/Relation/Current View/Proposal/Propagation 变化。
 
-`LIVE_IMA_WRITE_AUTHORIZED = false`；`LIVE_IMA_READONLY_PROBE_AUTHORIZED = false`。Phase 3C 已进入 Stage 1：仅对用户明确提供的 TGV PDF 执行一次真实 extraction；Production apply、IMA、第二篇 PDF 和后续 Claim attribution 均未授权。
+`LIVE_IMA_WRITE_AUTHORIZED = false`；`LIVE_IMA_READONLY_PROBE_AUTHORIZED = false`。IMA live integration 仍是独立后续工作，不因 Phase 3C/3D closure 自动获得授权。
 
 ### Phase 3C — Controlled Live Corpus Expansion Pilot
 
-状态：**IN PROGRESS — Stage 1 extraction review required**。
+状态：**complete**。
 
-新增独立 `src/pro_a/corpus_pilot.py` 与 `scripts/phase3c_corpus_pilot.py`。Stage 1 使用 Phase 3A parser、当前 frozen Analyzer 和配置中的真实 LLM，在 Production SQLite 的隔离副本上生成 non-canonical `phase3c_extraction_bundle` 与 `phase3c_extraction_review` draft，并在 review Markdown 中提供 Evidence locator、观察性 Node/Relation 输出、拒绝项和 metrics。该路径绕过 legacy `IngestionPipeline.process_file` 的 canonical links、Proposal、历史比较、Impact、Current View、Gap/RQ 和 IMA side effects；真实 Production 与 IMA 均不写。
+Phase 3C 完成 controlled live corpus pilot 及独立 clean-source correctness/generalization。Evidence v2、bounded local-subspan repair、narrative-first table suppression、PDF structure sidecar 与 post-binding table-derived Claim safety boundary 均完成独立验证。最终 eligible Claim review 为 104 KEEP、0 DROP，true semantic failure 与 attribution error 均为 0；表格来源的不合格 Claims 保留作审计而未进入 canonical apply。
 
-Review 使用单一 `extraction_bundle_sha256` 绑定 exact extraction output；Claim 内容不可编辑，决策仅允许 `KEEP`、`DROP`、`KEEP_NEEDS_REVIEW`，且未通过 Evidence exact validation 的 Claim 不可 KEEP。未来 apply 仅接受 READY exact review，在显式隔离 Production copy 上通过窄 SQLite authorizer 允许 Sources、Claims 和 processing_jobs 写入，并具备 duplicate/idempotency/conflict、archive copy failure 和 receipt failure 边界。TGV Stage 1 完成后必须停止等待人工 Extraction Review；`光互连研究方法与框架20260819.pdf` 保留给后续 robustness pilot。详见 `docs/PHASE3C_LIVE_CORPUS_EXPANSION_PILOT.md`。
+Phase 3C artifacts、review decisions 与 exact Source identity 随后作为 Phase 3D 输入；Phase 3C 自身不授予 Production authority。详见 `docs/PHASE3C_CORRECTNESS_CLOSURE.md`。
+
+### Phase 3D — Production Path Promotion / Apply Readiness
+
+状态：**complete**。
+
+Phase 3D 交付 deterministic promotion payload、exact multi-artifact admission convergence、Source provenance/materialization contract、`CREATE` / `REUSE` / `DEFER` / `REJECT` operation layer、human Node authorization、Phase 1-style collision/baseline validation、shadow qualification、rollback/restore qualification、dedicated one-time executor、immutable authorization artifact、durable journal/receipt consumption state 以及 successful exact Production promotion。授权仅覆盖已冻结 payload 与 baseline，并在成功执行后终止；没有持续、通用或浏览器 Production write authority。
+
+当前 Production baseline 冻结为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 Current Views；integrity `ok`、foreign-key violations 0、无 SQLite sidecar。精确 byte identity、authorization、journal、receipt、backup 与 Source materialization 证据仅保留在本地受控运行时，不进入公开文档。
+
+详见 `docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`。
+
+### Next recommended — Phase 3E Operational New-Source Ingestion
+
+推荐选择 **A：Operational new-source ingestion**。Phase 3C/3D 已证明 clean-source extraction、人工治理和窄 Production promotion 的完整路径；将其整理为可重复、逐 Source 授权的日常流程，是到达有用日常运行的最短依赖路径。更高层 review UI、IMA live integration 与 local-model preprocessing 应在该流程稳定后分别推进。Phase 3E 目前仅为路线建议，不携带执行或 Production 授权。
 
 ### Later — not started
 
@@ -196,13 +210,22 @@ DEFER_EVIDENCE_QUALITY_METADATA = true
 
 - Relation Candidate generation 漏召回；
 - contract-constrained functional Relation false negatives；
+- Phase 3D 的 7 个 Node DEFER：AI算力、TS芯片、摄像头马达驱动芯片、NFC芯片、EDSFF eSSD模组、聚辰股份、AI推理存储需求；
+- Phase 3D 的 10 个 Relation observations 保持 `REJECT`，不得自动重放；
+- schema `0.2.2` / `relation_evidence_links` 作为独立迁移阶段；
+- noisy Source、audio / ASR ingestion 作为独立质量阶段；
+- local-model preprocessing 作为未来独立能力；
 - Claim semantic deduplication / conflict retrieval；
 - Proposal “modify then accept”；
 - Knowledge Gap 与 ResearchQuestion 完整生命周期；
 - 更可靠的表格、图表、多模态与 source-version 处理；
-- 正式 IMA integration acceptance 与更高层 review UI。
+- IMA live integration 与更高层 review UI。
 
-这些 backlog 不授权修改 Phase 1 frozen contracts，也不属于 Phase 3A 验收范围。
+这些 backlog 不授权修改 Phase 1 frozen contracts，也不继承已消费的一次性 Production authorization。
+
+## Version and release policy
+
+当前项目版本与最新 tag 均为 `v0.3.0`。本次仅为 documentation/governance closure，不改变 executable behavior，因此不自动 bump version 或创建 tag；在下一次 executable release 时重新评估版本与 tag。
 
 ## Decision rule
 
