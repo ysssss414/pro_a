@@ -2,7 +2,7 @@
 
 Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete**
 
-Next: **Phase 3C — Controlled Live Corpus Expansion Pilot: ready for planning; not authorized.**
+Next: **Phase 3C — Controlled Live Corpus Expansion Pilot: IN PROGRESS — Stage 1 extraction review required.**
 
 ## Completed — Phase 1
 
@@ -162,7 +162,15 @@ Read-only API 现在按 `pending/accepted/rejected` 暴露 Proposal history 与�
 
 隔离测试覆盖 HTTP/COS simulator、PDF 与 Office full sync、全部 Phase 3A 文件格式 preflight、safe retry 与 uncertain retry blocking、mapping ID 稳定性、pipeline outage/same-name continuation、API/Explorer GET-only observability。没有 schema、Claim/Node/Relation/Current View/Proposal/Propagation 变化。
 
-`LIVE_IMA_WRITE_AUTHORIZED = false`；`LIVE_IMA_READONLY_PROBE_AUTHORIZED = false`。Phase 3C Controlled Live Corpus Expansion Pilot 仅 ready for planning，不授权执行。
+`LIVE_IMA_WRITE_AUTHORIZED = false`；`LIVE_IMA_READONLY_PROBE_AUTHORIZED = false`。Phase 3C 已进入 Stage 1：仅对用户明确提供的 TGV PDF 执行一次真实 extraction；Production apply、IMA、第二篇 PDF 和后续 Claim attribution 均未授权。
+
+### Phase 3C — Controlled Live Corpus Expansion Pilot
+
+状态：**IN PROGRESS — Stage 1 extraction review required**。
+
+新增独立 `src/pro_a/corpus_pilot.py` 与 `scripts/phase3c_corpus_pilot.py`。Stage 1 使用 Phase 3A parser、当前 frozen Analyzer 和配置中的真实 LLM，在 Production SQLite 的隔离副本上生成 non-canonical `phase3c_extraction_bundle` 与 `phase3c_extraction_review` draft，并在 review Markdown 中提供 Evidence locator、观察性 Node/Relation 输出、拒绝项和 metrics。该路径绕过 legacy `IngestionPipeline.process_file` 的 canonical links、Proposal、历史比较、Impact、Current View、Gap/RQ 和 IMA side effects；真实 Production 与 IMA 均不写。
+
+Review 使用单一 `extraction_bundle_sha256` 绑定 exact extraction output；Claim 内容不可编辑，决策仅允许 `KEEP`、`DROP`、`KEEP_NEEDS_REVIEW`，且未通过 Evidence exact validation 的 Claim 不可 KEEP。未来 apply 仅接受 READY exact review，在显式隔离 Production copy 上通过窄 SQLite authorizer 允许 Sources、Claims 和 processing_jobs 写入，并具备 duplicate/idempotency/conflict、archive copy failure 和 receipt failure 边界。TGV Stage 1 完成后必须停止等待人工 Extraction Review；`光互连研究方法与框架20260819.pdf` 保留给后续 robustness pilot。详见 `docs/PHASE3C_LIVE_CORPUS_EXPANSION_PILOT.md`。
 
 ### Later — not started
 

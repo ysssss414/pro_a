@@ -18,6 +18,59 @@ from .receipts import write_proposal, write_receipt
 from .storage import archive_file, ensure_workspace, sha256_file
 
 
+def build_claim_record(
+    claim_id: str,
+    source_id: str,
+    claim: dict[str, Any],
+    publication_time: str,
+    full_text: str,
+    *,
+    ingestion_time: str | None = None,
+    created_at: str | None = None,
+) -> dict[str, Any] | None:
+    """Build the canonical Claim fields without writing them to SQLite."""
+    statement = normalize_ws(str(claim.get("statement", "")))
+    if not statement:
+        return None
+    status = claim.get("status") or "current"
+    if not claim.get("evidence_validated"):
+        status = "needs_review"
+    structured = dict(claim.get("structured") or {})
+    structured["related_candidate_names"] = claim.get("related_candidate_names") or []
+    if claim.get("statement_normalization"):
+        structured["statement_normalization"] = dict(claim["statement_normalization"])
+    structured["validation"] = dict(claim.get("validation") or {
+        "evidence_validated": bool(claim.get("evidence_validated")),
+        "model_confidence": claim.get("confidence"),
+        "errors": [] if claim.get("evidence_validated") else ["evidence_excerpt_not_found"],
+    })
+    structured["validation"]["source_locator"] = resolve_evidence_locator(
+        full_text, claim.get("evidence_excerpt") or "",
+    )
+    return {
+        "claim_id": claim_id,
+        "statement": statement,
+        "nature": claim.get("nature") or "fact",
+        "fact_time": claim.get("fact_time") or "",
+        "publication_time": publication_time,
+        "ingestion_time": ingestion_time or now_iso(),
+        "source_id": source_id,
+        "evidence_pointer": claim.get("evidence_pointer") or "",
+        "evidence_excerpt": claim.get("evidence_excerpt") or "",
+        "attributed_to": claim.get("attributed_to") or "",
+        "scope": claim.get("scope") or "",
+        "assumption_text": claim.get("assumption") or "",
+        "status": status,
+        "confidence": claim.get("confidence"),
+        "novelty_level": claim.get("novelty_level") or "N2",
+        "structured": structured,
+        "created_at": created_at or now_iso(),
+        "evidence_validated": bool(claim.get("evidence_validated")),
+        "related_node_ids": list(claim.get("related_node_ids") or []),
+        "related_candidate_names": list(claim.get("related_candidate_names") or []),
+    }
+
+
 class IngestionPipeline:
     def __init__(self, cfg: AppConfig, db: Database):
         self.cfg = cfg
@@ -196,38 +249,29 @@ class IngestionPipeline:
         claim_ids: list[str] = []
         claim_id_by_index: dict[int, str] = {}
         for claim_index, c in enumerate(analysis.claims):
-            statement = normalize_ws(str(c.get("statement", "")))
-            if not statement:
+            if not normalize_ws(str(c.get("statement", ""))):
                 continue
             claim_id = make_id("CLM")
-            status = c.get("status") or "current"
-            if not c.get("evidence_validated"):
-                status = "needs_review"
-            structured = dict(c.get("structured") or {})
-            structured["related_candidate_names"] = c.get("related_candidate_names") or []
-            if c.get("statement_normalization"):
-                structured["statement_normalization"] = dict(c["statement_normalization"])
-            structured["validation"] = dict(c.get("validation") or {
-                "evidence_validated": bool(c.get("evidence_validated")),
-                "model_confidence": c.get("confidence"),
-                "errors": [] if c.get("evidence_validated") else ["evidence_excerpt_not_found"],
-            })
-            structured["validation"]["source_locator"] = resolve_evidence_locator(
-                full_text, c.get("evidence_excerpt") or "",
+            record = build_claim_record(
+                claim_id, source_id, c, publication_time, full_text,
             )
+            if record is None:
+                continue
             self.db.execute(
                 """INSERT INTO claims(claim_id,statement,nature,fact_time,publication_time,ingestion_time,source_id,
                    evidence_pointer,evidence_excerpt,attributed_to,scope,assumption_text,status,confidence,novelty_level,
                    structured_json,created_at)
                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (claim_id, statement, c.get("nature") or "fact", c.get("fact_time") or "", publication_time,
-                 now_iso(), source_id, c.get("evidence_pointer") or "", c.get("evidence_excerpt") or "",
-                 c.get("attributed_to") or "", c.get("scope") or "", c.get("assumption") or "", status, c.get("confidence"),
-                 c.get("novelty_level") or "N2", json.dumps(structured, ensure_ascii=False), now_iso()),
+                (record["claim_id"], record["statement"], record["nature"], record["fact_time"],
+                 record["publication_time"], record["ingestion_time"], record["source_id"],
+                 record["evidence_pointer"], record["evidence_excerpt"], record["attributed_to"],
+                 record["scope"], record["assumption_text"], record["status"], record["confidence"],
+                 record["novelty_level"], json.dumps(record["structured"], ensure_ascii=False),
+                 record["created_at"]),
             )
             claim_ids.append(claim_id)
             claim_id_by_index[claim_index] = claim_id
-            for node_id in c.get("related_node_ids") or []:
+            for node_id in record["related_node_ids"]:
                 if self.db.get_node(node_id):
                     self.db.execute("INSERT OR IGNORE INTO claim_node_links(claim_id,node_id,role) VALUES(?,?,?)",
                                     (claim_id, node_id, "related"))
@@ -235,8 +279,8 @@ class IngestionPipeline:
                         """INSERT OR IGNORE INTO source_node_links(
                            source_id,node_id,role,confidence,link_origin,evidence_excerpt,evidence_validation_json)
                            VALUES(?,?,?,?,?,?,?)""",
-                        (source_id, node_id, "related", c.get("confidence"), "claim",
-                         c.get("evidence_excerpt") or "", json.dumps(structured["validation"], ensure_ascii=False)),
+                        (source_id, node_id, "related", record["confidence"], "claim",
+                         record["evidence_excerpt"], json.dumps(record["structured"]["validation"], ensure_ascii=False)),
                     )
         return claim_ids, claim_id_by_index
 

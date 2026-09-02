@@ -1,0 +1,118 @@
+{
+  "schema_version": "1",
+  "purpose": "Generic, LLM-free prompt-contract fixtures for source-local semantic extraction.",
+  "cases": [
+    {
+      "id": "A",
+      "failure_class": "AMBIGUOUS_TECHNICAL_TOKEN",
+      "source": "访谈转写：这个方案使用洛层芯片，但本段没有解释‘洛层’。",
+      "candidate_claim": "该方案使用硅光芯片。",
+      "expected": "REJECT_PRECISE_NORMALIZATION",
+      "required_prompt_fragments": [
+        "SOURCE-LOCAL RESOLUTION ONLY",
+        "不得把音近",
+        "不输出该 Claim"
+      ]
+    },
+    {
+      "id": "B",
+      "failure_class": "LOCALLY_RESOLVED_NOISY_TOKEN",
+      "source": "访谈转写：我们口头说的‘洛层芯片’，下文均指硅光芯片。洛层芯片已经送样。",
+      "candidate_claim": "硅光芯片已经送样。",
+      "expected": "NORMALIZATION_MAY_BE_ACCEPTED",
+      "required_prompt_fragments": [
+        "明确全称、缩写释义、无歧义复现或等价表述",
+        "自行建立时才可标准化"
+      ]
+    },
+    {
+      "id": "C",
+      "failure_class": "ENTITY_INFERENCE",
+      "source": "访谈转写：新意电纸正在评估该工艺；本段没有公司全称。",
+      "candidate_claim": "星益电子股份有限公司正在评估该工艺。",
+      "expected": "REJECT_CANONICAL_ENTITY_INFERENCE",
+      "required_prompt_fragments": [
+        "Existing Node/Alias",
+        "实体匹配观察不等于改写 Claim 的许可"
+      ]
+    },
+    {
+      "id": "D",
+      "failure_class": "PRODUCT_CATEGORY_SUBSTITUTION",
+      "source": "专家：陶瓷基板目前价格较高。",
+      "candidate_claim": "玻璃布目前价格较高。",
+      "expected": "REJECT_CATEGORY_SUBSTITUTION",
+      "required_prompt_fragments": [
+        "产品类别边界",
+        "类别损坏或未解析时不得猜测"
+      ]
+    },
+    {
+      "id": "E",
+      "failure_class": "AMBIGUOUS_PRONOUN",
+      "source": "专家：树脂和薄膜都在验证，它目前还不稳定。",
+      "candidate_claim": "薄膜目前还不稳定。",
+      "expected": "REJECT_FORCED_ANTECEDENT",
+      "required_prompt_fragments": [
+        "存在唯一明确先行词",
+        "多个先行词都可能成立时"
+      ]
+    },
+    {
+      "id": "F",
+      "failure_class": "CONDITIONALITY",
+      "source": "专家：如果该产线能达到八成良率，就可能具备小批量能力。",
+      "candidate_claim": "该产线目前已具备小批量能力。",
+      "expected": "REJECT_CONDITION_LOSS",
+      "required_prompt_fragments": [
+        "条件能力写成当前已实现能力",
+        "修饰词必须继续附着于原本修饰的命题"
+      ]
+    },
+    {
+      "id": "G",
+      "failure_class": "RELATIVE_DATE",
+      "source": "专家：到四月交付节奏会改善。",
+      "candidate_claim": "到明年四月交付节奏会改善。",
+      "expected": "REJECT_UNRESOLVED_YEAR",
+      "required_prompt_fragments": [
+        "相对时间必须忠于 Source",
+        "不得仅凭 publication_time 推断"
+      ]
+    },
+    {
+      "id": "H",
+      "failure_class": "SCOPE",
+      "source": "专家：这家供应商的一条试验线可能用于高频产品。",
+      "candidate_claim": "该行业全部产线都将用于高频产品。",
+      "expected": "REJECT_SCOPE_EXPANSION",
+      "required_prompt_fragments": [
+        "局部设计、供应商能力、可能用途",
+        "整个主题的普遍结论"
+      ]
+    },
+    {
+      "id": "I",
+      "failure_class": "MATERIAL_ATOMICITY",
+      "source": "专家：海外供应商占比较高。",
+      "candidate_claim": "海外供应商占比较高，国内厂商只是跟随者。",
+      "expected": "REJECT_COMPOUND_OR_SPLIT_SUPPORTED_A",
+      "required_prompt_fragments": [
+        "有支持的 A 与无支持的 B",
+        "可独立证伪的实质命题"
+      ]
+    },
+    {
+      "id": "J",
+      "failure_class": "ATTRIBUTION_NON_REGRESSION",
+      "source": "主持人：甲公司本季已经交付了吗？专家：这个我不确定。主持人：问题是否仍在验证？专家：对。",
+      "candidate_claim": "专家称自己本季已经交付，并确认问题仍在验证。",
+      "expected": "REJECT_COMPANY_TO_SPEAKER_AND_UNAFFIRMED_PREMISE; MAY_ACCEPT_EXPLICITLY_AFFIRMED_PROPOSITION",
+      "required_prompt_fragments": [
+        "归因只写入 attributed_to",
+        "问句中的前提不等于回答者的陈述或判断",
+        "明确肯定并清楚绑定"
+      ]
+    }
+  ]
+}

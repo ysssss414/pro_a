@@ -1011,7 +1011,6 @@ class Analyzer:
             attributed_to = normalize_ws(claim.get("attributed_to") or "")
             claim["attributed_to"] = attributed_to
             scope = normalize_ws(str(claim.get("scope") or ""))
-            statement = canonicalize_text(str(claim.get("statement") or ""))
             structured = self._object(claim.get("structured") or {}, f"{path}.structured")
             structured_company = canonicalize_text(str(structured.get("company") or ""))
             company_scope = (
@@ -1021,32 +1020,9 @@ class Analyzer:
             requires_attribution = company_scope or nature in _ATTRIBUTED_NATURES
             if requires_attribution and not attributed_to:
                 self._invalid(f"{path}.attributed_to", "attribution is required")
-            subjects = attribution_subjects(attributed_to)
-            statement_subjects = [structured_company] if structured_company else subjects
-            has_explicit_noncompany_attribution = (
-                not company_scope
-                and bool(re.match(r"^.{1,40}(?:认为|判断|指出|表示|披露|称|预计)", statement))
-            )
-            if (
-                requires_attribution
-                and not any(subject in statement for subject in statement_subjects)
-                and not has_explicit_noncompany_attribution
-            ):
-                raw_statement = str(claim.get("statement") or "")
-                normalized_subject = structured_company or (subjects[-1] if subjects else attributed_to)
-                if company_scope and "公司" in raw_statement:
-                    normalized_statement = raw_statement.replace("公司", normalized_subject, 1)
-                elif company_scope:
-                    normalized_statement = f"{normalized_subject}{raw_statement}"
-                else:
-                    normalized_statement = f"{attributed_to}判断，{raw_statement}"
-                claim["statement"] = normalize_ws(normalized_statement)
-                claim["statement_normalization"] = {
-                    "raw_statement": raw_statement,
-                    "attribution_injected": True,
-                    "attributed_to": attributed_to,
-                    "method": "deterministic_attribution_prefix_or_company_replacement",
-                }
+            # Attribution metadata records who made the statement; it is not the
+            # statement's grammatical subject. Preserve model/source wording and
+            # never inject or substitute attributed_to into Claim semantics.
             raw_related_node_ids = self._list(
                 claim.get("related_node_ids") or [], f"{path}.related_node_ids"
             )
