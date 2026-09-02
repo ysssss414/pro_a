@@ -5,6 +5,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterator
 
+from .pdf_layout import (
+    PDF_LAYOUT_ADAPTER,
+    SourceSegment,
+    layout_sidecar,
+    parse_pdf_layout,
+    semantic_eligible_text,
+)
+
 
 class ParseError(RuntimeError):
     pass
@@ -15,6 +23,8 @@ class ParsedSource:
     text: str
     source_type: str
     diagnostics: dict[str, Any]
+    segments: tuple[SourceSegment, ...] | None = None
+    layout_sidecar: dict[str, Any] | None = None
 
 
 @dataclass
@@ -159,7 +169,9 @@ def parse_source(path: Path) -> tuple[str, str]:
     return parsed.text, parsed.source_type
 
 
-def parse_source_with_diagnostics(path: Path) -> ParsedSource:
+def parse_source_with_diagnostics(
+    path: Path, *, include_semantic_segments: bool = False,
+) -> ParsedSource:
     path = Path(path)
     fmt = path.suffix.lower().lstrip(".")
     stats = _ParseStats()
@@ -186,7 +198,32 @@ def parse_source_with_diagnostics(path: Path) -> ParsedSource:
         "partial_parse": stats.error_units > 0 and stats.text_units > 0,
         "image_only_or_no_extractable_text": fmt == "pdf" and stats.total_units > 0 and stats.extracted_chars == 0,
     }
-    return ParsedSource(text, "xlsx" if fmt == "xlsm" else fmt, diagnostics)
+    segments = None
+    sidecar = None
+    if fmt == "pdf" and include_semantic_segments:
+        projection = parse_pdf_layout(path, text)
+        segments = projection.segments
+        sidecar = layout_sidecar(projection)
+        diagnostics["pdf_layout"] = {
+            "adapter": PDF_LAYOUT_ADAPTER,
+            "adapter_versions": dict(projection.adapter_versions),
+            "signature_sha256": projection.signature_sha256,
+            "segments": len(segments),
+            "segment_kind_counts": {
+                kind: sum(segment.kind == kind for segment in segments)
+                for kind in ("narrative", "table", "unknown")
+            },
+            "semantic_policy": "NARRATIVE_FIRST_TABLE_SUPPRESSION",
+            "canonical_text_parser_unchanged": True,
+        }
+    return ParsedSource(
+        text, "xlsx" if fmt == "xlsm" else fmt, diagnostics, segments, sidecar,
+    )
+
+
+def semantic_eligible_source_text(parsed: ParsedSource) -> str:
+    """Return the pre-chunk semantic view without mutating Source truth."""
+    return semantic_eligible_text(parsed.text, parsed.segments)
 
 
 def chunk_text(text: str, max_chars: int) -> list[str]:

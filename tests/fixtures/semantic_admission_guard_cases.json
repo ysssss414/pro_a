@@ -1,0 +1,70 @@
+{
+  "schema_version": "1",
+  "cases": [
+    {
+      "id": "question_premise_only",
+      "statement": "该产品明年会完成量产。",
+      "attributed_to": "回答者",
+      "support": "您认为该产品明年会完成量产吗？",
+      "supporting_turn_roles": ["QUESTIONER"],
+      "adoption_status": "NOT_FOUND",
+      "expected_question_status": "BLOCKED"
+    },
+    {
+      "id": "explicit_answer_assertion",
+      "statement": "该产品仍处于验证阶段。",
+      "attributed_to": "回答者",
+      "support": "该产品仍处于验证阶段。",
+      "supporting_turn_roles": ["ANSWERER"],
+      "adoption_status": "NOT_APPLICABLE",
+      "expected_question_status": "ADMISSIBLE"
+    },
+    {
+      "id": "bound_affirmation",
+      "statement": "该方案已经完成验证。",
+      "attributed_to": "回答者",
+      "support": "该方案已经完成验证，对吗？",
+      "supporting_turn_roles": ["QUESTIONER"],
+      "adoption_status": "EXPLICIT",
+      "expected_question_status": "ADMISSIBLE"
+    },
+    {
+      "id": "unresolved_grade",
+      "statement": "ZX-42等级已经送样。",
+      "support": "新等级已经送样。",
+      "expected_precision_status": "BLOCKED"
+    },
+    {
+      "id": "anchored_grade",
+      "statement": "ZX-42等级已经送样。",
+      "support": "ZX-42等级已经送样。",
+      "expected_precision_status": "ADMISSIBLE"
+    },
+    {
+      "id": "unanchored_company",
+      "statement": "Northstar Systems已经完成认证。",
+      "support": "该供应商已经完成认证。",
+      "classified_named_entities": ["Northstar Systems"],
+      "expected_precision_status": "BLOCKED"
+    },
+    {
+      "id": "anchored_company",
+      "statement": "Northstar Systems已经完成认证。",
+      "support": "Northstar Systems已经完成认证。",
+      "classified_named_entities": ["Northstar Systems"],
+      "expected_precision_status": "ADMISSIBLE"
+    },
+    {
+      "id": "unanchored_year",
+      "statement": "该项目将在2031年量产。",
+      "support": "该项目将在后续量产。",
+      "expected_number_status": "BLOCKED"
+    },
+    {
+      "id": "anchored_year",
+      "statement": "该项目将在2031年量产。",
+      "support": "该项目将在2031年量产。",
+      "expected_number_status": "ADMISSIBLE"
+    }
+  ]
+}

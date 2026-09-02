@@ -113,7 +113,7 @@ def test_markdown_escape_is_canonicalized_before_exact_evidence_match(tmp_path: 
     assert validation["normalized_start"] >= 0
 
 
-def test_company_price_claim_is_deterministically_attributed_not_generalized(tmp_path: Path):
+def test_company_price_claim_preserves_statement_and_separate_attribution(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     payload = source_payload(claims=[claim(
         "2026年7月MLCC价格环比上涨30%以上。",
@@ -129,12 +129,12 @@ def test_company_price_claim_is_deterministically_attributed_not_generalized(tmp
     )
 
     normalized = result.claims[0]
-    assert normalized["statement"] == "昀冢科技2026年7月MLCC价格环比上涨30%以上。"
-    assert normalized["statement_normalization"]["raw_statement"] == "2026年7月MLCC价格环比上涨30%以上。"
-    assert normalized["statement_normalization"]["attribution_injected"] is True
+    assert normalized["statement"] == "2026年7月MLCC价格环比上涨30%以上。"
+    assert normalized["attributed_to"] == "昀冢科技"
+    assert "statement_normalization" not in normalized
 
 
-def test_company_data_uses_structured_company_as_subject_even_with_industry_scope(tmp_path: Path):
+def test_structured_company_does_not_overwrite_claim_subject(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     item = claim(
         "2026年7月MLCC价格环比上涨30%以上。",
@@ -151,8 +151,82 @@ def test_company_data_uses_structured_company_as_subject_even_with_industry_scop
         "sample.md", "公司2026年7月MLCC价格环比上涨30%以上。", "standard"
     )
 
-    assert result.claims[0]["statement"] == "昀冢科技2026年7月MLCC价格环比上涨30%以上。"
+    assert result.claims[0]["statement"] == "2026年7月MLCC价格环比上涨30%以上。"
     assert result.claims[0]["attributed_to"] == "昀冢科技业绩说明会"
+    assert "statement_normalization" not in result.claims[0]
+
+
+@pytest.mark.parametrize(("statement", "scope", "forbidden"), [
+    ("龙头公司在备料方面更有优势。", "龙头光模块公司", "龙头发言人"),
+    ("大陆公司主要做无源器件和外置光源模组。", "大陆光模块公司", "大陆发言人"),
+    ("两家龙头公司订单完成率不足50%。", "龙头光模块公司", "两家龙头发言人"),
+])
+def test_speaker_metadata_never_replaces_company_business_subject(
+    tmp_path: Path, statement: str, scope: str, forbidden: str,
+):
+    cfg, db = make_config(tmp_path)
+    item = claim(
+        statement, statement, attributed_to="发言人（研究员）", scope=scope,
+    )
+    item["nature"] = "expert_judgment"
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(claims=[item]))
+
+    result = analyzer.analyze_source("sample.md", statement, "standard")
+
+    normalized = result.claims[0]
+    assert normalized["statement"] == statement
+    assert forbidden not in normalized["statement"]
+    assert normalized["attributed_to"] == "发言人（研究员）"
+    assert "statement_normalization" not in normalized
+
+
+@pytest.mark.parametrize("statement", [
+    "袁杰可能28年的产能已被客户预订。",
+    "清香甘的这种技术仍需验证。",
+])
+def test_attribution_processing_does_not_infer_entity_or_technical_term(
+    tmp_path: Path, statement: str,
+):
+    cfg, db = make_config(tmp_path)
+    item = claim(
+        statement, statement, attributed_to="发言人（研究员）", scope="专家交流",
+    )
+    item["nature"] = "expert_judgment"
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(claims=[item]))
+
+    result = analyzer.analyze_source("sample.md", statement, "standard")
+
+    normalized = result.claims[0]
+    assert normalized["statement"] == statement
+    assert "可能指新易盛" not in normalized["statement"]
+    assert "硅光" not in normalized["statement"]
+    if "袁杰" in statement:
+        assert "袁杰可能28年的产能" in normalized["statement"]
+
+
+def test_pilot1_host_and_expert_attribution_remain_distinguishable(tmp_path: Path):
+    cfg, db = make_config(tmp_path)
+    claims = []
+    for statement, attributed_to in (
+        ("主持人提出供需问题。", "主持人"),
+        ("专家判断供给仍然紧张。", "专家"),
+    ):
+        item = claim(statement, statement, attributed_to=attributed_to, scope="专家交流")
+        item["nature"] = "expert_judgment"
+        claims.append(item)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = StaticLLM(source_payload(claims=claims))
+
+    result = analyzer.analyze_source(
+        "sample.md", "主持人提出供需问题。专家判断供给仍然紧张。", "standard",
+    )
+
+    assert [item["attributed_to"] for item in result.claims] == ["主持人", "专家"]
+    assert [item["statement"] for item in result.claims] == [
+        "主持人提出供需问题。", "专家判断供给仍然紧张。",
+    ]
 
 
 def test_mixed_current_actual_and_future_guidance_is_atomicized(tmp_path: Path):

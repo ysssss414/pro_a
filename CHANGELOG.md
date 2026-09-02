@@ -1,12 +1,19 @@
 # Changelog
 
+## Phase 3C Controlled Live Corpus Expansion Pilot - Stage 1 - 2026-08-28
+
+- Added a pilot-safe extraction bundle and Human Extraction Review draft path that runs the existing parser, frozen Analyzer, and configured real LLM against an isolated Production DB copy without canonical DB mutation or legacy ingestion/propagation/proposal/impact/IMA side effects.
+- Added exact bundle binding, stable proposed Source/Claim IDs, immutable Claim review content, Evidence-gated `KEEP`, `DROP` / `KEEP_NEEDS_REVIEW` decisions, Markdown review output, and deterministic metrics.
+- Added a controlled READY-bundle apply path with archive copy semantics, exact duplicate/idempotency/conflict handling, filesystem/SQLite failure boundaries, and a narrow SQLite authorizer; configured Production apply remains blocked.
+- Stage 1 TGV run passed: 8 PDF pages, 53 Claims / 7 Evidence-valid / 46 `needs_review`, 4 LLM attempts recorded, Production byte-identical, IMA untouched. `光互连研究方法与框架20260819.pdf` was not run. Human Extraction Review is required before any future apply.
+
 ## Phase 3B IMA Integration Operational Acceptance — 2026-08-28
 
 - Operationalized the existing IMA Source-original path with deterministic preflight, `[SRC_xxx] original_filename` identity, local idempotency and fail-closed mapping consistency checks.
 - Added staged HTTP/COS diagnostics, secret-free errors, create/add response validation, durable remote-state uncertainty protection, safe retry boundaries and stable `ima_objects.mapping_id` updates.
 - Added explicit `scripts/phase3b_ima_sync.py` preview/sync CLI with configured-Production DB authority, separate non-secret receipts and a narrow SQLite write authorizer. Preview is local read-only; no browser IMA mutation endpoint exists.
 - Added read-only Source Detail/Explorer IMA status and simulator-backed PDF/Office/full-pipeline acceptance. Current View sync/materialization, propagation, canonical contracts and schema remain deferred/unchanged.
-- Acceptance used no live IMA write or read-only probe. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; Phase 3C remains planning-only.
+- Acceptance used no live IMA write or read-only probe. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`; Phase 3C is now in progress at Stage 1 extraction review.
 
 ## Phase 3A Multi-format Source Ingestion Operational Acceptance — 2026-08-28
 
