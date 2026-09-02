@@ -409,35 +409,20 @@ def _suggest_operation(
     return "CREATE", "NO_PRODUCTION_COLLISION_AND_QUALIFYING_ADMITTED_CLAIM_SUPPORT"
 
 
-def build_node_operation_review(
-    payload: Mapping[str, Any], production_path: Path
-) -> dict[str, Any]:
-    """Build the deterministic advisory surface; never authorize an operation."""
-    validate_payload(payload)
-    baseline = production_identity(production_path)
-    metadata = payload.get("metadata") or {}
-    _require(baseline["sha256"] == metadata.get("production_sha256"), "PRODUCTION_BASELINE_SHA_MISMATCH")
-    _require(baseline["schema_sha256"] == metadata.get("production_schema_sha256"), "PRODUCTION_BASELINE_SCHEMA_MISMATCH")
-    _require(baseline["counts"] == metadata.get("production_counts"), "PRODUCTION_BASELINE_COUNTS_MISMATCH")
-
-    node_operations = payload.get("node_operations") or []
-    deferred = [operation for operation in node_operations if operation.get("operation") == "DEFER"]
-    rejected = [operation for operation in node_operations if operation.get("operation") == "REJECT"]
-    relations = payload.get("relation_operations") or []
-    relation_rejects = [operation for operation in relations if operation.get("operation") == "REJECT"]
-    _require(len(deferred) == 26, "NODE_DEFER_UNIVERSE_MISMATCH")
-    _require(len(rejected) == 32, "NODE_REJECT_UNIVERSE_MISMATCH")
-    _require(len(relations) == len(relation_rejects) == 10, "RELATION_REJECT_UNIVERSE_MISMATCH")
-    _require(all(not operation.get("executable") for operation in deferred + rejected + relation_rejects), "NONEXECUTABLE_OPERATION_BECAME_EXECUTABLE")
-
-    claims = [claim for claim in payload.get("claims") or [] if claim.get("executable") is True]
-    _require(len(claims) == 104, "ADMITTED_CLAIM_UNIVERSE_MISMATCH")
+def _build_advisory_node_records(
+    *,
+    operations: Sequence[Mapping[str, Any]],
+    claims: Sequence[Mapping[str, Any]],
+    catalog: Mapping[str, Any],
+    aliases_by_node: Mapping[str, Sequence[str]],
+    source_run_id: str,
+) -> list[dict[str, Any]]:
+    """Apply the Stage 3D.3A resolution/suggestion logic to one review universe."""
     admitted_ids = {claim["claim_id"] for claim in claims}
-    catalog, aliases_by_node = _load_catalog(production_path)
-    internal_owners = _candidate_term_owners(deferred)
+    internal_owners = _candidate_term_owners(operations)
     records: list[dict[str, Any]] = []
 
-    for operation in deferred:
+    for operation in operations:
         candidate = operation.get("candidate") or {}
         if operation.get("candidate_kind") == "existing_node_match":
             candidate_kind = "EXISTING_NODE_OBSERVATION"
@@ -474,7 +459,7 @@ def build_node_operation_review(
         prospective_node_id = deterministic_id(
             "NODE",
             {
-                "source_run_id": metadata.get("source_run_id"),
+                "source_run_id": source_run_id,
                 "candidate_id": operation.get("candidate_id"),
                 "canonical_name": proposed_name,
                 "primary_type": proposed_type,
@@ -530,6 +515,40 @@ def build_node_operation_review(
             "reviewer": None,
             "review_reason": None,
         })
+    return records
+
+
+def build_node_operation_review(
+    payload: Mapping[str, Any], production_path: Path
+) -> dict[str, Any]:
+    """Build the deterministic advisory surface; never authorize an operation."""
+    validate_payload(payload)
+    baseline = production_identity(production_path)
+    metadata = payload.get("metadata") or {}
+    _require(baseline["sha256"] == metadata.get("production_sha256"), "PRODUCTION_BASELINE_SHA_MISMATCH")
+    _require(baseline["schema_sha256"] == metadata.get("production_schema_sha256"), "PRODUCTION_BASELINE_SCHEMA_MISMATCH")
+    _require(baseline["counts"] == metadata.get("production_counts"), "PRODUCTION_BASELINE_COUNTS_MISMATCH")
+
+    node_operations = payload.get("node_operations") or []
+    deferred = [operation for operation in node_operations if operation.get("operation") == "DEFER"]
+    rejected = [operation for operation in node_operations if operation.get("operation") == "REJECT"]
+    relations = payload.get("relation_operations") or []
+    relation_rejects = [operation for operation in relations if operation.get("operation") == "REJECT"]
+    _require(len(deferred) == 26, "NODE_DEFER_UNIVERSE_MISMATCH")
+    _require(len(rejected) == 32, "NODE_REJECT_UNIVERSE_MISMATCH")
+    _require(len(relations) == len(relation_rejects) == 10, "RELATION_REJECT_UNIVERSE_MISMATCH")
+    _require(all(not operation.get("executable") for operation in deferred + rejected + relation_rejects), "NONEXECUTABLE_OPERATION_BECAME_EXECUTABLE")
+
+    claims = [claim for claim in payload.get("claims") or [] if claim.get("executable") is True]
+    _require(len(claims) == 104, "ADMITTED_CLAIM_UNIVERSE_MISMATCH")
+    catalog, aliases_by_node = _load_catalog(production_path)
+    records = _build_advisory_node_records(
+        operations=deferred,
+        claims=claims,
+        catalog=catalog,
+        aliases_by_node=aliases_by_node,
+        source_run_id=str(metadata.get("source_run_id") or ""),
+    )
 
     deferred_ids = [operation["candidate_id"] for operation in deferred]
     rejected_ids = {operation["candidate_id"] for operation in rejected}
@@ -571,6 +590,101 @@ def build_node_operation_review(
         "records": records,
         "authorization": {
             "all_review_decisions_pending": all(record["review_decision"] == "PENDING" for record in records),
+            "llm_authorization_used": False,
+            "production_apply_authorized": False,
+            "final_production_payload_generated": False,
+        },
+    }
+    digest = canonical_sha256(body)
+    return {
+        **body,
+        "review_id": f"NODE_REVIEW_{digest[:16].upper()}",
+        "review_sha256": digest,
+    }
+
+
+def build_operational_node_operation_review(
+    *,
+    run_id: str,
+    source_sha256: str,
+    claim_review_sha256: str,
+    claims: Sequence[Mapping[str, Any]],
+    node_operations: Sequence[Mapping[str, Any]],
+    relation_operations: Sequence[Mapping[str, Any]],
+    production_path: Path,
+    table_ineligible_claims: int,
+) -> dict[str, Any]:
+    """Reuse Stage 3D.3A diagnostics for an unapproved Phase 3E review package."""
+    deferred = [item for item in node_operations if item.get("operation") == "DEFER"]
+    rejected = [item for item in node_operations if item.get("operation") == "REJECT"]
+    _require(bool(run_id and source_sha256 and claim_review_sha256), "OPERATIONAL_REVIEW_BINDING_MISSING")
+    _require(
+        all(not item.get("executable") for item in [*node_operations, *relation_operations]),
+        "OPERATIONAL_REVIEW_CONTAINS_EXECUTABLE_OPERATION",
+    )
+    baseline = production_identity(production_path)
+    catalog, aliases_by_node = _load_catalog(production_path)
+    records = _build_advisory_node_records(
+        operations=deferred,
+        claims=claims,
+        catalog=catalog,
+        aliases_by_node=aliases_by_node,
+        source_run_id=run_id,
+    )
+    record_ids = [record["operation_candidate_id"] for record in records]
+    _require(
+        record_ids == [operation["candidate_id"] for operation in deferred],
+        "OPERATIONAL_NODE_REVIEW_ORDER_OR_UNIVERSE_MISMATCH",
+    )
+    counts = Counter(record["suggested_operation"] for record in records)
+    relation_deferred = sum(item.get("operation") == "DEFER" for item in relation_operations)
+    relation_rejected = sum(item.get("operation") == "REJECT" for item in relation_operations)
+    body = {
+        "document_type": "phase3e_node_operation_review",
+        "schema_version": SCHEMA_VERSION,
+        "review_status": "DRAFT",
+        "operational_run": {
+            "run_id": run_id,
+            "source_sha256": source_sha256,
+            "claim_review_sha256": claim_review_sha256,
+        },
+        "production_baseline": {
+            "sha256": baseline["sha256"],
+            "schema_version": baseline["schema_version"],
+            "schema_sha256": baseline["schema_sha256"],
+            "counts": baseline["counts"],
+            "sidecars": baseline["sidecars"],
+        },
+        "review_universe": {
+            "expected": len(deferred),
+            "observed": len(records),
+            "candidate_ids": record_ids,
+            "candidate_ids_sha256": canonical_sha256(record_ids),
+            "admitted_claims": len(claims),
+            "admitted_claim_ids_sha256": canonical_sha256([claim["claim_id"] for claim in claims]),
+            "rejected_nodes_excluded": len(rejected),
+            "table_ineligible_claims_excluded": table_ineligible_claims,
+        },
+        "suggestion_counts": {
+            operation: counts.get(operation, 0)
+            for operation in ("REUSE", "CREATE", "DEFER", "REJECT")
+        },
+        "relation_audit": {
+            "observed": len(relation_operations),
+            "deferred": relation_deferred,
+            "rejected": relation_rejected,
+            "relations_excluded_from_promotion": True,
+            "relation_review_reopened": False,
+        },
+        "audit_operations": {
+            "node_rejected": copy.deepcopy(rejected),
+            "relations": copy.deepcopy(list(relation_operations)),
+        },
+        "records": records,
+        "authorization": {
+            "all_review_decisions_pending": all(
+                record["review_decision"] == "PENDING" for record in records
+            ),
             "llm_authorization_used": False,
             "production_apply_authorized": False,
             "final_production_payload_generated": False,

@@ -1,0 +1,74 @@
+# Phase 3E Operational Clean-Source Ingestion
+
+Status: **Stage 3E.1 implemented; clean PDF only; stops at human review**
+
+## Start a run
+
+From the repository root:
+
+```text
+python scripts/phase3e_ingest.py <new-clean-source.pdf>
+```
+
+The command accepts only a clean, text-extractable PDF. A partial, empty, image-only, OCR-heavy, or otherwise non-clean PDF fails the clean-source gate and is deferred; it is not silently routed through a weaker parser or the legacy ingestion pipeline.
+
+The configured cloud extraction model is used for a new run. The exact parsed model JSON and normalized `SourceAnalysis` are frozen before deterministic downstream processing. Unit and replay qualification may instead provide `--frozen-extraction <bundle.json>`; that option imports exact frozen extraction bytes and does not call an LLM.
+
+## Runtime artifacts
+
+Runs are written outside Git under:
+
+```text
+workspace/ingestion/INGEST_<source-sha-prefix>/
+    source/
+    run_manifest.json
+    extraction/
+    evidence/
+    review/
+    promotion/
+    receipts/
+```
+
+A custom `--run-dir` must either be under the configured workspace or outside the Git repository.
+
+The Source is copied byte-for-byte into `source/` immediately, re-hashed, and used for every later stage. The manifest binds the run and Source identities, parser/prompt/model configuration identities, repository commit, read-only Production baseline, stage status, and exact hash/size inventory of every runtime artifact. It contains no API key.
+
+The stable operator-facing review artifacts are:
+
+```text
+review/claim_review.json
+review/claim_review.md
+review/node_operation_review.json
+review/node_operation_review.md
+promotion/promotion_preview.json
+promotion/promotion_summary.md
+```
+
+The Claim review includes exact Evidence binding, table eligibility, deterministic semantic-guard results, an advisory `KEEP` / `DROP` / `REVIEW` recommendation, and a `PENDING` human decision. The Node review includes supporting review-admitted Claim IDs and Evidence, exact Production resolution, collision diagnostics, an advisory `CREATE` / `REUSE` / `DEFER` / `REJECT` suggestion, and a `PENDING` human decision. Relation observations remain in audit artifacts and are excluded from promotion.
+
+## Resume
+
+Resume a run without depending on the original external PDF path:
+
+```text
+python scripts/phase3e_ingest.py --resume --run-dir <run-directory>
+```
+
+Resume re-hashes the frozen Source and the complete manifest inventory, verifies the current Production identity still matches the run baseline, and continues after the last completed stage. It does not repeat a completed LLM extraction. Any missing, modified, or additional runtime artifact, or a changed Production baseline, fails closed.
+
+For controlled diagnosis, `--stop-after` accepts `source`, `extraction`, `evidence`, `claim-review`, `node-review`, or `promotion-preview`.
+
+## Human-review and Production boundary
+
+A normal successful run ends with:
+
+```text
+RUN_STATUS = HUMAN_REVIEW_REQUIRED
+CLAIM_REVIEW = <path>
+NODE_REVIEW = <path>
+PROMOTION_PREVIEW = <path>
+```
+
+The promotion preview is deliberately non-executable. It uses a Phase 3E-specific document type, contains no intended mutation list, leaves all human decisions pending, and sets both `executable` and `production_apply_authorized` to false. The Phase 3D Production executor rejects it.
+
+Stage 3E.1 does not bind human decisions, generate a Production authorization artifact, initialize or migrate the Production schema, create a Production backup, materialize the Production archive, invoke IMA, or call the Production executor. Production access is immutable/read-only. A later, separately authorized handoff may reuse the Phase 3D executor after human decisions and an exact executable payload have been frozen.

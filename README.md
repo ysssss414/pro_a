@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete.** Phase 3C 已关闭 clean-source correctness/generalization，Phase 3D 已完成 deterministic promotion、human authorization binding、shadow qualification、rollback drill 与一次性 exact Production apply。该授权已随成功执行消费，不构成持续或通用 Production write authority。下一建议阶段是 Phase 3E Operational New-Source Ingestion，目前仅为路线建议，尚未开始或授权。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete.** Phase 3E.1 已将 clean-PDF extraction、Evidence/table/semantic admission、Claim/Node review 与 non-executable promotion preview 串成单一可恢复命令。正常运行停在 `HUMAN_REVIEW_REQUIRED`；Production authorization/apply 仍保持独立且未授权。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -22,6 +22,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
 - [`docs/PHASE3C_CORRECTNESS_CLOSURE.md`](docs/PHASE3C_CORRECTNESS_CLOSURE.md)
 - [`docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`](docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md)
+- [`docs/PHASE3E_OPERATIONAL_INGESTION.md`](docs/PHASE3E_OPERATIONAL_INGESTION.md)
 
 当前 Production baseline 为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 个 official Current Views。Phase 2 的 deterministic read surfaces 与 Phase 3 的 controlled Source expansion 路径均保留原边界。
 
@@ -77,7 +78,7 @@ Phase 3D 建立并验证了 deterministic promotion payload、exact multi-artifa
 
 公开文档仅冻结 schema、计数、操作边界和结论。精确 Production byte identity、Source 原件、authorization、journal、receipt、backup 及运行时路径继续保存在本地受控证据中。7 个 Node DEFER 与 10 个 Relation REJECT 均未执行；schema `0.2.2` / `relation_evidence_links`、noisy Source / audio / ASR、local-model preprocessing、IMA live integration 和更高层 review UI 都是独立 backlog。
 
-推荐下一阶段为 Phase 3E Operational New-Source Ingestion：把已证明的逐 Source 路径整理为可重复、显式授权的日常流程；该建议本身不授权任何 Production mutation。详见 [`docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`](docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md) 与 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
+Phase 3E.1 Operational New-Source Ingestion 已提供 `python scripts/phase3e_ingest.py <pdf>`：冻结 exact Source 后复用 Phase 3C/3D correctness 与 review primitives，生成 Claim/Node review package 及 non-executable promotion preview，并停止等待 human review。Fresh clean-source pilot 属于 Phase 3E.2，不在本阶段自动执行。详见 [`docs/PHASE3E_OPERATIONAL_INGESTION.md`](docs/PHASE3E_OPERATIONAL_INGESTION.md) 与 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
 ## Phase 2.1A read-only architecture
 

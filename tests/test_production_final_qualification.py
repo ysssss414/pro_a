@@ -40,7 +40,7 @@ STAGE3D2 = ROOT / "workspace" / "phase3d" / "STAGE3D2_QUALIFICATION_F6A9ECB_V2"
 STAGE3D3A = ROOT / "workspace" / "phase3d" / "STAGE3D3A_AUTHORIZATION_PREP_637D772"
 STAGE3D3B = ROOT / "workspace" / "phase3d" / "STAGE3D3B_HUMAN_REVIEW_637D772"
 RECOVERY = ROOT / "workspace" / "phase3d" / "STAGE3D_SOURCE_RECOVERY_A2AC028"
-PRODUCTION = ROOT / "workspace" / "pro_a.db"
+PRODUCTION = STAGE3D2 / "production_shadow_restore.db"
 SOURCE = RECOVERY / f"{EXPECTED_SOURCE_ID}.pdf"
 INPUT_PATHS = {
     "qualification": STAGE3D2 / "phase3d_promotion_payload.json",

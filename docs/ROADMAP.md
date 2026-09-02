@@ -2,7 +2,7 @@
 
 Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete**
 
-Next recommended: **Phase 3E — Operational New-Source Ingestion. Planning only; not started or authorized.**
+Next: **Phase 3E.2 — Fresh Clean-Source Operational Pilot. Selection and execution require a separate task.**
 
 ## Completed — Phase 1
 
@@ -182,9 +182,13 @@ Phase 3D 交付 deterministic promotion payload、exact multi-artifact admission
 
 详见 `docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`。
 
-### Next recommended — Phase 3E Operational New-Source Ingestion
+### Phase 3E — Operational New-Source Ingestion
 
-推荐选择 **A：Operational new-source ingestion**。Phase 3C/3D 已证明 clean-source extraction、人工治理和窄 Production promotion 的完整路径；将其整理为可重复、逐 Source 授权的日常流程，是到达有用日常运行的最短依赖路径。更高层 review UI、IMA live integration 与 local-model preprocessing 应在该流程稳定后分别推进。Phase 3E 目前仅为路线建议，不携带执行或 Production 授权。
+状态：**Stage 3E.1 complete**。
+
+Phase 3E.1 已将 Phase 3C/3D clean-source correctness 与 review primitives 整理为单一 clean-PDF operational entrypoint。每个 SHA-bound run 先冻结 exact Source，再完成 parse/semantic table suppression、Evidence binding/bounded local subspan、post-binding table Claim safety、semantic guard、Claim review、Node operation review 和 deterministic non-executable promotion preview。运行可按 manifest artifact hashes 恢复，Production 全程 immutable/read-only，最终停在 `HUMAN_REVIEW_REQUIRED`。
+
+下一阶段为 **Phase 3E.2 — Fresh Clean-Source Operational Pilot**：另行选择一篇从未用于 Phase 3C/3D 的 clean PDF，通过 operational entrypoint 运行至 human review，评估 usability 与 semantic correctness。该 pilot 未在 Stage 3E.1 自动开始，Production handoff/apply 仍未授权。
 
 ### Later — not started
 

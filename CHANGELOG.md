@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 3E.1 Operational New-Source Ingestion — 2026-09-02
+
+- Added a single resumable clean-PDF ingestion entrypoint with exact Source freezing, SHA-bound run identity, a hashed run manifest, explicit stage receipts, and clean-source fail/defer behavior.
+- Reused Phase 3C parsing, narrative-first table suppression, Evidence rebinding, bounded local-subspan, quote-fidelity, table Claim safety, and semantic-admission guards; reused Phase 3D.3A exact Production resolution and Node operation suggestion logic.
+- Added generic Claim and Node review packages plus a deterministic, executor-incompatible promotion preview. All human decisions remain `PENDING`; Relation execution, Production authorization/apply, backups, archive materialization, schema migration, IMA, and legacy ingestion remain disabled.
+- Qualified the wrapper with the frozen known clean Source: 107 raw Claims, 3 table-ineligible, 104 review-admitted, 26 Node candidates, and 10 Relation observations retained audit-only. Production remained unchanged.
+
 ## Phase 3D Production Path Promotion closure — 2026-09-02
 
 - Closed Phase 3C correctness/generalization and Phase 3D Production Path Promotion after one successful exact, one-time Production promotion.

@@ -16,7 +16,7 @@ from pro_a.production_promotion import PromotionError, apply_payload_to_shadow, 
 ROOT = Path(__file__).resolve().parents[1]
 STAGE3D2 = ROOT / "workspace" / "phase3d" / "STAGE3D2_QUALIFICATION_F6A9ECB_V2"
 STAGE3D3A = ROOT / "workspace" / "phase3d" / "STAGE3D3A_AUTHORIZATION_PREP_637D772"
-PRODUCTION = ROOT / "workspace" / "pro_a.db"
+PRODUCTION = STAGE3D2 / "production_shadow_restore.db"
 AVAILABLE = all((
     (STAGE3D2 / "phase3d_promotion_payload.json").is_file(),
     (STAGE3D3A / "node_operation_review.json").is_file(),

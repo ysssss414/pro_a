@@ -19,8 +19,9 @@ from pro_a.production_promotion import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PAYLOAD_PATH = ROOT / "workspace" / "phase3d" / "STAGE3D2_QUALIFICATION_F6A9ECB_V2" / "phase3d_promotion_payload.json"
-PRODUCTION = ROOT / "workspace" / "pro_a.db"
+STAGE3D2 = ROOT / "workspace" / "phase3d" / "STAGE3D2_QUALIFICATION_F6A9ECB_V2"
+PAYLOAD_PATH = STAGE3D2 / "phase3d_promotion_payload.json"
+PRODUCTION = STAGE3D2 / "production_shadow_restore.db"
 AVAILABLE = PAYLOAD_PATH.is_file() and PRODUCTION.is_file()
 requires_stage3d2 = pytest.mark.skipif(not AVAILABLE, reason="Frozen local Stage 3D.2 artifacts unavailable")
 
