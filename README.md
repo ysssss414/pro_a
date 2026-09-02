@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete.** Phase 3B 已完成 Source 原件到 IMA Source KB 的隔离 simulator acceptance；真实 IMA mutation 和 read-only probe 均未授权、未执行。Phase 3C Controlled Live Corpus Expansion Pilot 仅 ready for planning。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C correctness/generalization complete.** Phase 3C 已完成独立 clean-source generalization：Evidence v2 / bounded local-subspan repair、`NARRATIVE_FIRST_TABLE_SUPPRESSION`、PyMuPDF structure sidecar 与 `TABLE_DERIVED_CLAIM_SAFETY_BOUNDARY_V1` 均通过独立 Pilot #6。最终 delegated review 为 104/104 KEEP、0 true semantic failures、0 attribution errors。该 reviewer authority 为 `USER_DELEGATED_AI_REVIEW`，不是 human-executed review。**Production apply 仍未授权；下一 gate 是 Production Path Promotion / Apply Readiness。**
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -20,6 +20,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE1_FREEZE.md`](docs/PHASE1_FREEZE.md)
 - [`docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md`](docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md)
 - [`docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md`](docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md)
+- [`docs/PHASE3C_CORRECTNESS_CLOSURE.md`](docs/PHASE3C_CORRECTNESS_CLOSURE.md)
 
 当前 Production 有 294 Nodes、2 个 official Current Views（MLCC、昀冢科技）。Phase 2.4C 已完成 structured `content_json` presentation；Phase 2.5A 已增加 deterministic、read-only 的 Current View history 与版本导航；Phase 2.5B 已增加 official same-Node BASE → TARGET exact structured compare；Phase 2.6A 已增加基于 canonical Claim attribution 的 direct impact candidate discovery；Phase 2.6B 已完成仅浏览器 localStorage 的 Human Impact Review draft/export surface 及真实 Production 只读验收。canonical 内容保持不变。
 
@@ -41,9 +42,35 @@ Search
 
 主 Source 分块优先保持 page / paragraph / table-row / sheet-row / slide 边界，超长单元遵守原字符上限拆分。Evidence locator 复用既有 normalized exact canonicalization，确定性标记 resolved / ambiguous / unresolved，写入 `structured_json.validation.source_locator`；不覆盖 `evidence_pointer`。解析诊断合并到 `sources.metadata_json`，与 analysis quality / Source references 共存。
 
-Explorer Source Detail 增加 **Source Format / Parse Quality**，Claim Evidence 显示页/段落/表格行/工作表行/幻灯片定位。只读 API 使用字段白名单，不暴露归档路径或任意 metadata。没有文件下载、PDF viewer、OCR 或新依赖。
+Explorer Source Detail 增加 **Source Format / Parse Quality**，Claim Evidence 显示页/段落/表格行/工作表行/幻灯片定位。只读 API 使用字段白名单，不暴露归档路径或任意 metadata。没有文件下载、PDF viewer、OCR 或 schema migration。
 
-四种 PDF/Office 格式均完成真实 `process_file` 的隔离 standard/deep 验收，模型使用 deterministic stub；Production 与 IMA 均未改变。完整合同、限制和验收证据见 [`docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md`](docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md)。未来真实材料的 live ingestion 必须单独明确授权。
+四种 PDF/Office 格式均完成真实 `process_file` 的隔离 standard/deep 验收，模型使用 deterministic stub；Production 与 IMA 均未改变。完整合同、限制和验收证据见 [`docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md`](docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md)。
+
+## Phase 3C — Controlled Live Corpus Expansion Correctness Closure
+
+Phase 3C 建立并验证了 clean-source corpus expansion 的 non-canonical correctness path。关键冻结行为包括：
+
+- Evidence v2 与 deterministic Source binding；
+- bounded local-subspan repair，保持原 Evidence / Claim 不变；
+- canonical PDF Source truth 继续使用 `pypdf`；
+- PyMuPDF 仅作为 PDF structure/layout sidecar；
+- `NARRATIVE_FIRST_TABLE_SUPPRESSION`：authoritative table span 在 semantic chunk/prompt 前排除；
+- `table / narrative / unknown` precision-first、fail-open eligibility；
+- `TABLE_DERIVED_CLAIM_SAFETY_BOUNDARY_V1`：post-binding 只依据 authoritative Evidence + native table geometry 判定 origin eligibility；
+- raw table-derived Claims / Evidence 继续保留供审计，不作为 semantic failure 删除。
+
+Independent Pilot #6：107 raw Claims → 3 `TABLE_DERIVED_CLAIM_INELIGIBLE` → 104 review-eligible Claims；Source independence、table suppression、table-claim safety、Evidence artifact、mechanical gate 全部 PASS；delegated semantic review 为 104 KEEP / 0 DROP、true semantic failure 0.00%、`ATTRIBUTION_ERROR = 0`。Production SQLite 全程保持 SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`，integrity `ok`，FK violations `0`。
+
+Phase 3C correctness/generalization 因此关闭，但**没有获得 Production write authority**：
+
+```text
+PHASE3C_COMPLETE = true
+PRODUCTION_APPLY_READY = NO
+LIVE_PRODUCTION_APPLY_AUTHORIZED = false
+PHASE3C_NEXT_GATE = Production Path Promotion / Apply Readiness
+```
+
+详见 [`docs/PHASE3C_CORRECTNESS_CLOSURE.md`](docs/PHASE3C_CORRECTNESS_CLOSURE.md)。
 
 ## Phase 2.1A read-only architecture
 
@@ -130,10 +157,12 @@ npm run dev
 
 打开 `http://127.0.0.1:5173`。开发服务器将 `/api` 代理到 `http://127.0.0.1:8000`；如需覆盖 API 地址，可设置 `VITE_API_BASE_URL`。
 
-Standard / Deep ingestion 仍使用现有 CLI 和冻结契约。任何 Production mutation 继续要求明确目标、precondition SHA、独立 backup、单 transaction、receipt、post-write QA 与人工授权。
+Standard / Deep legacy ingestion 仍使用既有 CLI 和 frozen contracts；Phase 3C clean-source correctness path 尚未获得 normal Production-path promotion。任何 Production mutation 继续要求明确目标、precondition SHA、独立 backup、single transaction、receipt、post-write QA 与显式用户授权。
 
 ## 当前边界
 
 当前 Explorer 是 desktop-first、本地只读的投研知识终端，没有 write API、auth、recursive graph traversal、FTS/vector search、embedding、RAG、chatbot、raw file serving 或 schema migration。Current View Compare 只做 exact structured diff；impact discovery 只发现 direct candidates；Human Impact Review 只保存 browser-local non-canonical draft 并导出 handoff JSON。三者均不包含 semantic/fuzzy/LLM interpretation、自动影响方向或 change-level 判断、Proposal、Current View mutation 或 propagation。图固定为所选 Node 的 current 1-hop；Production 若没有 Current View、Research Question、Knowledge Gap 或 Node-linked Claim，界面会如实显示空态。Relation generation backlog 保持原状；不得通过放宽 Evidence、direction、identity、collision 或 Node Type 规则修复。
+
+Phase 3C correctness complete 不等于 live corpus write ready。PyMuPDF licensing/deployment、normal ingestion promotion、Production dry-run/backup/transaction/receipt/post-write QA 仍属于下一 gate。
 
 后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。
