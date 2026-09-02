@@ -1,10 +1,10 @@
 # Phase 3D — Production Path Promotion / Apply Readiness
 
-Status: **Stage 3D.0 through 3D.3B complete; Source materialization blocked; Production apply not authorized**
+Status: **Stage 3D.0 through 3D.3C complete; final shadow qualification passed; Production apply not authorized**
 
 Inspection date: `2026-09-02` (Asia/Shanghai)
 
-This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, records the completed Stage 3D.2 deterministic payload and shadow-apply qualification, and closes the Stage 3D.3A/3D.3B authorization-preparation and human Node-review binding. The exact Source bytes remain unavailable, no final Production payload was generated, and Production apply is not authorized.
+This document freezes the post-Phase-3C baseline, preserves the Stage 3D.0/3D.1 mutation-path census and promotion contract, records the completed Stage 3D.2 deterministic payload and shadow-apply qualification, closes the Stage 3D.3A/3D.3B authorization-preparation and human Node-review binding, and records the Stage 3D.3C exact-Source, authorization-bound payload, and final shadow rehearsal. Production apply remains explicitly unauthorized.
 
 ```text
 PHASE3D_STARTED = true
@@ -709,3 +709,101 @@ PRODUCTION_APPLY_ATTEMPTED = false
 ```
 
 The next gate remains blocked on recovery of the exact Source bytes. Stage 3D.3C, final payload generation, final shadow rehearsal, archive materialization, and Production apply are outside this closure and require separate authorization.
+
+## 13. Stage 3D.3C final qualification
+
+Stage 3D.3C supersedes the prior Source blocker without rewriting its historical receipt. The recovered PDF was frozen into the ignored qualification package independently of the external Downloads path:
+
+```text
+QUALIFICATION_DIRECTORY = workspace/phase3d/STAGE3D3C_FINAL_QUALIFICATION_A2AC028/
+SOURCE_PACKAGE = source/SRC_20260902_FDA400A0__20260629-华安证券-聚辰股份（688123.SH）：深耕EEPROM与SPD全球领先，卡位企业级eSSD和CXL用VPD，构筑新型AI存力优势.pdf
+SOURCE_PACKAGE_SIZE = 3261556
+SOURCE_PACKAGE_SHA256 = 572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a
+SOURCE_PACKAGE_FROZEN = true
+```
+
+The original recovered file and frozen package copy have identical size and SHA256. The real Production archive destination remained absent with zero Source-ID prefix collisions. Stage 3D.3C never copied into the real archive.
+
+### 13.1 Authorization-bound payload
+
+The final candidate payload binds the exact Phase 3C artifact hashes, Stage 3D.2 payload ID/hash, Stage 3D.3A review ID/hash, Stage 3D.3B human review ID/semantic/file hashes, frozen Source bytes, repository baseline commit, Production byte SHA, schema identity, and table counts.
+
+```text
+DOCUMENT_TYPE = phase3d_authorization_bound_promotion_payload
+FINAL_PAYLOAD_ID = PROMO_F2C6A1A0B0527D5E
+FINAL_PAYLOAD_SHA256 = f2c6a1a0b0527d5e37f6f3ac4a85d64ad7bea75c390fd24f2766d550609b1c7e
+REPOSITORY_COMMIT = a2ac028ac90f4eea2b8d9c916d6538ac14fe7aea
+QUALIFIED_EXECUTION_TARGET = SHADOW_ONLY
+DECISION_AUTHORITY = USER_HUMAN_REVIEW
+LLM_AUTHORIZATION_USED = false
+PRODUCTION_APPLY_AUTHORIZED = false
+```
+
+Its exact operation and mutation inventory is:
+
+```text
+SOURCE_CREATE = 1
+CLAIM_CREATE = 104
+TABLE_INELIGIBLE_CLAIM_REJECT = 3
+
+NODE_REUSE = 6
+NODE_CREATE = 8
+NODE_DEFER = 7
+NODE_REJECT = 5
+ALIAS_CREATE = 8
+
+RELATION_REJECT = 10
+RELATION_EXECUTABLE = 0
+
+CLAIM_NODE_LINK_CREATE = 0
+SOURCE_NODE_LINK_CREATE = 0
+```
+
+The eight CREATE identities and aliases exactly match the frozen human review, including the explicit exclusion of `CMM-D`. The six REUSE operations bind their exact active Production targets and make no alias mutations. The seven DEFER decisions, five human-rejected Nodes, ten rejected Relations, three table-ineligible Claims, and 32 pre-review Phase 3C Node rejections remain explicitly preserved and non-executable.
+
+Supporting Claim IDs remain audit provenance. Neither the Phase 3C artifacts nor the human decisions establish a deterministic database-link role, so no Claim-to-Node or Source-to-Node mutation was invented.
+
+### 13.2 Final shadow database and archive rehearsal
+
+A fresh exact Production copy and a separate disposable filesystem root exercised Source materialization plus the complete DB transaction:
+
+```text
+FINAL_SHADOW_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+FINAL_SHADOW_POST_SHA256 = 3c0007f38b136686cb1e0e73e2ad2f389983f61ae2c81679fcf5067835c4eba0
+CHANGED_TABLES = sources:+1/-0, claims:+104/-0, nodes:+8/-0, node_aliases:+8/-0
+FINAL_SHADOW_FK_VIOLATIONS = 0
+FINAL_SHADOW_INTEGRITY = ok
+FINAL_SHADOW_ARCHIVE_FILES = 1
+FINAL_SHADOW_ARCHIVE_SHA256 = 572a6df2b583358506e2a4fb86359a07e9a1503a3507dcdd2c81a8d97c27e97a
+```
+
+Exact replay returned `ALREADY_APPLIED` for the DB and `ALREADY_MATERIALIZED` for the archive with no delta. A conflicting replay failed closed. The controlled DB failure rolled back all semantic DB mutations and removed the newly materialized disposable Source. The Source-copy failure cleaned its staged bytes before any DB mutation. The restore drill recovered the exact Production byte SHA, semantic state, integrity, FK state, and empty pre-apply disposable archive state.
+
+### 13.3 Production non-mutation and remaining gate
+
+Production was inspected only through immutable/read-only connections. No schema initializer, migration, IMA, Proposal, Current View, propagation, Relation, or Production archive path was invoked.
+
+```text
+PRODUCTION_PRE_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+PRODUCTION_POST_SHA256 = 581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250
+PRODUCTION_INTEGRITY = ok
+PRODUCTION_FK_VIOLATIONS = 0
+PRODUCTION_SIDECARS = absent
+PRODUCTION_ARCHIVE_CHANGED = NO
+PRODUCTION_CHANGED = NO
+PRODUCTION_APPLY_ATTEMPTED = false
+PRODUCTION_APPLY_AUTHORIZED = false
+```
+
+Stage 3D.3C establishes apply readiness for this exact frozen payload and baseline only. It does not grant Production authority and contains no Production enable switch. The only next gate is an explicit user authorization decision for Production Apply; no apply may occur automatically.
+
+### 13.4 Validation
+
+```text
+Stage 3D targeted tests = 49 passed, 1 skipped
+  skipped = Windows symlink creation unavailable; resolved-path/samefile guards passed
+Full pytest = 1082 passed, 1 skipped
+compileall = PASS
+git diff --check = PASS
+Frontend tests = not run; no API or frontend behavior changed
+```

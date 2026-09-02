@@ -15,6 +15,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 DOCUMENT_TYPE = "phase3d_promotion_payload"
+AUTHORIZATION_DOCUMENT_TYPE = "phase3d_authorization_bound_promotion_payload"
 PAYLOAD_VERSION = "1"
 QUALIFICATION_DOCUMENT_TYPE = "phase3d_shadow_qualification_receipt"
 SUPPORTED_OPERATIONS = {"CREATE", "REUSE", "UPDATE", "DEFER", "REJECT"}
@@ -764,7 +765,10 @@ def payload_semantic_body(payload: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def validate_payload(payload: Mapping[str, Any]) -> None:
-    _require(payload.get("document_type") == DOCUMENT_TYPE, "PAYLOAD_DOCUMENT_TYPE_INVALID")
+    _require(
+        payload.get("document_type") in {DOCUMENT_TYPE, AUTHORIZATION_DOCUMENT_TYPE},
+        "PAYLOAD_DOCUMENT_TYPE_INVALID",
+    )
     _require(payload.get("payload_version") == PAYLOAD_VERSION, "PAYLOAD_VERSION_INVALID")
     semantic_hash = canonical_sha256(payload_semantic_body(payload))
     _require(payload.get("payload_hash") == semantic_hash, "PAYLOAD_HASH_MISMATCH")
