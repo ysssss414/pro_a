@@ -35,7 +35,8 @@ from pro_a.production_promotion import (
 
 ROOT = Path(__file__).resolve().parents[1]
 RUN_DIR = ROOT / "workspace" / "phase3c" / "PILOT_20260902_572A6DF2"
-PRODUCTION = ROOT / "workspace" / "pro_a.db"
+STAGE3D2 = ROOT / "workspace" / "phase3d" / "STAGE3D2_QUALIFICATION_F6A9ECB_V2"
+PRODUCTION = STAGE3D2 / "production_shadow_restore.db"
 SIGNOFF = ROOT / "artifacts" / "phase3c" / "pilot6_delegated_reviewer_signoff.json"
 PILOT6_AVAILABLE = all((
     (RUN_DIR / "extraction_bundle_stage1_1_rebound.json").is_file(),
