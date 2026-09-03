@@ -9,6 +9,7 @@ import pytest
 from pro_a.operational_ingestion import (
     PROMOTION_PREVIEW_DOCUMENT_TYPE,
     RunPaths,
+    _render_node_review,
     _run_promotion_preview,
     _semantic_admission_artifact,
     run_operational_ingestion,
@@ -262,6 +263,71 @@ def test_operational_node_review_reuses_exact_phase3d_resolution_logic(tmp_path:
     assert before == after
 
 
+def test_operational_node_review_labels_parent_placement_as_separate_governance(
+    tmp_path: Path,
+):
+    production = tmp_path / "production.db"
+    _write_minimal_production(production)
+    with sqlite3.connect(production) as connection:
+        connection.execute(
+            "INSERT INTO nodes VALUES(?,?,?,?)",
+            ("NODE_PARENT", "Parent Segment", "Segment", "active"),
+        )
+    claims = [{
+        "claim_id": "CLM_CHILD",
+        "evidence_id": "EVD_CHILD",
+        "immutable_projection": {
+            "statement": "New Product demand increased.",
+            "evidence_excerpt": "New Product demand increased.",
+            "evidence_pointer": "[[PAGE:1]]",
+            "related_node_ids": [],
+        },
+    }]
+    operations = [{
+        "operation_id": "OP_CHILD",
+        "candidate_id": "CAND_CHILD",
+        "candidate_kind": "node_candidate",
+        "operation": "DEFER",
+        "executable": False,
+        "candidate": {
+            "canonical_name": "New Product",
+            "primary_type": "Product",
+            "aliases": [],
+            "suggested_parent_node_ids": ["NODE_PARENT"],
+            "quality_eligible": True,
+            "quality_validation": {"eligible": True, "errors": []},
+            "candidate_kind": "normal",
+            "evidence_excerpt": "New Product demand increased.",
+        },
+        "claim_refs": ["CLM_CHILD"],
+        "reason": "NO_EXPLICIT_NODE_CREATE_OR_REUSE_REVIEW",
+    }]
+
+    review = build_operational_node_operation_review(
+        run_id="INGEST_PARENT_REVIEW",
+        source_sha256="a" * 64,
+        claim_review_sha256="b" * 64,
+        claims=claims,
+        node_operations=operations,
+        relation_operations=[],
+        production_path=production,
+        table_ineligible_claims=0,
+    )
+    placement = review["records"][0]["parent_placement_suggestion"]
+    markdown = _render_node_review(review)
+
+    assert placement == {
+        "suggested_parent_node_ids": ["NODE_PARENT"],
+        "advisory_only": True,
+        "separate_human_review_required": True,
+        "authorized_by_node_create": False,
+        "review_decision": "PENDING",
+    }
+    assert "PARENT PLACEMENT SUGGESTION" in markdown
+    assert "SEPARATE HUMAN REVIEW REQUIRED" in markdown
+    assert "NOT AUTHORIZED BY NODE CREATE" in markdown
+
+
 def test_promotion_preview_is_non_executable_and_executor_incompatible(tmp_path: Path):
     production = tmp_path / "production.db"
     _write_minimal_production(production)
@@ -291,8 +357,16 @@ def test_promotion_preview_is_non_executable_and_executor_incompatible(tmp_path:
     )
     (run_dir / "review" / "node_operation_review.json").write_text(
         json.dumps({
-            "suggestion_counts": {"REUSE": 0, "CREATE": 0, "DEFER": 0, "REJECT": 0},
-            "records": [],
+            "suggestion_counts": {"REUSE": 0, "CREATE": 1, "DEFER": 0, "REJECT": 0},
+            "records": [{
+                "operation_candidate_id": "CAND_PARENT",
+                "suggested_operation": "CREATE",
+                "suggestion_reason": "PENDING_NODE_IDENTITY_REVIEW",
+                "prospective_node_id": "NODE_PROSPECTIVE",
+                "parent_placement_suggestion": {
+                    "suggested_parent_node_ids": ["NODE_PARENT"],
+                },
+            }],
             "audit_operations": {"relations": []},
         }),
         encoding="utf-8",
@@ -306,6 +380,20 @@ def test_promotion_preview_is_non_executable_and_executor_incompatible(tmp_path:
     assert preview["authorization"]["executable"] is False
     assert preview["authorization"]["production_apply_authorized"] is False
     assert "intended_mutations" not in preview
+    assert preview["summary"]["node_create_suggestions"] == 1
+    assert preview["summary"]["parent_placement_suggestions"] == 1
+    assert preview["parent_placement_suggestions"][0] == {
+        "suggestion_id": preview["parent_placement_suggestions"][0]["suggestion_id"],
+        "candidate_id": "CAND_PARENT",
+        "prospective_child_node_id": "NODE_PROSPECTIVE",
+        "parent_node_id": "NODE_PARENT",
+        "suggestion_type": "PARENT_PLACEMENT_SUGGESTION",
+        "governance_status": "SEPARATE_HUMAN_REVIEW_REQUIRED",
+        "authorized_by_node_create": False,
+        "human_decision": "PENDING",
+        "executable": False,
+    }
+    assert preview["relations"]["observations"] == []
     with pytest.raises(PromotionError, match="PAYLOAD_DOCUMENT_TYPE_INVALID"):
         validate_payload(preview)
     assert before == after

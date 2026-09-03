@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
+from .relation_structure import directed_path_exists
+
 
 DOCUMENT_TYPE = "phase3d_promotion_payload"
 AUTHORIZATION_DOCUMENT_TYPE = "phase3d_authorization_bound_promotion_payload"
@@ -1017,26 +1019,14 @@ def validate_executable_operations(connection: sqlite3.Connection, payload: Mapp
         _require(source_id != target_id, "RELATION_SELF_LOOP")
         edge = (source_id, "part_of", target_id, relation.get("scope") or "")
         _require(edge not in current_edges, "RELATION_DUPLICATE")
-        graph: dict[str, set[str]] = {}
-        for start, end in part_of_edges:
-            graph.setdefault(start, set()).add(end)
-
-        def reachable(start: str, destination: str) -> bool:
-            pending = [start]
-            seen: set[str] = set()
-            while pending:
-                current = pending.pop()
-                if current == destination:
-                    return True
-                if current in seen:
-                    continue
-                seen.add(current)
-                pending.extend(graph.get(current, ()))
-            return False
-
-        _require(not reachable(target_id, source_id), "RELATION_CYCLE")
-        _require(not reachable(source_id, target_id), "RELATION_TRANSITIVE_REDUNDANCY")
-        graph.setdefault(source_id, set()).add(target_id)
+        _require(
+            not directed_path_exists(part_of_edges, target_id, source_id),
+            "RELATION_CYCLE",
+        )
+        _require(
+            not directed_path_exists(part_of_edges, source_id, target_id),
+            "RELATION_TRANSITIVE_REDUNDANCY",
+        )
         part_of_edges.add((source_id, target_id))
 
 

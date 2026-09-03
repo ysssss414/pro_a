@@ -891,22 +891,32 @@ def _render_node_review(review: Mapping[str, Any]) -> str:
         f"- Supporting review-admitted Claims: {review['review_universe']['admitted_claims']}",
         f"- Relation observations excluded: {review['relation_audit']['observed']}",
         "",
-        "| Candidate ID | Name | Type | Aliases | Claims | Exact targets | Suggestion | Reason | Human |",
-        "|---|---|---|---|---:|---|---|---|---|",
+        "| Candidate ID | Name | Type | Aliases | Claims | Exact targets | Node suggestion | Parent placement | Reason | Human |",
+        "|---|---|---|---|---:|---|---|---|---|---|",
     ]
     for record in review["records"]:
         clean = lambda value: str(value or "").replace("|", "\\|").replace("\n", " ")
         resolution = record["exact_production_resolution"]
+        parent_placement = record.get("parent_placement_suggestion") or {}
+        parent_ids = parent_placement.get("suggested_parent_node_ids") or []
+        parent_text = (
+            "PARENT PLACEMENT SUGGESTION: "
+            f"{clean(', '.join(parent_ids))}; SEPARATE HUMAN REVIEW REQUIRED; "
+            "NOT AUTHORIZED BY NODE CREATE"
+            if parent_ids else "None"
+        )
         lines.append(
             f"| `{record['operation_candidate_id']}` | {clean(record['proposed_name'])} | "
             f"{clean(record['proposed_type'])} | {clean(', '.join(record['proposed_aliases']))} | "
             f"{len(record['supporting_claim_ids'])} | "
             f"{clean(', '.join(resolution['exact_target_node_ids'])) or 'None'} | "
-            f"**{record['suggested_operation']}** | {clean(record['suggestion_reason'])} | PENDING |"
+            f"**{record['suggested_operation']}** | {parent_text} | "
+            f"{clean(record['suggestion_reason'])} | PENDING |"
         )
     lines.extend([
         "",
-        "Relations remain audit-only and are excluded from this promotion preview.",
+        "Parent placement suggestions require separate human review and are not authorized by Node CREATE.",
+        "Evidence-backed semantic Relations remain audit-only and are excluded from this promotion preview.",
         "No Node or Relation mutation was authorized or attempted.",
         "",
     ])
@@ -993,6 +1003,7 @@ def _render_promotion_preview(preview: Mapping[str, Any]) -> str:
         f"- Node REUSE suggestions: {summary['node_reuse_suggestions']}",
         f"- Node CREATE suggestions: {summary['node_create_suggestions']}",
         f"- Node DEFER suggestions: {summary['node_defer_suggestions']}",
+        f"- Parent placement suggestions (separate review): {summary['parent_placement_suggestions']}",
         f"- Relations excluded: {summary['relations_excluded']}",
         "",
         "EXECUTABLE = false",
@@ -1033,6 +1044,31 @@ def _run_promotion_preview(
     ]
     node_counts = node_review["suggestion_counts"]
     relations = node_review["audit_operations"]["relations"]
+    parent_placement_suggestions = [
+        {
+            "suggestion_id": deterministic_id(
+                "PARENT_PLACEMENT",
+                {
+                    "candidate_id": record["operation_candidate_id"],
+                    "parent_node_id": parent_node_id,
+                },
+            ),
+            "candidate_id": record["operation_candidate_id"],
+            "prospective_child_node_id": record["prospective_node_id"],
+            "parent_node_id": parent_node_id,
+            "suggestion_type": "PARENT_PLACEMENT_SUGGESTION",
+            "governance_status": "SEPARATE_HUMAN_REVIEW_REQUIRED",
+            "authorized_by_node_create": False,
+            "human_decision": "PENDING",
+            "executable": False,
+        }
+        for record in node_review["records"]
+        for parent_node_id in (
+            (record.get("parent_placement_suggestion") or {}).get(
+                "suggested_parent_node_ids"
+            ) or []
+        )
+    ]
     body = {
         "document_type": PROMOTION_PREVIEW_DOCUMENT_TYPE,
         "schema_version": SCHEMA_VERSION,
@@ -1061,6 +1097,7 @@ def _run_promotion_preview(
             }
             for record in node_review["records"]
         ],
+        "parent_placement_suggestions": parent_placement_suggestions,
         "relations": {
             "observations": relations,
             "excluded_from_promotion": True,
@@ -1078,6 +1115,7 @@ def _run_promotion_preview(
             "node_create_suggestions": node_counts.get("CREATE", 0),
             "node_defer_suggestions": node_counts.get("DEFER", 0),
             "node_reject_suggestions": node_counts.get("REJECT", 0),
+            "parent_placement_suggestions": len(parent_placement_suggestions),
             "relations_excluded": len(relations),
         },
         "authorization": {
