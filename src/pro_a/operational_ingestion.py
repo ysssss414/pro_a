@@ -255,10 +255,14 @@ def _record_failure(
     status: str,
     exc: BaseException,
 ) -> None:
+    piece_context = copy.deepcopy(getattr(exc, "piece_context", None))
+    call_metadata = copy.deepcopy(getattr(exc, "call_metadata", None))
     manifest["stage_status"] = status
     manifest["last_error"] = {"type": type(exc).__name__, "message": str(exc)}
+    if piece_context:
+        manifest["last_error"]["piece_context"] = piece_context
     failure_path = paths.path(f"receipts/{status.lower()}.json")
-    _write_json(failure_path, {
+    failure = {
         "document_type": "phase3e_stage_failure_receipt",
         "schema_version": SCHEMA_VERSION,
         "run_id": manifest["run_id"],
@@ -268,7 +272,12 @@ def _record_failure(
         "error": str(exc),
         "production_apply_attempted": False,
         "production_write": False,
-    })
+    }
+    if piece_context:
+        failure["piece_context"] = piece_context
+    if call_metadata:
+        failure["call_metadata"] = call_metadata
+    _write_json(failure_path, failure)
     _refresh_manifest(paths, manifest)
 
 
@@ -367,26 +376,10 @@ def _build_live_extraction(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
-    raw_responses: list[dict[str, Any]] = []
-    original_json = analyzer.llm.json
-
-    def recording_json(system: str, user: str) -> dict[str, Any]:
-        response = original_json(system, user)
-        raw_responses.append({
-            "system_prompt_sha256": hashlib.sha256(system.encode("utf-8")).hexdigest(),
-            "user_prompt_sha256": hashlib.sha256(user.encode("utf-8")).hexdigest(),
-            "raw_model_json": copy.deepcopy(response),
-            "call_metadata": copy.deepcopy(analyzer.llm.last_call_metadata),
-        })
-        return response
-
-    analyzer.llm.json = recording_json
-    try:
-        analysis = analyzer.analyze_source(
-            manifest["source"]["filename"], semantic_text, "deep"
-        )
-    finally:
-        analyzer.llm.json = original_json
+    analysis = analyzer.analyze_source(
+        manifest["source"]["filename"], semantic_text, "deep"
+    )
+    raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
 
     llm = _llm_metrics([item["call_metadata"] for item in raw_responses])
     prompt_status = phase3c_prompt_repair_status(analyzer_module.SOURCE_ANALYSIS_SYSTEM)
@@ -397,7 +390,15 @@ def _build_live_extraction(
     for index, claim in enumerate(analysis.claims):
         claim_id = deterministic_id(
             "CLM",
-            {"source_sha256": source_sha, "claim_index": index, "claim": claim},
+            {
+                "source_sha256": source_sha,
+                "claim_index": index,
+                "claim": {
+                    key: value
+                    for key, value in claim.items()
+                    if not key.startswith("origin_")
+                },
+            },
         )
         record = build_claim_record(
             claim_id,
@@ -410,6 +411,14 @@ def _build_live_extraction(
         )
         if record is None:
             continue
+        for key in (
+            "origin_chunk_index",
+            "origin_split_path",
+            "origin_piece_sha256",
+            "origin_pieces",
+        ):
+            if key in claim:
+                record[key] = copy.deepcopy(claim[key])
         record["validation"] = copy.deepcopy(record["structured"].get("validation") or {})
         record["phase3c_evidence"] = phase3c_evidence_provenance_contract(
             model_evidence_excerpt=str(record.get("evidence_excerpt") or ""),
@@ -483,6 +492,11 @@ def _build_live_extraction(
         "run_id": manifest["run_id"],
         "source_sha256": source_sha,
         "model": copy.deepcopy(bundle["model"]),
+        "piece_local_equivalence": {
+            "fixture_class": "A",
+            "status": "PIECE_LOCAL_PROVENANCE_RECORDED",
+            "raw_response_and_exact_piece_available": True,
+        },
         "raw_model_responses": raw_responses,
         "normalized_source_analysis": asdict(analysis),
     }
@@ -499,6 +513,11 @@ def _fixture_raw_analysis(
         "source_sha256": manifest["source"]["sha256"],
         "fixture_file_sha256": fixture_sha256,
         "llm_invoked": False,
+        "piece_local_equivalence": {
+            "fixture_class": "B",
+            "status": "PIECE_LOCAL_EQUIVALENCE_NOT_DIRECTLY_PROVABLE_FROM_FIXTURE",
+            "raw_response_and_exact_piece_available": False,
+        },
         "model": copy.deepcopy(bundle.get("model") or {}),
         "normalized_source_analysis": {
             "source_metadata": copy.deepcopy(bundle.get("proposed_source_metadata") or {}),

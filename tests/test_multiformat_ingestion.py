@@ -234,5 +234,8 @@ def test_analyzer_source_chunking_and_truncation_recovery_remain_exact(tmp_path)
     result = pipeline.analyzer.analyze_source("long.pdf", text, "standard")
     assert any("[[TRUNCATION_SPLIT:1]]" in call for call in calls)
     assert any("[[TRUNCATION_SPLIT:2]]" in call for call in calls)
-    assert result.claims[0]["evidence_validated"] is True
+    # The fixture response is intentionally repeated for every split; the first
+    # child cannot validate Evidence that exists only in a later child.
+    assert result.claims[0]["evidence_validated"] is False
+    assert result.claims[0]["origin_split_path"] == "1"
     assert result.claims[1]["status"] == "needs_review"
