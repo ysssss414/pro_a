@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import copy
+import hashlib
 import json
 import re
 import unicodedata
@@ -183,6 +184,76 @@ def attribution_subjects(attributed_to: str) -> list[str]:
     return subjects
 
 
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class SourcePiece:
+    """Bind Source content separately from the marker-wrapped prompt material."""
+
+    chunk_index: int
+    chunk_count: int
+    split_path: str
+    split_depth: int
+    source_text: str
+    prompt_text: str
+
+    @property
+    def source_sha256(self) -> str:
+        return _sha256_text(self.source_text)
+
+    @property
+    def prompt_sha256(self) -> str:
+        return _sha256_text(self.prompt_text)
+
+    @property
+    def piece_id(self) -> str:
+        identity = json.dumps(
+            {
+                "chunk_index": self.chunk_index,
+                "chunk_count": self.chunk_count,
+                "split_path": self.split_path,
+                "split_depth": self.split_depth,
+                "source_piece_sha256": self.source_sha256,
+                "prompt_piece_sha256": self.prompt_sha256,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return f"PIECE_{_sha256_text(identity)[:16].upper()}"
+
+    def origin(self) -> dict[str, Any]:
+        return {
+            "piece_id": self.piece_id,
+            "origin_chunk_index": self.chunk_index,
+            "origin_chunk_count": self.chunk_count,
+            "origin_split_path": self.split_path,
+            "origin_split_depth": self.split_depth,
+            "origin_piece_sha256": self.source_sha256,
+        }
+
+    def diagnostic(self) -> dict[str, Any]:
+        return {
+            "piece_id": self.piece_id,
+            "chunk_index": self.chunk_index,
+            "chunk_count": self.chunk_count,
+            "split_path": self.split_path,
+            "split_depth": self.split_depth,
+            "source_piece_sha256": self.source_sha256,
+            "source_piece_chars": len(self.source_text),
+            "prompt_piece_sha256": self.prompt_sha256,
+            "prompt_piece_chars": len(self.prompt_text),
+        }
+
+
+@dataclass(frozen=True)
+class PieceAnalysisResponse:
+    piece: SourcePiece
+    raw_response: dict[str, Any]
+
+
 @dataclass
 class SourceAnalysis:
     source_metadata: dict[str, Any]
@@ -202,6 +273,7 @@ class Analyzer:
         self.cfg = cfg
         self.db = db
         self.llm = ChatLLM(cfg.llm)
+        self.last_piece_call_records: list[dict[str, Any]] = []
 
     @property
     def available(self) -> bool:
@@ -248,6 +320,48 @@ class Analyzer:
             if not self.db.get_node(node_id):
                 self._invalid(f"{path}[{index}]", f"unknown Node ID {node_id!r}")
         return ids
+
+    @staticmethod
+    def _attach_piece_origin(item: dict[str, Any], piece: SourcePiece) -> None:
+        origin = piece.origin()
+        origin.update({
+            "evidence_validated": item.get("evidence_validated") is True,
+            "evidence_excerpt_sha256": _sha256_text(
+                str(item.get("evidence_excerpt") or "")
+            ),
+        })
+        item.update({
+            "origin_chunk_index": origin["origin_chunk_index"],
+            "origin_split_path": origin["origin_split_path"],
+            "origin_piece_sha256": origin["origin_piece_sha256"],
+            "origin_pieces": [origin],
+        })
+
+    @staticmethod
+    def _merge_piece_origins(
+        target: dict[str, Any], incoming: dict[str, Any]
+    ) -> None:
+        origins = target.setdefault("origin_pieces", [])
+        seen = {
+            (
+                item.get("piece_id"),
+                item.get("origin_piece_sha256"),
+                item.get("origin_split_path"),
+            )
+            for item in origins
+            if isinstance(item, dict)
+        }
+        for origin in incoming.get("origin_pieces") or []:
+            if not isinstance(origin, dict):
+                continue
+            key = (
+                origin.get("piece_id"),
+                origin.get("origin_piece_sha256"),
+                origin.get("origin_split_path"),
+            )
+            if key not in seen:
+                origins.append(copy.deepcopy(origin))
+                seen.add(key)
 
     def _claim_ids(self, value: Any, allowed: set[str], path: str) -> list[str]:
         ids = self._list(value, path)
@@ -873,7 +987,9 @@ class Analyzer:
             accepted.append(normalized)
         return accepted, rejected
 
-    def _validate_source_output(self, raw: Any, full_text: str) -> dict[str, Any]:
+    def _validate_source_output(
+        self, raw: Any, piece_source_text: str
+    ) -> dict[str, Any]:
         data = copy.deepcopy(self._object(raw, "source_analysis"))
         metadata = self._object(data.get("source_metadata") or {}, "source_metadata")
         metadata["source_rank"] = metadata.get("source_rank") or "UNRANKED"
@@ -897,7 +1013,7 @@ class Analyzer:
             if not isinstance(node_id, str) or not self.db.get_node(node_id):
                 excerpt = match.get("evidence_excerpt")
                 validation = evidence_match(
-                    excerpt if isinstance(excerpt, str) else "", full_text
+                    excerpt if isinstance(excerpt, str) else "", piece_source_text
                 )
                 model_confidence = match.get("confidence")
                 if isinstance(model_confidence, bool) or not isinstance(
@@ -923,7 +1039,9 @@ class Analyzer:
             model_confidence = self._confidence(match, path)
             excerpt = match.get("evidence_excerpt")
             excerpt_present = isinstance(excerpt, str) and bool(normalize_ws(excerpt))
-            validation = evidence_match(excerpt if excerpt_present else "", full_text)
+            validation = evidence_match(
+                excerpt if excerpt_present else "", piece_source_text
+            )
             excerpt_located = validation["evidence_validated"]
             node = self.db.get_node(node_id) or {}
             node_terms = [node.get("canonical_name") or "", *(node.get("aliases") or [])]
@@ -960,7 +1078,7 @@ class Analyzer:
                     self._validate_node_candidate(
                         candidate,
                         index,
-                        full_text,
+                        piece_source_text,
                         str(metadata.get("source_rank") or "UNRANKED"),
                     )
                 )
@@ -1044,7 +1162,9 @@ class Analyzer:
                         "reason": "unknown_node_id",
                     })
             self._list(claim.get("related_candidate_names") or [], f"{path}.related_candidate_names")
-            validation = evidence_match(str(claim.get("evidence_excerpt") or ""), full_text)
+            validation = evidence_match(
+                str(claim.get("evidence_excerpt") or ""), piece_source_text
+            )
             validated = validation["evidence_validated"]
             errors = [] if validated else ["evidence_excerpt_not_found"]
             claim["evidence_validated"] = validated
@@ -1079,7 +1199,7 @@ class Analyzer:
             claim["rejected_related_node_links"] = rejected_node_links
 
         relation_candidates, rejected_relation_candidates = self._validate_relation_candidates(
-            data.get("relation_candidates") or [], claims, full_text,
+            data.get("relation_candidates") or [], claims, piece_source_text,
         )
         data["relation_candidates"] = relation_candidates
         data["rejected_relation_candidates"] = rejected_relation_candidates
@@ -1239,6 +1359,7 @@ class Analyzer:
         return data
 
     def analyze_source(self, filename: str, text: str, mode: str) -> SourceAnalysis:
+        self.last_piece_call_records = []
         if not self.available:
             raise LLMError("LLM unavailable")
         chunks = chunk_source_text(text, self.cfg.llm.max_chunk_chars)
@@ -1254,48 +1375,114 @@ class Analyzer:
         claim_index_by_statement: dict[str, int] = {}
         next_relation_claim_ref = 1
         seen_matches: set[str] = set()
+        match_by_node_id: dict[str, dict[str, Any]] = {}
         seen_candidates: set[str] = set()
-        raw_outputs: list[dict[str, Any]] = []
+        raw_outputs: list[PieceAnalysisResponse] = []
         for idx, chunk in enumerate(chunks, 1):
             def analyze_piece(
                 piece: str, split_path: str = "", split_depth: int = 0
-            ) -> list[dict[str, Any]]:
+            ) -> list[PieceAnalysisResponse]:
                 split_marker = (
                     f"\n[[TRUNCATION_SPLIT:{split_path}]]" if split_path else ""
+                )
+                prompt_piece_text = (
+                    f"[[CHUNK:{idx}/{len(chunks)}]]{split_marker}\n{piece}"
+                )
+                source_piece = SourcePiece(
+                    chunk_index=idx,
+                    chunk_count=len(chunks),
+                    split_path=split_path,
+                    split_depth=split_depth,
+                    source_text=piece,
+                    prompt_text=prompt_piece_text,
                 )
                 user = SOURCE_ANALYSIS_USER.format(
                     mode=mode,
                     filename=filename,
                     nodes_json=catalog_json,
-                    text=(
-                        f"[[CHUNK:{idx}/{len(chunks)}]]{split_marker}\n{piece}"
-                    ),
+                    text=prompt_piece_text,
                 )
+                call_record = {
+                    **source_piece.diagnostic(),
+                    "source_piece": {
+                        "text": source_piece.source_text,
+                        "sha256": source_piece.source_sha256,
+                        "chars": len(source_piece.source_text),
+                    },
+                    "prompt_piece": {
+                        "prefix": source_piece.prompt_text[
+                            :len(source_piece.prompt_text) - len(source_piece.source_text)
+                        ],
+                        "sha256": source_piece.prompt_sha256,
+                        "chars": len(source_piece.prompt_text),
+                        "reconstruction": "prompt_piece.prefix + source_piece.text",
+                    },
+                    "system_prompt_sha256": _sha256_text(SOURCE_ANALYSIS_SYSTEM),
+                    "user_prompt_sha256": _sha256_text(user),
+                }
                 try:
-                    return [self.llm.json(SOURCE_ANALYSIS_SYSTEM, user)]
+                    raw_response = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user)
                 except LLMError as exc:
+                    failed_record = {
+                        **call_record,
+                        "call_status": "failed",
+                        "raw_model_json": None,
+                        "call_metadata": copy.deepcopy(
+                            getattr(self.llm, "last_call_metadata", {})
+                        ),
+                    }
+                    self.last_piece_call_records.append(failed_record)
                     is_truncation = "failure_category=output_truncation" in str(exc)
-                    if not is_truncation or split_depth >= 3:
-                        raise
-                    pieces = chunk_text(piece, max(2000, (len(piece) + 1) // 2))
-                    if len(pieces) < 2:
-                        raise
-                    recovered: list[dict[str, Any]] = []
-                    for split_index, subpiece in enumerate(pieces, 1):
-                        child_path = (
-                            f"{split_path}.{split_index}"
-                            if split_path else str(split_index)
-                        )
-                        recovered.extend(
-                            analyze_piece(subpiece, child_path, split_depth + 1)
-                        )
-                    return recovered
+                    if is_truncation and split_depth < 3:
+                        pieces = chunk_text(piece, max(2000, (len(piece) + 1) // 2))
+                        if len(pieces) >= 2:
+                            recovered: list[PieceAnalysisResponse] = []
+                            for split_index, subpiece in enumerate(pieces, 1):
+                                child_path = (
+                                    f"{split_path}.{split_index}"
+                                    if split_path else str(split_index)
+                                )
+                                recovered.extend(
+                                    analyze_piece(
+                                        subpiece, child_path, split_depth + 1
+                                    )
+                                )
+                            return recovered
+                    terminal = LLMError(str(exc))
+                    terminal.piece_context = source_piece.diagnostic()
+                    terminal.call_metadata = copy.deepcopy(
+                        failed_record["call_metadata"]
+                    )
+                    raise terminal from exc
+                self.last_piece_call_records.append({
+                    **call_record,
+                    "call_status": "success",
+                    "raw_model_json": copy.deepcopy(raw_response),
+                    "call_metadata": copy.deepcopy(
+                        getattr(self.llm, "last_call_metadata", {})
+                    ),
+                })
+                return [PieceAnalysisResponse(source_piece, raw_response)]
 
             raw_outputs.extend(analyze_piece(chunk))
 
-        for idx, raw_data in enumerate(raw_outputs, 1):
-            data = self._validate_source_output(raw_data, text)
-            if idx == 1:
+        for response_index, response in enumerate(raw_outputs, 1):
+            try:
+                data = self._validate_source_output(
+                    response.raw_response, response.piece.source_text
+                )
+            except LLMError as exc:
+                terminal = LLMError(str(exc))
+                terminal.piece_context = response.piece.diagnostic()
+                raise terminal from exc
+            for match in [
+                *(data.get("node_matches") or []),
+                *(data.get("rejected_node_matches") or []),
+            ]:
+                self._attach_piece_origin(match, response.piece)
+            for claim in data.get("claims") or []:
+                self._attach_piece_origin(claim, response.piece)
+            if response_index == 1:
                 merged["source_metadata"] = data.get("source_metadata") or {}
             rejected_matches.extend(data.get("rejected_node_matches") or [])
             for m in data.get("node_matches") or []:
@@ -1305,6 +1492,9 @@ class Analyzer:
                 elif key and key not in seen_matches:
                     seen_matches.add(key)
                     merged["node_matches"].append(m)
+                    match_by_node_id[key] = m
+                elif key:
+                    self._merge_piece_origins(match_by_node_id[key], m)
             for c in data.get("node_candidates") or []:
                 key = normalize_ws(str(c.get("canonical_name", ""))).lower()
                 if not c.get("quality_eligible"):
@@ -1327,6 +1517,7 @@ class Analyzer:
                 global_ref = (local_to_global_refs.get(local_ref) or [""])[0]
                 if key in claim_index_by_statement:
                     merged_claim = merged["claims"][claim_index_by_statement[key]]
+                    self._merge_piece_origins(merged_claim, claim)
                     relation_refs = merged_claim.setdefault("_relation_claim_refs", [])
                     if global_ref and global_ref not in relation_refs:
                         relation_refs.append(global_ref)
@@ -1360,6 +1551,9 @@ class Analyzer:
                     )
                 rejected_relation_candidates.append(normalized_rejection)
             merged["source_references"].extend(data.get("source_references") or [])
+        # Only candidates that passed their own piece and same-response Claims
+        # reach this Source-level pass. Revalidation may reject after ref remap,
+        # but a locally rejected candidate is absent and cannot be resurrected.
         merged["relation_candidates"], remap_rejections = self._validate_relation_candidates(
             merged["relation_candidates"], merged["claims"], text,
         )
