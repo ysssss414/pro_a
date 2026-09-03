@@ -112,6 +112,23 @@ def evidence_match(excerpt: str, full_text: str) -> dict[str, Any]:
     }
 
 
+def scope_node_catalog(
+    full_prompt_catalog: list[dict[str, Any]], piece_source_text: str,
+) -> list[dict[str, Any]]:
+    """Keep catalog records whose canonical name or alias occurs in this piece."""
+    normalized_piece = canonicalize_text(piece_source_text).casefold()
+    scoped: list[dict[str, Any]] = []
+    for node in full_prompt_catalog:
+        terms = [node.get("canonical_name") or "", *(node.get("aliases") or [])]
+        if any(
+            normalized_term in normalized_piece
+            for term in terms
+            if (normalized_term := canonicalize_text(str(term)).casefold())
+        ):
+            scoped.append(node)
+    return scoped
+
+
 def resolve_evidence_locator(full_text: str, evidence_excerpt: str) -> dict[str, Any]:
     """Locate normalized exact Evidence without changing its validation verdict."""
     excerpt = canonicalize_text(evidence_excerpt)
@@ -1363,7 +1380,7 @@ class Analyzer:
         if not self.available:
             raise LLMError("LLM unavailable")
         chunks = chunk_source_text(text, self.cfg.llm.max_chunk_chars)
-        catalog_json = json.dumps(self.node_catalog(), ensure_ascii=False)
+        full_prompt_catalog = self.node_catalog()
         merged = {
             "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [],
             "source_references": [], "relation_candidates": [],
@@ -1396,14 +1413,27 @@ class Analyzer:
                     source_text=piece,
                     prompt_text=prompt_piece_text,
                 )
+                scoped_node_catalog = scope_node_catalog(
+                    full_prompt_catalog, source_piece.source_text
+                )
+                catalog_json = json.dumps(scoped_node_catalog, ensure_ascii=False)
                 user = SOURCE_ANALYSIS_USER.format(
                     mode=mode,
                     filename=filename,
                     nodes_json=catalog_json,
                     text=prompt_piece_text,
                 )
-                call_record = {
+                piece_diagnostic = {
                     **source_piece.diagnostic(),
+                    "full_prompt_catalog_count": len(full_prompt_catalog),
+                    "scoped_node_catalog_count": len(scoped_node_catalog),
+                    "scoped_node_ids": [
+                        str(node.get("node_id") or "")
+                        for node in scoped_node_catalog
+                    ],
+                }
+                call_record = {
+                    **piece_diagnostic,
                     "source_piece": {
                         "text": source_piece.source_text,
                         "sha256": source_piece.source_sha256,
@@ -1449,7 +1479,7 @@ class Analyzer:
                                 )
                             return recovered
                     terminal = LLMError(str(exc))
-                    terminal.piece_context = source_piece.diagnostic()
+                    terminal.piece_context = piece_diagnostic
                     terminal.call_metadata = copy.deepcopy(
                         failed_record["call_metadata"]
                     )
