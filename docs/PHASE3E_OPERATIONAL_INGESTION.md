@@ -33,6 +33,8 @@ A custom `--run-dir` must either be under the configured workspace or outside th
 
 The Source is copied byte-for-byte into `source/` immediately, re-hashed, and used for every later stage. The manifest binds the run and Source identities, parser/prompt/model configuration identities, repository commit, read-only Production baseline, stage status, and exact hash/size inventory of every runtime artifact. It contains no API key.
 
+Every initial chunk and recursive truncation child independently scopes the unchanged active-Node prompt catalog against that exact model-visible Source piece. A Node record is included when its normalized canonical name or an alias occurs in the normalized piece; an empty scoped catalog remains a valid extraction call. The raw call record preserves piece provenance plus `full_prompt_catalog_count`, `scoped_node_catalog_count`, and the compact `scoped_node_ids` inventory, including for failed or truncated calls.
+
 The stable operator-facing review artifacts are:
 
 ```text

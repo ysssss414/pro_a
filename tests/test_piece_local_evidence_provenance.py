@@ -128,6 +128,13 @@ def analyze_pieces(monkeypatch, analyzer, pieces, responses):
     return analyzer.analyze_source("controlled.txt", "".join(pieces), "standard")
 
 
+def prompt_catalog(user: str) -> list[dict]:
+    catalog_text = user.split(
+        "已存在 Knowledge Nodes（JSON）：\n", 1
+    )[1].split("\n\n本次材料文本（仅基于此材料）：", 1)[0]
+    return json.loads(catalog_text)
+
+
 def test_other_piece_evidence_cannot_validate_match_claim_event_or_relation(
     tmp_path: Path, monkeypatch,
 ):
@@ -219,6 +226,13 @@ def test_same_piece_positive_cases_preserve_existing_semantics_and_origins(
     assert result.claims[0]["origin_piece_sha256"] == hashlib.sha256(
         piece_a.encode("utf-8")
     ).hexdigest()
+    first_catalog = prompt_catalog(analyzer.llm.users[0])
+    assert [node["node_id"] for node in first_catalog] == [alpha_id, beta_id]
+    assert analyzer.last_piece_call_records[0]["full_prompt_catalog_count"] == 2
+    assert analyzer.last_piece_call_records[0]["scoped_node_catalog_count"] == 2
+    assert analyzer.last_piece_call_records[0]["scoped_node_ids"] == [
+        alpha_id, beta_id,
+    ]
 
 
 def test_repeated_text_passes_in_its_origin_and_duplicate_merge_keeps_all_origins(
@@ -303,6 +317,11 @@ def test_recursive_split_children_keep_distinct_piece_provenance(
     assert [record["call_status"] for record in analyzer.last_piece_call_records] == [
         "failed", "success", "success"
     ]
+    assert all(
+        "full_prompt_catalog_count" in record
+        and "scoped_node_catalog_count" in record
+        for record in analyzer.last_piece_call_records
+    )
     children = analyzer.last_piece_call_records[1:]
     assert [record["split_path"] for record in children] == ["1", "2"]
     assert [record["source_piece"]["text"] for record in children] == [
@@ -313,22 +332,30 @@ def test_recursive_split_children_keep_distinct_piece_provenance(
     assert children[0]["source_piece"]["sha256"] != children[1]["source_piece"]["sha256"]
 
 
-def test_every_piece_still_receives_the_full_unscoped_node_catalog(
+def test_each_piece_catalog_is_scoped_without_full_source_leakage(
     tmp_path: Path, monkeypatch,
 ):
     cfg, db = make_config(tmp_path)
     alpha_id = db.add_node("Alpha", "Product")
-    beta_id = db.add_node("Beta", "Technology")
+    cxl_id = db.add_node("Compute Express Link", "Technology", ["CXL"])
     analyzer = Analyzer(cfg, db)
 
     analyze_pieces(
-        monkeypatch, analyzer, ["first", "second"], [payload(), payload()]
+        monkeypatch,
+        analyzer,
+        ["Alpha is discussed here.", "Compute Express Link is discussed here."],
+        [payload(), payload()],
     )
 
-    catalog_json = json.dumps(analyzer.node_catalog(), ensure_ascii=False)
     assert len(analyzer.llm.users) == 2
-    assert all(catalog_json in user for user in analyzer.llm.users)
-    assert all(alpha_id in user and beta_id in user for user in analyzer.llm.users)
+    first, second = [prompt_catalog(user) for user in analyzer.llm.users]
+    assert [node["node_id"] for node in first] == [alpha_id]
+    assert cxl_id not in json.dumps(first, ensure_ascii=False)
+    assert [node["node_id"] for node in second] == [cxl_id]
+    assert [
+        record["scoped_node_catalog_count"]
+        for record in analyzer.last_piece_call_records
+    ] == [1, 1]
 
 
 def test_phase3e_raw_analysis_records_exact_piece_and_bundle_claim_origin(
@@ -395,6 +422,9 @@ def test_phase3e_raw_analysis_records_exact_piece_and_bundle_claim_origin(
     ).hexdigest()
     assert call["raw_model_json"] == response
     assert call["call_metadata"]["attempts"][0]["total_tokens"] == 30
+    assert call["full_prompt_catalog_count"] == 0
+    assert call["scoped_node_catalog_count"] == 0
+    assert call["scoped_node_ids"] == []
     normalized_claim = raw["normalized_source_analysis"]["claims"][0]
     assert bundle["claims"][0]["origin_piece_sha256"] == normalized_claim[
         "origin_piece_sha256"
@@ -442,6 +472,9 @@ def test_terminal_truncation_failure_receipt_keeps_compact_piece_identity(
     assert piece_context["chunk_index"] == 1
     assert piece_context["split_path"] == ""
     assert piece_context["source_piece_chars"] == len("short piece")
+    assert piece_context["full_prompt_catalog_count"] == 0
+    assert piece_context["scoped_node_catalog_count"] == 0
+    assert piece_context["scoped_node_ids"] == []
     assert "source_text" not in piece_context
     paths = RunPaths(tmp_path / "run")
     paths.path("receipts").mkdir(parents=True)
