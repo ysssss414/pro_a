@@ -40,7 +40,12 @@ from .production_promotion import (
     production_identity,
     sha256_file,
 )
-from .semantic_admission import ADMISSIBLE, BLOCKED, evaluate_semantic_admission
+from .semantic_admission import (
+    ADMISSIBLE,
+    BLOCKED,
+    evaluate_semantic_admission,
+    join_permitted_support_regions,
+)
 from .table_claim_safety import apply_table_claim_safety_boundary_v1, load_pymupdf_word_pages
 
 
@@ -610,7 +615,7 @@ def _semantic_admission_artifact(
             quote.get("fidelity_status") in VALID_FIDELITY_STATUSES
             and resolved.get("authoritative") is True
         )
-        support_text = "\n".join(
+        support_text = join_permitted_support_regions(
             text
             for text in [
                 str((quote.get("evidence_contract") or {}).get("canonical_ready_evidence") or ""),
@@ -630,6 +635,10 @@ def _semantic_admission_artifact(
             attributed_to=str(claim.get("attributed_to") or ""),
             permitted_support_text=support_text,
             support_region_authoritative=evidence_bound,
+            support_region_exhaustive=False,
+            nature=str(claim.get("nature") or ""),
+            fact_time=str(claim.get("fact_time") or ""),
+            claim_status=str(claim.get("status") or ""),
         )
         table_eligible = table.get("review_eligible") is True
         # Preserve the Phase 3C Pilot #6 review universe: table-eligible Claims

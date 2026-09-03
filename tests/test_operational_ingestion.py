@@ -203,7 +203,49 @@ def test_semantic_surface_preserves_table_eligible_review_universe():
     assert result["counts"]["review_admitted"] == 1
     assert result["decisions"][0]["review_admitted"] is True
     assert result["decisions"][1]["review_admitted"] is False
+    assert result["decisions"][0]["recommended_decision"] == "KEEP"
+    assert {
+        "question_premise_guard",
+        "precision_token_guard",
+        "number_time_guard",
+        "subject_scope_guard",
+        "atomicity_guard",
+        "nature_consistency_guard",
+    } <= result["decisions"][0]["semantic_admission"].keys()
     assert result["decisions"][1]["recommended_decision"] == "DROP"
+
+
+def test_operational_bounded_support_routes_missing_quantity_to_review():
+    claim = {
+        "claim_id": "CLM_REVIEW",
+        "statement": "接口速率为7200 MT/s。",
+        "attributed_to": "",
+        "nature": "data",
+    }
+    result = _semantic_admission_artifact(
+        manifest={"run_id": "INGEST_TEST", "source": {"sha256": "a" * 64}},
+        bundle={"claims": [claim]},
+        evidence_draft={"claims": [{
+            "claim_id": "CLM_REVIEW",
+            "bounded_context_candidates": [],
+            "evidence_spans": [],
+        }]},
+        gate={"claims": [{
+            "claim_id": "CLM_REVIEW",
+            "fidelity_status": "EXACT_SOURCE_MATCH",
+            "resolved_locator": {"authoritative": True, "locator": "PAGE:1"},
+            "evidence_contract": {"canonical_ready_evidence": "接口速率已披露。"},
+        }]},
+        table_boundary={"decisions": [{
+            "claim_id": "CLM_REVIEW",
+            "review_eligible": True,
+            "eligibility_decision": "TABLE_CLAIM_ELIGIBLE_FAIL_OPEN",
+            "decision_reason": "KEEP_FAIL_OPEN",
+        }]},
+    )
+    decision = result["decisions"][0]
+    assert decision["semantic_admission"]["number_time_guard"]["status"] == "REVIEW_REQUIRED"
+    assert decision["recommended_decision"] == "REVIEW"
 
 
 def test_operational_node_review_reuses_exact_phase3d_resolution_logic(tmp_path: Path):
