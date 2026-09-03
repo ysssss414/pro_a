@@ -6,7 +6,7 @@ from typing import Any
 
 from .analyzer import Analyzer
 from .config import AppConfig
-from .constants import NODE_TYPES
+from .constants import NODE_PARENT_PLACEMENT_PROPOSAL_TYPE, NODE_TYPES
 from .current_view import create_official_view_record, write_official_view_file
 from .db import CURRENT_VIEW_ORDER, Database, now_iso
 from .ids import make_id
@@ -44,7 +44,9 @@ class ProposalManager:
             raise KeyError(f"Unknown proposal: {proposal_id}")
         if proposal["status"] == "accepted":
             result = self._result(proposal)
-            if proposal["proposal_type"] != "node_relation":
+            if proposal["proposal_type"] not in {
+                "node_relation", NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,
+            }:
                 if result.get("view_id"):
                     self._run_side_effect_jobs(result["view_id"])
                 if result.get("propagation_batch_id"):
@@ -55,6 +57,10 @@ class ProposalManager:
 
         if proposal["proposal_type"] == "node_relation":
             result = self._accept_node_relation_atomic(proposal_id)
+            write_proposal(self.cfg, self.db.proposal(proposal_id))
+            return result
+        if proposal["proposal_type"] == NODE_PARENT_PLACEMENT_PROPOSAL_TYPE:
+            result = self._accept_node_parent_placement_atomic(proposal_id)
             write_proposal(self.cfg, self.db.proposal(proposal_id))
             return result
         if proposal["proposal_type"] == "new_node":
@@ -88,7 +94,9 @@ class ProposalManager:
             raise ValueError(f"Proposal is not pending: {proposal['status']}")
         self._update_status(proposal_id, "rejected", reason)
         batch_id = proposal.get("propagation_batch_id") or ""
-        if batch_id and proposal["proposal_type"] != "node_relation":
+        if batch_id and proposal["proposal_type"] not in {
+            "node_relation", NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,
+        }:
             self.propagation.resume_batch(batch_id)
 
     def _accept_node_relation_atomic(self, proposal_id: str) -> dict[str, Any]:
@@ -195,6 +203,63 @@ class ProposalManager:
             )
         return result
 
+    def _accept_node_parent_placement_atomic(
+        self, proposal_id: str,
+    ) -> dict[str, Any]:
+        with self.db.transaction(immediate=True) as conn:
+            row = conn.execute(
+                "SELECT * FROM proposals WHERE proposal_id=?", (proposal_id,)
+            ).fetchone()
+            if not row:
+                raise KeyError(proposal_id)
+            proposal = dict(row)
+            if proposal["status"] == "accepted":
+                return self._result(proposal)
+            if proposal["status"] != "pending":
+                raise ValueError(f"Proposal is not pending: {proposal['status']}")
+            if proposal["proposal_type"] != NODE_PARENT_PLACEMENT_PROPOSAL_TYPE:
+                raise ValueError(
+                    "Proposal is not node_parent_placement: "
+                    f"{proposal['proposal_type']}"
+                )
+            if proposal.get("source_impact_id") or proposal.get("propagation_batch_id"):
+                raise ValueError(
+                    "node_parent_placement Proposal cannot belong to Impact Recovery or propagation"
+                )
+            try:
+                raw_payload = json.loads(proposal["payload_json"])
+            except (TypeError, json.JSONDecodeError) as exc:
+                raise ValueError(
+                    "node_parent_placement payload must be valid JSON"
+                ) from exc
+            payload = self.db.validate_node_parent_placement_payload(
+                raw_payload, _conn=conn,
+            )
+            if proposal.get("target_node_id") != payload["child_node_id"]:
+                raise ValueError(
+                    "node_parent_placement target Node does not match payload child"
+                )
+            relation_id = self.db.add_relation(
+                payload["child_node_id"],
+                "part_of",
+                payload["parent_node_id"],
+                _conn=conn,
+            )
+            result = {
+                "relation_id": relation_id,
+                "created_new_relation": True,
+                "child_node_id": payload["child_node_id"],
+                "parent_node_id": payload["parent_node_id"],
+                "suggestion_source": payload["suggestion_source"],
+                "relation_evidence_created": False,
+            }
+            conn.execute(
+                """UPDATE proposals SET status='accepted',result_json=?,resolved_at=?
+                   WHERE proposal_id=?""",
+                (json.dumps(result, ensure_ascii=False), now_iso(), proposal_id),
+            )
+        return result
+
     def _accept_new_node(self, proposal: dict[str, Any]) -> dict[str, Any]:
         p = proposal["payload"]
         if p.get("primary_type") not in NODE_TYPES:
@@ -203,9 +268,18 @@ class ProposalManager:
             p["canonical_name"], p["primary_type"], p.get("aliases") or [], p.get("description", "")
         )
         claim_ids = p.get("related_claim_ids") or []
-        for parent_id in p.get("suggested_parent_node_ids") or []:
-            if self.db.get_node(parent_id):
-                self.db.add_relation(node_id, "part_of", parent_id)
+        raw_parent_ids = p.get("suggested_parent_node_ids") or []
+        if not isinstance(raw_parent_ids, list):
+            raise ValueError("suggested_parent_node_ids must be a list")
+        suggested_parent_node_ids: list[str] = []
+        for parent_id in raw_parent_ids:
+            if not isinstance(parent_id, str) or not parent_id.strip():
+                raise ValueError(
+                    "suggested_parent_node_ids must contain non-empty Node IDs"
+                )
+            parent_id = parent_id.strip()
+            if parent_id not in suggested_parent_node_ids:
+                suggested_parent_node_ids.append(parent_id)
         source_id = p.get("source_id", "")
         if source_id:
             self.db.execute(
@@ -228,6 +302,22 @@ class ProposalManager:
                 (rq_id, node_id, p.get("question") or p["canonical_name"], p.get("importance", ""), "", None,
                  "[]", "[]", "[]", p.get("what_would_change_my_mind", ""), "open", ts, ts),
             )
+        parent_placement_proposal_ids: list[str] = []
+        for parent_id in suggested_parent_node_ids:
+            parent_proposal_id = self.db.add_proposal(
+                NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,
+                {
+                    "child_node_id": node_id,
+                    "parent_node_id": parent_id,
+                    "origin_new_node_proposal_id": proposal["proposal_id"],
+                    "origin_candidate_name": p["canonical_name"],
+                    "suggestion_reason": p.get("reason") or "",
+                    "suggestion_source": "MODEL_ADVISORY",
+                },
+                target_node_id=node_id,
+            )
+            parent_placement_proposal_ids.append(parent_proposal_id)
+            write_proposal(self.cfg, self.db.proposal(parent_proposal_id))
         cv_proposal = ""
         if claim_ids:
             impact = self.propagation.evaluate_node(
@@ -237,7 +327,15 @@ class ProposalManager:
                 context={"reason": "Initial Current View check after approved new Node"},
             )
             cv_proposal = impact.get("proposal_id", "")
-        return {"node_id": node_id, "current_view_proposal": cv_proposal}
+        return {
+            "node_id": node_id,
+            "current_view_proposal": cv_proposal,
+            "suggested_parent_node_ids": suggested_parent_node_ids,
+            "parent_placement_status": (
+                "PENDING" if parent_placement_proposal_ids else "NOT_REVIEWED"
+            ),
+            "parent_placement_proposal_ids": parent_placement_proposal_ids,
+        }
 
     @staticmethod
     def _current_view_conn(conn, node_id: str) -> dict[str, Any] | None:

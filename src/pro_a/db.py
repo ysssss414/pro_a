@@ -8,8 +8,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
-from .constants import NODE_TYPES, RELATION_TYPES
+from .constants import (
+    NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,
+    NODE_TYPES,
+    RELATION_TYPES,
+)
 from .ids import make_id
+from .relation_structure import directed_path_exists
 
 
 CURRENT_VIEW_ORDER = "revision_date DESC,revision_seq DESC,view_id DESC"
@@ -441,6 +446,187 @@ class Database:
         return relation_id
 
     @staticmethod
+    def _normalize_node_parent_placement_payload(
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            raise ValueError("node_parent_placement payload must be an object")
+        required_ids = (
+            "child_node_id",
+            "parent_node_id",
+            "origin_new_node_proposal_id",
+        )
+        normalized: dict[str, Any] = {}
+        for field in required_ids:
+            value = payload.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"node_parent_placement {field} is required")
+            normalized[field] = value.strip()
+        candidate_name = payload.get("origin_candidate_name")
+        if not isinstance(candidate_name, str) or not candidate_name.strip():
+            raise ValueError(
+                "node_parent_placement origin_candidate_name is required"
+            )
+        suggestion_reason = payload.get("suggestion_reason", "")
+        if not isinstance(suggestion_reason, str):
+            raise ValueError(
+                "node_parent_placement suggestion_reason must be a string"
+            )
+        suggestion_source = payload.get("suggestion_source")
+        if suggestion_source != "MODEL_ADVISORY":
+            raise ValueError(
+                "node_parent_placement suggestion_source must be MODEL_ADVISORY"
+            )
+        normalized.update({
+            "origin_candidate_name": candidate_name.strip(),
+            "suggestion_reason": suggestion_reason.strip(),
+            "suggestion_source": suggestion_source,
+        })
+        return normalized
+
+    def propose_node_parent_placement(self, payload: dict[str, Any]) -> str:
+        normalized = self._normalize_node_parent_placement_payload(payload)
+        with self.transaction(immediate=True) as conn:
+            origin = conn.execute(
+                "SELECT proposal_type FROM proposals WHERE proposal_id=?",
+                (normalized["origin_new_node_proposal_id"],),
+            ).fetchone()
+            if not origin or origin["proposal_type"] != "new_node":
+                raise ValueError(
+                    "node_parent_placement origin must be a new_node Proposal"
+                )
+            pending = conn.execute(
+                """SELECT proposal_id,payload_json FROM proposals
+                   WHERE proposal_type=? AND status='pending'
+                   ORDER BY created_at,proposal_id""",
+                (NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,),
+            ).fetchall()
+            pair = normalized["child_node_id"], normalized["parent_node_id"]
+            for row in pending:
+                try:
+                    existing = self._normalize_node_parent_placement_payload(
+                        json.loads(row["payload_json"])
+                    )
+                except (TypeError, json.JSONDecodeError, ValueError):
+                    continue
+                if (existing["child_node_id"], existing["parent_node_id"]) == pair:
+                    return row["proposal_id"]
+            proposal_id = make_id("PROP")
+            conn.execute(
+                """INSERT INTO proposals(
+                   proposal_id,proposal_type,target_node_id,payload_json,status,reason,
+                   propagation_batch_id,source_impact_id,created_at
+                   ) VALUES(?,?,?,?,?,?,?,?,?)""",
+                (
+                    proposal_id,
+                    NODE_PARENT_PLACEMENT_PROPOSAL_TYPE,
+                    normalized["child_node_id"],
+                    json.dumps(normalized, ensure_ascii=False),
+                    "pending",
+                    normalized["suggestion_reason"],
+                    "",
+                    "",
+                    now_iso(),
+                ),
+            )
+        return proposal_id
+
+    @staticmethod
+    def _validate_node_parent_placement_payload_conn(
+        conn: sqlite3.Connection, payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized = Database._normalize_node_parent_placement_payload(payload)
+        child_node_id = normalized["child_node_id"]
+        parent_node_id = normalized["parent_node_id"]
+
+        origin = conn.execute(
+            "SELECT proposal_type,status,payload_json,result_json FROM proposals WHERE proposal_id=?",
+            (normalized["origin_new_node_proposal_id"],),
+        ).fetchone()
+        if not origin or origin["proposal_type"] != "new_node":
+            raise ValueError("node_parent_placement origin new_node Proposal is missing")
+        if origin["status"] != "accepted":
+            raise ValueError("node_parent_placement origin new_node Proposal is not accepted")
+        try:
+            origin_payload = json.loads(origin["payload_json"])
+            origin_result = json.loads(origin["result_json"])
+        except (TypeError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                "node_parent_placement origin new_node Proposal is malformed"
+            ) from exc
+        if not isinstance(origin_payload, dict) or not isinstance(origin_result, dict):
+            raise ValueError(
+                "node_parent_placement origin new_node Proposal is malformed"
+            )
+        origin_candidate_name = origin_payload.get("canonical_name")
+        if (
+            not isinstance(origin_candidate_name, str)
+            or origin_candidate_name.strip() != normalized["origin_candidate_name"]
+        ):
+            raise ValueError("node_parent_placement origin candidate name changed")
+        if origin_result.get("node_id") != child_node_id:
+            raise ValueError("node_parent_placement child does not match accepted Node")
+        raw_parent_ids = origin_payload.get("suggested_parent_node_ids") or []
+        if not isinstance(raw_parent_ids, list):
+            raise ValueError(
+                "node_parent_placement origin parent suggestions are malformed"
+            )
+        origin_parent_ids = {
+            value.strip() for value in raw_parent_ids
+            if isinstance(value, str) and value.strip()
+        }
+        if parent_node_id not in origin_parent_ids:
+            raise ValueError("node_parent_placement parent was not an origin suggestion")
+
+        child = conn.execute(
+            "SELECT status FROM nodes WHERE node_id=?", (child_node_id,)
+        ).fetchone()
+        if not child:
+            raise ValueError(f"Unknown child Node: {child_node_id}")
+        parent = conn.execute(
+            "SELECT status FROM nodes WHERE node_id=?", (parent_node_id,)
+        ).fetchone()
+        if not parent:
+            raise ValueError(f"Unknown parent Node: {parent_node_id}")
+        if child["status"] != "active":
+            raise ValueError(f"child Node is not active: {child_node_id}")
+        if parent["status"] != "active":
+            raise ValueError(f"parent Node is not active: {parent_node_id}")
+        if child_node_id == parent_node_id:
+            raise ValueError("node_parent_placement cannot make a Node its own parent")
+
+        existing = conn.execute(
+            """SELECT relation_id FROM node_relations
+               WHERE from_node_id=? AND relation_type='part_of' AND to_node_id=?""",
+            (child_node_id, parent_node_id),
+        ).fetchone()
+        if existing:
+            raise ValueError("node_parent_placement part_of Relation already exists")
+        part_of_edges = {
+            (row["from_node_id"], row["to_node_id"])
+            for row in conn.execute(
+                """SELECT from_node_id,to_node_id FROM node_relations
+                   WHERE relation_type='part_of' AND status='current'"""
+            ).fetchall()
+        }
+        if directed_path_exists(part_of_edges, parent_node_id, child_node_id):
+            raise ValueError("node_parent_placement would introduce a cycle")
+        if directed_path_exists(part_of_edges, child_node_id, parent_node_id):
+            raise ValueError("node_parent_placement is transitively redundant")
+        return normalized
+
+    def validate_node_parent_placement_payload(
+        self,
+        payload: dict[str, Any],
+        *,
+        _conn: sqlite3.Connection | None = None,
+    ) -> dict[str, Any]:
+        if _conn is not None:
+            return self._validate_node_parent_placement_payload_conn(_conn, payload)
+        with self.connect() as conn:
+            return self._validate_node_parent_placement_payload_conn(conn, payload)
+
+    @staticmethod
     def _node_relation_identity(payload: dict[str, Any]) -> tuple[str, str, str, str] | None:
         from_node_id = payload.get("from_node_id")
         relation_type = payload.get("relation_type")
@@ -766,6 +952,16 @@ class Database:
                 confidence=payload.get("confidence"),
                 reason=payload["reason"] if "reason" in payload else reason,
             )
+        if proposal_type == NODE_PARENT_PLACEMENT_PROPOSAL_TYPE:
+            if propagation_batch_id or source_impact_id:
+                raise ValueError(
+                    "node_parent_placement Proposal cannot belong to Impact Recovery or propagation"
+                )
+            if not isinstance(payload, dict):
+                raise ValueError("node_parent_placement payload must be an object")
+            if "suggestion_reason" not in payload:
+                payload = {**payload, "suggestion_reason": reason}
+            return self.propose_node_parent_placement(payload)
         if source_impact_id:
             existing = self.one(
                 """SELECT proposal_id FROM proposals

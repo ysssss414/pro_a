@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from .constants import NODE_PARENT_PLACEMENT_PROPOSAL_TYPE
 from .db import Database
 
 
@@ -89,9 +90,12 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
         impact_reviews.append(impact)
     impact_ids = {impact["impact_id"] for impact in impact_reviews}
 
+    proposal_inventory = []
     related_proposals = []
     for proposal in db.all("SELECT * FROM proposals ORDER BY created_at,proposal_id"):
         payload = _json(proposal.pop("payload_json", "{}"), {})
+        proposal["payload"] = payload
+        proposal_inventory.append(proposal)
         related_claims: set[str] = set()
         for key in ("related_claim_ids", "evidence_claim_ids", "supporting_claim_ids"):
             related_claims.update(payload.get(key) or [])
@@ -103,8 +107,19 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
             or bool(claim_ids & related_claims)
         )
         if related:
-            proposal["payload"] = payload
             related_proposals.append(proposal)
+    related_new_node_ids = {
+        proposal["proposal_id"] for proposal in related_proposals
+        if proposal["proposal_type"] == "new_node"
+    }
+    related_ids = {proposal["proposal_id"] for proposal in related_proposals}
+    related_proposals.extend(
+        proposal for proposal in proposal_inventory
+        if proposal["proposal_id"] not in related_ids
+        and proposal["proposal_type"] == NODE_PARENT_PLACEMENT_PROPOSAL_TYPE
+        and proposal["payload"].get("origin_new_node_proposal_id") in related_new_node_ids
+    )
+    related_proposals.sort(key=lambda item: (item["created_at"], item["proposal_id"]))
 
     current_view_proposals = [
         proposal for proposal in related_proposals
@@ -113,6 +128,10 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
     relation_proposals = [
         proposal for proposal in related_proposals
         if proposal["proposal_type"] == "node_relation"
+    ]
+    parent_placement_proposals = [
+        proposal for proposal in related_proposals
+        if proposal["proposal_type"] == NODE_PARENT_PLACEMENT_PROPOSAL_TYPE
     ]
     research_question_candidates = [
         proposal for proposal in related_proposals
@@ -142,6 +161,7 @@ def build_source_audit(db: Database, source_id: str) -> dict[str, Any]:
         "claim_relations": claim_relations,
         "impact_reviews": impact_reviews,
         "node_proposals": node_proposals,
+        "parent_placement_proposals": parent_placement_proposals,
         "relation_proposals": relation_proposals,
         "relation_candidates": (
             (source.get("metadata") or {}).get("analysis_quality") or {}

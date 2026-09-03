@@ -83,9 +83,16 @@ def test_accept_same_proposal_is_idempotent(tmp_path: Path):
 
 def test_accept_same_new_node_proposal_is_idempotent(tmp_path: Path):
     cfg, db = make_config(tmp_path)
+    parent_node_id = db.add_node("Parent Node", "Theme")
     pid = db.add_proposal(
         "new_node",
-        {"canonical_name": "One Node", "primary_type": "Theme", "aliases": [], "related_claim_ids": []},
+        {
+            "canonical_name": "One Node",
+            "primary_type": "Theme",
+            "aliases": [],
+            "related_claim_ids": [],
+            "suggested_parent_node_ids": [parent_node_id],
+        },
     )
     manager = ProposalManager(cfg, db, NoChangeAnalyzer())
 
@@ -93,10 +100,14 @@ def test_accept_same_new_node_proposal_is_idempotent(tmp_path: Path):
     second = manager.accept(pid)
 
     assert second == first
-    assert db.one("SELECT COUNT(*) AS n FROM nodes")["n"] == 1
+    assert db.one("SELECT COUNT(*) AS n FROM nodes")["n"] == 2
+    assert db.one(
+        "SELECT COUNT(*) AS n FROM proposals WHERE proposal_type='node_parent_placement'"
+    )["n"] == 1
+    assert db.one("SELECT COUNT(*) AS n FROM node_relations")["n"] == 0
 
 
-def test_accept_new_node_keeps_claim_links_without_formalizing_related_relation(tmp_path: Path):
+def test_accept_new_node_keeps_claim_links_and_defers_parent_placement(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     parent_node_id = db.add_node("Existing Theme", "Theme")
     related_node_id = db.add_node("Existing Application", "Application")
@@ -132,7 +143,21 @@ def test_accept_new_node_keeps_claim_links_without_formalizing_related_relation(
         "SELECT relation_type,to_node_id FROM node_relations WHERE from_node_id=?",
         (accepted["node_id"],),
     )
-    assert relations == [{"relation_type": "part_of", "to_node_id": parent_node_id}]
+    assert relations == []
+    assert accepted["suggested_parent_node_ids"] == [parent_node_id]
+    assert accepted["parent_placement_status"] == "PENDING"
+    assert len(accepted["parent_placement_proposal_ids"]) == 1
+    parent_proposal = db.proposal(accepted["parent_placement_proposal_ids"][0])
+    assert parent_proposal["proposal_type"] == "node_parent_placement"
+    assert parent_proposal["status"] == "pending"
+    assert parent_proposal["payload"] == {
+        "child_node_id": accepted["node_id"],
+        "parent_node_id": parent_node_id,
+        "origin_new_node_proposal_id": proposal_id,
+        "origin_candidate_name": "New Product",
+        "suggestion_reason": "",
+        "suggestion_source": "MODEL_ADVISORY",
+    }
     assert db.one("SELECT COUNT(*) AS n FROM relation_evidence_links")["n"] == 0
     assert [
         row["claim_id"]

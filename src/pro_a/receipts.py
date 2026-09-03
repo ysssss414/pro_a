@@ -22,6 +22,7 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
     source = audit.get("source") or {}
     nodes = audit.get("nodes") or []
     node_proposals = audit.get("node_proposals") or []
+    parent_placement_proposals = audit.get("parent_placement_proposals") or []
     relation_candidates = audit.get("relation_candidates") or []
     relation_proposals = audit.get("relation_proposals") or []
     rejected_relation_candidates = audit.get("rejected_relation_candidates") or []
@@ -39,6 +40,7 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         "", "## 处理结果", "",
         f"- Existing Nodes matched: {len(nodes)}",
         f"- Candidate Node Proposals: {len(node_proposals)}",
+        f"- Parent Placement Proposals: {len(parent_placement_proposals)}",
         f"- Relation Candidates: accepted {len(relation_candidates)}, rejected {len(rejected_relation_candidates)}",
         f"- Relation Proposals: {len(relation_proposals)}",
         f"- Claims created: {len(claims)}",
@@ -73,6 +75,13 @@ def write_receipt(cfg: AppConfig, job_id: str, data: dict[str, Any]) -> Path:
         f"confidence={proposal['payload'].get('confidence')}, "
         f"related_claims={len(proposal['payload'].get('related_claim_ids') or [])}"
         for proposal in node_proposals
+    ] or ["- None"]
+    lines += ["", "## Parent Placement Proposals", ""]
+    lines += [
+        f"- `{proposal['proposal_id']}` `{proposal['payload'].get('child_node_id', '')}` "
+        f"--part_of--> `{proposal['payload'].get('parent_node_id', '')}` — "
+        f"status={proposal['status']}, advisory=true, separate_review_required=true"
+        for proposal in parent_placement_proposals
     ] or ["- None"]
     lines += ["", "## Relation Proposals", ""]
     lines += [
@@ -156,6 +165,14 @@ def write_proposal(cfg: AppConfig, proposal: dict[str, Any]) -> Path:
         f"- target_node_id: {proposal.get('target_node_id') or ''}",
         f"- reason: {proposal.get('reason') or ''}",
         f"- propagation_batch_id: {proposal.get('propagation_batch_id') or ''}",
+    ]
+    if proposal.get("proposal_type") == "node_parent_placement":
+        lines += [
+            "- governance: PARENT PLACEMENT SUGGESTION",
+            "- authorization: SEPARATE HUMAN REVIEW REQUIRED",
+            "- node_create_authorizes_this_relation: false",
+        ]
+    lines += [
         "", "```json", json.dumps(payload, ensure_ascii=False, indent=2), "```", "",
         "CLI:", f"- 接受：`pro-a proposals accept {proposal_id}`",
         f"- 拒绝：`pro-a proposals reject {proposal_id} --reason \"...\"`", "",

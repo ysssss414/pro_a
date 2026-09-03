@@ -631,6 +631,22 @@ def build_operational_node_operation_review(
         aliases_by_node=aliases_by_node,
         source_run_id=run_id,
     )
+    for record, operation in zip(records, deferred):
+        candidate = operation.get("candidate") or {}
+        raw_parent_ids = candidate.get("suggested_parent_node_ids") or []
+        if not isinstance(raw_parent_ids, list):
+            raw_parent_ids = []
+        parent_ids = list(dict.fromkeys(
+            parent_id.strip() for parent_id in raw_parent_ids
+            if isinstance(parent_id, str) and parent_id.strip()
+        ))
+        record["parent_placement_suggestion"] = {
+            "suggested_parent_node_ids": parent_ids,
+            "advisory_only": True,
+            "separate_human_review_required": bool(parent_ids),
+            "authorized_by_node_create": False,
+            "review_decision": "PENDING" if parent_ids else "NOT_APPLICABLE",
+        }
     record_ids = [record["operation_candidate_id"] for record in records]
     _require(
         record_ids == [operation["candidate_id"] for operation in deferred],
