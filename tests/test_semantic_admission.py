@@ -124,6 +124,69 @@ def test_grouped_numeric_scope_routes_to_review_not_automatic_block():
     assert result["overall_guard_disposition"] == REVIEW_REQUIRED
 
 
+def test_authoritative_exact_binding_reconciles_heuristic_scope_only_review():
+    statement = "甲、乙等类别合计增长70%。"
+    result = evaluate_semantic_admission(
+        statement=statement,
+        attributed_to="研究机构",
+        permitted_support_text=statement,
+        support_region_authoritative=True,
+        nature="data",
+        claim_evidence_fidelity_status="LAYOUT_NORMALIZED_EXACT_MATCH",
+    )
+    assert result["precision_token_guard"]["status"] == ADMISSIBLE
+    assert result["number_time_guard"]["status"] == ADMISSIBLE
+    assert result["number_time_guard"]["reason_codes"] == [
+        "AUTHORITATIVE_BOUND_SCOPE_RECONCILED"
+    ]
+    assert result["subject_scope_guard"]["status"] == ADMISSIBLE
+    assert result["subject_scope_guard"]["reason_codes"] == [
+        "AUTHORITATIVE_BOUND_SCOPE_RECONCILED"
+    ]
+    assert result["overall_guard_disposition"] == ADMISSIBLE
+
+
+def test_scope_reconciliation_fails_closed_without_binding_or_with_concrete_conflict():
+    statement = "甲、乙等类别合计增长70%。"
+    unresolved = evaluate_semantic_admission(
+        statement=statement,
+        attributed_to="研究机构",
+        permitted_support_text=statement,
+        support_region_authoritative=False,
+        nature="data",
+        claim_evidence_fidelity_status="LAYOUT_NORMALIZED_EXACT_MATCH",
+    )
+    assert unresolved["number_time_guard"]["status"] == REVIEW_REQUIRED
+    assert unresolved["subject_scope_guard"]["status"] == REVIEW_REQUIRED
+
+    conflict = evaluate_semantic_admission(
+        statement=statement,
+        attributed_to="研究机构",
+        permitted_support_text=statement,
+        support_region_authoritative=True,
+        nature="data",
+        claim_evidence_fidelity_status="EXACT_SOURCE_MATCH",
+        claim_subject_anchors=["scope-a"],
+        source_subject_anchors=["scope-b"],
+        source_subjects_exhaustive=True,
+    )
+    assert conflict["subject_scope_guard"]["status"] == BLOCKED
+    assert conflict["overall_guard_disposition"] == BLOCKED
+
+
+def test_scope_reconciliation_does_not_override_unanchored_number():
+    result = evaluate_semantic_admission(
+        statement="甲、乙等类别合计增长70%。",
+        attributed_to="研究机构",
+        permitted_support_text="甲、乙等类别合计增长60%。",
+        support_region_authoritative=True,
+        nature="data",
+        claim_evidence_fidelity_status="EXACT_SOURCE_MATCH",
+    )
+    assert result["number_time_guard"]["status"] == BLOCKED
+    assert result["overall_guard_disposition"] == BLOCKED
+
+
 def test_subject_scope_blocks_only_explicit_exhaustive_disjoint_anchors():
     mismatch = subject_scope_anchor_guard(
         claim_subject_anchors=["material"],

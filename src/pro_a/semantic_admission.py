@@ -24,6 +24,11 @@ ADMISSIBLE = "ADMISSIBLE"
 REVIEW_REQUIRED = "REVIEW_REQUIRED"
 BLOCKED = "BLOCKED"
 
+_AUTHORITATIVE_EXACT_FIDELITY_STATUSES = {
+    "EXACT_SOURCE_MATCH",
+    "LAYOUT_NORMALIZED_EXACT_MATCH",
+}
+
 QUESTIONER = "QUESTIONER"
 ANSWERER = "ANSWERER"
 UNKNOWN = "UNKNOWN"
@@ -849,6 +854,72 @@ def subject_scope_anchor_guard(
     )
 
 
+def _reconcile_authoritative_bound_scope_review(
+    *,
+    precision: Mapping[str, Any],
+    number_time: Mapping[str, Any],
+    subject_scope: Mapping[str, Any],
+    support_region_authoritative: bool,
+    claim_evidence_fidelity_status: str,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Let exact authoritative binding outrank scope-only heuristics."""
+    precision_details = precision.get("details") or {}
+    number_details = number_time.get("details") or {}
+    all_precision_tokens_anchored = (
+        precision.get("status") == ADMISSIBLE
+        and not precision_details.get("unanchored_tokens")
+        and len(precision_details.get("tokens") or [])
+        == len(precision_details.get("anchored_tokens") or [])
+    )
+    numeric_states = list(number_details.get("tokens") or [])
+    all_numbers_anchored = bool(numeric_states) and all(
+        item.get("anchor_state") == "ANCHORED" for item in numeric_states
+    )
+    scope_only_review = (
+        number_time.get("status") == REVIEW_REQUIRED
+        and set(number_time.get("reason_codes") or [])
+        == {"NUMERIC_SCOPE_REVIEW_REQUIRED"}
+        and number_details.get("numeric_scope_review_signal") is True
+        and subject_scope.get("status") == REVIEW_REQUIRED
+        and set(subject_scope.get("reason_codes") or [])
+        == {"SUBJECT_SCOPE_REVIEW_REQUIRED"}
+    )
+    authoritative_exact = (
+        support_region_authoritative
+        and claim_evidence_fidelity_status in _AUTHORITATIVE_EXACT_FIDELITY_STATUSES
+    )
+    if not (
+        authoritative_exact
+        and all_precision_tokens_anchored
+        and all_numbers_anchored
+        and scope_only_review
+    ):
+        return dict(number_time), dict(subject_scope)
+
+    reason = ["AUTHORITATIVE_BOUND_SCOPE_RECONCILED"]
+    number_reconciled = {
+        **number_time,
+        "status": ADMISSIBLE,
+        "reason_codes": reason,
+        "details": {
+            **number_details,
+            "authoritative_bound_scope_reconciled": True,
+            "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
+        },
+    }
+    subject_reconciled = {
+        **subject_scope,
+        "status": ADMISSIBLE,
+        "reason_codes": reason,
+        "details": {
+            **(subject_scope.get("details") or {}),
+            "authoritative_bound_scope_reconciled": True,
+            "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
+        },
+    }
+    return number_reconciled, subject_reconciled
+
+
 def evaluate_semantic_admission(
     *,
     statement: str,
@@ -870,6 +941,7 @@ def evaluate_semantic_admission(
     proposition_evidence_text: str = "",
     proposition_evidence_units: Iterable[Mapping[str, Any]] = (),
     proposition_ir_validation: Mapping[str, Any] | None = None,
+    claim_evidence_fidelity_status: str = "",
 ) -> dict[str, Any]:
     question = question_premise_admission_guard(
         supporting_turn_roles=supporting_turn_roles,
@@ -896,6 +968,13 @@ def evaluate_semantic_admission(
         numeric_scope_review_required=number_time["details"][
             "numeric_scope_review_signal"
         ],
+    )
+    number_time, subject_scope = _reconcile_authoritative_bound_scope_review(
+        precision=precision,
+        number_time=number_time,
+        subject_scope=subject_scope,
+        support_region_authoritative=support_region_authoritative,
+        claim_evidence_fidelity_status=claim_evidence_fidelity_status,
     )
     proposition_validation = (
         dict(proposition_ir_validation)
@@ -952,5 +1031,6 @@ def evaluate_semantic_admission(
             "nature": nature,
             "fact_time": fact_time,
             "status": claim_status,
+            "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
         },
     }
