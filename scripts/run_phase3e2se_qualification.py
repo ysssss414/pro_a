@@ -737,6 +737,7 @@ def main() -> int:
     parser.add_argument("--full-pytest", default="NOT_RECORDED")
     parser.add_argument("--compileall", default="NOT_RECORDED")
     parser.add_argument("--diff-check", default="NOT_RECORDED")
+    parser.add_argument("--draft-pr-number", type=int)
     args = parser.parse_args()
 
     authority = args.authority_root.resolve()
@@ -875,8 +876,8 @@ def main() -> int:
         "PRODUCTION_CHANGED": "NO" if production["matches_frozen_baseline"] else "YES",
         "PRODUCTION_APPLY_ATTEMPTED": False,
         "BRANCH": branch,
-        "COMMIT_SHA": None,
-        "DRAFT_PR_NUMBER": None,
+        "COMMIT_SHA": head,
+        "DRAFT_PR_NUMBER": args.draft_pr_number,
         "S_F_STATUS": "READY_FOR_FRESH_HOLDOUT" if complete else "BLOCKED",
         "gates": architecture_gates,
     }
@@ -887,6 +888,7 @@ def main() -> int:
         "release_sha": RELEASE_SHA,
         "branch": branch,
         "head_at_qualification": head,
+        "draft_pr_number": args.draft_pr_number,
         "frozen_sc_authority": sc_authority,
         "primary_extraction_contract": primary_contract,
         "semantic_artifact": str(semantic_path) if decomposition else None,
