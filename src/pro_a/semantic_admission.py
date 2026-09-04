@@ -11,7 +11,13 @@ import hashlib
 import json
 import re
 import unicodedata
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
+
+from .proposition_ir import (
+    structural_atomicity_result,
+    structural_nature_result,
+    validate_proposition_ir,
+)
 
 
 ADMISSIBLE = "ADMISSIBLE"
@@ -23,7 +29,7 @@ ANSWERER = "ANSWERER"
 UNKNOWN = "UNKNOWN"
 
 GUARD_CONFIGURATION: dict[str, Any] = {
-    "version": "phase3e2sb-v1",
+    "version": "phase3e2se-decoupled-v2",
     "disposition_precedence": [BLOCKED, REVIEW_REQUIRED, ADMISSIBLE],
     "question_premise": {
         "question_only_answerer_attribution_without_adoption": BLOCKED,
@@ -47,11 +53,15 @@ GUARD_CONFIGURATION: dict[str, Any] = {
         "unstructured_semantic_guessing": False,
     },
     "atomicity": {
+        "primary_abstraction": "versioned_proposition_signatures",
+        "legacy_without_ir": "phase3e2sb-v1-explicit-compatibility",
         "compound_claims_are_blocked": False,
         "credible_independent_predicates": REVIEW_REQUIRED,
         "claim_text_rewritten": False,
     },
     "nature_consistency": {
+        "evaluation_order": "after_atomicity_per_proposition",
+        "bare_jiang_token_is_future": False,
         "metadata_mutated": False,
         "inconsistent_current_future_or_judgment_cues": REVIEW_REQUIRED,
         "inconsistency_alone_is_blocked": False,
@@ -588,7 +598,9 @@ _SPECIFICATION_CUE = re.compile(
 )
 _CLAUSE_BOUNDARY = re.compile(r"[，,；;]|(?:并且|同时|同年|同期|该(?:芯片|产品|款产品))")
 _CURRENT_STATE_CUE = re.compile(r"(?:当前|目前|已|正在|尚处于|规模约为|市场规模约为)")
-_FUTURE_OR_CONDITIONAL_CUE = re.compile(
+# Frozen artifacts without proposition IR use this explicitly named legacy
+# compatibility cue.  The v2 path never infers future modality from bare 将.
+_LEGACY_FUTURE_OR_CONDITIONAL_CUE = re.compile(
     r"(?:预计|有望|未来|(?<!已)将|可能|假设|若|风险)"
 )
 
@@ -597,8 +609,24 @@ def _matched_pattern_count(patterns: Iterable[re.Pattern[str]], text: str) -> in
     return sum(bool(pattern.search(text)) for pattern in patterns)
 
 
-def claim_atomicity_admission_guard(*, statement: str) -> dict[str, Any]:
+def claim_atomicity_admission_guard(
+    *,
+    statement: str,
+    proposition_ir_validation: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Advisory-only structural triage; this function never rewrites a Claim."""
+    if (
+        proposition_ir_validation is not None
+        and proposition_ir_validation.get("status") != "LEGACY_NOT_PRESENT"
+    ):
+        result = structural_atomicity_result(proposition_ir_validation)
+        return _guard_result(
+            "CLAIM_ATOMICITY_ADMISSION_GUARD",
+            str(result["status"]),
+            result["reason_codes"],
+            **result["details"],
+        )
+
     text = _normalize(statement)
     reasons: list[str] = []
 
@@ -656,7 +684,7 @@ def claim_atomicity_admission_guard(*, statement: str) -> dict[str, Any]:
 
     if (
         _CURRENT_STATE_CUE.search(text)
-        and _FUTURE_OR_CONDITIONAL_CUE.search(text)
+        and _LEGACY_FUTURE_OR_CONDITIONAL_CUE.search(text)
         and _CLAUSE_BOUNDARY.search(text)
     ):
         reasons.append("ACTUAL_AND_FUTURE_CAPABILITY_COMBINED")
@@ -720,13 +748,30 @@ def claim_nature_consistency_guard(
     statement: str,
     nature: str,
     attributed_to: str = "",
+    proposition_ir_validation: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Advisory-only consistency check; nature metadata is never mutated."""
+    if (
+        proposition_ir_validation is not None
+        and proposition_ir_validation.get("status") != "LEGACY_NOT_PRESENT"
+    ):
+        result = structural_nature_result(
+            proposition_ir_validation,
+            claim_nature=nature,
+            attributed_to=attributed_to,
+        )
+        return _guard_result(
+            "CLAIM_NATURE_CONSISTENCY_GUARD",
+            str(result["status"]),
+            result["reason_codes"],
+            **result["details"],
+        )
+
     text = _normalize(statement)
     normalized_nature = _compact(nature)
     reasons: list[str] = []
     current_cues = bool(_CURRENT_STATE_CUE.search(text))
-    future_cues = bool(_FUTURE_OR_CONDITIONAL_CUE.search(text))
+    future_cues = bool(_LEGACY_FUTURE_OR_CONDITIONAL_CUE.search(text))
     subjective_cues = bool(re.search(r"(?:国际领先|行业领先|占尽市场先机|我们认为|看好)", text))
     explicit_actual_clause = bool(
         re.search(
@@ -820,6 +865,11 @@ def evaluate_semantic_admission(
     claim_subject_anchors: Iterable[str] = (),
     source_subject_anchors: Iterable[str] = (),
     source_subjects_exhaustive: bool = False,
+    parent_claim_id: str = "",
+    proposition_ir: Any = None,
+    proposition_evidence_text: str = "",
+    proposition_evidence_units: Iterable[Mapping[str, Any]] = (),
+    proposition_ir_validation: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     question = question_premise_admission_guard(
         supporting_turn_roles=supporting_turn_roles,
@@ -847,11 +897,26 @@ def evaluate_semantic_admission(
             "numeric_scope_review_signal"
         ],
     )
-    atomicity = claim_atomicity_admission_guard(statement=statement)
+    proposition_validation = (
+        dict(proposition_ir_validation)
+        if proposition_ir_validation is not None
+        else validate_proposition_ir(
+            proposition_ir,
+            claim_statement=statement,
+            claim_evidence=proposition_evidence_text or permitted_support_text,
+            expected_parent_claim_id=parent_claim_id,
+            evidence_units=list(proposition_evidence_units),
+        )
+    )
+    atomicity = claim_atomicity_admission_guard(
+        statement=statement,
+        proposition_ir_validation=proposition_validation,
+    )
     nature_consistency = claim_nature_consistency_guard(
         statement=statement,
         nature=nature,
         attributed_to=attributed_to,
+        proposition_ir_validation=proposition_validation,
     )
     guards = [question, precision, number_time, subject_scope, atomicity, nature_consistency]
     if any(item["status"] == BLOCKED for item in guards):
@@ -873,6 +938,14 @@ def evaluate_semantic_admission(
         "subject_scope_guard": subject_scope,
         "atomicity_guard": atomicity,
         "nature_consistency_guard": nature_consistency,
+        "proposition_ir_validation": proposition_validation,
+        "semantic_pipeline": {
+            "version": "phase3e2se1-decoupled-v2.1",
+            "architecture": "DECOUPLED_POST_EXTRACTION_PROPOSITION_PASS",
+            "compatibility_path": proposition_validation.get("compatibility_path"),
+            "atomicity_then_nature": True,
+            "proposition_ir_inside_primary_extraction": False,
+        },
         "overall_guard_disposition": disposition,
         "guard_reasons": list(dict.fromkeys(reasons)),
         "claim_metadata_observed": {

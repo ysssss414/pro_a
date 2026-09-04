@@ -229,7 +229,7 @@ def test_pilot1_host_and_expert_attribution_remain_distinguishable(tmp_path: Pat
     ]
 
 
-def test_mixed_current_actual_and_future_guidance_is_atomicized(tmp_path: Path):
+def test_analyzer_preserves_mixed_claim_for_advisory_structural_review(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     item = claim(
         "昀冢科技一期当前出货量为80亿颗/月，预计2026Q4达到120亿颗/月。",
@@ -254,14 +254,14 @@ def test_mixed_current_actual_and_future_guidance_is_atomicized(tmp_path: Path):
         "standard",
     )
 
-    assert len(result.claims) == 2
-    assert [item["nature"] for item in result.claims] == ["data", "company_guidance"]
+    assert len(result.claims) == 1
+    assert result.claims[0]["nature"] == "company_guidance"
     assert "当前出货量为80亿颗/月" in result.claims[0]["statement"]
-    assert "预计2026Q4达到120亿颗/月" in result.claims[1]["statement"]
-    assert all(item["validation"]["evidence_validated"] for item in result.claims)
+    assert "预计2026Q4达到120亿颗/月" in result.claims[0]["statement"]
+    assert result.claims[0]["validation"]["evidence_validated"] is True
 
 
-def test_actual_company_price_is_not_rewritten_as_guidance_or_forecast(tmp_path: Path):
+def test_analyzer_does_not_mutate_actual_company_price_nature_from_digits(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     item = claim(
         "昀冢科技26M7、26M8单月MLCC价格环比上涨30%以上。",
@@ -279,7 +279,7 @@ def test_actual_company_price_is_not_rewritten_as_guidance_or_forecast(tmp_path:
     )
 
     normalized = result.claims[0]
-    assert normalized["nature"] == "data"
+    assert normalized["nature"] == "company_guidance"
     assert "预计" not in normalized["statement"]
     assert "forecast" not in normalized["statement"].lower()
 
