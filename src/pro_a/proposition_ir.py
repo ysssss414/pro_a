@@ -456,6 +456,55 @@ def _mechanism_classes(
     return result
 
 
+def _has_bounded_adjacent_support(
+    units: Sequence[Mapping[str, Any]],
+    evidence_by_id: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    """Require every selected Evidence unit to be local to one bounded locator."""
+    evidence_ids = {
+        str(evidence_id)
+        for unit in units
+        for evidence_id in unit.get("support_evidence_unit_ids") or []
+    }
+    if not evidence_ids or any(evidence_id not in evidence_by_id for evidence_id in evidence_ids):
+        return False
+    selected = [evidence_by_id[evidence_id] for evidence_id in evidence_ids]
+    locators = {str(item.get("source_locator") or "") for item in selected}
+    if len(locators) != 1 or "" in locators:
+        return False
+    orders = sorted({item.get("order") for item in selected})
+    if not orders or any(not isinstance(order, int) for order in orders):
+        return False
+    # One intervening clause is allowed because the decomposition may omit a
+    # descriptive attribute between consecutive propositions in the Claim.
+    return all(right - left <= 2 for left, right in zip(orders, orders[1:]))
+
+
+def _market_structure_data_vector(
+    units: Sequence[Mapping[str, Any]],
+    evidence_by_id: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    if not _has_bounded_adjacent_support(units, evidence_by_id):
+        return False
+    if len(units) != 2:
+        return False
+    families = {str(unit.get("predicate_family") or "") for unit in units}
+    natures = {str(unit.get("nature") or "") for unit in units}
+    modalities = {str(unit.get("modality") or "") for unit in units}
+    if families != {"identity", "measurement"} or natures != {"data"}:
+        return False
+    if modalities != {"actual"}:
+        return False
+    joined = " ".join(_unit_support_text(unit, evidence_by_id) for unit in units)
+    return bool(
+        re.search(r"(?:包括|包含|由).*(?:等|以及|及)", joined)
+        and re.search(
+            r"前(?:[一二三四五六七八九十]|\d+)大.*(?:合计|共同|共).*(?:占|份额|比重)",
+            joined,
+        )
+    )
+
+
 def _bounded_coherence_override(
     units: Sequence[Mapping[str, Any]],
     evidence_by_id: Mapping[str, Mapping[str, Any]],
@@ -525,6 +574,107 @@ def _bounded_coherence_override(
         and re.search(r"(?:需|需要).*?(?:验证|爬坡)", joined)
     ):
         return "CAUSAL_JUDGMENT", "REQUIREMENT_TO_VALIDATION_CAUSAL_JUDGMENT"
+    if not _has_bounded_adjacent_support(units, evidence_by_id):
+        return None
+
+    all_actual = modalities == {"actual"}
+    all_fact = natures == {"fact"}
+    all_data = natures == {"data"}
+    narrower_scope = bool(re.search(r"(?:尤其|但|然而|另一方面|另有)", joined))
+
+    if family_set == {"status"} and len(units) == 2 and all_actual and all_data:
+        ranked_units = all(
+            re.search(r"第(?:[一二三四五六七八九十]|\d+)(?:大|位)?.*(?:持股|占|份额)", text)
+            for text in texts
+        )
+        if ranked_units and re.search(r"(?:截至|截止).*(?:19|20)\d{2}年", joined):
+            return "REPORTING_VECTOR", "SAME_DATE_RANKED_SNAPSHOT"
+
+    if family_set == {"measurement"} and len(units) >= 2 and all_actual and all_data:
+        if re.search(r"(?:CAGR|复合增长)", joined, re.IGNORECASE):
+            return "REPORTING_VECTOR", "TIME_SERIES_WITH_DERIVED_GROWTH"
+        if re.search(r"(?:共|合计|总计).*(?:其中|分别)", joined):
+            return "REPORTING_VECTOR", "TOTAL_AND_COMPONENT_DISTRIBUTION"
+        if (
+            len(units) == 2
+            and not narrower_scope
+            and all(
+                re.search(
+                    r"(?:由|从).*?(?:降至|升至|增至|增长至|下降至|提高至|提升至|达到)",
+                    text,
+                )
+                for text in texts
+            )
+        ):
+            return "COMPARISON_VECTOR", "ALIGNED_PAIRED_COMPARISON"
+        if (
+            len(units) == 2
+            and not narrower_scope
+            and "其中" in joined
+            and sum(bool(re.search(r"(?:%|百分之|占|比重|份额)", text)) for text in texts)
+            == 2
+        ):
+            return "REPORTING_VECTOR", "NESTED_COMPOSITION_VECTOR"
+        if not narrower_scope and re.search(r"(?:同比|环比)(?:增长|下降|提高|降低)?", joined):
+            return "REPORTING_VECTOR", "SAME_PERIOD_VALUE_AND_GROWTH"
+
+    if family_set == {"lifecycle"} and len(units) >= 3 and all_actual and all_fact:
+        years: list[int] = []
+        for text in texts:
+            match = re.search(r"((?:19|20)\d{2})年", text)
+            if match is None:
+                break
+            years.append(int(match.group(1)))
+        if len(years) == len(units) and all(
+            right > left for left, right in zip(years, years[1:])
+        ):
+            return "SEQUENTIAL_ROUTE", "EXPLICIT_CHRONOLOGICAL_HISTORY_SEQUENCE"
+
+    if (
+        family_set == {"status", "measurement"}
+        and len(units) == 3
+        and families.count("status") == 2
+        and all_actual
+        and all_fact
+        and re.search(r"(?:突破|改进|改善|研发成功)", texts[0])
+        and re.search(r"(?:首次|首个)?.*(?:应用|量产|验证|落地)", texts[1])
+        and re.search(
+            r"(?:提升|提高|改善|降低|减少|增强|优化).*(?:良率|质量|性能|效率|缺陷|粗糙)",
+            texts[2],
+        )
+    ):
+        return "CAUSAL_JUDGMENT", "BREAKTHROUGH_APPLICATION_OUTCOME_CHAIN"
+
+    if (
+        family_set == {"capability", "measurement"}
+        and len(units) == 2
+        and all_fact
+        and any(
+            str(unit.get("predicate_family") or "") == "measurement"
+            and str(unit.get("modality") or "") == "capability"
+            for unit in units
+        )
+        and re.search(r"(?:通过|利用|结合|采用)", texts[0])
+        and re.search(
+            r"(?:可|能够).*(?:控制|达到|保持|维持).*(?:以内|以下|以上|范围|不超过)",
+            texts[1],
+        )
+    ):
+        return "CAUSAL_JUDGMENT", "MECHANISM_WITH_BOUNDED_CAPABILITY_OUTCOME"
+
+    if (
+        family_set == {"capability", "lifecycle"}
+        and len(units) == 2
+        and all_actual
+        and all_fact
+        and any(
+            str(unit.get("predicate_family") or "") == "capability"
+            and str(unit.get("coherence_type") or "") == "SPEC_VECTOR"
+            for unit in units
+        )
+        and re.search(r"(?:其中|上述|其).*(?:量产|验证|销售|交付|上市)", joined)
+    ):
+        return "SINGLE_EVENT_ATTRIBUTES", "SPEC_VECTOR_WITH_NESTED_LIFECYCLE_ATTRIBUTE"
     return None
 
 
@@ -622,6 +772,11 @@ def structural_nature_result(
         for item in validation.get("evidence_units") or []
     }
     normalized_claim_nature = _canonical_text(claim_nature).casefold()
+    bounded_override = _bounded_coherence_override(units, evidence_by_id)
+    override_reason = bounded_override[1] if bounded_override else ""
+    market_structure_vector = _market_structure_data_vector(units, evidence_by_id)
+    bounded_local_support = _has_bounded_adjacent_support(units, evidence_by_id)
+    families = {str(unit.get("predicate_family") or "") for unit in units}
     unit_results: list[dict[str, Any]] = []
     reasons: list[str] = []
     for unit in units:
@@ -641,6 +796,45 @@ def structural_nature_result(
             and family in {"architecture_route", "configuration", "status"}
             and jiang == "PROPOSAL_COMPLEMENT"
         )
+        qualitative_measurement_outcome = (
+            family == "measurement"
+            and unit_nature == "fact"
+            and modality == "actual"
+            and bounded_local_support
+            and bool(families & {"status", "capability", "causal_judgment"})
+            and not re.search(r"\d", text)
+            and bool(
+                re.search(
+                    r"(?:提升|提高|改善|降低|减少|增强|优化).*(?:良率|质量|性能|效率|缺陷|粗糙)",
+                    text,
+                )
+            )
+        )
+        capability_measurement_bound = (
+            family == "measurement"
+            and unit_nature == "fact"
+            and modality == "capability"
+            and bounded_local_support
+            and families == {"capability", "measurement"}
+            and all(str(item.get("nature") or "") == "fact" for item in units)
+            and all(
+                str(item.get("modality") or "") not in {"future", "conditional"}
+                for item in units
+            )
+            and bool(
+                re.search(
+                    r"(?:可|能够).*(?:控制|达到|保持|维持).*(?:以内|以下|以上|范围|不超过)",
+                    text,
+                )
+            )
+        )
+        coherent_nonmeasurement_data = (
+            unit_nature == "data"
+            and (
+                (family == "status" and override_reason == "SAME_DATE_RANKED_SNAPSHOT")
+                or (family == "identity" and market_structure_vector)
+            )
+        )
         if not attributed_match and not reported_proposal_fact:
             if normalized_claim_nature in {"fact", "data"} and (
                 modality in {"future", "conditional"} or jiang == "FUTURE_AUXILIARY"
@@ -648,9 +842,18 @@ def structural_nature_result(
                 unit_reasons.append("FORWARD_OR_CONDITIONAL_PROPOSITION_CLASSIFIED_AS_FACT_OR_DATA")
             if normalized_claim_nature != unit_nature:
                 unit_reasons.append("PROPOSITION_NATURE_INCONSISTENT_WITH_CLAIM")
-            if family == "measurement" and unit_nature != "data":
+            if (
+                family == "measurement"
+                and unit_nature != "data"
+                and not qualitative_measurement_outcome
+                and not capability_measurement_bound
+            ):
                 unit_reasons.append("MEASUREMENT_PROPOSITION_NOT_CLASSIFIED_AS_DATA")
-            if family not in {"measurement", "comparison", "calculation"} and unit_nature == "data":
+            if (
+                family not in {"measurement", "comparison", "calculation"}
+                and unit_nature == "data"
+                and not coherent_nonmeasurement_data
+            ):
                 unit_reasons.append("NON_MEASUREMENT_PROPOSITION_CLASSIFIED_AS_DATA")
         if (
             jiang == "AMBIGUOUS_JIANG"
@@ -669,6 +872,15 @@ def structural_nature_result(
                 "jiang_modality": jiang,
                 "attributed_nature_exact_match": attributed_match,
                 "reported_proposal_fact": reported_proposal_fact,
+                "bounded_nature_exception": (
+                    "QUALITATIVE_MEASUREMENT_OUTCOME"
+                    if qualitative_measurement_outcome
+                    else "CAPABILITY_MEASUREMENT_BOUND"
+                    if capability_measurement_bound
+                    else "COHERENT_NONMEASUREMENT_DATA_ATTRIBUTE"
+                    if coherent_nonmeasurement_data
+                    else None
+                ),
                 "reason_codes": list(dict.fromkeys(unit_reasons)),
             }
         )

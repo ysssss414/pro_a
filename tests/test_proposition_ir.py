@@ -341,6 +341,302 @@ def test_nature_runs_after_atomicity_per_unit():
     assert result["nature_consistency_guard"]["details"]["evaluation_order"] == "AFTER_ATOMICITY"
 
 
+@pytest.mark.parametrize(
+    ("statement", "specs", "expected_type", "expected_reason"),
+    [
+        (
+            "2026年第一季度指标值为2.08亿元，同比增长23.01%。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+            "REPORTING_VECTOR",
+            "SAME_PERIOD_VALUE_AND_GROWTH",
+        ),
+        (
+            "该指标从2020年的0.89增长至2025年的4.45，CAGR为37.99%。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+            "REPORTING_VECTOR",
+            "TIME_SERIES_WITH_DERIVED_GROWTH",
+        ),
+        (
+            "共获得308项授权，其中甲地区209项、乙地区99项。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+            "REPORTING_VECTOR",
+            "TOTAL_AND_COMPONENT_DISTRIBUTION",
+        ),
+        (
+            "指标A由9.72%降至4.75%，指标B由4.96%降至1.79%。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+            "COMPARISON_VECTOR",
+            "ALIGNED_PAIRED_COMPARISON",
+        ),
+        (
+            "上层类别占总量7%，其中下层类别占上层类别49%。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+            "REPORTING_VECTOR",
+            "NESTED_COMPOSITION_VECTOR",
+        ),
+        (
+            "主体于2004年成立，2008年首个产品量产，2015年设立子公司，2019年上市。",
+            [
+                {"family": "lifecycle", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "lifecycle", "nature": "fact", "support": [1], "key": "k2"},
+                {"family": "lifecycle", "nature": "fact", "support": [2], "key": "k3"},
+                {"family": "lifecycle", "nature": "fact", "support": [3], "key": "k4"},
+            ],
+            "SEQUENTIAL_ROUTE",
+            "EXPLICIT_CHRONOLOGICAL_HISTORY_SEQUENCE",
+        ),
+        (
+            "该产品取得技术突破，首次应用并实现量产，显著提升客户良率。",
+            [
+                {"family": "status", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "status", "nature": "fact", "support": [1], "key": "k2"},
+                {"family": "measurement", "nature": "fact", "support": [2], "key": "k3"},
+            ],
+            "CAUSAL_JUDGMENT",
+            "BREAKTHROUGH_APPLICATION_OUTCOME_CHAIN",
+        ),
+        (
+            "该工艺通过机械与化学作用实现平整，可将落差控制在5nm以内。",
+            [
+                {"family": "capability", "nature": "fact", "support": [0], "key": "k1"},
+                {
+                    "family": "measurement",
+                    "modality": "capability",
+                    "nature": "fact",
+                    "support": [1],
+                    "key": "k2",
+                },
+            ],
+            "CAUSAL_JUDGMENT",
+            "MECHANISM_WITH_BOUNDED_CAPABILITY_OUTCOME",
+        ),
+        (
+            "平台覆盖类型甲、乙与丙，其中多款子类型已实现量产。",
+            [
+                {
+                    "family": "capability",
+                    "nature": "fact",
+                    "support": [0],
+                    "key": "k1",
+                    "coherence_type": "SPEC_VECTOR",
+                },
+                {"family": "lifecycle", "nature": "fact", "support": [1], "key": "k2"},
+            ],
+            "SINGLE_EVENT_ATTRIBUTES",
+            "SPEC_VECTOR_WITH_NESTED_LIFECYCLE_ATTRIBUTE",
+        ),
+    ],
+)
+def test_fragmented_existing_coherence_classes_are_boundedly_reconciled(
+    statement, specs, expected_type, expected_reason
+):
+    evidence = _evidence("CLM_RECONCILE", statement)
+    result = _evaluate(
+        "CLM_RECONCILE",
+        statement,
+        specs[0]["nature"],
+        _ir("CLM_RECONCILE", evidence, *specs),
+        evidence,
+    )
+    atomicity = result["atomicity_guard"]
+    assert atomicity["status"] == ADMISSIBLE
+    assert atomicity["reason_codes"] == ["COHERENT_VECTOR_OR_SCENARIO"]
+    assert atomicity["details"]["bounded_coherence_override"] == {
+        "coherence_type": expected_type,
+        "reason": expected_reason,
+    }
+
+
+@pytest.mark.parametrize(
+    ("statement", "specs"),
+    [
+        (
+            "产品甲在客户一量产，产品乙在客户二送样。",
+            [
+                {"family": "status", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "status", "nature": "fact", "support": [1], "key": "k2"},
+            ],
+        ),
+        (
+            "平台的产品甲已量产，产品乙仍在验证。",
+            [
+                {"family": "status", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "status", "nature": "fact", "support": [1], "key": "k2"},
+            ],
+        ),
+        (
+            "该技术用于节点甲，独立市场占比为45%。",
+            [
+                {"family": "application", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+        ),
+        (
+            "总体指标从15%升至34%，尤其在较窄范围内另一指标超过50%。",
+            [
+                {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+                {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+            ],
+        ),
+        (
+            "同一主体的项目甲已定点，项目乙正在送样。",
+            [
+                {"family": "status", "nature": "fact", "support": [0], "key": "k1"},
+                {"family": "status", "nature": "fact", "support": [1], "key": "k2"},
+            ],
+        ),
+    ],
+)
+def test_bounded_coherence_reconciliation_preserves_independent_negative_contrasts(
+    statement, specs
+):
+    evidence = _evidence("CLM_NEGATIVE", statement)
+    result = _evaluate(
+        "CLM_NEGATIVE",
+        statement,
+        "data" if all(spec["nature"] == "data" for spec in specs) else "fact",
+        _ir("CLM_NEGATIVE", evidence, *specs),
+        evidence,
+    )
+    assert result["atomicity_guard"]["status"] == REVIEW_REQUIRED
+    assert result["atomicity_guard"]["reason_codes"] == [
+        "INDEPENDENT_REVIEWABLE_PROPOSITIONS"
+    ]
+
+
+def test_nature_precision_allows_status_units_in_a_coherent_ranked_data_snapshot():
+    statement = "截至2026年第一季度，第一位主体占29.57%，第二位主体占18.89%。"
+    evidence = _evidence("CLM_RANKED", statement)
+    ir = _ir(
+        "CLM_RANKED",
+        evidence,
+        {"family": "status", "nature": "data", "support": [0, 1], "key": "k1"},
+        {"family": "status", "nature": "data", "support": [2], "key": "k2"},
+    )
+    result = _evaluate("CLM_RANKED", statement, "data", ir, evidence)
+    assert result["atomicity_guard"]["status"] == ADMISSIBLE
+    assert result["nature_consistency_guard"]["status"] == ADMISSIBLE
+
+
+def test_nature_precision_allows_identity_inside_a_market_structure_data_vector():
+    statement = "核心厂商包括甲、乙、丙等，前三大厂商合计占全球约65%的份额。"
+    evidence = _evidence("CLM_MARKET_STRUCTURE", statement)
+    result = _evaluate(
+        "CLM_MARKET_STRUCTURE",
+        statement,
+        "data",
+        _ir(
+            "CLM_MARKET_STRUCTURE",
+            evidence,
+            {"family": "identity", "nature": "data", "support": [0], "key": "k1"},
+            {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+        ),
+        evidence,
+    )
+    assert result["nature_consistency_guard"]["status"] == ADMISSIBLE
+
+
+def test_nature_precision_allows_nonquantitative_outcome_and_capability_bound_fact():
+    qualitative = "技术改进已落地，显著提升最终质量。"
+    evidence = _evidence("CLM_QUALITATIVE", qualitative)
+    result = _evaluate(
+        "CLM_QUALITATIVE",
+        qualitative,
+        "fact",
+        _ir(
+            "CLM_QUALITATIVE",
+            evidence,
+            {"family": "status", "nature": "fact", "support": [0], "key": "k1"},
+            {"family": "measurement", "nature": "fact", "support": [1], "key": "k2"},
+        ),
+        evidence,
+    )
+    assert result["nature_consistency_guard"]["status"] == ADMISSIBLE
+
+    bounded = "该结构形成稳定界面，可将偏差控制在5nm以内。"
+    evidence = _evidence("CLM_BOUND", bounded)
+    result = _evaluate(
+        "CLM_BOUND",
+        bounded,
+        "fact",
+        _ir(
+            "CLM_BOUND",
+            evidence,
+            {"family": "capability", "nature": "fact", "support": [0], "key": "k1"},
+            {
+                "family": "measurement",
+                "modality": "capability",
+                "nature": "fact",
+                "support": [1],
+                "key": "k2",
+            },
+        ),
+        evidence,
+    )
+    assert result["nature_consistency_guard"]["status"] == ADMISSIBLE
+
+
+def test_nature_precision_preserves_future_and_independent_fact_data_reviews():
+    future = "2025年规模为10亿元，预计2026年增至12亿元。"
+    evidence = _evidence("CLM_FUTURE", future)
+    result = _evaluate(
+        "CLM_FUTURE",
+        future,
+        "data",
+        _ir(
+            "CLM_FUTURE",
+            evidence,
+            {"family": "measurement", "nature": "data", "support": [0], "key": "k1"},
+            {
+                "family": "measurement",
+                "modality": "future",
+                "nature": "data",
+                "support": [1],
+                "key": "k2",
+                "time_scope": "future",
+            },
+        ),
+        evidence,
+    )
+    assert result["atomicity_guard"]["status"] == ADMISSIBLE
+    assert result["nature_consistency_guard"]["status"] == REVIEW_REQUIRED
+    assert "FORWARD_OR_CONDITIONAL_PROPOSITION_CLASSIFIED_AS_FACT_OR_DATA" in result[
+        "nature_consistency_guard"
+    ]["reason_codes"]
+
+    mixed = "技术用于节点甲，独立市场占比为45%。"
+    evidence = _evidence("CLM_MIXED_PROTECT", mixed)
+    result = _evaluate(
+        "CLM_MIXED_PROTECT",
+        mixed,
+        "data",
+        _ir(
+            "CLM_MIXED_PROTECT",
+            evidence,
+            {"family": "application", "nature": "fact", "support": [0], "key": "k1"},
+            {"family": "measurement", "nature": "data", "support": [1], "key": "k2"},
+        ),
+        evidence,
+    )
+    assert result["atomicity_guard"]["status"] == REVIEW_REQUIRED
+    assert result["nature_consistency_guard"]["status"] == REVIEW_REQUIRED
+
+
 def test_legacy_claims_use_explicit_compatibility_path():
     result = evaluate_semantic_admission(
         statement="产品已量产，最高支持7200 MT/s。",

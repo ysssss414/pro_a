@@ -668,6 +668,7 @@ def _semantic_admission_artifact(
                 proposition_result.get("validation")
                 if proposition_result else None
             ),
+            claim_evidence_fidelity_status=str(quote.get("fidelity_status") or ""),
         )
         table_eligible = table.get("review_eligible") is True
         proposition_validation_status = (
