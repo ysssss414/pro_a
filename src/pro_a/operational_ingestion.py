@@ -6,7 +6,7 @@ import json
 import shutil
 import subprocess
 from collections import Counter
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -26,6 +26,7 @@ from .corpus_pilot import (
     run_pilot2_gate_a_quote_fidelity,
 )
 from .gate_c_quality_hardening import phase3c_prompt_repair_status
+from .llm import ChatLLM
 from .parsers import ParseError, parse_source_with_diagnostics, semantic_eligible_source_text
 from .pipeline import build_claim_record
 from .production_authorization import build_operational_node_operation_review
@@ -45,6 +46,13 @@ from .semantic_admission import (
     BLOCKED,
     evaluate_semantic_admission,
     join_permitted_support_regions,
+)
+from .semantic_decomposition import (
+    ChatLLMSemanticBackend,
+    SEMANTIC_MAX_OUTPUT_TOKENS,
+    SemanticDecomposer,
+    build_semantic_claim_inputs,
+    semantic_prompt_sha256,
 )
 from .table_claim_safety import apply_table_claim_safety_boundary_v1, load_pymupdf_word_pages
 
@@ -600,7 +608,9 @@ def _semantic_admission_artifact(
     evidence_draft: Mapping[str, Any],
     gate: Mapping[str, Any],
     table_boundary: Mapping[str, Any],
+    proposition_results: Mapping[str, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    proposition_results = proposition_results or {}
     draft_by_id = {item["claim_id"]: item for item in evidence_draft.get("claims") or []}
     gate_by_id = {item["claim_id"]: item for item in gate.get("claims") or []}
     table_by_id = {item["claim_id"]: item for item in table_boundary.get("decisions") or []}
@@ -610,6 +620,7 @@ def _semantic_admission_artifact(
         draft = draft_by_id[claim_id]
         quote = gate_by_id[claim_id]
         table = table_by_id[claim_id]
+        proposition_result = proposition_results.get(claim_id)
         resolved = quote.get("resolved_locator") or {}
         evidence_bound = bool(
             quote.get("fidelity_status") in VALID_FIDELITY_STATUSES
@@ -639,8 +650,29 @@ def _semantic_admission_artifact(
             nature=str(claim.get("nature") or ""),
             fact_time=str(claim.get("fact_time") or ""),
             claim_status=str(claim.get("status") or ""),
+            parent_claim_id=claim_id,
+            proposition_ir=(
+                proposition_result.get("proposition_ir")
+                if proposition_result else None
+            ),
+            proposition_evidence_text=str(
+                (quote.get("evidence_contract") or {}).get("canonical_ready_evidence")
+                or claim.get("evidence_excerpt")
+                or ""
+            ),
+            proposition_evidence_units=(
+                proposition_result.get("evidence_units") or []
+                if proposition_result else []
+            ),
+            proposition_ir_validation=(
+                proposition_result.get("validation")
+                if proposition_result else None
+            ),
         )
         table_eligible = table.get("review_eligible") is True
+        proposition_validation_status = (
+            (proposition_result or {}).get("validation") or {}
+        ).get("status")
         # Preserve the Phase 3C Pilot #6 review universe: table-eligible Claims
         # reach human review even when deterministic Evidence/semantic guards
         # recommend DROP or REVIEW. Admission to review is not acceptance.
@@ -651,6 +683,9 @@ def _semantic_admission_artifact(
         elif not evidence_bound:
             recommendation = "REVIEW"
             reason = "EVIDENCE_NOT_AUTHORITATIVELY_BOUND"
+        elif proposition_result and proposition_validation_status != "VALID":
+            recommendation = "REVIEW"
+            reason = "INVALID_OR_AMBIGUOUS_PROPOSITION_IR"
         elif guards["overall_guard_disposition"] == BLOCKED:
             recommendation = "DROP"
             reason = ",".join(guards["guard_reasons"]) or "SEMANTIC_ADMISSION_BLOCKED"
@@ -679,6 +714,9 @@ def _semantic_admission_artifact(
             "human_decision": "PENDING",
         })
     counts = Counter(item["semantic_admission"]["overall_guard_disposition"] for item in decisions)
+    proposition_validations = [
+        item["semantic_admission"]["proposition_ir_validation"] for item in decisions
+    ]
     return {
         "document_type": "phase3e_semantic_admission",
         "schema_version": SCHEMA_VERSION,
@@ -689,18 +727,33 @@ def _semantic_admission_artifact(
             "guard_result_is_advisory": True,
             "review_admission_preserves_table_eligible_phase3c_universe": True,
             "evidence_and_semantic_failures_remain_visible_as_recommendations": True,
+            "proposition_ir_is_supplementary": True,
+            "semantic_architecture": "DECOUPLED_POST_EXTRACTION_PROPOSITION_PASS",
+            "proposition_ir_inside_primary_extraction": False,
+            "atomicity_then_nature": True,
             "human_decisions_remain_pending": True,
         },
         "counts": {
             "raw_claims": len(decisions),
             "review_admitted": sum(item["review_admitted"] for item in decisions),
             "guard_dispositions": dict(sorted(counts.items())),
+            "proposition_ir": {
+                "valid": sum(item["status"] == "VALID" for item in proposition_validations),
+                "invalid": sum(item["status"] == "INVALID" for item in proposition_validations),
+                "legacy_not_present": sum(
+                    item["status"] == "LEGACY_NOT_PRESENT" for item in proposition_validations
+                ),
+            },
         },
         "decisions": decisions,
     }
 
 
-def _run_evidence(paths: RunPaths, manifest: Mapping[str, Any]) -> list[Path]:
+def _run_evidence(
+    paths: RunPaths,
+    manifest: dict[str, Any],
+    cfg: AppConfig,
+) -> list[Path]:
     bundle_path = paths.path("extraction/extraction_bundle.json")
     extraction_review = paths.path("extraction/extraction_review_draft.json")
     source_path = paths.frozen_source
@@ -787,6 +840,57 @@ def _run_evidence(paths: RunPaths, manifest: Mapping[str, Any]) -> list[Path]:
         "gate": "PASS" if table_result["raw_claims_unchanged"] else "FAIL",
         "result": table_result,
     })
+    semantic_decomposition_path = evidence_dir / "semantic_decomposition.json"
+    semantic_llm = ChatLLM(replace(
+        cfg.llm,
+        max_output_tokens=min(
+            cfg.llm.max_output_tokens,
+            SEMANTIC_MAX_OUTPUT_TOKENS,
+        ),
+    ))
+    proposition_results: dict[str, Mapping[str, Any]] = {}
+    if semantic_llm.available:
+        semantic_inputs = build_semantic_claim_inputs(
+            bundle=bundle,
+            evidence_draft=evidence_draft,
+            quote_fidelity=gate,
+        )
+        decomposition = SemanticDecomposer(
+            ChatLLMSemanticBackend(semantic_llm),
+            batch_size=8,
+        ).run(semantic_inputs)
+        proposition_results = {
+            item["parent_claim_id"]: item
+            for item in decomposition["results"]
+        }
+        manifest["semantic_model"] = {
+            "stage": "POST_EXTRACTION",
+            "prompt_sha256": semantic_prompt_sha256(),
+            "backend": decomposition["backend"],
+            "llm_calls": decomposition["semantic_llm_calls"],
+            "length_retries": decomposition["semantic_length_retries"],
+            "usage": copy.deepcopy(decomposition["usage"]),
+            "parent_claim_universe_stable": (
+                decomposition["input_parent_claim_ids"]
+                == decomposition["output_parent_claim_ids"]
+            ),
+        }
+    else:
+        decomposition = {
+            "document_type": "phase3e2se_post_extraction_semantic_decomposition",
+            "schema_version": "1.0",
+            "architecture": "DECOUPLED_POST_EXTRACTION_PROPOSITION_PASS",
+            "status": "SKIPPED_LLM_UNAVAILABLE",
+            "proposition_ir_inside_primary_extraction": False,
+            "primary_extraction_claims_mutated": False,
+            "results": [],
+        }
+        manifest["semantic_model"] = {
+            "stage": "POST_EXTRACTION",
+            "status": "SKIPPED_LLM_UNAVAILABLE",
+            "llm_calls": 0,
+        }
+    _write_json(semantic_decomposition_path, decomposition)
     semantic_path = evidence_dir / "semantic_admission.json"
     _write_json(semantic_path, _semantic_admission_artifact(
         manifest=manifest,
@@ -794,6 +898,7 @@ def _run_evidence(paths: RunPaths, manifest: Mapping[str, Any]) -> list[Path]:
         evidence_draft=evidence_draft,
         gate=gate,
         table_boundary=table_result,
+        proposition_results=proposition_results,
     ))
     return [
         rebound_path,
@@ -808,6 +913,7 @@ def _run_evidence(paths: RunPaths, manifest: Mapping[str, Any]) -> list[Path]:
         quote_metrics,
         quote_surface,
         table_path,
+        semantic_decomposition_path,
         semantic_path,
     ]
 
@@ -1339,7 +1445,7 @@ def run_operational_ingestion(
         (
             "EVIDENCE_COMPLETE",
             "EVIDENCE_FAILED",
-            lambda: _run_evidence(paths, manifest),
+            lambda: _run_evidence(paths, manifest, cfg),
         ),
         (
             "CLAIM_REVIEW_READY",

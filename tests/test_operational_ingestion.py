@@ -248,6 +248,57 @@ def test_operational_bounded_support_routes_missing_quantity_to_review():
     assert decision["recommended_decision"] == "REVIEW"
 
 
+def test_invalid_semantic_ir_never_escalates_to_drop():
+    claim = {
+        "claim_id": "CLM_AMBIGUOUS",
+        "statement": "接口速率为7200 MT/s。",
+        "attributed_to": "",
+        "nature": "data",
+    }
+    result = _semantic_admission_artifact(
+        manifest={"run_id": "INGEST_TEST", "source": {"sha256": "a" * 64}},
+        bundle={"claims": [claim]},
+        evidence_draft={"claims": [{
+            "claim_id": "CLM_AMBIGUOUS",
+            "bounded_context_candidates": [],
+            "evidence_spans": [],
+        }]},
+        gate={"claims": [{
+            "claim_id": "CLM_AMBIGUOUS",
+            "fidelity_status": "EXACT_SOURCE_MATCH",
+            "resolved_locator": {"authoritative": True, "locator": "PAGE:1"},
+            "evidence_contract": {"canonical_ready_evidence": "接口速率已披露。"},
+        }]},
+        table_boundary={"decisions": [{
+            "claim_id": "CLM_AMBIGUOUS",
+            "review_eligible": True,
+            "eligibility_decision": "TABLE_CLAIM_ELIGIBLE_FAIL_OPEN",
+            "decision_reason": "KEEP_FAIL_OPEN",
+        }]},
+        proposition_results={"CLM_AMBIGUOUS": {
+            "proposition_ir": {
+                "schema_version": "proposition-ir-v2",
+                "parent_claim_id": "CLM_AMBIGUOUS",
+                "ir_status": "AMBIGUOUS",
+                "units": [],
+            },
+            "validation": {
+                "status": "AMBIGUOUS",
+                "valid": False,
+                "schema_version": "proposition-ir-v2",
+                "parent_claim_id": "CLM_AMBIGUOUS",
+                "unit_count": 0,
+                "issue_codes": ["MODEL_MARKED_IR_AMBIGUOUS"],
+                "normalized_units": [],
+            },
+        }},
+    )
+    decision = result["decisions"][0]
+    assert decision["semantic_admission"]["number_time_guard"]["status"] == "REVIEW_REQUIRED"
+    assert decision["recommended_decision"] == "REVIEW"
+    assert decision["recommendation_reason"] == "INVALID_OR_AMBIGUOUS_PROPOSITION_IR"
+
+
 def test_operational_node_review_reuses_exact_phase3d_resolution_logic(tmp_path: Path):
     production = tmp_path / "production.db"
     _write_minimal_production(production)

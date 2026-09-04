@@ -45,6 +45,10 @@ def test_semantic_repair_prompt_snapshot_and_existing_gate_c_contract_pass():
     assert status["prompt_sha256"] == EXPECTED_PROMPT_SHA256
 
 
+def test_primary_extraction_contract_does_not_contain_proposition_ir():
+    assert "proposition_ir" not in SOURCE_ANALYSIS_SYSTEM
+
+
 def test_attribution_and_question_answer_boundaries_are_both_explicit():
     assert "不得用说话者替换 statement 中的公司" in SOURCE_ANALYSIS_SYSTEM
     assert "问句中的前提不等于回答者的陈述或判断" in SOURCE_ANALYSIS_SYSTEM

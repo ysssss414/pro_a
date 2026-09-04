@@ -524,7 +524,7 @@ def test_source_prompt_forbids_external_knowledge_and_claim_splicing():
     assert "A 被 B 使用" in SOURCE_ANALYSIS_SYSTEM
 
 
-def test_atomic_split_maps_only_unique_relation_supporting_child(tmp_path: Path):
+def test_structural_admission_does_not_auto_split_relation_supporting_claim(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     from_node_id, to_node_id = relation_nodes(db)
     text = (
@@ -544,7 +544,7 @@ def test_atomic_split_maps_only_unique_relation_supporting_child(tmp_path: Path)
     result = pipeline.process_all()[0]
 
     assert result["status"] == "analyzed"
-    assert len(result["claims"]) == 2
+    assert len(result["claims"]) == 1
     claims_by_id = {
         row["claim_id"]: row
         for row in db.all(
@@ -552,14 +552,11 @@ def test_atomic_split_maps_only_unique_relation_supporting_child(tmp_path: Path)
             (result["source_id"],),
         )
     }
-    supporting_id = next(
-        claim_id for claim_id, row in claims_by_id.items()
-        if "采用 HBM4" in row["statement"]
-    )
-    unrelated_id = next(claim_id for claim_id in claims_by_id if claim_id != supporting_id)
+    supporting_id = next(iter(claims_by_id))
+    assert "当前带宽" in claims_by_id[supporting_id]["statement"]
+    assert "采用 HBM4" in claims_by_id[supporting_id]["statement"]
     proposal = db.proposal(result["relation_proposals"][0])
     assert proposal["payload"]["supporting_claim_ids"] == [supporting_id]
-    assert unrelated_id not in proposal["payload"]["supporting_claim_ids"]
     assert "supporting_claim_refs" not in proposal["payload"]
     assert "_resolved_supporting_claim_indices" not in proposal["payload"]
     assert proposal["payload"]["scope"] == "C1 / Rubin"
@@ -571,7 +568,7 @@ def test_atomic_split_maps_only_unique_relation_supporting_child(tmp_path: Path)
     ] == [supporting_id]
 
 
-def test_atomic_split_with_no_relation_supporting_child_is_rejected(tmp_path: Path):
+def test_unsplit_claim_without_relation_semantics_is_rejected(tmp_path: Path):
     cfg, db = make_config(tmp_path)
     from_node_id, to_node_id = relation_nodes(db)
     text = (
@@ -589,12 +586,12 @@ def test_atomic_split_with_no_relation_supporting_child_is_rejected(tmp_path: Pa
     result = pipeline.process_all()[0]
 
     assert result["status"] == "analyzed"
-    assert len(result["claims"]) == 2
+    assert len(result["claims"]) == 1
     assert result["relation_proposals"] == []
     assert db.one("SELECT COUNT(*) AS n FROM proposals")["n"] == 0
     rejection = result["audit"]["rejected_relation_candidates"][0]
-    assert rejection["stage"] == "claim_resolution"
-    assert rejection["reason"] == "atomic Claim ref has no relation-supporting child"
+    assert rejection["stage"] == "semantic"
+    assert rejection["reason"] == "semantic support insufficient"
 
 
 def test_atomic_ref_with_multiple_relation_children_is_ambiguous(tmp_path: Path):
@@ -623,7 +620,7 @@ def test_atomic_ref_with_multiple_relation_children_is_ambiguous(tmp_path: Path)
     assert "ambiguous" in rejected[0]["reason"]
 
 
-def test_chunk_merge_recomputes_global_relation_child_index(
+def test_chunk_merge_recomputes_global_relation_claim_index_without_auto_split(
     tmp_path: Path, monkeypatch,
 ):
     cfg, db = make_config(tmp_path)
@@ -651,11 +648,11 @@ def test_chunk_merge_recomputes_global_relation_child_index(
         "chunks.md", f"{unrelated}\n{atomic_text}", "standard",
     )
 
-    assert len(result.claims) == 3
+    assert len(result.claims) == 2
     relation_candidate = result.relation_candidates[0]
     assert relation_candidate["supporting_claim_refs"] == ["C2"]
-    assert relation_candidate["_resolved_supporting_claim_indices"] == [2]
-    assert "采用 HBM4" in result.claims[2]["statement"]
+    assert relation_candidate["_resolved_supporting_claim_indices"] == [1]
+    assert "采用 HBM4" in result.claims[1]["statement"]
 
 
 class PipelineAnalyzer:
