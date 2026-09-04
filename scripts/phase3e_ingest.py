@@ -27,6 +27,15 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         help="qualification-only frozen Phase 3C extraction bundle; does not call the LLM",
     )
+    parser.add_argument(
+        "--adaptive-retry-policy",
+        choices=("allow", "forbid"),
+        default="allow",
+        help=(
+            "forbid semantic-input-changing truncation splits for frozen acceptance; "
+            "normal chunk fan-out and identical-input transport retries remain enabled"
+        ),
+    )
     return parser
 
 
@@ -40,6 +49,7 @@ def main(argv: list[str] | None = None) -> int:
             resume=args.resume,
             stop_after=args.stop_after,
             frozen_extraction_path=args.frozen_extraction,
+            adaptive_retry_policy=args.adaptive_retry_policy,
         )
     except (OperationalIngestionError, OSError, ValueError) as exc:
         print(f"RUN_STATUS = FAILED\nERROR = {exc}", file=sys.stderr)

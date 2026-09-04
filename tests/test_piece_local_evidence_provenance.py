@@ -490,3 +490,85 @@ def test_terminal_truncation_failure_receipt_keeps_compact_piece_identity(
     assert receipt["piece_context"] == piece_context
     assert "raw_model_json" not in receipt
     assert "source_piece" not in receipt
+
+
+def test_frozen_acceptance_policy_blocks_adaptive_semantic_reextraction(
+    tmp_path: Path,
+):
+    cfg, db = make_config(tmp_path)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = SequenceLLM(
+        LLMError("failure_category=output_truncation"),
+        payload(),
+        payload(),
+    )
+    source = "独立句子。" * 1000
+
+    with pytest.raises(LLMError, match="output_truncation"):
+        analyzer.analyze_source(
+            "acceptance.pdf",
+            source,
+            "deep",
+            adaptive_retry_policy="forbid",
+        )
+
+    assert len(analyzer.llm.users) == 1
+    assert len(analyzer.last_piece_call_records) == 1
+    assert analyzer.last_piece_call_records[0]["adaptive_retry_policy"] == "forbid"
+    assert analyzer.last_piece_call_records[0]["adaptive_retry_blocked"] is True
+
+
+def test_frozen_acceptance_policy_preserves_normal_chunk_fan_out(
+    tmp_path: Path, monkeypatch,
+):
+    cfg, db = make_config(tmp_path)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = SequenceLLM(payload(), payload())
+    monkeypatch.setattr(
+        "pro_a.analyzer.chunk_source_text",
+        lambda text, max_chars: ["first normal chunk", "second normal chunk"],
+    )
+
+    analyzer.analyze_source(
+        "acceptance.pdf",
+        "first normal chunksecond normal chunk",
+        "deep",
+        adaptive_retry_policy="forbid",
+    )
+
+    assert len(analyzer.llm.users) == 2
+    assert [row["chunk_index"] for row in analyzer.last_piece_call_records] == [1, 2]
+    assert all(row["split_depth"] == 0 for row in analyzer.last_piece_call_records)
+
+
+def test_frozen_acceptance_policy_preserves_identical_input_transport_retry_metadata(
+    tmp_path: Path,
+):
+    class TransportRetryLLM(SequenceLLM):
+        def json(self, system, user):
+            result = super().json(system, user)
+            self._last_call_metadata = {
+                "attempts_used": 2,
+                "attempts": [
+                    {"attempt_number": 1, "result": "transport_error"},
+                    {"attempt_number": 2, "result": "success"},
+                ],
+                "semantic_inputs_identical": True,
+            }
+            return result
+
+    cfg, db = make_config(tmp_path)
+    analyzer = Analyzer(cfg, db)
+    analyzer.llm = TransportRetryLLM(payload())
+
+    analyzer.analyze_source(
+        "acceptance.pdf",
+        "one fixed semantic input",
+        "deep",
+        adaptive_retry_policy="forbid",
+    )
+
+    assert len(analyzer.last_piece_call_records) == 1
+    metadata = analyzer.last_piece_call_records[0]["call_metadata"]
+    assert metadata["attempts_used"] == 2
+    assert metadata["semantic_inputs_identical"] is True
