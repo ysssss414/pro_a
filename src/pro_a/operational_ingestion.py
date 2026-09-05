@@ -3,11 +3,14 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import re
 import shutil
 import subprocess
+import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -41,6 +44,7 @@ from .production_promotion import (
     production_identity,
     sha256_file,
 )
+from .proposition_ir import validate_proposition_ir
 from .semantic_admission import (
     ADMISSIBLE,
     BLOCKED,
@@ -77,6 +81,7 @@ STOP_AFTER = {
     "node-review": "NODE_REVIEW_READY",
     "promotion-preview": "PROMOTION_PREVIEW_READY",
 }
+FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY = "forbid"
 VALID_FIDELITY_STATUSES = {
     "EXACT_SOURCE_MATCH",
     "LAYOUT_NORMALIZED_EXACT_MATCH",
@@ -234,6 +239,9 @@ def _write_stage_receipt(
         "schema_version": SCHEMA_VERSION,
         "run_id": manifest["run_id"],
         "source_sha256": manifest["source"]["sha256"],
+        "adaptive_retry_policy": str(
+            (manifest.get("model") or {}).get("adaptive_retry_policy") or "allow"
+        ),
         "stage": stage,
         "status": "PASS",
         "outputs": outputs,
@@ -386,11 +394,15 @@ def _build_live_extraction(
     parsed: Any,
     production_path: Path,
     layout_sidecar_relative: str,
+    adaptive_retry_policy: str = "allow",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
     analysis = analyzer.analyze_source(
-        manifest["source"]["filename"], semantic_text, "deep"
+        manifest["source"]["filename"],
+        semantic_text,
+        "deep",
+        adaptive_retry_policy=adaptive_retry_policy,
     )
     raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
 
@@ -581,6 +593,9 @@ def _run_extraction(
             parsed=parsed,
             production_path=production_path,
             layout_sidecar_relative="extraction/source_layout_sidecar.json",
+            adaptive_retry_policy=str(
+                manifest["model"].get("adaptive_retry_policy") or "allow"
+            ),
         )
         _write_json(bundle_path, bundle)
         manifest["model"]["extraction_mode"] = "CONFIGURED_CLOUD_MODEL"
@@ -601,6 +616,54 @@ def _move_output(source: str, destination: Path) -> Path:
     return destination
 
 
+def _duplicate_core_text(statement: str) -> str:
+    text = unicodedata.normalize("NFKC", str(statement or "")).strip()
+    text = re.sub(
+        r"^(?:报告指出|根据[^，,：:]{1,48}(?:预测|测算|披露)|"
+        r"[^，,：:]{1,32}(?:指出|认为|判断|预测|披露))[，,：:]",
+        "",
+        text,
+    )
+    text = re.sub(r"预计[于在](?=(?:19|20)\d{2}年)", "预计", text)
+    text = re.sub(r"(?<![\w])(?:将|持续)(?![\w])", "", text)
+    return re.sub(r"[\W_]+", "", text, flags=re.UNICODE).casefold()
+
+
+def _numeric_semantic_anchors(statement: str) -> tuple[str, ...]:
+    return tuple(
+        re.findall(
+            r"(?:19|20)\d{2}(?:Q[1-4]|年)?|\d+(?:\.\d+)?(?:%|万|亿|元|美元|倍)?",
+            unicodedata.normalize("NFKC", str(statement or "")),
+            re.I,
+        )
+    )
+
+
+def _same_source_duplicate_pairs(
+    claims: Sequence[Mapping[str, Any]],
+) -> dict[str, str]:
+    """Return later->earlier duplicate candidates without suppressing either Claim."""
+    duplicate_of: dict[str, str] = {}
+    prior: list[tuple[str, str, str, tuple[str, ...]]] = []
+    for claim in claims:
+        claim_id = str(claim.get("claim_id") or "")
+        nature = str(claim.get("nature") or "")
+        statement = str(claim.get("statement") or "")
+        core = _duplicate_core_text(statement)
+        anchors = _numeric_semantic_anchors(statement)
+        if not claim_id or len(core) < 12:
+            continue
+        for prior_id, prior_nature, prior_core, prior_anchors in prior:
+            if nature != prior_nature or anchors != prior_anchors:
+                continue
+            if core == prior_core or SequenceMatcher(None, prior_core, core).ratio() >= 0.92:
+                duplicate_of[claim_id] = prior_id
+                break
+        if claim_id not in duplicate_of:
+            prior.append((claim_id, nature, core, anchors))
+    return duplicate_of
+
+
 def _semantic_admission_artifact(
     *,
     manifest: Mapping[str, Any],
@@ -614,13 +677,24 @@ def _semantic_admission_artifact(
     draft_by_id = {item["claim_id"]: item for item in evidence_draft.get("claims") or []}
     gate_by_id = {item["claim_id"]: item for item in gate.get("claims") or []}
     table_by_id = {item["claim_id"]: item for item in table_boundary.get("decisions") or []}
+    claims = list(bundle.get("claims") or [])
+    duplicate_of = _same_source_duplicate_pairs(claims)
     decisions = []
-    for claim in bundle.get("claims") or []:
+    for claim in claims:
         claim_id = claim["claim_id"]
         draft = draft_by_id[claim_id]
         quote = gate_by_id[claim_id]
         table = table_by_id[claim_id]
         proposition_result = proposition_results.get(claim_id)
+        proposition_validation = None
+        if proposition_result:
+            proposition_validation = validate_proposition_ir(
+                proposition_result.get("proposition_ir"),
+                claim_statement=str(claim.get("statement") or ""),
+                expected_parent_claim_id=claim_id,
+                evidence_units=proposition_result.get("evidence_units") or [],
+                generation_issues=proposition_result.get("generation_issues") or (),
+            )
         resolved = quote.get("resolved_locator") or {}
         evidence_bound = bool(
             quote.get("fidelity_status") in VALID_FIDELITY_STATUSES
@@ -665,14 +739,14 @@ def _semantic_admission_artifact(
                 if proposition_result else []
             ),
             proposition_ir_validation=(
-                proposition_result.get("validation")
+                proposition_validation
                 if proposition_result else None
             ),
             claim_evidence_fidelity_status=str(quote.get("fidelity_status") or ""),
         )
         table_eligible = table.get("review_eligible") is True
         proposition_validation_status = (
-            (proposition_result or {}).get("validation") or {}
+            proposition_validation or {}
         ).get("status")
         # Preserve the Phase 3C Pilot #6 review universe: table-eligible Claims
         # reach human review even when deterministic Evidence/semantic guards
@@ -696,6 +770,10 @@ def _semantic_admission_artifact(
         else:
             recommendation = "REVIEW"
             reason = ",".join(guards["guard_reasons"]) or "SEMANTIC_REVIEW_REQUIRED"
+        duplicate_claim_id = duplicate_of.get(claim_id)
+        if duplicate_claim_id and recommendation == "KEEP":
+            recommendation = "REVIEW"
+            reason = "SAME_SOURCE_SEMANTIC_DUPLICATE_CANDIDATE"
         decisions.append({
             "claim_id": claim_id,
             "evidence_validation": {
@@ -712,6 +790,12 @@ def _semantic_admission_artifact(
             "review_admitted": review_admitted,
             "recommended_decision": recommendation,
             "recommendation_reason": reason,
+            "duplicate_of_claim_id": duplicate_claim_id,
+            "duplicate_reconciliation": (
+                "REVIEW_WITHOUT_SUPPRESSION"
+                if duplicate_claim_id
+                else "NO_DUPLICATE_CANDIDATE"
+            ),
             "human_decision": "PENDING",
         })
     counts = Counter(item["semantic_admission"]["overall_guard_disposition"] for item in decisions)
@@ -733,6 +817,7 @@ def _semantic_admission_artifact(
             "proposition_ir_inside_primary_extraction": False,
             "atomicity_then_nature": True,
             "human_decisions_remain_pending": True,
+            "same_source_semantic_duplicates_are_review_only": True,
         },
         "counts": {
             "raw_claims": len(decisions),
@@ -1262,6 +1347,7 @@ def _start_new_run(
     config: AppConfig,
     run_dir: Path | None,
     frozen_extraction_path: Path | None,
+    adaptive_retry_policy: str,
 ) -> tuple[RunPaths, dict[str, Any]]:
     source_path = source_path.resolve()
     if not source_path.is_file():
@@ -1333,6 +1419,7 @@ def _start_new_run(
             "prompt_identity": prompt,
             "frozen_extraction_input_sha256": fixture_sha,
             "llm_invoked": False,
+            "adaptive_retry_policy": adaptive_retry_policy,
         },
         "stage_status": "SOURCE_FROZEN",
         "completed_stages": [],
@@ -1403,10 +1490,15 @@ def run_operational_ingestion(
     resume: bool = False,
     stop_after: str | None = None,
     frozen_extraction_path: Path | None = None,
+    adaptive_retry_policy: str = "allow",
 ) -> dict[str, Any]:
     """Run or resume the clean-PDF workflow through a non-executable preview."""
     if stop_after is not None and stop_after not in STOP_AFTER:
         raise OperationalIngestionError(f"STOP_AFTER_INVALID:{stop_after}")
+    if adaptive_retry_policy not in {"allow", "forbid"}:
+        raise OperationalIngestionError(
+            "ADAPTIVE_RETRY_POLICY_INVALID:expected allow or forbid"
+        )
     cfg = load_config(config_path)
     if resume:
         if run_dir is None:
@@ -1427,6 +1519,7 @@ def run_operational_ingestion(
             frozen_extraction_path=(
                 Path(frozen_extraction_path) if frozen_extraction_path else None
             ),
+            adaptive_retry_policy=adaptive_retry_policy,
         )
     production_path = cfg.db_path.resolve()
     fixture_replay = paths.path("extraction/frozen_extraction_input.json").is_file()

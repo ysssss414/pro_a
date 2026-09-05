@@ -1308,10 +1308,21 @@ class Analyzer:
             )
         return data
 
-    def analyze_source(self, filename: str, text: str, mode: str) -> SourceAnalysis:
+    def analyze_source(
+        self,
+        filename: str,
+        text: str,
+        mode: str,
+        *,
+        adaptive_retry_policy: str = "allow",
+    ) -> SourceAnalysis:
         self.last_piece_call_records = []
         if not self.available:
             raise LLMError("LLM unavailable")
+        if adaptive_retry_policy not in {"allow", "forbid"}:
+            raise ValueError(
+                "adaptive_retry_policy must be 'allow' or 'forbid'"
+            )
         chunks = chunk_source_text(text, self.cfg.llm.max_chunk_chars)
         full_prompt_catalog = self.node_catalog()
         merged = {
@@ -1386,17 +1397,25 @@ class Analyzer:
                 try:
                     raw_response = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user)
                 except LLMError as exc:
+                    is_truncation = "failure_category=output_truncation" in str(exc)
                     failed_record = {
                         **call_record,
                         "call_status": "failed",
+                        "adaptive_retry_policy": adaptive_retry_policy,
+                        "adaptive_retry_blocked": (
+                            is_truncation and adaptive_retry_policy == "forbid"
+                        ),
                         "raw_model_json": None,
                         "call_metadata": copy.deepcopy(
                             getattr(self.llm, "last_call_metadata", {})
                         ),
                     }
                     self.last_piece_call_records.append(failed_record)
-                    is_truncation = "failure_category=output_truncation" in str(exc)
-                    if is_truncation and split_depth < 3:
+                    if (
+                        is_truncation
+                        and adaptive_retry_policy == "allow"
+                        and split_depth < 3
+                    ):
                         pieces = chunk_text(piece, max(2000, (len(piece) + 1) // 2))
                         if len(pieces) >= 2:
                             recovered: list[PieceAnalysisResponse] = []
@@ -1420,6 +1439,8 @@ class Analyzer:
                 self.last_piece_call_records.append({
                     **call_record,
                     "call_status": "success",
+                    "adaptive_retry_policy": adaptive_retry_policy,
+                    "adaptive_retry_blocked": False,
                     "raw_model_json": copy.deepcopy(raw_response),
                     "call_metadata": copy.deepcopy(
                         getattr(self.llm, "last_call_metadata", {})

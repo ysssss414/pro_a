@@ -90,6 +90,11 @@ _ATTRIBUTED_NATURES = {
     "user_judgment",
     "ai_inference",
 }
+_PREDICATE_FAMILY_ALIASES = {
+    # Older/frozen decomposition artifacts used the action label as a family.
+    # Canonicalize it to the existing lifecycle family; do not expand the ontology.
+    "proposal": "lifecycle",
+}
 
 
 def _canonical_text(value: Any) -> str:
@@ -324,7 +329,8 @@ def validate_proposition_ir(
             continue
         if set(raw) - _UNIT_FIELDS:
             issues.append(_issue("UNSUPPORTED_PROPOSITION_CONTENT", unit_index=index))
-        family = raw.get("predicate_family")
+        raw_family = raw.get("predicate_family")
+        family = _PREDICATE_FAMILY_ALIASES.get(str(raw_family), raw_family)
         modality = raw.get("modality")
         nature = raw.get("nature")
         time_scope = raw.get("time_scope", "unspecified")
@@ -400,7 +406,11 @@ def validate_proposition_ir(
     ambiguous_coherence = 0
     for key, types in key_types.items():
         group_size = sum(unit.get("coherence_key") == key for unit in normalized_units)
-        if len(types) != 1 or ("INDEPENDENT" in types and group_size != 1):
+        compatible_vector_types = types <= {"REPORTING_VECTOR", "COMPARISON_VECTOR"}
+        if (
+            (len(types) != 1 and not compatible_vector_types)
+            or ("INDEPENDENT" in types and group_size != 1)
+        ):
             ambiguous_coherence += 1
             issues.append(_issue("AMBIGUOUS_COHERENCE_GROUP", coherence_key=key))
 
@@ -435,6 +445,115 @@ def _unit_support_text(
         str((evidence_by_id.get(evidence_id) or {}).get("normalized_text") or "")
         for evidence_id in unit.get("support_evidence_unit_ids") or []
     ).strip()
+
+
+def _generated_boundary_candidates(
+    units: Sequence[Mapping[str, Any]],
+    evidence_by_id: Mapping[str, Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Find only the two under-generation structures proven by the S-J.1 census."""
+    if len(units) != 1:
+        return []
+    unit = units[0]
+    selected = [
+        evidence_by_id[evidence_id]
+        for evidence_id in unit.get("support_evidence_unit_ids") or []
+        if evidence_id in evidence_by_id
+    ]
+    selected.sort(key=lambda item: int(item.get("order") or 0))
+    texts = [str(item.get("normalized_text") or "") for item in selected]
+    candidates: list[dict[str, Any]] = []
+
+    acquisition_index = next(
+        (index for index, text in enumerate(texts) if re.search(r"(?:收购|并购|acquir)", text, re.I)),
+        None,
+    )
+    entry_index = next(
+        (
+            index
+            for index, text in enumerate(texts)
+            if re.search(r"(?:通过.*)?(?:切入|拓展至|expand(?:ed|s|ing)?\s+into)", text, re.I)
+            or re.search(
+                r"(?:进入|enter(?:ed|s|ing)?).*(?:市场|领域|业务|赛道|market|sector|business)",
+                text,
+                re.I,
+            )
+        ),
+        None,
+    )
+    if (
+        acquisition_index is not None
+        and entry_index is not None
+        and entry_index > acquisition_index
+    ):
+        candidates.append(
+            {
+                "pattern": "ACQUISITION_TO_DISTINCT_MARKET_ENTRY",
+                "left_evidence_unit_id": selected[acquisition_index]["evidence_unit_id"],
+                "right_evidence_unit_id": selected[entry_index]["evidence_unit_id"],
+            }
+        )
+
+    current_index = next(
+        (
+            index
+            for index, text in enumerate(texts)
+            if re.search(r"(?:当前|现有|本代|current|present)", text, re.I)
+        ),
+        None,
+    )
+    next_generation_index = next(
+        (
+            index
+            for index, text in enumerate(texts)
+            if re.search(r"(?:下一代|下代|未来一代|next[- ]generation)", text, re.I)
+            and re.search(r"(?:则|而|whereas|while)", text, re.I)
+        ),
+        None,
+    )
+    if (
+        current_index is not None
+        and next_generation_index is not None
+        and next_generation_index > current_index
+    ):
+        candidates.append(
+            {
+                "pattern": "CURRENT_TO_NEXT_GENERATION_RESPONSIBILITY_SHIFT",
+                "left_evidence_unit_id": selected[current_index]["evidence_unit_id"],
+                "right_evidence_unit_id": selected[next_generation_index]["evidence_unit_id"],
+            }
+        )
+    return candidates
+
+
+def _same_group_independence_conflict(
+    units: Sequence[Mapping[str, Any]],
+    evidence_by_id: Mapping[str, Mapping[str, Any]],
+) -> str | None:
+    """Reject a model coherence key when it spans project and period-wide budgets."""
+    if len(units) != 2:
+        return None
+    families = {str(unit.get("predicate_family") or "") for unit in units}
+    natures = {str(unit.get("nature") or "") for unit in units}
+    texts = [_unit_support_text(unit, evidence_by_id) for unit in units]
+    if families != {"lifecycle", "measurement"} or natures != {"company_guidance"}:
+        return None
+    project_event = any(
+        re.search(r"(?:项目|工厂|基地|产线|project|factory|facility).*(?:建设|投资|build|invest)", text, re.I)
+        or re.search(r"(?:投资|建设|build|invest).*(?:项目|工厂|基地|产线|project|factory|facility)", text, re.I)
+        for text in texts
+    )
+    period_budget = any(
+        re.search(
+            r"(?:(?:19|20)\d{2}年|年度|annual).*(?:固定资产投资|资本开支|资本支出|capex|capital expenditure).*(?:预算|budget)",
+            text,
+            re.I,
+        )
+        for text in texts
+    )
+    if project_event and period_budget:
+        return "PROJECT_EVENT_AND_PERIOD_CAPITAL_BUDGET"
+    return None
 
 
 def _mechanism_classes(
@@ -566,6 +685,12 @@ def _bounded_coherence_override(
         len(natures) == 1
         and natures <= _ATTRIBUTED_NATURES
         and "CAUSAL_JUDGMENT" in coherence_types
+        and re.search(
+            r"(?:因此|因而|从而|由于|所以|进而|(?:主要)?受.*(?:推动|驱动|影响)|"
+            r"because|therefore|as a result|driven by)",
+            joined,
+            re.I,
+        )
     ):
         return "CAUSAL_JUDGMENT", "ATTRIBUTED_CAUSAL_JUDGMENT_CONTEXT"
     if (
@@ -582,6 +707,33 @@ def _bounded_coherence_override(
     all_data = natures == {"data"}
     narrower_scope = bool(re.search(r"(?:尤其|但|然而|另一方面|另有)", joined))
 
+    if (
+        family_set == {"status"}
+        and len(units) == 2
+        and all_actual
+        and natures <= {"fact", "expert_judgment"}
+        and any(re.search(r"(?:集中度|集中水平|concentration)", text, re.I) for text in texts)
+        and any(re.search(r"(?:竞争格局|竞争结构|market structure)", text, re.I) for text in texts)
+    ):
+        return "REPORTING_VECTOR", "MARKET_CONCENTRATION_STRUCTURE_SNAPSHOT"
+
+    if (
+        family_set == {"status", "capability"}
+        and len(units) == 2
+        and all_actual
+        and natures == {"expert_judgment"}
+        and any(re.search(r"(?:市场.*集中|market.*concentrat)", text, re.I) for text in texts)
+        and any(
+            re.search(
+                r"(?:竞争优势|竞争能力|competitive advantage).*(?:延伸|扩展|拓展|extend)",
+                text,
+                re.I,
+            )
+            for text in texts
+        )
+    ):
+        return "OTHER_COHERENT", "MARKET_STATE_AND_COMPETITIVE_SCOPE_VECTOR"
+
     if family_set == {"status"} and len(units) == 2 and all_actual and all_data:
         ranked_units = all(
             re.search(r"第(?:[一二三四五六七八九十]|\d+)(?:大|位)?.*(?:持股|占|份额)", text)
@@ -591,6 +743,30 @@ def _bounded_coherence_override(
             return "REPORTING_VECTOR", "SAME_DATE_RANKED_SNAPSHOT"
 
     if family_set == {"measurement"} and len(units) >= 2 and all_actual and all_data:
+        if (
+            len(units) == 2
+            and all(
+                re.search(r"(?:19|20)\d{2}(?:Q[1-4]|年)", text, re.I)
+                for text in texts
+            )
+            and re.match(
+                r"^(?:19|20)\d{2}(?:Q[1-4]|年(?:第[一二三四1-4]季度)?)"
+                r"(?:进一步|继续)?(?:达到|升至|降至|提升至|下降至|增至)",
+                texts[1],
+                re.I,
+            )
+        ):
+            return "REPORTING_VECTOR", "ELIDED_METRIC_TIME_SERIES"
+        if (
+            len(units) == 2
+            and re.search(r"(?:19|20)\d{2}(?:Q[1-4]|年)", texts[0], re.I)
+            and not re.search(r"(?:19|20)\d{2}(?:Q[1-4]|年)", texts[1], re.I)
+            and re.match(r"^(?:但|而|同时|同期)", texts[1])
+            and all(re.search(r"同比", text) for text in texts)
+            and any(re.search(r"(?:增长|提升|上升)", text) for text in texts)
+            and any(re.search(r"(?:下降|下滑|减少)", text) for text in texts)
+        ):
+            return "COMPARISON_VECTOR", "CONTRASTED_SAME_PERIOD_SNAPSHOT"
         if re.search(r"(?:CAGR|复合增长)", joined, re.IGNORECASE):
             return "REPORTING_VECTOR", "TIME_SERIES_WITH_DERIVED_GROWTH"
         if re.search(r"(?:共|合计|总计).*(?:其中|分别)", joined):
@@ -705,10 +881,26 @@ def structural_atomicity_result(validation: Mapping[str, Any]) -> dict[str, Any]
             "reason_codes": ["INVALID_OR_AMBIGUOUS_PROPOSITION_IR"],
             "details": details,
         }
+    generated_boundaries = _generated_boundary_candidates(units, evidence)
+    if generated_boundaries:
+        details["generated_boundary_candidates"] = generated_boundaries
+        return {
+            "status": "REVIEW_REQUIRED",
+            "reason_codes": ["INDEPENDENT_REVIEWABLE_PROPOSITIONS"],
+            "details": details,
+        }
     if len(units) <= 1:
         return {
             "status": "ADMISSIBLE",
             "reason_codes": ["SINGLE_PROPOSITION_UNIT"],
+            "details": details,
+        }
+    same_group_conflict = _same_group_independence_conflict(units, evidence)
+    if same_group_conflict:
+        details["same_group_independence_conflict"] = same_group_conflict
+        return {
+            "status": "REVIEW_REQUIRED",
+            "reason_codes": [same_group_conflict],
             "details": details,
         }
     if len(groups) == 1 and "INDEPENDENT" not in coherence_types:
@@ -760,6 +952,41 @@ def classify_jiang_modality(statement: str) -> str:
     return "NO_JIANG"
 
 
+def _transitively_cited_attribution(attributed_to: str) -> bool:
+    return bool(
+        re.search(
+            r"(?:转引自|引自|援引自|转述自|cited\s+via|as\s+cited\s+by)",
+            _canonical_text(attributed_to),
+            re.I,
+        )
+    )
+
+
+def _realized_company_proposition(unit: Mapping[str, Any], text: str) -> bool:
+    if str(unit.get("nature") or "") != "company_guidance":
+        return False
+    if str(unit.get("modality") or "") != "actual":
+        return False
+    if str(unit.get("time_scope") or "") == "future" or re.search(
+        r"(?:预计|预期|计划|目标|拟|预算|将|有望|未来)", text
+    ):
+        return False
+    family = str(unit.get("predicate_family") or "")
+    if family == "measurement" and str(unit.get("time_scope") or "") in {
+        "historical",
+        "current",
+    }:
+        return bool(re.search(r"\d", text))
+    if family in {"status", "lifecycle"}:
+        return bool(
+            re.search(
+                r"(?:目前|当前|截至|已经|已|完成|进入|达到|实现|处于)",
+                text,
+            )
+        )
+    return False
+
+
 def structural_nature_result(
     validation: Mapping[str, Any],
     *,
@@ -789,6 +1016,14 @@ def structural_nature_result(
         attributed_match = (
             normalized_claim_nature in _ATTRIBUTED_NATURES
             and unit_nature == normalized_claim_nature
+        )
+        relayed_forecast_role = (
+            attributed_match
+            and normalized_claim_nature == "broker_forecast"
+            and _transitively_cited_attribution(attributed_to)
+        )
+        realized_guidance_inheritance = (
+            attributed_match and _realized_company_proposition(unit, text)
         )
         reported_proposal_fact = (
             normalized_claim_nature == "fact"
@@ -835,7 +1070,18 @@ def structural_nature_result(
                 or (family == "identity" and market_structure_vector)
             )
         )
-        if not attributed_match and not reported_proposal_fact:
+        if relayed_forecast_role:
+            unit_reasons.append(
+                "TRANSITIVELY_CITED_FORECAST_REQUIRES_EXPERT_JUDGMENT"
+            )
+        if realized_guidance_inheritance:
+            unit_reasons.append("REALIZED_PROPOSITION_INHERITS_COMPANY_GUIDANCE")
+        exact_match_resolves_semantics = (
+            attributed_match
+            and not relayed_forecast_role
+            and not realized_guidance_inheritance
+        )
+        if not exact_match_resolves_semantics and not reported_proposal_fact:
             if normalized_claim_nature in {"fact", "data"} and (
                 modality in {"future", "conditional"} or jiang == "FUTURE_AUXILIARY"
             ):
@@ -871,6 +1117,12 @@ def structural_nature_result(
                 "support_evidence_unit_ids": unit.get("support_evidence_unit_ids") or [],
                 "jiang_modality": jiang,
                 "attributed_nature_exact_match": attributed_match,
+                "exact_match_resolves_nature_semantics": exact_match_resolves_semantics,
+                "attribution_role": (
+                    "TRANSITIVELY_CITED_SOURCE"
+                    if relayed_forecast_role
+                    else "DIRECT_OR_UNSPECIFIED"
+                ),
                 "reported_proposal_fact": reported_proposal_fact,
                 "bounded_nature_exception": (
                     "QUALITATIVE_MEASUREMENT_OUTCOME"
