@@ -33,7 +33,8 @@ def _parser() -> argparse.ArgumentParser:
         default="allow",
         help=(
             "forbid semantic-input-changing truncation splits for frozen acceptance; "
-            "normal chunk fan-out and identical-input transport retries remain enabled"
+            "normal chunk fan-out and identical-input transport retries remain enabled; "
+            "S-K frozen acceptance must explicitly select forbid"
         ),
     )
     return parser

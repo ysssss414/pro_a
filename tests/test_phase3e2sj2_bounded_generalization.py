@@ -611,13 +611,13 @@ def test_same_source_semantic_duplicate_is_reviewed_without_suppressing_claim():
     claims = [
         {
             "claim_id": "CLM_SUMMARY",
-            "statement": "报告指出，基础设施扩张从“更多设备、更复杂设备、更多检测”三个维度拉动需求。",
+            "statement": "报告指出，供应网络升级通过“交付更快、覆盖更广、响应更稳”三个方面提升韧性。",
             "attributed_to": "研究机构",
             "nature": "expert_judgment",
         },
         {
             "claim_id": "CLM_DETAIL",
-            "statement": "研究机构判断，基础设施扩张将从“更多设备、更复杂设备、更多检测”三个维度持续拉动需求。",
+            "statement": "研究机构判断，供应网络升级通过“交付更快、覆盖更广、响应更稳”三个方面持续提升韧性。",
             "attributed_to": "研究机构",
             "nature": "expert_judgment",
         },
@@ -634,7 +634,7 @@ def test_same_source_semantic_duplicate_is_reviewed_without_suppressing_claim():
     assert len(result["decisions"]) == 2
 
 
-def test_duplicate_precision_controls_preserve_distinct_time_and_quantity():
+def test_duplicate_precision_controls_preserve_distinct_time_quantity_nature_and_semantics():
     helper = getattr(operational_ingestion, "_same_source_duplicate_pairs")
     base = {
         "claim_id": "CLM_BASE",
@@ -649,5 +649,14 @@ def test_duplicate_precision_controls_preserve_distinct_time_and_quantity():
     changed_value.update(
         claim_id="CLM_VALUE", statement="机构预测，市场2027年增长30%至130亿元。"
     )
+    changed_nature = deepcopy(base)
+    changed_nature.update(claim_id="CLM_NATURE", nature="company_guidance")
+    changed_semantics = deepcopy(base)
+    changed_semantics.update(
+        claim_id="CLM_SEMANTICS",
+        statement="机构预测，项目2027年削减20%后预算为120亿元。",
+    )
 
-    assert helper([base, changed_year, changed_value]) == {}
+    assert helper(
+        [base, changed_year, changed_value, changed_nature, changed_semantics]
+    ) == {}

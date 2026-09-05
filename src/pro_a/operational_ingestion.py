@@ -81,6 +81,7 @@ STOP_AFTER = {
     "node-review": "NODE_REVIEW_READY",
     "promotion-preview": "PROMOTION_PREVIEW_READY",
 }
+FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY = "forbid"
 VALID_FIDELITY_STATUSES = {
     "EXACT_SOURCE_MATCH",
     "LAYOUT_NORMALIZED_EXACT_MATCH",
@@ -238,6 +239,9 @@ def _write_stage_receipt(
         "schema_version": SCHEMA_VERSION,
         "run_id": manifest["run_id"],
         "source_sha256": manifest["source"]["sha256"],
+        "adaptive_retry_policy": str(
+            (manifest.get("model") or {}).get("adaptive_retry_policy") or "allow"
+        ),
         "stage": stage,
         "status": "PASS",
         "outputs": outputs,
@@ -622,10 +626,6 @@ def _duplicate_core_text(statement: str) -> str:
     )
     text = re.sub(r"预计[于在](?=(?:19|20)\d{2}年)", "预计", text)
     text = re.sub(r"(?<![\w])(?:将|持续)(?![\w])", "", text)
-    # Chinese modal characters have no word boundaries. Their removal is
-    # limited to the two proven redundant adverb positions.
-    text = re.sub(r"扩张将从", "扩张从", text)
-    text = re.sub(r"维度持续拉动", "维度拉动", text)
     return re.sub(r"[\W_]+", "", text, flags=re.UNICODE).casefold()
 
 

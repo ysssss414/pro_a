@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from pro_a.operational_ingestion import (
+    FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY,
     PROMOTION_PREVIEW_DOCUMENT_TYPE,
     RunPaths,
     _render_node_review,
@@ -134,6 +135,45 @@ def test_source_and_extraction_fixture_are_frozen_and_manifested(tmp_path: Path)
     assert manifest["source"]["source_id"] == "SRC_FIXTURE"
     assert manifest["production_safety"]["production_write_path_enabled"] is False
     assert manifest["model"]["frozen_extraction_input_sha256"]
+
+
+def test_frozen_acceptance_retry_policy_propagates_to_manifest_and_receipt(
+    tmp_path: Path,
+):
+    workspace = tmp_path / "workspace"
+    _write_minimal_production(workspace / "pro_a.db")
+    config = _write_config(tmp_path / "config.toml", workspace)
+    source = tmp_path / "acceptance.pdf"
+    source.write_bytes(b"%PDF-1.4\nfrozen acceptance fixture")
+    run_dir = workspace / "ingestion" / "acceptance"
+
+    result = run_operational_ingestion(
+        source,
+        config_path=config,
+        run_dir=run_dir,
+        stop_after="source",
+        adaptive_retry_policy=FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY,
+    )
+    manifest = json.loads(Path(result["manifest"]).read_text(encoding="utf-8"))
+    receipt = json.loads(
+        (run_dir / "receipts/source_frozen.json").read_text(encoding="utf-8")
+    )
+
+    assert FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY == "forbid"
+    assert manifest["model"]["adaptive_retry_policy"] == "forbid"
+    assert receipt["adaptive_retry_policy"] == "forbid"
+    assert manifest["model"]["llm_invoked"] is False
+
+    resumed = run_operational_ingestion(
+        config_path=config,
+        run_dir=run_dir,
+        resume=True,
+        stop_after="source",
+    )
+    resumed_manifest = json.loads(
+        Path(resumed["manifest"]).read_text(encoding="utf-8")
+    )
+    assert resumed_manifest["model"]["adaptive_retry_policy"] == "forbid"
 
 
 def test_resume_uses_frozen_source_and_detects_artifact_tampering(tmp_path: Path):
