@@ -397,16 +397,24 @@ def _build_live_extraction(
     production_path: Path,
     layout_sidecar_relative: str,
     adaptive_retry_policy: str = "allow",
+    initial_plan_path: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
+
+    def persist_initial_plan(plan: dict[str, Any]) -> None:
+        if initial_plan_path is not None:
+            _write_json(initial_plan_path, plan)
+
     analysis = analyzer.analyze_source(
         manifest["source"]["filename"],
         semantic_text,
         "deep",
         adaptive_retry_policy=adaptive_retry_policy,
+        initial_plan_sink=persist_initial_plan,
     )
     raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
+    initial_plan = copy.deepcopy(analyzer.last_initial_extraction_plan)
 
     llm = _llm_metrics([item["call_metadata"] for item in raw_responses])
     prompt_status = phase3c_prompt_repair_status(analyzer_module.SOURCE_ANALYSIS_SYSTEM)
@@ -496,6 +504,19 @@ def _build_live_extraction(
                 for key in ("prompt_tokens", "completion_tokens", "total_tokens")
             },
             "llm_calls": llm["llm_calls"],
+            "initial_extraction_plan": {
+                "path": (
+                    initial_plan_path.as_posix()
+                    if initial_plan_path is not None
+                    else ""
+                ),
+                "sha256": initial_plan.get("initial_extraction_plan_sha256"),
+                "planner_version": initial_plan.get("planner_version"),
+                "piece_count": initial_plan.get("piece_count"),
+                "effective_initial_max_chars": (
+                    initial_plan.get("partition_policy") or {}
+                ).get("effective_initial_max_chars"),
+            },
         },
         "proposed_source_metadata": copy.deepcopy(analysis.source_metadata),
         "source_references": copy.deepcopy(analysis.source_references),
@@ -525,6 +546,7 @@ def _build_live_extraction(
             "raw_response_and_exact_piece_available": True,
         },
         "raw_model_responses": raw_responses,
+        "initial_extraction_plan": copy.deepcopy(bundle["model"]["initial_extraction_plan"]),
         "normalized_source_analysis": asdict(analysis),
     }
     return raw_analysis, bundle
@@ -574,6 +596,7 @@ def _run_extraction(
     }
     layout_path = extraction_dir / "source_layout_sidecar.json"
     _write_json(layout_path, parsed.layout_sidecar)
+    initial_plan_path = extraction_dir / "initial_extraction_plan.json"
     bundle_path = extraction_dir / "extraction_bundle.json"
     raw_path = extraction_dir / "raw_analysis.json"
     fixture_path = extraction_dir / "frozen_extraction_input.json"
@@ -598,6 +621,7 @@ def _run_extraction(
             adaptive_retry_policy=str(
                 manifest["model"].get("adaptive_retry_policy") or "allow"
             ),
+            initial_plan_path=initial_plan_path,
         )
         _write_json(bundle_path, bundle)
         manifest["model"]["extraction_mode"] = "CONFIGURED_CLOUD_MODEL"
@@ -608,7 +632,10 @@ def _run_extraction(
     _write_json(review_path, _build_review_draft(bundle, review_id=review_id))
     manifest["model"]["frozen_output_sha256"] = sha256_file(raw_path)
     manifest["model"]["normalized_bundle_sha256"] = sha256_file(bundle_path)
-    return [gate_path, layout_path, raw_path, bundle_path, review_path]
+    artifacts = [gate_path, layout_path, raw_path, bundle_path, review_path]
+    if initial_plan_path.is_file():
+        artifacts.append(initial_plan_path)
+    return artifacts
 
 
 def _move_output(source: str, destination: Path) -> Path:
