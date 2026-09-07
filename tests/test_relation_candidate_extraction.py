@@ -641,7 +641,8 @@ def test_chunk_merge_recomputes_global_relation_claim_index_without_auto_split(
         ),
     )
     monkeypatch.setattr(
-        "pro_a.analyzer.chunk_source_text", lambda text, max_chars: [unrelated, atomic_text],
+        "pro_a.analyzer.chunk_source_text",
+        lambda text, max_chars: [f"{unrelated}\n", atomic_text],
     )
 
     result = analyzer.analyze_source(

@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete.** Phase 3E.1 已将 clean-PDF extraction、Evidence/table/semantic admission、Claim/Node review 与 non-executable promotion preview 串成单一可恢复命令。正常运行停在 `HUMAN_REVIEW_REQUIRED`；Production authorization/apply 仍保持独立且未授权。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete; Phase 3E.2 closed at the governed automation boundary.** Phase 3E.2 保留 S-K fresh-source `FAIL`，验证了 bounded correctness、safety precision 与 deterministic pre-call partitioning，但未接受 full automation generalization；复杂 clean PDF 仍可能产生较高人工 REVIEW 负担。S-M 未授权，Production authorization/apply 仍保持独立且未授权。详见 [`docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 

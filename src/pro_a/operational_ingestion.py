@@ -49,6 +49,7 @@ from .semantic_admission import (
     ADMISSIBLE,
     BLOCKED,
     evaluate_semantic_admission,
+    is_meaning_changing_qualifier,
     join_permitted_support_regions,
 )
 from .semantic_decomposition import (
@@ -82,6 +83,7 @@ STOP_AFTER = {
     "promotion-preview": "PROMOTION_PREVIEW_READY",
 }
 FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY = "forbid"
+DUPLICATE_SIMILARITY_THRESHOLD = 0.92
 VALID_FIDELITY_STATUSES = {
     "EXACT_SOURCE_MATCH",
     "LAYOUT_NORMALIZED_EXACT_MATCH",
@@ -395,16 +397,24 @@ def _build_live_extraction(
     production_path: Path,
     layout_sidecar_relative: str,
     adaptive_retry_policy: str = "allow",
+    initial_plan_path: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
+
+    def persist_initial_plan(plan: dict[str, Any]) -> None:
+        if initial_plan_path is not None:
+            _write_json(initial_plan_path, plan)
+
     analysis = analyzer.analyze_source(
         manifest["source"]["filename"],
         semantic_text,
         "deep",
         adaptive_retry_policy=adaptive_retry_policy,
+        initial_plan_sink=persist_initial_plan,
     )
     raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
+    initial_plan = copy.deepcopy(analyzer.last_initial_extraction_plan)
 
     llm = _llm_metrics([item["call_metadata"] for item in raw_responses])
     prompt_status = phase3c_prompt_repair_status(analyzer_module.SOURCE_ANALYSIS_SYSTEM)
@@ -494,6 +504,19 @@ def _build_live_extraction(
                 for key in ("prompt_tokens", "completion_tokens", "total_tokens")
             },
             "llm_calls": llm["llm_calls"],
+            "initial_extraction_plan": {
+                "path": (
+                    initial_plan_path.as_posix()
+                    if initial_plan_path is not None
+                    else ""
+                ),
+                "sha256": initial_plan.get("initial_extraction_plan_sha256"),
+                "planner_version": initial_plan.get("planner_version"),
+                "piece_count": initial_plan.get("piece_count"),
+                "effective_initial_max_chars": (
+                    initial_plan.get("partition_policy") or {}
+                ).get("effective_initial_max_chars"),
+            },
         },
         "proposed_source_metadata": copy.deepcopy(analysis.source_metadata),
         "source_references": copy.deepcopy(analysis.source_references),
@@ -523,6 +546,7 @@ def _build_live_extraction(
             "raw_response_and_exact_piece_available": True,
         },
         "raw_model_responses": raw_responses,
+        "initial_extraction_plan": copy.deepcopy(bundle["model"]["initial_extraction_plan"]),
         "normalized_source_analysis": asdict(analysis),
     }
     return raw_analysis, bundle
@@ -572,6 +596,7 @@ def _run_extraction(
     }
     layout_path = extraction_dir / "source_layout_sidecar.json"
     _write_json(layout_path, parsed.layout_sidecar)
+    initial_plan_path = extraction_dir / "initial_extraction_plan.json"
     bundle_path = extraction_dir / "extraction_bundle.json"
     raw_path = extraction_dir / "raw_analysis.json"
     fixture_path = extraction_dir / "frozen_extraction_input.json"
@@ -596,6 +621,7 @@ def _run_extraction(
             adaptive_retry_policy=str(
                 manifest["model"].get("adaptive_retry_policy") or "allow"
             ),
+            initial_plan_path=initial_plan_path,
         )
         _write_json(bundle_path, bundle)
         manifest["model"]["extraction_mode"] = "CONFIGURED_CLOUD_MODEL"
@@ -606,7 +632,10 @@ def _run_extraction(
     _write_json(review_path, _build_review_draft(bundle, review_id=review_id))
     manifest["model"]["frozen_output_sha256"] = sha256_file(raw_path)
     manifest["model"]["normalized_bundle_sha256"] = sha256_file(bundle_path)
-    return [gate_path, layout_path, raw_path, bundle_path, review_path]
+    artifacts = [gate_path, layout_path, raw_path, bundle_path, review_path]
+    if initial_plan_path.is_file():
+        artifacts.append(initial_plan_path)
+    return artifacts
 
 
 def _move_output(source: str, destination: Path) -> Path:
@@ -639,28 +668,186 @@ def _numeric_semantic_anchors(statement: str) -> tuple[str, ...]:
     )
 
 
+def _proposition_candidates(statement: str) -> list[tuple[str, str]]:
+    """Expose bounded claim clauses and retain their proposition-boundary role."""
+    text = unicodedata.normalize("NFKC", str(statement or "")).strip()
+    clauses = [
+        item.strip()
+        for item in re.split(r"[，,；;。！？!?]+", text)
+        if item.strip()
+    ]
+    if len(clauses) <= 1:
+        return [(text, "WHOLE_PROPOSITION")] if text else []
+    if len(clauses) != 2:
+        return [(text, "PARENT_STATEMENT")]
+    result = [(text, "PARENT_STATEMENT")]
+    leading_condition = clauses[0] if is_meaning_changing_qualifier(clauses[0]) else ""
+    for index, clause in enumerate(clauses):
+        if leading_condition and index == 0:
+            continue
+        candidate = f"{leading_condition}，{clause}" if leading_condition else clause
+        if candidate not in {item[0] for item in result}:
+            result.append((candidate, "BOUNDED_SUBPROPOSITION"))
+    return result
+
+
+def _proposition_candidate_texts(statement: str) -> list[str]:
+    return [text for text, _role in _proposition_candidates(statement)]
+
+
+def _meaning_changing_scope_anchor(statement: str) -> str:
+    first = re.split(
+        r"[，,；;。！？!?]+",
+        unicodedata.normalize("NFKC", str(statement or "")).strip(),
+        maxsplit=1,
+    )[0].strip()
+    return _duplicate_core_text(first) if is_meaning_changing_qualifier(first) else ""
+
+
+def _bounded_parent_subproposition_equivalence(
+    left: str,
+    right: str,
+    *,
+    structured_scope: str,
+) -> bool:
+    """Match one provenance-bound parent clause without discarding its argument."""
+    marker = re.compile(r"更(?:具|有|为)")
+    left_match = marker.search(left)
+    right_match = marker.search(right)
+    if left_match is None or right_match is None:
+        return False
+    left_predicate = left[left_match.start():]
+    right_predicate = right[right_match.start():]
+    if left_predicate != right_predicate:
+        return False
+    left_prefix = left[:left_match.start()]
+    right_prefix = right[:right_match.start()]
+    common_length = 0
+    for left_char, right_char in zip(left_prefix, right_prefix):
+        if left_char != right_char:
+            break
+        common_length += 1
+    shared_argument = left_prefix[:common_length]
+    left_bridge = left_prefix[common_length:]
+    right_bridge = right_prefix[common_length:]
+    possessive_boundary = shared_argument.rfind("的")
+    shared_nominal_head = shared_argument[possessive_boundary + 1:]
+    scope_core = _duplicate_core_text(structured_scope)
+    return bool(
+        left_bridge
+        and right_bridge
+        and possessive_boundary >= 0
+        and len(shared_nominal_head) >= 2
+        and not shared_nominal_head.endswith(("在", "当", "若", "于"))
+        and scope_core
+        and scope_core in shared_argument
+        and not _numeric_semantic_anchors(left_bridge)
+        and not _numeric_semantic_anchors(right_bridge)
+        and not is_meaning_changing_qualifier(left_bridge)
+        and not is_meaning_changing_qualifier(right_bridge)
+    )
+
+
+def _duplicate_signature_match(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    return SequenceMatcher(None, left, right).ratio() >= DUPLICATE_SIMILARITY_THRESHOLD
+
+
+def _strong_parent_subproposition_match(
+    left_signature: tuple[str, tuple[str, ...], str],
+    right_signature: tuple[str, tuple[str, ...], str],
+    left_claim: Mapping[str, Any],
+    right_claim: Mapping[str, Any],
+) -> bool:
+    left_core, left_anchors, left_role = left_signature
+    right_core, right_anchors, right_role = right_signature
+    if {left_role, right_role} != {
+        "BOUNDED_SUBPROPOSITION",
+        "WHOLE_PROPOSITION",
+    }:
+        return False
+    if left_anchors != right_anchors:
+        return False
+    if not (
+        left_claim.get("evidence_validated") is True
+        and right_claim.get("evidence_validated") is True
+    ):
+        return False
+    for key in ("source_id", "origin_piece_sha256", "attributed_to"):
+        if not left_claim.get(key) or left_claim.get(key) != right_claim.get(key):
+            return False
+    if str(left_claim.get("fact_time") or "") != str(right_claim.get("fact_time") or ""):
+        return False
+    whole_claim = left_claim if left_role == "WHOLE_PROPOSITION" else right_claim
+    return _bounded_parent_subproposition_equivalence(
+        left_core,
+        right_core,
+        structured_scope=str(whole_claim.get("scope") or ""),
+    )
+
+
 def _same_source_duplicate_pairs(
     claims: Sequence[Mapping[str, Any]],
 ) -> dict[str, str]:
-    """Return later->earlier duplicate candidates without suppressing either Claim."""
+    """Return later->earlier proposition-aware candidates without suppression."""
     duplicate_of: dict[str, str] = {}
-    prior: list[tuple[str, str, str, tuple[str, ...]]] = []
+    prior: list[
+        tuple[
+            str,
+            str,
+            str,
+            Mapping[str, Any],
+            list[tuple[str, tuple[str, ...], str]],
+        ]
+    ] = []
     for claim in claims:
         claim_id = str(claim.get("claim_id") or "")
         nature = str(claim.get("nature") or "")
         statement = str(claim.get("statement") or "")
-        core = _duplicate_core_text(statement)
-        anchors = _numeric_semantic_anchors(statement)
-        if not claim_id or len(core) < 12:
+        scope_anchor = _meaning_changing_scope_anchor(statement)
+        signatures = [
+            (
+                _duplicate_core_text(candidate),
+                _numeric_semantic_anchors(candidate),
+                role,
+            )
+            for candidate, role in _proposition_candidates(statement)
+        ]
+        signatures = [item for item in signatures if len(item[0]) >= 12]
+        if not claim_id or not signatures:
             continue
-        for prior_id, prior_nature, prior_core, prior_anchors in prior:
-            if nature != prior_nature or anchors != prior_anchors:
+        for (
+            prior_id,
+            prior_nature,
+            prior_scope_anchor,
+            prior_claim,
+            prior_signatures,
+        ) in prior:
+            if nature != prior_nature or scope_anchor != prior_scope_anchor:
                 continue
-            if core == prior_core or SequenceMatcher(None, prior_core, core).ratio() >= 0.92:
+            if any(
+                anchors == prior_anchors
+                and (
+                    _duplicate_signature_match(prior_core, core)
+                    or _strong_parent_subproposition_match(
+                        signature,
+                        prior_signature,
+                        claim,
+                        prior_claim,
+                    )
+                )
+                for signature in signatures
+                for prior_signature in prior_signatures
+                for core, anchors, _role in [signature]
+                for prior_core, prior_anchors, _prior_role in [prior_signature]
+            ):
                 duplicate_of[claim_id] = prior_id
                 break
         if claim_id not in duplicate_of:
-            prior.append((claim_id, nature, core, anchors))
+            prior.append(
+                (claim_id, nature, scope_anchor, claim, signatures)
+            )
     return duplicate_of
 
 
@@ -723,6 +910,8 @@ def _semantic_admission_artifact(
             support_region_exhaustive=False,
             nature=str(claim.get("nature") or ""),
             fact_time=str(claim.get("fact_time") or ""),
+            scope=str(claim.get("scope") or ""),
+            assumption_text=str(claim.get("assumption_text") or ""),
             claim_status=str(claim.get("status") or ""),
             parent_claim_id=claim_id,
             proposition_ir=(
@@ -787,6 +976,15 @@ def _semantic_admission_artifact(
                 "reason": table.get("decision_reason"),
             },
             "semantic_admission": guards,
+            "semantic_statement": guards["semantic_statement"],
+            "scope_preservation": copy.deepcopy(
+                {
+                    **(guards["scope_preservation_guard"].get("details") or {}),
+                    "status": (
+                        guards["scope_preservation_guard"].get("details") or {}
+                    ).get("reconciliation_status"),
+                }
+            ),
             "review_admitted": review_admitted,
             "recommended_decision": recommendation,
             "recommendation_reason": reason,
@@ -818,6 +1016,11 @@ def _semantic_admission_artifact(
             "atomicity_then_nature": True,
             "human_decisions_remain_pending": True,
             "same_source_semantic_duplicates_are_review_only": True,
+            "duplicate_similarity_threshold": DUPLICATE_SIMILARITY_THRESHOLD,
+            "duplicate_candidate_space": (
+                "DIRECT_THRESHOLD_OR_PROVENANCE_BOUND_PARENT_TO_SUBPROPOSITION"
+            ),
+            "mandatory_scope_preservation": True,
         },
         "counts": {
             "raw_claims": len(decisions),

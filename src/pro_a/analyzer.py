@@ -7,7 +7,7 @@ import json
 import re
 import unicodedata
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from .config import AppConfig
 from .constants import (
@@ -16,7 +16,7 @@ from .constants import (
 )
 from .db import Database
 from .llm import ChatLLM, LLMError
-from .parsers import chunk_source_text, chunk_text, source_units
+from .parsers import SOURCE_MARKER, chunk_source_text, chunk_text, source_units
 from .prompts import (
     CANDIDATE_BACKFILL_SYSTEM, CANDIDATE_BACKFILL_USER,
     CLAIM_COMPARE_SYSTEM, CLAIM_COMPARE_USER, IMPACT_SYSTEM, IMPACT_USER,
@@ -191,6 +191,17 @@ def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def _canonical_sha256(value: Any) -> str:
+    canonical = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    )
+    return _sha256_text(canonical)
+
+
+FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS = 10_000
+INITIAL_EXTRACTION_PLANNER_VERSION = "PHASE3E2SL6_PRECALL_PARTITION_V1"
+
+
 @dataclass(frozen=True)
 class SourcePiece:
     """Bind Source content separately from the marker-wrapped prompt material."""
@@ -257,6 +268,29 @@ class PieceAnalysisResponse:
     raw_response: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class PlannedExtractionPiece:
+    source_piece: SourcePiece
+    source_start: int
+    source_end: int
+    locators: tuple[str, ...]
+    scoped_node_catalog: tuple[dict[str, Any], ...]
+    user_prompt: str
+
+    @property
+    def scoped_node_ids(self) -> tuple[str, ...]:
+        return tuple(str(node.get("node_id") or "") for node in self.scoped_node_catalog)
+
+
+@dataclass(frozen=True)
+class InitialExtractionPlan:
+    effective_max_chars: int
+    full_prompt_catalog: tuple[dict[str, Any], ...]
+    pieces: tuple[PlannedExtractionPiece, ...]
+    artifact: dict[str, Any]
+    plan_sha256: str
+
+
 @dataclass
 class SourceAnalysis:
     source_metadata: dict[str, Any]
@@ -277,6 +311,7 @@ class Analyzer:
         self.db = db
         self.llm = ChatLLM(cfg.llm)
         self.last_piece_call_records: list[dict[str, Any]] = []
+        self.last_initial_extraction_plan: dict[str, Any] = {}
 
     @property
     def available(self) -> bool:
@@ -288,6 +323,159 @@ class Analyzer:
             {"node_id": r["node_id"], "canonical_name": r["canonical_name"], "primary_type": r["primary_type"], "aliases": r.get("aliases", [])}
             for r in rows
         ]
+
+    @staticmethod
+    def _piece_locators(text: str, start: int, end: int) -> tuple[str, ...]:
+        markers = list(SOURCE_MARKER.finditer(text))
+        spans: list[tuple[str, int, int]] = []
+        if not markers:
+            spans.append(("TEXT", 0, len(text)))
+        else:
+            if text[:markers[0].start()].strip():
+                spans.append(("TEXT", 0, markers[0].start()))
+            for index, marker in enumerate(markers):
+                unit_end = markers[index + 1].start() if index + 1 < len(markers) else len(text)
+                spans.append((marker.group(1), marker.start(), unit_end))
+        return tuple(
+            locator
+            for locator, locator_start, locator_end in spans
+            if max(start, locator_start) < min(end, locator_end)
+        )
+
+    def plan_initial_extraction(
+        self,
+        filename: str,
+        text: str,
+        mode: str,
+        *,
+        adaptive_retry_policy: str = "allow",
+    ) -> InitialExtractionPlan:
+        """Freeze every enriched initial piece before the first model call."""
+        if adaptive_retry_policy not in {"allow", "forbid"}:
+            raise ValueError(
+                "adaptive_retry_policy must be 'allow' or 'forbid'"
+            )
+        configured_max_chars = self.cfg.llm.max_chunk_chars
+        effective_max_chars = (
+            min(configured_max_chars, FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS)
+            if adaptive_retry_policy == "forbid"
+            else configured_max_chars
+        )
+        chunks = chunk_source_text(text, effective_max_chars)
+        if "".join(chunks) != text:
+            raise ValueError("initial extraction partition does not reconstruct Source")
+        full_prompt_catalog = self.node_catalog()
+        planned: list[PlannedExtractionPiece] = []
+        cursor = 0
+        for index, chunk in enumerate(chunks, 1):
+            source_start = cursor
+            source_end = source_start + len(chunk)
+            cursor = source_end
+            prompt_piece_text = f"[[CHUNK:{index}/{len(chunks)}]]\n{chunk}"
+            source_piece = SourcePiece(
+                chunk_index=index,
+                chunk_count=len(chunks),
+                split_path="",
+                split_depth=0,
+                source_text=chunk,
+                prompt_text=prompt_piece_text,
+            )
+            scoped_node_catalog = tuple(
+                copy.deepcopy(scope_node_catalog(full_prompt_catalog, chunk))
+            )
+            user_prompt = SOURCE_ANALYSIS_USER.format(
+                mode=mode,
+                filename=filename,
+                nodes_json=json.dumps(scoped_node_catalog, ensure_ascii=False),
+                text=prompt_piece_text,
+            )
+            planned.append(PlannedExtractionPiece(
+                source_piece=source_piece,
+                source_start=source_start,
+                source_end=source_end,
+                locators=self._piece_locators(text, source_start, source_end),
+                scoped_node_catalog=scoped_node_catalog,
+                user_prompt=user_prompt,
+            ))
+        if cursor != len(text):
+            raise ValueError("initial extraction partition coverage is incomplete")
+        piece_artifacts = []
+        for piece in planned:
+            prompt_prefix = piece.source_piece.prompt_text[
+                :len(piece.source_piece.prompt_text) - len(piece.source_piece.source_text)
+            ]
+            piece_artifacts.append({
+                **piece.source_piece.diagnostic(),
+                "source_start": piece.source_start,
+                "source_end": piece.source_end,
+                "source_piece": {
+                    "text": piece.source_piece.source_text,
+                    "sha256": piece.source_piece.source_sha256,
+                    "chars": len(piece.source_piece.source_text),
+                },
+                "prompt_piece": {
+                    "prefix": prompt_prefix,
+                    "sha256": piece.source_piece.prompt_sha256,
+                    "chars": len(piece.source_piece.prompt_text),
+                    "reconstruction": "prompt_piece.prefix + source_piece.text",
+                },
+                "locators": list(piece.locators),
+                "scoped_node_catalog_count": len(piece.scoped_node_catalog),
+                "scoped_node_ids": list(piece.scoped_node_ids),
+                "scoped_node_catalog_sha256": _canonical_sha256(
+                    piece.scoped_node_catalog
+                ),
+                "system_prompt_sha256": _sha256_text(SOURCE_ANALYSIS_SYSTEM),
+                "user_prompt_sha256": _sha256_text(piece.user_prompt),
+            })
+        body = {
+            "document_type": "phase3e2sl6_initial_extraction_plan",
+            "schema_version": "1",
+            "planner_version": INITIAL_EXTRACTION_PLANNER_VERSION,
+            "planning_inputs": {
+                "model_response_consumed": False,
+                "filename": filename,
+                "mode": mode,
+                "source_text_sha256": _sha256_text(text),
+                "source_text_chars": len(text),
+                "full_node_catalog_count": len(full_prompt_catalog),
+                "full_node_catalog_sha256": _canonical_sha256(full_prompt_catalog),
+                "system_prompt_sha256": _sha256_text(SOURCE_ANALYSIS_SYSTEM),
+            },
+            "partition_policy": {
+                "adaptive_retry_policy": adaptive_retry_policy,
+                "configured_max_chunk_chars": configured_max_chars,
+                "effective_initial_max_chars": effective_max_chars,
+                "frozen_acceptance_safe_max_chars": FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS,
+                "response_time_recovery": (
+                    "FORBIDDEN"
+                    if adaptive_retry_policy == "forbid"
+                    else "ADAPTIVE_RECOVERY_ALLOWED"
+                ),
+                "locator_aware_partitioning": True,
+                "table_semantic_eligibility_policy_unchanged": True,
+                "claim_cap_added": False,
+                "output_token_limit_changed": False,
+            },
+            "piece_count": len(planned),
+            "coverage": {
+                "source_chars": len(text),
+                "planned_chars": sum(len(piece.source_piece.source_text) for piece in planned),
+                "ordered_exact_reconstruction": True,
+                "omitted_chars": 0,
+                "duplicated_chars": 0,
+            },
+            "pieces": piece_artifacts,
+        }
+        plan_sha256 = _canonical_sha256(body)
+        artifact = {**body, "initial_extraction_plan_sha256": plan_sha256}
+        return InitialExtractionPlan(
+            effective_max_chars=effective_max_chars,
+            full_prompt_catalog=tuple(copy.deepcopy(full_prompt_catalog)),
+            pieces=tuple(planned),
+            artifact=artifact,
+            plan_sha256=plan_sha256,
+        )
 
     @staticmethod
     def _invalid(path: str, message: str) -> None:
@@ -1315,16 +1503,22 @@ class Analyzer:
         mode: str,
         *,
         adaptive_retry_policy: str = "allow",
+        initial_plan_sink: Callable[[dict[str, Any]], None] | None = None,
     ) -> SourceAnalysis:
         self.last_piece_call_records = []
+        self.last_initial_extraction_plan = {}
         if not self.available:
             raise LLMError("LLM unavailable")
-        if adaptive_retry_policy not in {"allow", "forbid"}:
-            raise ValueError(
-                "adaptive_retry_policy must be 'allow' or 'forbid'"
-            )
-        chunks = chunk_source_text(text, self.cfg.llm.max_chunk_chars)
-        full_prompt_catalog = self.node_catalog()
+        initial_plan = self.plan_initial_extraction(
+            filename,
+            text,
+            mode,
+            adaptive_retry_policy=adaptive_retry_policy,
+        )
+        self.last_initial_extraction_plan = copy.deepcopy(initial_plan.artifact)
+        if initial_plan_sink is not None:
+            initial_plan_sink(copy.deepcopy(initial_plan.artifact))
+        full_prompt_catalog = list(initial_plan.full_prompt_catalog)
         merged = {
             "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [],
             "source_references": [], "relation_candidates": [],
@@ -1339,36 +1533,47 @@ class Analyzer:
         match_by_node_id: dict[str, dict[str, Any]] = {}
         seen_candidates: set[str] = set()
         raw_outputs: list[PieceAnalysisResponse] = []
-        for idx, chunk in enumerate(chunks, 1):
+        for initial_piece in initial_plan.pieces:
+            idx = initial_piece.source_piece.chunk_index
             def analyze_piece(
-                piece: str, split_path: str = "", split_depth: int = 0
+                piece: str,
+                split_path: str = "",
+                split_depth: int = 0,
+                planned_piece: PlannedExtractionPiece | None = None,
             ) -> list[PieceAnalysisResponse]:
-                split_marker = (
-                    f"\n[[TRUNCATION_SPLIT:{split_path}]]" if split_path else ""
-                )
-                prompt_piece_text = (
-                    f"[[CHUNK:{idx}/{len(chunks)}]]{split_marker}\n{piece}"
-                )
-                source_piece = SourcePiece(
-                    chunk_index=idx,
-                    chunk_count=len(chunks),
-                    split_path=split_path,
-                    split_depth=split_depth,
-                    source_text=piece,
-                    prompt_text=prompt_piece_text,
-                )
-                scoped_node_catalog = scope_node_catalog(
-                    full_prompt_catalog, source_piece.source_text
-                )
-                catalog_json = json.dumps(scoped_node_catalog, ensure_ascii=False)
-                user = SOURCE_ANALYSIS_USER.format(
-                    mode=mode,
-                    filename=filename,
-                    nodes_json=catalog_json,
-                    text=prompt_piece_text,
-                )
+                if planned_piece is not None:
+                    source_piece = planned_piece.source_piece
+                    scoped_node_catalog = list(planned_piece.scoped_node_catalog)
+                    user = planned_piece.user_prompt
+                else:
+                    split_marker = (
+                        f"\n[[TRUNCATION_SPLIT:{split_path}]]" if split_path else ""
+                    )
+                    prompt_piece_text = (
+                        f"[[CHUNK:{idx}/{len(initial_plan.pieces)}]]{split_marker}\n{piece}"
+                    )
+                    source_piece = SourcePiece(
+                        chunk_index=idx,
+                        chunk_count=len(initial_plan.pieces),
+                        split_path=split_path,
+                        split_depth=split_depth,
+                        source_text=piece,
+                        prompt_text=prompt_piece_text,
+                    )
+                    scoped_node_catalog = scope_node_catalog(
+                        full_prompt_catalog, source_piece.source_text
+                    )
+                    catalog_json = json.dumps(scoped_node_catalog, ensure_ascii=False)
+                    user = SOURCE_ANALYSIS_USER.format(
+                        mode=mode,
+                        filename=filename,
+                        nodes_json=catalog_json,
+                        text=prompt_piece_text,
+                    )
                 piece_diagnostic = {
                     **source_piece.diagnostic(),
+                    "initial_plan_sha256": initial_plan.plan_sha256,
+                    "preplanned_initial_piece": planned_piece is not None,
                     "full_prompt_catalog_count": len(full_prompt_catalog),
                     "scoped_node_catalog_count": len(scoped_node_catalog),
                     "scoped_node_ids": [
@@ -1448,7 +1653,10 @@ class Analyzer:
                 })
                 return [PieceAnalysisResponse(source_piece, raw_response)]
 
-            raw_outputs.extend(analyze_piece(chunk))
+            raw_outputs.extend(analyze_piece(
+                initial_piece.source_piece.source_text,
+                planned_piece=initial_piece,
+            ))
 
         for response_index, response in enumerate(raw_outputs, 1):
             try:
