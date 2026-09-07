@@ -192,11 +192,21 @@ def test_duplicate_shared_subproposition_is_compared_before_frozen_threshold():
             "claim_id": "CLM_PARENT",
             "statement": "专用适配器依赖部署路线，标准接口的扩容收益相对更具普适性。",
             "nature": "expert_judgment",
+            "scope": "部署方案",
+            "source_id": "SRC_SHARED",
+            "origin_piece_sha256": "a" * 64,
+            "attributed_to": "研究机构",
+            "evidence_validated": True,
         },
         {
             "claim_id": "CLM_SHARED",
             "statement": "标准接口的扩容收益逻辑更具普适性。",
             "nature": "expert_judgment",
+            "scope": "标准接口",
+            "source_id": "SRC_SHARED",
+            "origin_piece_sha256": "a" * 64,
+            "attributed_to": "研究机构",
+            "evidence_validated": True,
         },
     ]
 
