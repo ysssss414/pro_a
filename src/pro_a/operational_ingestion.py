@@ -49,6 +49,7 @@ from .semantic_admission import (
     ADMISSIBLE,
     BLOCKED,
     evaluate_semantic_admission,
+    is_meaning_changing_qualifier,
     join_permitted_support_regions,
 )
 from .semantic_decomposition import (
@@ -82,6 +83,7 @@ STOP_AFTER = {
     "promotion-preview": "PROMOTION_PREVIEW_READY",
 }
 FROZEN_ACCEPTANCE_ADAPTIVE_RETRY_POLICY = "forbid"
+DUPLICATE_SIMILARITY_THRESHOLD = 0.92
 VALID_FIDELITY_STATUSES = {
     "EXACT_SOURCE_MATCH",
     "LAYOUT_NORMALIZED_EXACT_MATCH",
@@ -639,28 +641,114 @@ def _numeric_semantic_anchors(statement: str) -> tuple[str, ...]:
     )
 
 
+def _proposition_candidate_texts(statement: str) -> list[str]:
+    """Expose bounded claim clauses while preserving a leading condition."""
+    text = unicodedata.normalize("NFKC", str(statement or "")).strip()
+    clauses = [
+        item.strip()
+        for item in re.split(r"[，,；;。！？!?]+", text)
+        if item.strip()
+    ]
+    if len(clauses) <= 1:
+        return [text] if text else []
+    if len(clauses) != 2:
+        return [text]
+    result = [text]
+    leading_condition = clauses[0] if is_meaning_changing_qualifier(clauses[0]) else ""
+    for index, clause in enumerate(clauses):
+        if leading_condition and index == 0:
+            continue
+        candidate = f"{leading_condition}，{clause}" if leading_condition else clause
+        if candidate not in result:
+            result.append(candidate)
+    return result
+
+
+def _meaning_changing_scope_anchor(statement: str) -> str:
+    first = re.split(
+        r"[，,；;。！？!?]+",
+        unicodedata.normalize("NFKC", str(statement or "")).strip(),
+        maxsplit=1,
+    )[0].strip()
+    return _duplicate_core_text(first) if is_meaning_changing_qualifier(first) else ""
+
+
+def _bounded_comparative_roots(left: str, right: str) -> tuple[str, str] | None:
+    """Remove only a short terminal modifier before one shared comparative predicate."""
+    marker = re.compile(r"更(?:具|有|为)")
+    left_match = marker.search(left)
+    right_match = marker.search(right)
+    if left_match is None or right_match is None:
+        return None
+    left_predicate = left[left_match.start():]
+    right_predicate = right[right_match.start():]
+    if left_predicate != right_predicate:
+        return None
+    left_prefix = left[:left_match.start()]
+    right_prefix = right[:right_match.start()]
+    common_length = 0
+    for left_char, right_char in zip(left_prefix, right_prefix):
+        if left_char != right_char:
+            break
+        common_length += 1
+    left_modifier = left_prefix[common_length:]
+    right_modifier = right_prefix[common_length:]
+    if (
+        common_length < 8
+        or not left_modifier
+        or not right_modifier
+        or len(left_modifier) > 4
+        or len(right_modifier) > 4
+    ):
+        return None
+    root = f"{left_prefix[:common_length]}{left_predicate}"
+    return root, root
+
+
+def _duplicate_signature_match(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if SequenceMatcher(None, left, right).ratio() >= DUPLICATE_SIMILARITY_THRESHOLD:
+        return True
+    roots = _bounded_comparative_roots(left, right)
+    return bool(
+        roots
+        and SequenceMatcher(None, roots[0], roots[1]).ratio()
+        >= DUPLICATE_SIMILARITY_THRESHOLD
+    )
+
+
 def _same_source_duplicate_pairs(
     claims: Sequence[Mapping[str, Any]],
 ) -> dict[str, str]:
-    """Return later->earlier duplicate candidates without suppressing either Claim."""
+    """Return later->earlier proposition-aware candidates without suppression."""
     duplicate_of: dict[str, str] = {}
-    prior: list[tuple[str, str, str, tuple[str, ...]]] = []
+    prior: list[tuple[str, str, str, list[tuple[str, tuple[str, ...]]]]] = []
     for claim in claims:
         claim_id = str(claim.get("claim_id") or "")
         nature = str(claim.get("nature") or "")
         statement = str(claim.get("statement") or "")
-        core = _duplicate_core_text(statement)
-        anchors = _numeric_semantic_anchors(statement)
-        if not claim_id or len(core) < 12:
+        scope_anchor = _meaning_changing_scope_anchor(statement)
+        signatures = [
+            (_duplicate_core_text(candidate), _numeric_semantic_anchors(candidate))
+            for candidate in _proposition_candidate_texts(statement)
+        ]
+        signatures = [item for item in signatures if len(item[0]) >= 12]
+        if not claim_id or not signatures:
             continue
-        for prior_id, prior_nature, prior_core, prior_anchors in prior:
-            if nature != prior_nature or anchors != prior_anchors:
+        for prior_id, prior_nature, prior_scope_anchor, prior_signatures in prior:
+            if nature != prior_nature or scope_anchor != prior_scope_anchor:
                 continue
-            if core == prior_core or SequenceMatcher(None, prior_core, core).ratio() >= 0.92:
+            if any(
+                anchors == prior_anchors
+                and _duplicate_signature_match(prior_core, core)
+                for core, anchors in signatures
+                for prior_core, prior_anchors in prior_signatures
+            ):
                 duplicate_of[claim_id] = prior_id
                 break
         if claim_id not in duplicate_of:
-            prior.append((claim_id, nature, core, anchors))
+            prior.append((claim_id, nature, scope_anchor, signatures))
     return duplicate_of
 
 
@@ -723,6 +811,8 @@ def _semantic_admission_artifact(
             support_region_exhaustive=False,
             nature=str(claim.get("nature") or ""),
             fact_time=str(claim.get("fact_time") or ""),
+            scope=str(claim.get("scope") or ""),
+            assumption_text=str(claim.get("assumption_text") or ""),
             claim_status=str(claim.get("status") or ""),
             parent_claim_id=claim_id,
             proposition_ir=(
@@ -787,6 +877,15 @@ def _semantic_admission_artifact(
                 "reason": table.get("decision_reason"),
             },
             "semantic_admission": guards,
+            "semantic_statement": guards["semantic_statement"],
+            "scope_preservation": copy.deepcopy(
+                {
+                    **(guards["scope_preservation_guard"].get("details") or {}),
+                    "status": (
+                        guards["scope_preservation_guard"].get("details") or {}
+                    ).get("reconciliation_status"),
+                }
+            ),
             "review_admitted": review_admitted,
             "recommended_decision": recommendation,
             "recommendation_reason": reason,
@@ -818,6 +917,9 @@ def _semantic_admission_artifact(
             "atomicity_then_nature": True,
             "human_decisions_remain_pending": True,
             "same_source_semantic_duplicates_are_review_only": True,
+            "duplicate_similarity_threshold": DUPLICATE_SIMILARITY_THRESHOLD,
+            "duplicate_candidate_space": "PARENT_AND_BOUNDED_SUBPROPOSITION",
+            "mandatory_scope_preservation": True,
         },
         "counts": {
             "raw_claims": len(decisions),

@@ -287,6 +287,7 @@ def validate_proposition_ir(
             "unsupported_content_failures": 0,
             "duplicate_unit_cases": 0,
             "ambiguous_coherence_cases": 0,
+            "coherence_reconciliations": [],
         }
 
     issues = [dict(item) for item in generation_issues]
@@ -404,13 +405,29 @@ def validate_proposition_ir(
     if observed_keys and observed_keys != expected_keys:
         issues.append(_issue("COHERENCE_KEYS_NONCANONICAL"))
     ambiguous_coherence = 0
+    coherence_reconciliations: list[dict[str, Any]] = []
     for key, types in key_types.items():
         group_size = sum(unit.get("coherence_key") == key for unit in normalized_units)
         compatible_vector_types = types <= {"REPORTING_VECTOR", "COMPARISON_VECTOR"}
-        if (
+        ambiguous = (
             (len(types) != 1 and not compatible_vector_types)
             or ("INDEPENDENT" in types and group_size != 1)
-        ):
+        )
+        if ambiguous:
+            group = [
+                unit for unit in normalized_units if unit.get("coherence_key") == key
+            ]
+            override = _bounded_coherence_override(group, evidence_by_id)
+            if override is not None:
+                coherence_type, reason = override
+                coherence_reconciliations.append(
+                    {
+                        "coherence_key": key,
+                        "coherence_type": coherence_type,
+                        "reason": reason,
+                    }
+                )
+                continue
             ambiguous_coherence += 1
             issues.append(_issue("AMBIGUOUS_COHERENCE_GROUP", coherence_key=key))
 
@@ -435,6 +452,7 @@ def validate_proposition_ir(
             for code in codes
         ),
         "ambiguous_coherence_cases": ambiguous_coherence,
+        "coherence_reconciliations": coherence_reconciliations,
     }
 
 
@@ -599,6 +617,45 @@ def _has_bounded_adjacent_support(
     return all(right - left <= 2 for left, right in zip(orders, orders[1:]))
 
 
+def _product_specification_vector(
+    units: Sequence[Mapping[str, Any]],
+    evidence_by_id: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    """Recognize an actual engineering specification, not an observed KPI."""
+    if not _has_bounded_adjacent_support(units, evidence_by_id) or not units:
+        return False
+    families = {str(unit.get("predicate_family") or "") for unit in units}
+    if "measurement" not in families or not families <= {
+        "measurement",
+        "configuration",
+        "capability",
+    }:
+        return False
+    if any(str(unit.get("nature") or "") != "fact" for unit in units):
+        return False
+    if any(str(unit.get("modality") or "") != "actual" for unit in units):
+        return False
+    joined = " ".join(_unit_support_text(unit, evidence_by_id) for unit in units)
+    if re.search(
+        r"(?:同比|环比|收入|利润|市场份额|截至|季度|年度|预计|预测|实际完成)",
+        joined,
+    ):
+        return False
+    specification_markers = re.findall(
+        r"(?:搭载|配备|配套|集成|支持|采用|单颗|单通道|每通道|整机|"
+        r"端口|通道|带宽|输出|输入|温度|功率|尺寸|速率|容量|组件|部件|电路)",
+        joined,
+    )
+    engineering_quantity = bool(
+        re.search(
+            r"\d+(?:\.\d+)?\s*(?:[KMGT]?bps|dB[m]?|°C|℃|W|V|A|Hz|mm|nm|颗|通道|端口)",
+            joined,
+            re.I,
+        )
+    )
+    return engineering_quantity and len(set(specification_markers)) >= 2
+
+
 def _market_structure_data_vector(
     units: Sequence[Mapping[str, Any]],
     evidence_by_id: Mapping[str, Mapping[str, Any]],
@@ -706,6 +763,45 @@ def _bounded_coherence_override(
     all_fact = natures == {"fact"}
     all_data = natures == {"data"}
     narrower_scope = bool(re.search(r"(?:尤其|但|然而|另一方面|另有)", joined))
+
+    if _product_specification_vector(units, evidence_by_id):
+        return "SPEC_VECTOR", "FACTUAL_PRODUCT_SPECIFICATION_VECTOR"
+
+    if (
+        family_set == {"configuration", "measurement"}
+        and len(units) == 2
+        and len(natures) == 1
+        and modalities == {"actual"}
+        and any(
+            re.search(
+                r"(?:该|此|上述|本|前述|其|[一二三四五六七八九十\d]+[^，；]{0,4})"
+                r"(?:方案|配置|路径|架构|组合).*"
+                r"(?:损耗|时延|成本|功耗|带宽|速率|容量|温度|功率|效率)",
+                text,
+            )
+            for text in texts
+        )
+    ):
+        return "SIMULATION_SCENARIO", "CONFIGURATION_WITH_BOUND_MEASUREMENT"
+
+    if (
+        family_set == {"architecture_route", "configuration"}
+        and len(units) == 2
+        and all_actual
+        and all_fact
+        and re.search(r"同一(?:系统|平台|架构|框架)", joined)
+    ):
+        return "SPEC_VECTOR", "PLATFORM_ARCHITECTURE_CONFIGURATION_VECTOR"
+
+    if (
+        family_set == {"configuration"}
+        and len(units) == 2
+        and len(natures) == 1
+        and {"actual", "future"} <= modalities
+        and re.search(r"(?:当前|本代|现阶段)", texts[0])
+        and re.search(r"(?:下一阶段|下一代|下代|未来一代)", texts[1])
+    ):
+        return "COMPARISON_VECTOR", "CURRENT_NEXT_GENERATION_CONFIGURATION_VECTOR"
 
     if (
         family_set == {"status"}
@@ -1002,6 +1098,7 @@ def structural_nature_result(
     bounded_override = _bounded_coherence_override(units, evidence_by_id)
     override_reason = bounded_override[1] if bounded_override else ""
     market_structure_vector = _market_structure_data_vector(units, evidence_by_id)
+    product_specification_vector = _product_specification_vector(units, evidence_by_id)
     bounded_local_support = _has_bounded_adjacent_support(units, evidence_by_id)
     families = {str(unit.get("predicate_family") or "") for unit in units}
     unit_results: list[dict[str, Any]] = []
@@ -1093,6 +1190,7 @@ def structural_nature_result(
                 and unit_nature != "data"
                 and not qualitative_measurement_outcome
                 and not capability_measurement_bound
+                and not product_specification_vector
             ):
                 unit_reasons.append("MEASUREMENT_PROPOSITION_NOT_CLASSIFIED_AS_DATA")
             if (
@@ -1129,6 +1227,8 @@ def structural_nature_result(
                     if qualitative_measurement_outcome
                     else "CAPABILITY_MEASUREMENT_BOUND"
                     if capability_measurement_bound
+                    else "FACTUAL_PRODUCT_SPECIFICATION_VECTOR"
+                    if product_specification_vector and family == "measurement"
                     else "COHERENT_NONMEASUREMENT_DATA_ATTRIBUTE"
                     if coherent_nonmeasurement_data
                     else None

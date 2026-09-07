@@ -28,13 +28,17 @@ _AUTHORITATIVE_EXACT_FIDELITY_STATUSES = {
     "EXACT_SOURCE_MATCH",
     "LAYOUT_NORMALIZED_EXACT_MATCH",
 }
+_AUTHORITATIVE_RECOVERED_FIDELITY_STATUSES = {
+    *_AUTHORITATIVE_EXACT_FIDELITY_STATUSES,
+    "PROVENANCE_MISMATCH_RECOVERED",
+}
 
 QUESTIONER = "QUESTIONER"
 ANSWERER = "ANSWERER"
 UNKNOWN = "UNKNOWN"
 
 GUARD_CONFIGURATION: dict[str, Any] = {
-    "version": "phase3e2se-decoupled-v2",
+    "version": "phase3e2sl2-bounded-semantic-closure-v1",
     "disposition_precedence": [BLOCKED, REVIEW_REQUIRED, ADMISSIBLE],
     "question_premise": {
         "question_only_answerer_attribution_without_adoption": BLOCKED,
@@ -56,6 +60,12 @@ GUARD_CONFIGURATION: dict[str, Any] = {
     "subject_scope": {
         "automatic_block_requires_exhaustive_disjoint_anchors": True,
         "unstructured_semantic_guessing": False,
+    },
+    "scope_preservation": {
+        "authoritative_structured_qualifier_only": True,
+        "meaning_changing_qualifier_missing": REVIEW_REQUIRED,
+        "optional_context_is_appended": False,
+        "invented_qualifier_allowed": False,
     },
     "atomicity": {
         "primary_abstraction": "versioned_proposition_signatures",
@@ -90,6 +100,132 @@ def _normalize(value: str) -> str:
 
 def _compact(value: str) -> str:
     return re.sub(r"\s+", "", _normalize(value))
+
+
+def _semantic_compact(value: str) -> str:
+    return re.sub(r"[\W_]+", "", _normalize(value), flags=re.UNICODE)
+
+
+_MEANING_CHANGING_QUALIFIER = re.compile(
+    r"^(?:"
+    r"若|如果|假如|倘若|除非|只要|只有|一旦|"
+    r"(?:在|当).{1,80}?(?:条件|前提|情况下|情形下|场景下|情境下|期间|之前|之后|时)|"
+    r"截至|截止|"
+    r"if\b|unless\b|when\b|provided\s+that\b|subject\s+to\b|"
+    r"assuming\b|under\s+the\s+condition\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def is_meaning_changing_qualifier(text: str) -> bool:
+    """Recognize a closed set of structural condition/scope introducers."""
+    return bool(_MEANING_CHANGING_QUALIFIER.search(_normalize(text).strip()))
+
+
+def reconcile_mandatory_qualifier(
+    *,
+    statement: str,
+    assumption_text: str,
+    authoritative_evidence: str,
+    evidence_authoritative: bool,
+) -> dict[str, Any]:
+    """Preserve an extracted mandatory qualifier without inventing content."""
+    qualifier = str(assumption_text or "").strip().rstrip("，,；;。.!！")
+    original = str(statement or "").strip()
+    result = {
+        "status": "NO_QUALIFIER",
+        "qualifier_class": "NOT_PRESENT",
+        "original_statement": original,
+        "semantic_statement": original,
+        "qualifier_text": qualifier,
+        "qualifier_authoritatively_supported": False,
+        "invented_qualifier": False,
+    }
+    if not qualifier:
+        return result
+    if not is_meaning_changing_qualifier(qualifier):
+        return {
+            **result,
+            "status": "OPTIONAL_CONTEXT",
+            "qualifier_class": "OPTIONAL_CONTEXT",
+        }
+
+    qualifier_core = _semantic_compact(qualifier)
+    statement_core = _semantic_compact(original)
+    evidence_core = _semantic_compact(authoritative_evidence)
+    if qualifier_core and qualifier_core in statement_core:
+        return {
+            **result,
+            "status": "ALREADY_PRESERVED",
+            "qualifier_class": "MEANING_CHANGING_SCOPE",
+            "qualifier_authoritatively_supported": bool(
+                evidence_authoritative and qualifier_core in evidence_core
+            ),
+        }
+    supported = bool(
+        evidence_authoritative
+        and qualifier_core
+        and qualifier_core in evidence_core
+    )
+    if not supported:
+        return {
+            **result,
+            "status": "REVIEW_REQUIRED",
+            "qualifier_class": "MEANING_CHANGING_SCOPE",
+        }
+    return {
+        **result,
+        "status": "RECONCILED",
+        "qualifier_class": "MEANING_CHANGING_SCOPE",
+        "semantic_statement": f"{qualifier}，{original}",
+        "qualifier_authoritatively_supported": True,
+    }
+
+
+def scope_preservation_admission_guard(
+    *,
+    statement: str,
+    assumption_text: str,
+    authoritative_evidence: str,
+    evidence_authoritative: bool,
+) -> dict[str, Any]:
+    reconciliation = reconcile_mandatory_qualifier(
+        statement=statement,
+        assumption_text=assumption_text,
+        authoritative_evidence=authoritative_evidence,
+        evidence_authoritative=evidence_authoritative,
+    )
+    details = {
+        key: value for key, value in reconciliation.items() if key != "status"
+    }
+    details["reconciliation_status"] = reconciliation["status"]
+    if reconciliation["status"] == "RECONCILED":
+        return _guard_result(
+            "SCOPE_PRESERVATION_GUARD",
+            REVIEW_REQUIRED,
+            ["MEANING_CHANGING_SCOPE_RECONCILED"],
+            **details,
+        )
+    if reconciliation["status"] == "REVIEW_REQUIRED":
+        return _guard_result(
+            "SCOPE_PRESERVATION_GUARD",
+            REVIEW_REQUIRED,
+            ["MEANING_CHANGING_SCOPE_NOT_AUTHORITATIVELY_SUPPORTED"],
+            **details,
+        )
+    return _guard_result(
+        "SCOPE_PRESERVATION_GUARD",
+        ADMISSIBLE,
+        [
+            "MEANING_CHANGING_SCOPE_ALREADY_PRESERVED"
+            if reconciliation["status"] == "ALREADY_PRESERVED"
+            else "OPTIONAL_CONTEXT_NOT_APPENDED"
+            if reconciliation["status"] == "OPTIONAL_CONTEXT"
+            else "NO_SEPARATE_QUALIFIER"
+        ],
+        **details,
+    )
 
 
 _SUPPORT_REGION_SEPARATOR = "\u241e"
@@ -398,10 +534,18 @@ def precision_token_provenance_guard(
         if not _literal_token_present(item["token"], permitted_support_text)
     ]
     anchored = [item for item in tokens if item not in missing]
+    compact_support = _semantic_compact(permitted_support_text)
+    layout_joined = [
+        item
+        for item in missing
+        if _semantic_compact(item["token"])
+        and _semantic_compact(item["token"]) in compact_support
+    ]
     details = {
         "tokens": tokens,
         "anchored_tokens": anchored,
         "unanchored_tokens": missing,
+        "layout_joined_tokens": layout_joined,
         "support_region_authoritative": support_region_authoritative,
         "support_region_exhaustive": support_region_exhaustive,
         "registry_used_as_evidence": False,
@@ -861,7 +1005,7 @@ def _reconcile_authoritative_bound_scope_review(
     subject_scope: Mapping[str, Any],
     support_region_authoritative: bool,
     claim_evidence_fidelity_status: str,
-) -> tuple[dict[str, Any], dict[str, Any]]:
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     """Let exact authoritative binding outrank scope-only heuristics."""
     precision_details = precision.get("details") or {}
     number_details = number_time.get("details") or {}
@@ -888,13 +1032,38 @@ def _reconcile_authoritative_bound_scope_review(
         support_region_authoritative
         and claim_evidence_fidelity_status in _AUTHORITATIVE_EXACT_FIDELITY_STATUSES
     )
+    precision_scope_only_review = (
+        precision.get("status") == REVIEW_REQUIRED
+        and set(precision.get("reason_codes") or [])
+        == {"PRECISION_SUPPORT_SCOPE_NOT_EXHAUSTIVE"}
+        and bool(precision_details.get("unanchored_tokens"))
+        and precision_details.get("unanchored_tokens")
+        == precision_details.get("layout_joined_tokens")
+    )
+    authoritative_recovered = (
+        support_region_authoritative
+        and claim_evidence_fidelity_status
+        in _AUTHORITATIVE_RECOVERED_FIDELITY_STATUSES
+    )
+    reconciled_precision = dict(precision)
+    if authoritative_recovered and precision_scope_only_review:
+        reconciled_precision = {
+            **precision,
+            "status": ADMISSIBLE,
+            "reason_codes": ["AUTHORITATIVE_LAYOUT_JOIN_RECONCILED"],
+            "details": {
+                **precision_details,
+                "authoritative_layout_join_reconciled": True,
+                "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
+            },
+        }
     if not (
         authoritative_exact
         and all_precision_tokens_anchored
         and all_numbers_anchored
         and scope_only_review
     ):
-        return dict(number_time), dict(subject_scope)
+        return reconciled_precision, dict(number_time), dict(subject_scope)
 
     reason = ["AUTHORITATIVE_BOUND_SCOPE_RECONCILED"]
     number_reconciled = {
@@ -917,7 +1086,59 @@ def _reconcile_authoritative_bound_scope_review(
             "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
         },
     }
-    return number_reconciled, subject_reconciled
+    return reconciled_precision, number_reconciled, subject_reconciled
+
+
+def _reconcile_structured_time_scope(
+    *,
+    number_time: Mapping[str, Any],
+    fact_time: str,
+    scope: str,
+    support_region_authoritative: bool,
+    claim_evidence_fidelity_status: str,
+) -> dict[str, Any]:
+    """Use explicit extraction fields only for an otherwise missing year."""
+    details = number_time.get("details") or {}
+    missing = [
+        item
+        for item in details.get("tokens") or []
+        if item.get("anchor_state") == "MISSING"
+    ]
+    missing_years = {
+        match.group(0)
+        for item in missing
+        if item.get("kind") == "YEAR"
+        for match in [re.search(r"(?:19|20)\d{2}", str(item.get("token") or ""))]
+        if match
+    }
+    structured_years = set(
+        re.findall(r"(?:19|20)\d{2}", f"{fact_time} {scope}")
+    )
+    exact = (
+        support_region_authoritative
+        and claim_evidence_fidelity_status in _AUTHORITATIVE_EXACT_FIDELITY_STATUSES
+    )
+    if not (
+        exact
+        and number_time.get("status") == REVIEW_REQUIRED
+        and set(number_time.get("reason_codes") or [])
+        == {"NUMBER_TIME_SUPPORT_SCOPE_NOT_EXHAUSTIVE"}
+        and missing
+        and len(missing) == len(missing_years)
+        and missing_years <= structured_years
+    ):
+        return dict(number_time)
+    return {
+        **number_time,
+        "status": ADMISSIBLE,
+        "reason_codes": ["AUTHORITATIVE_STRUCTURED_TIME_SCOPE_RECONCILED"],
+        "details": {
+            **details,
+            "structured_qualifier_reconciled": True,
+            "structured_years": sorted(structured_years),
+            "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
+        },
+    }
 
 
 def evaluate_semantic_admission(
@@ -929,6 +1150,8 @@ def evaluate_semantic_admission(
     support_region_exhaustive: bool = True,
     nature: str = "",
     fact_time: str = "",
+    scope: str = "",
+    assumption_text: str = "",
     claim_status: str = "",
     supporting_turn_roles: Iterable[str] = (),
     adoption_status: str = "NOT_APPLICABLE",
@@ -943,20 +1166,30 @@ def evaluate_semantic_admission(
     proposition_ir_validation: Mapping[str, Any] | None = None,
     claim_evidence_fidelity_status: str = "",
 ) -> dict[str, Any]:
+    scope_preservation = scope_preservation_admission_guard(
+        statement=statement,
+        assumption_text=assumption_text,
+        authoritative_evidence=proposition_evidence_text or permitted_support_text,
+        evidence_authoritative=support_region_authoritative,
+    )
+    semantic_statement = str(
+        (scope_preservation.get("details") or {}).get("semantic_statement")
+        or statement
+    )
     question = question_premise_admission_guard(
         supporting_turn_roles=supporting_turn_roles,
         attributed_role=statement_attribution_role(attributed_to),
         adoption_status=adoption_status,
     )
     precision = precision_token_provenance_guard(
-        statement=statement,
+        statement=semantic_statement,
         permitted_support_text=permitted_support_text,
         support_region_authoritative=support_region_authoritative,
         support_region_exhaustive=support_region_exhaustive,
         classified_named_entities=classified_named_entities,
     )
     number_time = number_and_time_provenance_guard(
-        statement=statement,
+        statement=semantic_statement,
         permitted_support_text=permitted_support_text,
         support_region_authoritative=support_region_authoritative,
         support_region_exhaustive=support_region_exhaustive,
@@ -969,10 +1202,17 @@ def evaluate_semantic_admission(
             "numeric_scope_review_signal"
         ],
     )
-    number_time, subject_scope = _reconcile_authoritative_bound_scope_review(
+    precision, number_time, subject_scope = _reconcile_authoritative_bound_scope_review(
         precision=precision,
         number_time=number_time,
         subject_scope=subject_scope,
+        support_region_authoritative=support_region_authoritative,
+        claim_evidence_fidelity_status=claim_evidence_fidelity_status,
+    )
+    number_time = _reconcile_structured_time_scope(
+        number_time=number_time,
+        fact_time=fact_time,
+        scope=scope,
         support_region_authoritative=support_region_authoritative,
         claim_evidence_fidelity_status=claim_evidence_fidelity_status,
     )
@@ -981,23 +1221,31 @@ def evaluate_semantic_admission(
         if proposition_ir_validation is not None
         else validate_proposition_ir(
             proposition_ir,
-            claim_statement=statement,
+            claim_statement=semantic_statement,
             claim_evidence=proposition_evidence_text or permitted_support_text,
             expected_parent_claim_id=parent_claim_id,
             evidence_units=list(proposition_evidence_units),
         )
     )
     atomicity = claim_atomicity_admission_guard(
-        statement=statement,
+        statement=semantic_statement,
         proposition_ir_validation=proposition_validation,
     )
     nature_consistency = claim_nature_consistency_guard(
-        statement=statement,
+        statement=semantic_statement,
         nature=nature,
         attributed_to=attributed_to,
         proposition_ir_validation=proposition_validation,
     )
-    guards = [question, precision, number_time, subject_scope, atomicity, nature_consistency]
+    guards = [
+        scope_preservation,
+        question,
+        precision,
+        number_time,
+        subject_scope,
+        atomicity,
+        nature_consistency,
+    ]
     if any(item["status"] == BLOCKED for item in guards):
         disposition = BLOCKED
     elif any(item["status"] == REVIEW_REQUIRED for item in guards):
@@ -1011,6 +1259,8 @@ def evaluate_semantic_admission(
         for reason in item["reason_codes"]
     ]
     return {
+        "semantic_statement": semantic_statement,
+        "scope_preservation_guard": scope_preservation,
         "question_premise_guard": question,
         "precision_token_guard": precision,
         "number_time_guard": number_time,
@@ -1019,7 +1269,7 @@ def evaluate_semantic_admission(
         "nature_consistency_guard": nature_consistency,
         "proposition_ir_validation": proposition_validation,
         "semantic_pipeline": {
-            "version": "phase3e2se1-decoupled-v2.1",
+            "version": "phase3e2sl2-bounded-semantic-closure-v1",
             "architecture": "DECOUPLED_POST_EXTRACTION_PROPOSITION_PASS",
             "compatibility_path": proposition_validation.get("compatibility_path"),
             "atomicity_then_nature": True,
@@ -1030,6 +1280,8 @@ def evaluate_semantic_admission(
         "claim_metadata_observed": {
             "nature": nature,
             "fact_time": fact_time,
+            "scope": scope,
+            "assumption_text": assumption_text,
             "status": claim_status,
             "claim_evidence_fidelity_status": claim_evidence_fidelity_status,
         },

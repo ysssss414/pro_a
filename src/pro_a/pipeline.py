@@ -15,6 +15,7 @@ from .ima_sync import sync_source
 from .parsers import ParseError, parse_source_with_diagnostics, parse_warnings
 from .propagation import PropagationManager
 from .receipts import write_proposal, write_receipt
+from .semantic_admission import reconcile_mandatory_qualifier
 from .storage import archive_file, ensure_workspace, sha256_file
 
 
@@ -29,7 +30,8 @@ def build_claim_record(
     created_at: str | None = None,
 ) -> dict[str, Any] | None:
     """Build the canonical Claim fields without writing them to SQLite."""
-    statement = normalize_ws(str(claim.get("statement", "")))
+    original_statement = normalize_ws(str(claim.get("statement", "")))
+    statement = original_statement
     if not statement:
         return None
     status = claim.get("status") or "current"
@@ -39,6 +41,18 @@ def build_claim_record(
     structured["related_candidate_names"] = claim.get("related_candidate_names") or []
     if claim.get("statement_normalization"):
         structured["statement_normalization"] = dict(claim["statement_normalization"])
+    scope_preservation = reconcile_mandatory_qualifier(
+        statement=statement,
+        assumption_text=str(claim.get("assumption") or ""),
+        authoritative_evidence=str(claim.get("evidence_excerpt") or ""),
+        evidence_authoritative=bool(claim.get("evidence_validated")),
+    )
+    if scope_preservation["status"] == "RECONCILED":
+        statement = normalize_ws(scope_preservation["semantic_statement"])
+    structured["scope_preservation"] = {
+        **scope_preservation,
+        "canonical_statement_updated": statement != original_statement,
+    }
     structured["validation"] = dict(claim.get("validation") or {
         "evidence_validated": bool(claim.get("evidence_validated")),
         "model_confidence": claim.get("confidence"),
