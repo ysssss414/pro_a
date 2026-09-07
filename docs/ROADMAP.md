@@ -1,8 +1,8 @@
 # pro_a Roadmap — Source Expansion & External Knowledge Integration
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.2 closed at the governed automation boundary**
 
-Next: **Phase 3E.2 — Fresh Clean-Source Operational Pilot. Selection and execution require a separate task.**
+Next: **No S-M acceptance is currently authorized. Further automation requires a separately authorized architectural phase and a newly frozen contract.**
 
 ## Completed — Phase 1
 
@@ -184,11 +184,11 @@ Phase 3D 交付 deterministic promotion payload、exact multi-artifact admission
 
 ### Phase 3E — Operational New-Source Ingestion
 
-状态：**Stage 3E.1 complete**。
+状态：**Stage 3E.1 complete；Phase 3E.2 closed at the governed automation boundary**。
 
 Phase 3E.1 已将 Phase 3C/3D clean-source correctness 与 review primitives 整理为单一 clean-PDF operational entrypoint。每个 SHA-bound run 先冻结 exact Source，再完成 parse/semantic table suppression、Evidence binding/bounded local subspan、post-binding table Claim safety、semantic guard、Claim review、Node operation review 和 deterministic non-executable promotion preview。运行可按 manifest artifact hashes 恢复，Production 全程 immutable/read-only，最终停在 `HUMAN_REVIEW_REQUIRED`。
 
-下一阶段为 **Phase 3E.2 — Fresh Clean-Source Operational Pilot**：另行选择一篇从未用于 Phase 3C/3D 的 clean PDF，通过 operational entrypoint 运行至 human review，评估 usability 与 semantic correctness。该 pilot 未在 Stage 3E.1 自动开始，Production handoff/apply 仍未授权。
+Phase 3E.2 保留原始 S-K fresh-source `FAIL`。后续 bounded repair 验证了 core correctness、safety precision 与 S-L6 deterministic pre-call partitioning；S-L7 同时确认复杂 clean Source 的 REVIEW 负担仍可能较高。最终 preregistered S-L8 atomicity 规则因释放合法负控而撤回，因此 full automation generalization 未获接受，不再授权 Phase 3E.2 内的规则级修复，S-M 亦未授权。完整边界见 [`PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
 
 ### Later — not started
 
