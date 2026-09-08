@@ -40,6 +40,11 @@ the candidate only to disposable shadow copies, verifies idempotent replay and
 transaction rollback, and requires the Phase 3D final Production validator to
 reject the candidate's non-authorization-bound document type.
 
+The later generic full-operational handoff gap closure preserves this contract
+as a compatibility wrapper. Stage 1 input validation and seven-item regression
+controls remain qualification-specific, while deterministic mapping, payload
+construction, and shadow qualification now delegate to the shared handoff core.
+
 Phase 3F Stage 2 is outside this stage and remains unstarted.
 
 ## Public repository projection

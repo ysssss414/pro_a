@@ -4,29 +4,21 @@ from __future__ import annotations
 
 import copy
 import json
-import sqlite3
-import tempfile
 from pathlib import Path
 from typing import Any, Mapping
 
 from .phase3f_qualification_review import read_review_packet, validate_completed_qualification_packet
-from .production_final_qualification import validate_final_payload
+from .phase3f_operational_handoff import (
+    HandoffPolicy,
+    OperationalHandoffError,
+    build_handoff_core,
+    validate_handoff_payload,
+)
 from .production_promotion import (
-    DOCUMENT_TYPE as PHASE3D_DOCUMENT_TYPE,
-    PAYLOAD_VERSION,
-    PromotionError,
-    apply_payload_to_shadow,
-    build_identity_catalog,
-    canonical_json_bytes,
     canonical_sha256,
-    copy_production_to_shadow,
-    decide_node_operation,
     deterministic_id,
-    payload_semantic_body,
     production_identity,
     sha256_file,
-    validate_executable_operations,
-    validate_payload,
 )
 
 
@@ -53,6 +45,15 @@ EXPECTED_DECISIONS = {
     "nodes": {CREATE_NODE: "CREATE", REUSE_NODE: "REUSE", DEFER_NODE: "DEFER"},
     "relations": {CREATE_PARENT: "CREATE"},
 }
+HANDOFF_POLICY = HandoffPolicy(
+    review_scope=REVIEW_SCOPE,
+    qualification_only=True,
+    full_operational_review_complete=False,
+    unselected_candidates_reviewed=False,
+    adapter_type=ADAPTER_TYPE,
+    mapping_document_type=MAPPING_DOCUMENT_TYPE,
+    legacy_qualification_labels=True,
+)
 
 
 class HandoffRequalificationError(RuntimeError):
@@ -83,64 +84,6 @@ def _validate_receipt(receipt: Mapping[str, Any], prefix: str) -> None:
     digest = canonical_sha256(body)
     _require(receipt.get("receipt_sha256") == digest, "INPUT_RECEIPT_HASH_MISMATCH")
     _require(receipt.get("receipt_id") == f"{prefix}_{digest[:16].upper()}", "INPUT_RECEIPT_ID_MISMATCH")
-
-
-def _readonly_connection(path: Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(f"file:{path.resolve().as_posix()}?mode=ro&immutable=1", uri=True)
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-def _catalog(production_path: Path) -> dict[str, Any]:
-    connection = _readonly_connection(production_path)
-    try:
-        nodes = [dict(row) for row in connection.execute("SELECT node_id,canonical_name,primary_type,status FROM nodes")]
-        aliases = [dict(row) for row in connection.execute("SELECT alias,node_id FROM node_aliases")]
-    finally:
-        connection.close()
-    return build_identity_catalog(nodes, aliases)
-
-
-def _claim_row(claim: Mapping[str, Any], timestamp: str) -> dict[str, Any]:
-    return {
-        "claim_id": claim["claim_id"], "statement": claim["statement"], "nature": claim["nature"],
-        "fact_time": claim.get("fact_time") or "", "publication_time": claim.get("publication_time") or "",
-        "ingestion_time": claim.get("ingestion_time") or timestamp, "source_id": claim["source_id"],
-        "evidence_pointer": claim.get("evidence_pointer") or "", "evidence_excerpt": claim.get("evidence_excerpt") or "",
-        "attributed_to": claim.get("attributed_to") or "", "scope": claim.get("scope") or "",
-        "assumption_text": claim.get("assumption_text") or "", "status": claim.get("status") or "current",
-        "confidence": claim.get("confidence"), "novelty_level": claim.get("novelty_level") or "N2",
-        "structured_json": canonical_json_bytes(claim.get("structured") or {}).decode("utf-8"),
-        "created_at": claim.get("created_at") or timestamp,
-    }
-
-
-def _source_row(bundle: Mapping[str, Any], timestamp: str, bindings: list[dict[str, Any]]) -> dict[str, Any]:
-    source, reviewed = bundle["source"], bundle.get("proposed_source_metadata") or {}
-    name = str(source["original_name"]).replace("/", "_").replace("\\", "_")
-    date_path = str(reviewed.get("publication_time") or "1970-01-01").replace("-", "/")
-    metadata = {
-        "summary": reviewed.get("summary") or "", "parse_diagnostics": source.get("parse_diagnostics") or {},
-        "parse_warnings": source.get("parse_warnings") or [], "semantic_eligibility": source.get("semantic_eligibility") or {},
-        "phase3f_stage1": {"review_scope": REVIEW_SCOPE, "qualification_only": True, "production_authorization": False,
-                           "archive_materialization": "NOT_AUTHORIZED", "input_artifacts": bindings},
-    }
-    return {
-        "source_id": source["proposed_source_id"], "title": reviewed.get("title") or source["original_name"],
-        "original_name": source["original_name"], "archived_path": f"archive/{date_path}/{source['proposed_source_id']}__{name}",
-        "sha256": source["sha256"], "ingestion_mode": source.get("analysis_mode") or "deep",
-        "analysis_mode": source.get("analysis_mode") or "deep", "source_type": source.get("source_type") or "unknown",
-        "source_rank": reviewed.get("source_rank") or "UNRANKED", "origin_type": reviewed.get("source_origin_type") or "unknown",
-        "author": reviewed.get("author") or "", "organization": reviewed.get("organization") or "",
-        "publication_time": reviewed.get("publication_time") or "", "ingested_at": timestamp, "status": "analyzed",
-        "ima_media_id": "", "ima_kb_id": "", "underlying_source_id": "",
-        "metadata_json": canonical_json_bytes(metadata).decode("utf-8"),
-    }
-
-
-def _mutation(table: str, key: Mapping[str, Any], row: Mapping[str, Any], authority: str) -> dict[str, Any]:
-    body = {"table": table, "operation": "INSERT", "key": dict(key), "row": dict(row), "authorized_by": authority}
-    return {"mutation_id": deterministic_id("MUT", body), **body}
 
 
 def _records(packet: Mapping[str, Any], group: str) -> dict[str, Mapping[str, Any]]:
@@ -183,36 +126,6 @@ def _validate_inputs(
     return packet, validation, receipt
 
 
-def _node_operation(
-    record: Mapping[str, Any], packet: Mapping[str, Any], catalog: Mapping[str, Any],
-    accepted_claim_ids: set[str], evidence_ids: Mapping[str, str], timestamp: str,
-) -> dict[str, Any]:
-    content, human = record["content"], record["human_input"]
-    requested = human["decision"]
-    claim_refs = sorted(accepted_claim_ids.intersection(content.get("supporting_claim_ids") or []))
-    candidate = {
-        "candidate_id": record["candidate_id"], "canonical_name": content["proposed_name"],
-        "primary_type": content["proposed_type"], "aliases": content.get("proposed_aliases") or [],
-        "node_id": content["prospective_node_id"], "match_term": content["proposed_name"], "approved_aliases": [],
-        "claim_refs": claim_refs, "evidence_refs": [evidence_ids[item] for item in claim_refs],
-        "frozen_timestamp": timestamp, "reason": human["reason"],
-        "qualification_record_content_sha256": record["content_sha256"],
-    }
-    operation = decide_node_operation(
-        candidate, requested_operation=requested,
-        review_decision={"CREATE": "APPROVE_CREATE", "REUSE": "APPROVE_REUSE"}.get(requested, requested),
-        catalog=catalog, run_id=packet["run"]["run_id"],
-    )
-    operation["qualification_authorization"] = {
-        "decision": requested, "reason": human["reason"], "target_node_id": human.get("target_node_id") or "",
-        "packet_id": packet["packet_id"],
-    }
-    if requested == "REUSE":
-        _require(operation.get("executable") is True, "AUTHORIZED_REUSE_NOT_RESOLVED")
-        _require(operation.get("resolved_target_id") == human.get("target_node_id"), "AUTHORIZED_REUSE_TARGET_MISMATCH")
-    return operation
-
-
 def _build_relation_operations(
     completed: Mapping[str, Any], node_operations: list[Mapping[str, Any]], timestamp: str
 ) -> list[dict[str, Any]]:
@@ -240,77 +153,18 @@ def _build_relation_operations(
     }]
 
 
-def _mapping_record(record: Mapping[str, Any], phase3d_object: Mapping[str, Any] | None) -> dict[str, Any]:
-    decision, promotable = record["human_input"]["decision"], phase3d_object is not None
-    return {
-        "candidate_type": record["candidate_type"], "candidate_id": record["candidate_id"],
-        "qualification_record_content_sha256": record["content_sha256"], "human_decision": decision,
-        "human_reason": record["human_input"]["reason"], "target_node_id": record["human_input"].get("target_node_id") or "",
-        "disposition": "QUALIFICATION_PROMOTABLE" if promotable else "QUALIFICATION_BLOCKED",
-        "block_reason": "" if promotable else f"HUMAN_{decision}_NON_PROMOTABLE",
-        "phase3d_object": copy.deepcopy(phase3d_object),
-    }
-
-
 def validate_qualification_only_payload(payload: Mapping[str, Any]) -> None:
     """Prove that a Phase 3D-shaped candidate remains non-Production."""
-    validate_payload(payload)
-    for field, expected in (("document_type", PHASE3D_DOCUMENT_TYPE), ("review_scope", REVIEW_SCOPE),
-                            ("qualification_only", True), ("full_operational_review_complete", False),
-                            ("production_authorization", False), ("production_apply_authorized", False),
-                            ("unselected_candidates_reviewed", False), ("qualified_execution_target", EXECUTION_TARGET)):
-        _require(payload.get(field) == expected, "QUALIFICATION_ONLY_GUARD_MISMATCH", field)
-    authority = payload.get("human_authorization") or {}
-    _require(authority.get("production_authorization") is False and authority.get("production_apply_authorized") is False,
-             "QUALIFICATION_AUTHORITY_BOUNDARY_INVALID")
-
-
-def _phase3d_validation(payload: Mapping[str, Any], production_path: Path) -> dict[str, Any]:
-    before = production_identity(production_path)
-    validate_qualification_only_payload(payload)
-    connection = _readonly_connection(production_path)
     try:
-        validate_executable_operations(connection, payload)
-        for mutation in payload["intended_mutations"]:
-            where = " AND ".join(f'"{field}"=?' for field in mutation["key"])
-            found = connection.execute(f'SELECT 1 FROM "{mutation["table"]}" WHERE {where} LIMIT 1',
-                                       tuple(mutation["key"].values())).fetchone()
-            _require(found is None, "PRODUCTION_ROW_ALREADY_EXISTS", mutation["mutation_id"])
-    finally:
-        connection.close()
-
-    rejection = ""
-    try:
-        validate_final_payload(payload)
-    except PromotionError as exc:
-        rejection = str(exc)
-    _require(rejection == "FINAL_PAYLOAD_DOCUMENT_TYPE_MISMATCH", "PRODUCTION_FINAL_APPLY_GUARD_NOT_PROVEN", rejection)
-    with tempfile.TemporaryDirectory(prefix="phase3f_stage1_requalification_") as raw:
-        root, shadow = Path(raw), Path(raw) / "shadow.db"
-        copy_production_to_shadow(production_path, shadow, before["sha256"])
-        applied = apply_payload_to_shadow(payload, shadow, production_path)
-        replay = apply_payload_to_shadow(payload, shadow, production_path)
-        rollback = root / "rollback.db"
-        copy_production_to_shadow(production_path, rollback, before["sha256"])
-        rollback_sha, error = sha256_file(rollback), ""
-        try:
-            apply_payload_to_shadow(payload, rollback, production_path, inject_failure_after=2)
-        except PromotionError as exc:
-            error = str(exc)
-        _require(error == "INJECTED_TRANSACTION_FAILURE", "ROLLBACK_INJECTION_NOT_OBSERVED")
-        _require(sha256_file(rollback) == rollback_sha, "SHADOW_ROLLBACK_HASH_MISMATCH")
-    after = production_identity(production_path)
-    _require(before == after, "PRODUCTION_CHANGED")
-    return {
-        "payload_validation": "PASS", "preapply_validation": "PASS", "qualification_only_guard": "PASS",
-        "production_final_apply_guard": "PASS", "production_final_apply_rejection": rejection,
-        "shadow_apply": applied["status"], "shadow_integrity": applied["integrity"],
-        "shadow_foreign_key_violations": len(applied["foreign_key_violations"]),
-        "shadow_changed_tables": applied["changed_tables"], "shadow_post_counts": applied["post_counts"],
-        "idempotent_replay": "PASS" if replay["status"] == "ALREADY_APPLIED" else "FAIL", "rollback": "PASS",
-        "production_sha256": after["sha256"], "production_integrity": after["integrity"],
-        "production_foreign_key_violations": len(after["foreign_key_violations"]), "production_changed": False,
-    }
+        validate_handoff_payload(payload, HANDOFF_POLICY)
+    except OperationalHandoffError as exc:
+        message = str(exc)
+        if message.startswith("HANDOFF_BOUNDARY_INVALID:"):
+            field = message.split(":", 1)[1].strip()
+            raise HandoffRequalificationError(
+                f"QUALIFICATION_ONLY_GUARD_MISMATCH: {field}"
+            ) from exc
+        raise
 
 
 def build_requalification_artifacts(
@@ -345,123 +199,30 @@ def build_requalification_artifacts(
     bindings = sorted([_binding(role, path, root) for role, path in paths.items()]
                       + [_binding("evidence_bound_extraction_bundle", evidence_bundle_path, root)], key=lambda item: item["role"])
     production = production_identity(production_path)
-    claims_by_id, nodes_by_id = _records(packet, "claims"), _records(packet, "nodes")
-    bundle_claims = {item["claim_id"]: item for item in bundle["claims"]}
-    keep, timestamp = bundle_claims[KEEP_CLAIM], bundle_claims[KEEP_CLAIM]["created_at"]
-    evidence_ids = {item["claim_id"]: item["evidence_id"] for node in packet["nodes"]
-                    for item in node["content"].get("supporting_evidence") or []}
-    for claim_id in (KEEP_CLAIM, REVIEW_CLAIM, DROP_CLAIM):
-        claim = bundle_claims[claim_id]
-        evidence_ids.setdefault(claim_id, deterministic_id("EVD", {
-            "source_sha256": packet["source"]["source_sha256"], "claim_id": claim_id,
-            "evidence_pointer": claim.get("evidence_pointer"), "evidence_excerpt": claim.get("evidence_excerpt"),
-            "phase3c_evidence": claim.get("phase3c_evidence"),
-        }))
-    claim_items = []
-    for claim_id in (KEEP_CLAIM, REVIEW_CLAIM, DROP_CLAIM):
-        record, source_claim = claims_by_id[claim_id], bundle_claims[claim_id]
-        executable = claim_id == KEEP_CLAIM
-        claim_items.append({
-            "claim_id": claim_id, "evidence_id": evidence_ids[claim_id], "immutable_claim": copy.deepcopy(source_claim),
-            "qualification_record_content_sha256": record["content_sha256"],
-            "reviewer_decision": {**copy.deepcopy(record["human_input"]), "reviewer": packet["human_completion"]["reviewer"],
-                                  "packet_id": packet["packet_id"], "immutable_packet_sha256": packet["immutable_packet_sha256"]},
-            "table_eligibility": copy.deepcopy(record["content"]["table_eligibility"]),
-            "semantic_admission": copy.deepcopy(record["content"]["semantic_admission"]), "executable": executable,
-            "disposition": "QUALIFICATION_PROMOTABLE" if executable else "QUALIFICATION_BLOCKED",
-            "block_reason": "" if executable else f"HUMAN_{record['human_input']['decision']}_NON_PROMOTABLE",
-        })
-
-    catalog = _catalog(production_path)
-    node_operations = [_node_operation(nodes_by_id[item], packet, catalog, {KEEP_CLAIM}, evidence_ids, timestamp)
-                       for item in (CREATE_NODE, REUSE_NODE, DEFER_NODE)]
-    relation_operations = _build_relation_operations(packet, node_operations, timestamp)
-    phase3d_objects: dict[str, dict[str, Any]] = {
-        KEEP_CLAIM: {"object_type": "CLAIM", "claim_id": KEEP_CLAIM,
-                     "evidence_id": evidence_ids[KEEP_CLAIM], "executable": True}}
-    for operation in node_operations + relation_operations:
-        if operation["executable"]:
-            phase3d_objects[operation["candidate_id"]] = {
-                "object_type": "NODE_OPERATION" if operation in node_operations else "RELATION_OPERATION",
-                "operation_id": operation["operation_id"], "operation": operation["operation"],
-                "node_id": (operation.get("final_node") or {}).get("node_id") or operation.get("resolved_target_id"),
-                "relation_id": (operation.get("final_relation") or {}).get("relation_id"), "executable": True,
-            }
-            phase3d_objects[operation["candidate_id"]] = {
-                key: value for key, value in phase3d_objects[operation["candidate_id"]].items() if value is not None}
-    selected = packet["claims"] + packet["nodes"] + packet["relations"]
-    mapping_records = [_mapping_record(item, phase3d_objects.get(item["candidate_id"])) for item in selected]
-    mapping_body = {
-        "document_type": MAPPING_DOCUMENT_TYPE, "schema_version": SCHEMA_VERSION, "review_scope": REVIEW_SCOPE,
-        "qualification_only": True, "full_operational_review_complete": False, "production_authorization": False,
-        "production_apply_authorized": False, "unselected_candidates_reviewed": False,
-        "source_qualification_packet": {"packet_id": packet["packet_id"],
-                                        "immutable_packet_sha256": packet["immutable_packet_sha256"],
-                                        "completed_packet_sha256": completion["completed_packet_sha256"]},
-        "records": mapping_records, "counts": {"qualification_candidates": 7, "promotable": 4, "blocked": 3},
+    completion_for_core = {
+        **completion,
+        "total_operational_decisions_validated": completion[
+            "qualification_decisions_validated"
+        ],
     }
-    mapping_hash = canonical_sha256(mapping_body)
-    mapping = {**mapping_body, "mapping_id": f"HANDOFF_MAPPING_{mapping_hash[:16].upper()}", "mapping_sha256": mapping_hash}
-
-    source_row = _source_row(bundle, timestamp, bindings)
-    mutations = [_mutation("sources", {"source_id": source_row["source_id"]}, source_row,
-                           f"{packet['packet_id']}:QUALIFICATION_ONLY_SOURCE_LINEAGE")]
-    claim_row = _claim_row(keep, timestamp)
-    mutations.append(_mutation("claims", {"claim_id": KEEP_CLAIM}, claim_row, KEEP_CLAIM))
-    create_operation = next(item for item in node_operations if item["candidate_id"] == CREATE_NODE)
-    node_row = create_operation["final_node"]
-    mutations.append(_mutation("nodes", {"node_id": node_row["node_id"]}, node_row, create_operation["operation_id"]))
-    for alias in create_operation["aliases"]:
-        row = {"alias": alias, "node_id": node_row["node_id"]}
-        mutations.append(_mutation("node_aliases", row, row, create_operation["operation_id"]))
-    relation_row = relation_operations[0]["final_relation"]
-    mutations.append(_mutation("node_relations", {"relation_id": relation_row["relation_id"]}, relation_row,
-                               relation_operations[0]["operation_id"]))
-
-    payload_body = {
-        "document_type": PHASE3D_DOCUMENT_TYPE, "payload_version": PAYLOAD_VERSION, "review_scope": REVIEW_SCOPE,
-        "qualification_only": True, "full_operational_review_complete": False, "production_authorization": False,
-        "production_apply_authorized": False, "unselected_candidates_reviewed": False,
-        "qualified_execution_target": EXECUTION_TARGET, "adapter_type": ADAPTER_TYPE,
-        "metadata": {
-            "repository_commit": repository_commit, "production_sha256": production["sha256"],
-            "production_schema_version": production["schema_version"], "production_schema_sha256": production["schema_sha256"],
-            "production_counts": production["counts"], "source_sha256": packet["source"]["source_sha256"],
-            "source_id": packet["source"]["source_id"], "run_id": packet["run"]["run_id"], "frozen_timestamp": timestamp,
-            "input_artifact_roles_and_sha256": [{"role": item["role"], "file_sha256": item["file_sha256"]} for item in bindings],
-            "input_artifacts": bindings,
+    core = build_handoff_core(
+        packet=packet,
+        completion=completion_for_core,
+        completion_receipt=prior_receipt,
+        bundle=bundle,
+        production_path=production_path,
+        repository_commit=repository_commit,
+        bindings=bindings,
+        authority={
+            "authority_source": completion["authority_source"],
+            "authorization_file_sha256": sha256_file(paths["qualification_authorization"]),
+            "authorization_semantic_sha256": "",
         },
-        "human_authorization": {
-            "review_scope": REVIEW_SCOPE, "reviewer": completion["reviewer"], "authority_source": completion["authority_source"],
-            "packet_id": packet["packet_id"], "immutable_packet_sha256": packet["immutable_packet_sha256"],
-            "completed_packet_sha256": completion["completed_packet_sha256"], "completion_receipt_id": prior_receipt["receipt_id"],
-            "completion_receipt_sha256": prior_receipt["receipt_sha256"], "qualification_decisions_validated": 7,
-            "full_operational_review_complete": False, "production_authorization": False,
-            "production_apply_authorized": False, "unselected_candidates_reviewed": False,
-        },
-        "handoff_mapping": {"mapping_id": mapping["mapping_id"], "mapping_sha256": mapping["mapping_sha256"]},
-        "source": {"source_id": packet["source"]["source_id"], "source_sha256": packet["source"]["source_sha256"],
-                   "qualification_only_lineage_insert": True, "production_source_authorization": False},
-        "evidence": [{"evidence_id": item["evidence_id"], "claim_id": item["claim_id"],
-                      "evidence_pointer": item["immutable_claim"].get("evidence_pointer"),
-                      "evidence_excerpt": item["immutable_claim"].get("evidence_excerpt"),
-                      "validation": item["immutable_claim"].get("validation") or {},
-                      "phase3c_evidence": item["immutable_claim"].get("phase3c_evidence") or {}} for item in claim_items],
-        "claims": claim_items, "node_operations": node_operations, "relation_operations": relation_operations,
-        "link_operations": [], "intended_mutations": mutations,
-        "excluded_from_promotion": [{"candidate_type": item["candidate_type"], "candidate_id": item["candidate_id"],
-                                     "decision": item["human_decision"], "reason": item["block_reason"]}
-                                    for item in mapping_records if item["disposition"] == "QUALIFICATION_BLOCKED"],
-        "audit": {"qualification_candidate_count": 7, "qualification_promotable_count": 4,
-                  "qualification_blocked_count": 3, "source_insert_count": 1, "executable_claim_count": 1,
-                  "executable_node_operation_count": 2, "executable_relation_operation_count": 1,
-                  "link_operation_count": 0, "llm_calls": 0, "full_review_candidate_count": 205,
-                  "full_review_candidates_authorized": 0},
-    }
-    payload_hash = canonical_sha256(payload_body)
-    payload = {**payload_body, "payload_id": f"PROMO_{payload_hash[:16].upper()}", "payload_hash": payload_hash}
-    _require(payload_semantic_body(payload) == payload_body, "PAYLOAD_SEMANTIC_BODY_MISMATCH")
-    phase3d = _phase3d_validation(payload, production_path)
+        policy=HANDOFF_POLICY,
+    )
+    mapping = core["mapping"]
+    payload = core["payload"]
+    phase3d = core["phase3d_validation"]
 
     validation_receipt = _semantic({
         "document_type": VALIDATION_DOCUMENT_TYPE, "schema_version": SCHEMA_VERSION, "status": "PASS",
