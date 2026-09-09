@@ -1,5 +1,6 @@
 """Public-safe fixtures only; no package or real Source text is required."""
 import copy
+import hashlib
 from datetime import datetime
 import json
 from pathlib import Path
@@ -112,9 +113,22 @@ def complete(blank):
 
 
 def handoff(case, packet=None):
-    return build_handoff_core(packet=packet or complete(case["blank"]), bundle={"blank_packet": case["blank"]},
+    from pro_a.foundation_payload_envelope import PayloadVerificationBasis, completed_semantic_sha256
+    # Fixture-owned authority is constructed before compilation, never from a
+    # payload. Legacy synthetic reviews also need the new envelope at execution.
+    packet = copy.deepcopy(packet or complete(case["blank"]))
+    human = packet["human_completion"]
+    human.update(state="COMPLETED", content_decision_authority="EXPLICIT_HUMAN_APPROVAL")
+    human["completed_packet_id"] = deterministic_id("SYNTHETIC_COMPLETED", packet)
+    human["completed_packet_semantic_sha256"] = completed_semantic_sha256(packet)
+    data = json.dumps(packet, ensure_ascii=False, sort_keys=True, indent=2).encode("utf-8")
+    basis = PayloadVerificationBasis(human["completed_packet_id"], human["completed_packet_semantic_sha256"],
+        hashlib.sha256(data).hexdigest(), packet.get("execution_contract", {}).get("contract_sha256"),
+        packet["production_baseline"]["sha256"], packet["production_baseline"]["schema_version"], COMMIT, COMMIT)
+    case["verification"] = dict(verification_basis=basis, completed_artifact=data)
+    return build_handoff_core(packet=packet, bundle={"blank_packet": case["blank"]},
                               production_path=case["production"], repository_commit=COMMIT,
-                              completion={}, completion_receipt={}, bindings=[], authority={}, policy=None)
+                              completion={}, completion_receipt={}, bindings=[], authority={}, policy=None, **case["verification"])
 
 
 def reseal(case):
@@ -135,13 +149,13 @@ def test_complete_baseline_shared_engine_e2e(case):
     first, second = handoff(case), handoff(case)
     assert first == second
     payload = first["payload"]
-    validate_payload(payload)
+    validate_payload(payload, **case["verification"])
     assert len(first["mapping"]) == 13
     assert sum(m["table"] == "sources" for m in payload["intended_mutations"]) == 3
     assert {r["source_id"] for r in payload["claims"]} == {"S1", "S2", "S3"}
     shadow = case["root"] / "shadow.db"
     copy_production_to_shadow(case["production"], shadow, before["sha256"])
-    result = apply_payload_to_shadow(payload, shadow, case["production"])
+    result = apply_payload_to_shadow(payload, shadow, case["production"], **case["verification"])
     assert result["status"] == "COMMITTED"
     assert result["changed_tables"] == {
         "sources": {"added": 3, "removed": 0}, "claims": {"added": 3, "removed": 0},
@@ -149,15 +163,15 @@ def test_complete_baseline_shared_engine_e2e(case):
         "node_relations": {"added": 4, "removed": 0}, "relation_evidence_links": {"added": 9, "removed": 0},
         "current_views": {"added": 1, "removed": 0},
     }
-    assert apply_payload_to_shadow(payload, shadow, case["production"])["status"] == "ALREADY_APPLIED"
+    assert apply_payload_to_shadow(payload, shadow, case["production"], **case["verification"])["status"] == "ALREADY_APPLIED"
     rollback = case["root"] / "rollback.db"
     copy_production_to_shadow(case["production"], rollback, before["sha256"])
     with pytest.raises(PromotionError, match="INJECTED_TRANSACTION_FAILURE"):
-        apply_payload_to_shadow(payload, rollback, case["production"], inject_failure_after=len(payload["intended_mutations"]))
+        apply_payload_to_shadow(payload, rollback, case["production"], inject_failure_after=len(payload["intended_mutations"]), **case["verification"])
     assert production_identity(rollback)["semantic_snapshot"] == before["semantic_snapshot"]
     assert production_identity(case["production"]) == before
     with pytest.raises(PromotionError, match="CONFIGURED_PRODUCTION_WRITE_BLOCKED"):
-        apply_payload_to_shadow(payload, case["production"], case["production"])
+        apply_payload_to_shadow(payload, case["production"], case["production"], **case["verification"])
 
 
 @pytest.mark.parametrize("change,expected", [
@@ -239,7 +253,7 @@ def test_baseline_cannot_become_official_or_mutate_in_payload(case):
         digest = canonical_sha256(body)
         bad.update(payload_hash=digest, payload_id="PROMO_" + digest[:16].upper())
         with pytest.raises(PromotionError, match="FOUNDATION_PAYLOAD_PROJECTION_DRIFT"):
-            validate_payload(bad)
+            validate_payload(bad, **case["verification"])
 
 
 def test_baseline_storage_isolation_and_immutability(case):
@@ -248,7 +262,7 @@ def test_baseline_storage_isolation_and_immutability(case):
     payload = handoff(case)["payload"]
     shadow = case["root"] / "baseline-shadow.db"
     copy_production_to_shadow(case["production"], shadow, payload["metadata"]["production_sha256"])
-    apply_payload_to_shadow(payload, shadow, case["production"])
+    apply_payload_to_shadow(payload, shadow, case["production"], **case["verification"])
     db = Database(shadow)
     view = db.one("SELECT * FROM current_views WHERE status='baseline'")
     nid, vid = view["node_id"], view["view_id"]
@@ -338,7 +352,7 @@ def test_package_drift_after_payload_build_is_rejected(case):
     payload = handoff(case)["payload"]
     Path(case["blank"]["package"]["path"]).write_bytes(b"Synthetic package changed after construction")
     with pytest.raises(PromotionError, match="PACKAGE_HASH_DRIFT"):
-        validate_payload(payload)
+        validate_payload(payload, **case["verification"])
 
 
 def test_foundation_n1_special_case(case):

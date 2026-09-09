@@ -66,8 +66,8 @@ def test_native_and_claim_linked_coexist_with_no_native_claim_dependency(native_
     before = production_identity(native_case["production"])
     shadow = native_case["root"] / "native-shadow.db"
     copy_production_to_shadow(native_case["production"], shadow, before["sha256"])
-    assert apply_payload_to_shadow(payload, shadow, native_case["production"])["status"] == "COMMITTED"
-    assert apply_payload_to_shadow(payload, shadow, native_case["production"])["status"] == "ALREADY_APPLIED"
+    assert apply_payload_to_shadow(payload, shadow, native_case["production"], **native_case["verification"])["status"] == "COMMITTED"
+    assert apply_payload_to_shadow(payload, shadow, native_case["production"], **native_case["verification"])["status"] == "ALREADY_APPLIED"
     with Database(shadow).connect() as con:
         assert con.execute("SELECT count(*) FROM relation_evidence_links WHERE claim_id IS NULL AND provenance_mode='RELATION_NATIVE'").fetchone()[0] == 2
         assert not con.execute("PRAGMA foreign_key_check").fetchall()
@@ -79,7 +79,7 @@ def test_native_and_claim_linked_coexist_with_no_native_claim_dependency(native_
     rollback = native_case["root"] / "native-rollback.db"
     copy_production_to_shadow(native_case["production"], rollback, before["sha256"])
     with pytest.raises(PromotionError, match="INJECTED_TRANSACTION_FAILURE"):
-        apply_payload_to_shadow(payload, rollback, native_case["production"], inject_failure_after=len(payload["intended_mutations"]))
+        apply_payload_to_shadow(payload, rollback, native_case["production"], inject_failure_after=len(payload["intended_mutations"]), **native_case["verification"])
     assert production_identity(rollback)["semantic_snapshot"] == before["semantic_snapshot"]
     assert production_identity(native_case["production"]) == before
 
@@ -169,7 +169,7 @@ def test_native_link_and_source_provenance_are_immutable(native_case):
     payload = handoff(native_case, independent_review(native_case))["payload"]
     shadow = native_case["root"] / "native-immutable.db"
     copy_production_to_shadow(native_case["production"], shadow, sha256_file(native_case["production"]))
-    apply_payload_to_shadow(payload, shadow, native_case["production"])
+    apply_payload_to_shadow(payload, shadow, native_case["production"], **native_case["verification"])
     with Database(shadow).connect() as con:
         for sql in (
             "UPDATE relation_evidence_links SET evidence_id='OTHER' WHERE provenance_mode='RELATION_NATIVE'",

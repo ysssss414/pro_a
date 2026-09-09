@@ -62,7 +62,7 @@ def test_governed_shared_phase3d_full_e2e(governed):
     result = handoff(governed)
     assert result == handoff(governed)
     payload = result["payload"]
-    validate_payload(payload)
+    validate_payload(payload, **governed["verification"])
     claim_rows = [m["row"] for m in payload["intended_mutations"] if m["table"] == "claims"]
     assert len(claim_rows) == 3 and all(r["status"] == "current" for r in claim_rows)
     for row in claim_rows:
@@ -75,11 +75,11 @@ def test_governed_shared_phase3d_full_e2e(governed):
     assert sum(a["evidence_role"] == "contradicts" for a in auths) == 1
     shadow = governed["root"] / "governed-shadow.db"
     copy_production_to_shadow(governed["production"], shadow, before["sha256"])
-    applied = apply_payload_to_shadow(payload, shadow, governed["production"])
+    applied = apply_payload_to_shadow(payload, shadow, governed["production"], **governed["verification"])
     assert applied["status"] == "COMMITTED"
     assert applied["changed_tables"]["relation_temporal_semantics"] == {"added": 4, "removed": 0}
     assert applied["changed_tables"]["relation_evidence_authorizations"] == {"added": 9, "removed": 0}
-    assert apply_payload_to_shadow(payload, shadow, governed["production"])["status"] == "ALREADY_APPLIED"
+    assert apply_payload_to_shadow(payload, shadow, governed["production"], **governed["verification"])["status"] == "ALREADY_APPLIED"
     db = Database(shadow)
     with db.connect() as con:
         rows = categorical_relations(con)
@@ -93,7 +93,7 @@ def test_governed_shared_phase3d_full_e2e(governed):
     rollback = governed["root"] / "governed-rollback.db"
     copy_production_to_shadow(governed["production"], rollback, before["sha256"])
     with pytest.raises(PromotionError, match="INJECTED_TRANSACTION_FAILURE"):
-        apply_payload_to_shadow(payload, rollback, governed["production"], inject_failure_after=len(payload["intended_mutations"]))
+        apply_payload_to_shadow(payload, rollback, governed["production"], inject_failure_after=len(payload["intended_mutations"]), **governed["verification"])
     assert production_identity(rollback)["semantic_snapshot"] == before["semantic_snapshot"]
     assert production_identity(governed["production"]) == before
 
@@ -156,7 +156,7 @@ def test_admitted_provenance_and_authorizations_cannot_be_rewritten(governed):
     payload = handoff(governed)["payload"]
     shadow = governed["root"] / "immutable-provenance.db"
     copy_production_to_shadow(governed["production"], shadow, sha256_file(governed["production"]))
-    apply_payload_to_shadow(payload, shadow, governed["production"])
+    apply_payload_to_shadow(payload, shadow, governed["production"], **governed["verification"])
     with Database(shadow).connect() as con:
         for statement in (
             "UPDATE claims SET structured_json='{}' WHERE claim_id='C1'",
@@ -207,7 +207,7 @@ def test_keep_preserves_native_null_time_without_inventing_a_date(governed):
     assert json.loads(row["structured_json"])["foundation_admission"]["pre_review_time_fields"]["publication_time"] is None
     shadow = governed["root"] / "null-time-shadow.db"
     copy_production_to_shadow(governed["production"], shadow, sha256_file(governed["production"]))
-    assert apply_payload_to_shadow(payload, shadow, governed["production"])["status"] == "COMMITTED"
+    assert apply_payload_to_shadow(payload, shadow, governed["production"], **governed["verification"])["status"] == "COMMITTED"
 
 
 def test_namespace_overwrite_and_predecessor_guards(governed):

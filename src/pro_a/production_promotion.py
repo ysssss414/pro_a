@@ -766,7 +766,26 @@ def payload_semantic_body(payload: Mapping[str, Any]) -> dict[str, Any]:
     return {key: copy.deepcopy(value) for key, value in payload.items() if key not in {"payload_id", "payload_hash"}}
 
 
-def validate_payload(payload: Mapping[str, Any]) -> None:
+def validate_payload_artifact(payload_artifact, *, expected_payload_file_sha256: str,
+                              verification_basis=None, completed_artifact=None):
+    """Validate exact serialized bytes using an independently supplied file hash.
+
+    This read-only helper is not an executor or a source of authorization.
+    """
+    data = payload_artifact if isinstance(payload_artifact, bytes) else Path(payload_artifact).read_bytes()
+    payload = json.loads(data)
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .foundation_payload_envelope import verify_payload_review_basis
+        verify_payload_review_basis(payload, verification_basis, completed_artifact)
+    _require(hashlib.sha256(data).hexdigest() == expected_payload_file_sha256, "PAYLOAD_FILE_HASH_MISMATCH")
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
+    return payload
+
+
+def validate_payload(payload: Mapping[str, Any], *, verification_basis=None, completed_artifact=None) -> None:
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .foundation_payload_envelope import verify_payload_review_basis
+        verify_payload_review_basis(payload, verification_basis, completed_artifact)
     _require(
         payload.get("document_type") in {DOCUMENT_TYPE, AUTHORIZATION_DOCUMENT_TYPE},
         "PAYLOAD_DOCUMENT_TYPE_INVALID",
@@ -784,7 +803,7 @@ def validate_payload(payload: Mapping[str, Any]) -> None:
         _require(metadata.get(field) not in (None, "", []), f"PAYLOAD_BASELINE_FIELD_MISSING:{field}")
     if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
         from .phase3f_foundation_baseline import validate_foundation_payload
-        validate_foundation_payload(payload)
+        validate_foundation_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
         return
     mutations = payload.get("intended_mutations") or []
     mutation_ids = [item.get("mutation_id") for item in mutations]
@@ -958,11 +977,11 @@ def _catalog_from_connection(connection: sqlite3.Connection) -> dict[str, Any]:
     return build_identity_catalog(nodes, aliases)
 
 
-def validate_executable_operations(connection: sqlite3.Connection, payload: Mapping[str, Any]) -> None:
-    validate_payload(payload)
+def validate_executable_operations(connection: sqlite3.Connection, payload: Mapping[str, Any], *, verification_basis=None, completed_artifact=None) -> None:
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
     if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
         from .phase3f_foundation_baseline import validate_foundation_payload
-        validate_foundation_payload(payload, connection)
+        validate_foundation_payload(payload, connection, verification_basis=verification_basis, completed_artifact=completed_artifact)
         return
     catalog = _catalog_from_connection(connection)
     package_terms: dict[str, str] = {}
@@ -1189,9 +1208,11 @@ def apply_payload_to_shadow(
     configured_production_path: Path,
     *,
     inject_failure_after: int | None = None,
+    verification_basis=None,
+    completed_artifact=None,
 ) -> dict[str, Any]:
     """Apply only to an explicit shadow. Configured Production is unconditionally blocked."""
-    validate_payload(payload)
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
     shadow_path = Path(shadow_path).resolve()
     configured_production_path = Path(configured_production_path).resolve()
     assert_shadow_target(shadow_path, configured_production_path)
@@ -1222,7 +1243,7 @@ def apply_payload_to_shadow(
             }
         _require(pre_sha == payload["metadata"]["production_sha256"], "SHADOW_NOT_EXACT_PRODUCTION_BASELINE")
         _require(table_counts(connection) == payload["metadata"]["production_counts"], "SHADOW_BASELINE_COUNTS_MISMATCH")
-        validate_executable_operations(connection, payload)
+        validate_executable_operations(connection, payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
         before_rows = database_rows(connection)
         allowed_tables = {mutation["table"] for mutation in payload["intended_mutations"]}
         connection.set_authorizer(_write_authorizer(allowed_tables))

@@ -469,11 +469,15 @@ def _snapshot_tables(packet):
     return SNAPSHOT_TABLES + (EXTRA_SNAPSHOT_TABLES if uses_contract(packet) else ())
 
 
-def build_foundation_handoff(*, packet, blank_packet, production_path, repository_commit):
+def build_foundation_handoff(*, packet, blank_packet, production_path, repository_commit,
+                             verification_basis=None, completed_artifact=None):
+    from .foundation_payload_envelope import verify_completed_artifact, BOUND_CONTRACT as ENVELOPE_CONTRACT
+    actual_packet, review_basis = verify_completed_artifact(verification_basis, completed_artifact)
+    require(canonical_sha256(packet) == canonical_sha256(actual_packet), "EMBEDDED_COMPLETED_ARTIFACT_MISMATCH")
+    require(repository_commit == verification_basis.expected_payload_implementation_commit, "PAYLOAD_IMPLEMENTATION_BINDING_MISMATCH")
     validate_review(blank_packet, expected_sha256=blank_packet["immutable_packet_sha256"], completed=False)
     validate_review(packet, expected_sha256=blank_packet["immutable_packet_sha256"], completed=True)
     validate_files(packet)
-    require(repository_commit == packet["repository_commit"], "GIT_BASELINE_DRIFT")
     production = production_identity(Path(production_path))
     require(production == packet["production_baseline"], "PRODUCTION_BASELINE_DRIFT")
     with sqlite3.connect(Path(production_path).resolve().as_uri() + "?mode=ro&immutable=1", uri=True) as connection:
@@ -491,26 +495,31 @@ def build_foundation_handoff(*, packet, blank_packet, production_path, repositor
     body = {"document_type": "phase3d_promotion_payload", "payload_version": "1", "adapter_type": PROFILE,
             "production_authorization": False, "production_apply_authorized": False,
             "qualification_only": True, "qualified_execution_target": "DISPOSABLE_SHADOW_ONLY",
+            "review_basis": review_basis, "payload_envelope_contract": copy.deepcopy(ENVELOPE_CONTRACT),
             "metadata": {"repository_commit": repository_commit, "production_sha256": production["sha256"],
+                         "review_basis_implementation_commit": packet["repository_commit"],
+                         "payload_builder_verifier_implementation_commit": repository_commit,
                          "production_schema_version": production["schema_version"], "production_schema_sha256": production["schema_sha256"],
                          "production_counts": production["counts"], "source_sha256": [r["expected_sha256"] for r in packet["registry"]["sources"]],
-                         "input_artifact_roles_and_sha256": [{"role": "foundation_review", "file_sha256": canonical_sha256(packet)}]},
+                         "input_artifact_roles_and_sha256": [{"role": "foundation_review", "file_sha256": review_basis["completed_packet_file_sha256"]}]},
             "foundation_review": packet, "immutable_packet_sha256": blank_packet["immutable_packet_sha256"],
             "foundation_snapshot": snapshot, **compiled}
     digest = canonical_sha256(body)
     payload = {**body, "payload_hash": digest, "payload_id": "PROMO_" + digest[:16].upper()}
     from .production_promotion import validate_payload
-    validate_payload(payload)
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
     return {"payload": payload, "mapping": compiled["mapping"]}
 
 
-def validate_foundation_payload(payload, connection=None):
+def validate_foundation_payload(payload, connection=None, *, verification_basis=None, completed_artifact=None):
+    from .foundation_payload_envelope import verify_payload_review_basis
+    verify_payload_review_basis(payload, verification_basis, completed_artifact)
     require(payload.get("production_authorization") is False and payload.get("production_apply_authorized") is False
             and payload.get("qualification_only") is True, "PRODUCTION_AUTHORIZATION_FORBIDDEN")
     packet = payload["foundation_review"]
     validate_review(packet, expected_sha256=payload["immutable_packet_sha256"], completed=True)
     validate_files(packet)
-    require(payload["metadata"]["repository_commit"] == packet["repository_commit"], "GIT_BASELINE_DRIFT")
+    require(payload["metadata"]["review_basis_implementation_commit"] == packet["repository_commit"], "GIT_BASELINE_DRIFT")
     require(payload["metadata"]["source_sha256"] == [r["expected_sha256"] for r in packet["registry"]["sources"]], "PAYLOAD_SOURCE_BINDING_DRIFT")
     expected = compile_mutations(packet, payload["foundation_snapshot"])
     for key, value in expected.items():

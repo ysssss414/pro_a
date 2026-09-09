@@ -211,7 +211,7 @@ def test_direct_existing_consumers_and_schema_023_e2e(identity_case):
     assert any(m['table']=='claims' and m['row']['claim_id']=='C1' for m in payload['intended_mutations'])
     shadow = identity_case['root'] / 'v4-synthetic-shadow.db'
     copy_production_to_shadow(identity_case['production'],shadow,p['production_baseline']['sha256'])
-    apply_payload_to_shadow(payload,shadow,identity_case['production'])
+    apply_payload_to_shadow(payload,shadow,identity_case['production'], **identity_case["verification"])
     with closing(connect_read_only(shadow)) as conn:
         require_execution_schema(conn)
         assert conn.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
@@ -296,7 +296,7 @@ def test_v4_native_authority_reuses_exact_schema_guards(native_case):
     payload=handoff(native_case,packet)['payload']
     shadow=native_case['root']/'native-v4-shadow.db'
     copy_production_to_shadow(native_case['production'],shadow,old['production_baseline']['sha256'])
-    apply_payload_to_shadow(payload,shadow,native_case['production'])
+    apply_payload_to_shadow(payload,shadow,native_case['production'], **native_case["verification"])
     with closing(connect_read_only(shadow)) as conn:
         require_execution_schema(conn)
         assert conn.execute("SELECT count(*) FROM relation_evidence_links WHERE provenance_mode='RELATION_NATIVE' AND status='active'").fetchone()[0]==2
