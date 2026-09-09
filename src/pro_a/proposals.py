@@ -448,7 +448,7 @@ class ProposalManager:
     def _view_for_side_effect(self, view_id: str) -> dict[str, Any]:
         view = self.db.one(
             """SELECT v.*,n.node_id,n.canonical_name,n.primary_type FROM current_views v
-               JOIN nodes n ON n.node_id=v.node_id WHERE v.view_id=?""",
+               JOIN nodes n ON n.node_id=v.node_id WHERE v.view_id=? AND v.status='official'""",
             (view_id,),
         )
         if not view:

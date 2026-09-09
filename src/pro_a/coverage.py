@@ -194,7 +194,7 @@ def run_audit(db_path: str | Path) -> dict[str, Any]:
         rq_ref_counts: Counter[str] = Counter()
         gap_ref_counts: Counter[str] = Counter()
         if _table_exists(conn, "current_views"):
-            for row in conn.execute("SELECT trigger_claim_ids_json FROM current_views").fetchall():
+            for row in conn.execute("SELECT trigger_claim_ids_json FROM current_views WHERE status='official'").fetchall():
                 view_ref_counts.update(_json_string_list(row[0]))
         if _table_exists(conn, "research_questions"):
             for row in conn.execute("SELECT supporting_claim_ids_json,opposing_claim_ids_json FROM research_questions").fetchall():

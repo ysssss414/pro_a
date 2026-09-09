@@ -782,6 +782,10 @@ def validate_payload(payload: Mapping[str, Any]) -> None:
         "input_artifact_roles_and_sha256",
     ):
         _require(metadata.get(field) not in (None, "", []), f"PAYLOAD_BASELINE_FIELD_MISSING:{field}")
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .phase3f_foundation_baseline import validate_foundation_payload
+        validate_foundation_payload(payload)
+        return
     mutations = payload.get("intended_mutations") or []
     mutation_ids = [item.get("mutation_id") for item in mutations]
     _require(len(mutation_ids) == len(set(mutation_ids)), "DUPLICATE_MUTATION_ID")
@@ -956,6 +960,10 @@ def _catalog_from_connection(connection: sqlite3.Connection) -> dict[str, Any]:
 
 def validate_executable_operations(connection: sqlite3.Connection, payload: Mapping[str, Any]) -> None:
     validate_payload(payload)
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .phase3f_foundation_baseline import validate_foundation_payload
+        validate_foundation_payload(payload, connection)
+        return
     catalog = _catalog_from_connection(connection)
     package_terms: dict[str, str] = {}
     created_ids: set[str] = set()

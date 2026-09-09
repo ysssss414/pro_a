@@ -99,7 +99,7 @@ def create_official_view_record(conn, cfg: AppConfig, node_id: str, data: dict[s
     previous = dict(previous_row) if previous_row else None
     revision_date = datetime.now().strftime("%Y%m%d")
     seq_row = conn.execute(
-        "SELECT MAX(revision_seq) AS seq FROM current_views WHERE node_id=? AND revision_date=?",
+        "SELECT MAX(revision_seq) AS seq FROM current_views WHERE node_id=? AND revision_date=? AND status='official'",
         (node_id, revision_date),
     ).fetchone()
     revision_seq = (seq_row["seq"] + 1) if seq_row and seq_row["seq"] is not None else 0
