@@ -19,7 +19,7 @@ from .production_promotion import (
 from .relation_structure import directed_path_exists
 from .db import ACTIVE_RELATION_SUPPORTING_CLAIM_STATUSES
 from .foundation_execution_contract import (
-    uses_contract, BOUND_CONTRACT, EXTRA_SNAPSHOT_TABLES, admitted_claim_row,
+    uses_contract, uses_identity_contract, BOUND_CONTRACT, BOUND_IDENTITY_CONTRACT, EXTRA_SNAPSHOT_TABLES, admitted_claim_row,
     authorize_links, temporal_row, authorization_row, project_temporal, evidence_link_row,
 )
 
@@ -54,7 +54,7 @@ def blank_body(packet):
     return body
 
 
-def build_review_packet(*, package, registry, production, repository_commit, objects, timestamp, execution_contract=None, evidence_governance_manifest=None):
+def build_review_packet(*, package, registry, production, repository_commit, objects, timestamp, execution_contract=None, evidence_governance_manifest=None, identity_evidence_index=None):
     """Build blank review from explicit lossless projections, never infer decisions."""
     require(set(objects) == set(DECISIONS), "OBJECT_UNIVERSE_INVALID")
     records = {}
@@ -85,10 +85,16 @@ def build_review_packet(*, package, registry, production, repository_commit, obj
             "package": package, "production_sha256": production["sha256"], "execution_contract": execution_contract,
         })
     if evidence_governance_manifest is not None:
-        require(execution_contract == BOUND_CONTRACT, "NATIVE_EXECUTION_CONTRACT_NOT_BOUND")
+        require(execution_contract in (BOUND_CONTRACT, BOUND_IDENTITY_CONTRACT), "NATIVE_EXECUTION_CONTRACT_NOT_BOUND")
         body["evidence_governance_manifest"] = copy.deepcopy(evidence_governance_manifest)
         body["packet_id"] = deterministic_id("FOUNDATION_REVIEW", {
             "prior_identity": body["packet_id"], "governance_manifest_sha256": evidence_governance_manifest["manifest_sha256"]})
+    if execution_contract == BOUND_IDENTITY_CONTRACT:
+        body["identity_evidence_index"] = copy.deepcopy(identity_evidence_index)
+        body["identity_evidence_index_sha256"] = canonical_sha256(identity_evidence_index)
+        body["packet_id"] = deterministic_id("FOUNDATION_REVIEW", {
+            "prior_identity": body["packet_id"], "identity_evidence_index_sha256": body["identity_evidence_index_sha256"],
+            "repository_commit": repository_commit})
     packet = seal(body, "immutable_packet_sha256")
     validate_review(packet, expected_sha256=packet["immutable_packet_sha256"], completed=False)
     return packet
@@ -103,6 +109,9 @@ def validate_review(packet, *, expected_sha256, completed):
             "IMMUTABLE_PACKET_HASH_DRIFT")
     require(packet.get("current_view_candidates") == 0, "OFFICIAL_VIEW_CANDIDATE_FORBIDDEN")
     governed = uses_contract(packet)
+    if uses_identity_contract(packet):
+        from .foundation_identity_admission import validate_identity_evidence
+        validate_identity_evidence(packet)
     governance_manifest = packet.get("evidence_governance_manifest")
     if governance_manifest is not None:
         from .foundation_native_evidence import validate_manifest
@@ -229,9 +238,14 @@ def compile_mutations(packet, snapshot):
     governed = uses_contract(packet)
     mutations, mapping, node_ops, relation_ops, claims = [], [], [], [], []
     catalog = build_identity_catalog(snapshot["nodes"], snapshot["node_aliases"])
+    identity = None
+    if uses_identity_contract(packet):
+        from .foundation_identity_admission import identity_plan, require_claim_subject
+        identity = identity_plan(packet, snapshot, {
+            r["candidate_id"]: r["human_input"] for rows in packet["objects"].values() for r in rows})
     source_rows = {r["source_id"]: r for r in snapshot["sources"]}
     claim_rows = {r["claim_id"]: r for r in snapshot["claims"]}
-    nodes = {}  # ONLY explicitly human-authorized final identities, not all Production Nodes.
+    nodes = dict(identity["references"]) if identity else {}  # V4 also admits exact active direct Production refs.
     executable_claims = set()
     active_evidence_claims = set()
     terms = {}
@@ -269,6 +283,8 @@ def compile_mutations(packet, snapshot):
         claims.append({"claim_id": cid, "source_id": content["source_id"], "executable": executable})
         if not executable:
             continue
+        if identity:
+            require_claim_subject(record, nodes)
         require(content.get("qualification_status") == "DETERMINISTICALLY_MAPPABLE", f"CLAIM_EXCEPTION_UNRESOLVED:{cid}")
         require(cid not in claim_rows, f"CLAIM_ID_COLLISION:{cid}")
         row = admitted_claim_row(record, packet) if governed else copy.deepcopy(content["row"])
@@ -296,7 +312,10 @@ def compile_mutations(packet, snapshot):
         node_ops.append(op)
         if not executable:
             continue
-        require(content["supporting_claim_ids"] and set(content["supporting_claim_ids"]) & executable_claims, f"NODE_SUPPORT_NON_EXECUTABLE:{cid}")
+        if not identity:
+            require(content["supporting_claim_ids"] and set(content["supporting_claim_ids"]) & executable_claims, f"NODE_SUPPORT_NON_EXECUTABLE:{cid}")
+        else:
+            op["identity_admission"] = copy.deepcopy(identity["nodes"][cid])
         require(content["primary_type"] in NODE_TYPES, f"NODE_TYPE_INVALID:{cid}")
         if decision == "REUSE":
             nid = human["target_id"]
@@ -317,12 +336,20 @@ def compile_mutations(packet, snapshot):
             op.update(final_node=row, aliases=[])
             mutate("nodes", {"node_id": nid}, row, cid)
         nodes[cid] = nid
-        nodes[nid] = nid
+        if not identity:
+            nodes[nid] = nid
     for record in packet["objects"]["aliases"]:
         cid, content, human = record["candidate_id"], record["content"], record["human_input"]
         executable = human["decision"] == "ATTACH"
         disposition("aliases", record, executable)
         if not executable:
+            continue
+        if identity:
+            projection = identity["aliases"][cid]
+            mapping[-1].update(copy.deepcopy(projection))
+            if projection["runtime_alias_mutation_count"]:
+                mutate("node_aliases", {"alias": content["alias"]},
+                       {"alias": content["alias"], "node_id": projection["resolved_runtime_target_id"]}, cid)
             continue
         nid = nodes.get(content["target_ref"])
         require(nid is not None and human["target_id"] == nid, f"ALIAS_TARGET_NON_EXECUTABLE:{cid}")

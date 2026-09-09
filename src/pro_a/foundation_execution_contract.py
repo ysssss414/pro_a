@@ -39,6 +39,28 @@ CONTRACT = {
 }
 CONTRACT_SHA256 = canonical_sha256(CONTRACT)
 BOUND_CONTRACT = {**CONTRACT, "contract_sha256": CONTRACT_SHA256}
+# V3 remains the exact storage/evidence sub-contract installed in schema 0.2.3.
+# V4 changes review identity admission only; it does not relabel V3 persisted
+# evidence authority or require replacement of any Production trigger.
+IDENTITY_CONTRACT = {
+    "contract_id": "FOUNDATION_EXECUTION_CONTRACT_V4_NODE_IDENTITY_SEPARATED",
+    "schema_version": "0.2.3",
+    "storage_evidence_contract_sha256": CONTRACT_SHA256,
+    "node_identity_admission": "INDEPENDENT_OF_CLAIM_CURRENT_ADMISSION",
+    "reuse_node_requires_keep_supporting_claim": False,
+    "create_node_requires_keep_supporting_claim": False,
+    "supporting_claim_ids_execution_role": "NON_BLOCKING_NODE_IDENTITY_PROVENANCE",
+    "create_identity_provenance": "NONEMPTY_EXACT_IMMUTABLE_EVIDENCE_AND_SOURCE_BINDINGS",
+    "direct_existing_node_ref": "EXISTS_ACTIVE_TYPE_AND_IDENTITY_VALID_INDEPENDENT_OF_CANDIDATE",
+    "human_alias_target": "FROZEN_SEMANTIC_CANDIDATE_OR_EXISTING_NODE_REFERENCE",
+    "runtime_alias_target": "RESOLVED_FINAL_NODE_ID",
+    "canonical_equivalent_attach": "ATTACH_NOOP_CANONICAL_EQUIVALENT_SAME_OWNER_ONLY",
+    "claim_relation_baseline_evidence_rules": "UNCHANGED_STORAGE_EVIDENCE_CONTRACT",
+    "prior_human_authorization_automatically_rebound": False,
+    "production_authorization": False,
+}
+IDENTITY_CONTRACT_SHA256 = canonical_sha256(IDENTITY_CONTRACT)
+BOUND_IDENTITY_CONTRACT = {**IDENTITY_CONTRACT, "contract_sha256": IDENTITY_CONTRACT_SHA256}
 EXTRA_SNAPSHOT_TABLES = ("relation_temporal_semantics", "relation_evidence_authorizations")
 
 
@@ -51,8 +73,13 @@ def uses_contract(packet):
     value = packet.get("execution_contract")
     if value is None:
         return False
-    require(value == BOUND_CONTRACT, "EXECUTION_CONTRACT_DRIFT")
+    require(value in (BOUND_CONTRACT, BOUND_IDENTITY_CONTRACT), "EXECUTION_CONTRACT_DRIFT")
     return True
+
+
+def uses_identity_contract(packet):
+    uses_contract(packet)
+    return packet.get("execution_contract") == BOUND_IDENTITY_CONTRACT
 
 
 def project_temporal(raw):
@@ -165,11 +192,17 @@ def admitted_claim_row(record, packet):
     return row
 
 
-def authorize_links(record, packet, active_claim_ids):
-    content, human = record["content"], record["human_input"]
+def authorize_links(record, packet, active_claim_ids, *, preview_decisions=None):
+    """Exact evidence eligibility; preview never supplies runtime authorization.
+
+    Only normal completed-review calls may feed runtime projections. The preview
+    entry point returns diagnostics and never invokes a row/payload builder.
+    """
+    content = record["content"]
+    human = record["human_input"] if preview_decisions is None else preview_decisions[record["candidate_id"]]
     if human["decision"] not in {"CREATE", "REUSE"}:
         return []
-    require(uses_contract(packet) and packet["human_completion"]["reviewer"].strip() and human["reason"].strip(),
+    require(uses_contract(packet) and (preview_decisions is not None or packet["human_completion"]["reviewer"].strip()) and human["reason"].strip(),
             "RELATION_LINK_HUMAN_AUTHORITY_MISSING")
     require(content.get("decision_contract") == BOUND_CONTRACT, "RELATION_CROSS_OBJECT_RULE_NOT_BOUND")
     if content.get("evidence_provenance_mode") == "RELATION_NATIVE":
@@ -181,7 +214,7 @@ def authorize_links(record, packet, active_claim_ids):
         require(content.get("relation_native_authorizations") == expected_native and expected_native, "NATIVE_AUTHORIZATION_PROJECTION_DRIFT")
         require(any(r["role"] == "SUPPORTS" for r in expected_native), "NATIVE_SUPPORTS_AUTHORIZATION_REQUIRED")
         return [{"candidate": candidate, "claim_id": None, "evidence_role": candidate["role"].lower(),
-                 "provenance_mode": "RELATION_NATIVE", "authorization_state": "AUTHORIZED_BY_SEPARATE_GOVERNANCE_MANIFEST"}
+                 "provenance_mode": "RELATION_NATIVE", "authorization_state": "PREVIEW_ONLY_NOT_AUTHORIZATION" if preview_decisions is not None else "AUTHORIZED_BY_SEPARATE_GOVERNANCE_MANIFEST"}
                 for candidate in expected_native]
     expected = exact_link_candidates(record, packet["objects"]["claims"], packet["package"]["sha256"])
     require(content.get("evidence_link_candidates") == expected, "RELATION_LINK_CANDIDATE_DRIFT")
@@ -190,12 +223,13 @@ def authorize_links(record, packet, active_claim_ids):
     result = []
     for candidate in expected:
         cid = candidate["claim_id"]
-        require(cid in active_claim_ids and claims[cid]["human_input"]["decision"] == "KEEP", "RELATION_CLAIM_ADMISSION_BLOCKED:" + cid)
+        claim_human = claims[cid]["human_input"] if preview_decisions is None else preview_decisions[cid]
+        require(cid in active_claim_ids and claim_human["decision"] == "KEEP", "RELATION_CLAIM_ADMISSION_BLOCKED:" + cid)
         require(claims[cid]["content"]["qualification_status"] == "DETERMINISTICALLY_MAPPABLE", "RELATION_CLAIM_EXCEPTION_UNRESOLVED:" + cid)
         require(candidate["authorization_state"] == "UNAUTHORIZED", "LINK_CANDIDATE_PREAUTHORIZED")
         result.append({"candidate": candidate, "claim_id": cid,
                        "evidence_role": (candidate["explicit_role"] or "SUPPORTS").lower(),
-                       "authorization_state": "AUTHORIZED_BY_HUMAN_RELATION_AND_CLAIM_DECISIONS"})
+                       "authorization_state": "PREVIEW_ONLY_NOT_AUTHORIZATION" if preview_decisions is not None else "AUTHORIZED_BY_HUMAN_RELATION_AND_CLAIM_DECISIONS"})
     return result
 
 
@@ -213,6 +247,7 @@ def temporal_row(record, relation_id, packet):
 
 
 def authorization_row(link, record, relation_id, packet):
+    require(link.get("authorization_state") != "PREVIEW_ONLY_NOT_AUTHORIZATION", "PREVIEW_IS_NOT_RUNTIME_AUTHORITY")
     candidate = link["candidate"]
     native = link.get("provenance_mode") == "RELATION_NATIVE"
     if native:
@@ -242,6 +277,7 @@ def authorization_row(link, record, relation_id, packet):
 
 
 def evidence_link_row(link, relation_id, timestamp):
+    require(link.get("authorization_state") != "PREVIEW_ONLY_NOT_AUTHORIZATION", "PREVIEW_IS_NOT_RUNTIME_AUTHORITY")
     row = {"relation_id": relation_id, "claim_id": link["claim_id"], "evidence_role": link["evidence_role"],
            "status": "active", "created_at": timestamp, "provenance_mode": "CLAIM_LINKED", "evidence_id": "",
            "source_id": None, "source_sha256": "", "evidence_sha256": "", "authorization_id": None}

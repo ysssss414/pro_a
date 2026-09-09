@@ -5,7 +5,7 @@ from datetime import date
 import json
 
 from .constants import CLAIM_NATURES, NODE_TYPES, RELATION_TYPES
-from .foundation_execution_contract import requalified_objects, BOUND_CONTRACT, restore_temporal
+from .foundation_execution_contract import requalified_objects, BOUND_CONTRACT, BOUND_IDENTITY_CONTRACT, restore_temporal
 from .foundation_schema_preparation import require_execution_schema
 from .phase3f_foundation_baseline import require
 from .production_promotion import build_identity_catalog, resolve_identity, canonical_sha256
@@ -134,3 +134,36 @@ def compare_all_rows(old, new, old_snapshot):
                 "classification": "REVIEW_SEMANTICS_CHANGED" if changed else "SEMANTICALLY_UNCHANGED_REQUALIFIED",
                 "explained": True, "human_decision": ""})
     return sorted(records, key=lambda r: r["candidate_id"])
+
+
+def requalify_identity_contract(original, prior_blank, connection, evidence):
+    """New V4 projections, preserving the original package and V3 evidence layer.
+
+    Re-run original mechanical qualification, not adjudication of new evidence.
+    No decisions are accepted or copied into a review packet here.
+    """
+    from .phase3f_foundation_baseline import validate_review
+    validate_review(prior_blank, expected_sha256=prior_blank["immutable_packet_sha256"], completed=False)
+    objects = requalify(original, prior_blank["evidence_governance_manifest"], connection, evidence)
+    prior = {(kind, r["candidate_id"]): r for kind, rows in prior_blank["objects"].items() for r in rows}
+    require(set(prior) == {(kind, r["candidate_id"]) for kind, rows in objects.items() for r in rows}, "CANDIDATE_UNIVERSE_DRIFT")
+    for kind, rows in objects.items():
+        for r in rows:
+            c = r["content"]
+            require(c == prior[kind, r["candidate_id"]]["content"], "UNEXPLAINED_PRE_CORRECTION_PROJECTION_DRIFT:" + r["candidate_id"])
+            if kind == "nodes":
+                c["identity_admission_contract"] = {
+                    "contract_sha256": BOUND_IDENTITY_CONTRACT["contract_sha256"],
+                    "supporting_claim_ids_execution_role": "NON_BLOCKING_NODE_IDENTITY_PROVENANCE",
+                    "create_identity_provenance": "EXACT_FROZEN_EVIDENCE_AND_SOURCE_BINDINGS",
+                    "human_decision": "",
+                }
+            elif kind == "aliases":
+                c["identity_admission_contract"] = {
+                    "contract_sha256": BOUND_IDENTITY_CONTRACT["contract_sha256"],
+                    "human_target": "SEMANTIC_CANDIDATE_OR_EXISTING_NODE_REFERENCE",
+                    "runtime_target": "RESOLVED_FINAL_NODE_ID",
+                    "canonical_equivalent_attach": "ATTACH_NOOP_CANONICAL_EQUIVALENT_SAME_OWNER_ONLY",
+                    "human_decision": "",
+                }
+    return objects
