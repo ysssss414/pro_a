@@ -904,8 +904,17 @@ def build_handoff_core(
     bindings: Sequence[Mapping[str, Any]],
     authority: Mapping[str, Any],
     policy: HandoffPolicy,
+    verification_basis=None,
+    completed_artifact=None,
 ) -> dict[str, Any]:
-    """Build mapping and Phase 3D payload for either supported review mode."""
+    """Build mapping and Phase 3D payload for the selected immutable review contract."""
+    if packet.get("document_type") == "phase3f_foundation_baseline_review_packet":
+        from .phase3f_foundation_baseline import build_foundation_handoff
+        return build_foundation_handoff(
+            packet=packet, blank_packet=bundle["blank_packet"],
+            production_path=production_path, repository_commit=repository_commit,
+            verification_basis=verification_basis, completed_artifact=completed_artifact,
+        )
     production_path = Path(production_path).resolve()
     _require(
         isinstance(repository_commit, str) and len(repository_commit) == 40,

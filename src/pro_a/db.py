@@ -62,6 +62,16 @@ class Database:
             conn.close()
 
     def init_schema(self) -> None:
+        # Explicitly prepared foundation schemas must never be auto-downgraded,
+        # nor run legacy backfills over governed evidence or frozen baselines.
+        if self.path.exists():
+            with sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True) as existing:
+                has_meta = existing.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").fetchone()
+                version = existing.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone() if has_meta else None
+                if version and version[0] == "0.2.3":
+                    from .foundation_schema_preparation import require_execution_schema
+                    require_execution_schema(existing)
+                    return
         schema = Path(__file__).with_name("schema.sql").read_text(encoding="utf-8")
         with self.connect() as conn:
             conn.executescript(schema)
@@ -91,7 +101,7 @@ class Database:
         self._add_column(conn, "proposals", "source_impact_id TEXT NOT NULL DEFAULT ''")
         self._add_column(conn, "proposals", "result_json TEXT NOT NULL DEFAULT '{}'")
 
-        for row in conn.execute("SELECT view_id,version FROM current_views").fetchall():
+        for row in conn.execute("SELECT view_id,version FROM current_views WHERE status<>'baseline'").fetchall():
             version = row["version"]
             revision_date = version[2:10] if version.startswith("v_") and len(version) >= 10 else ""
             revision_seq = 0
@@ -328,6 +338,19 @@ class Database:
     def relation_evidence(self, relation_id: str) -> list[dict[str, Any]]:
         if not self.one("SELECT 1 FROM node_relations WHERE relation_id=?", (relation_id,)):
             raise ValueError(f"Unknown Relation: {relation_id}")
+        if "provenance_mode" in {r["name"] for r in self.all("PRAGMA table_info(relation_evidence_links)")}:
+            return self.all(
+                """SELECT rel.relation_id,rel.claim_id,rel.evidence_role,
+                          rel.status AS evidence_status,rel.created_at AS evidence_created_at,
+                          COALESCE(rel.source_id,c.source_id) AS source_id,c.statement,c.status,c.confidence,
+                          rel.provenance_mode,rel.evidence_id,rel.source_sha256,rel.evidence_sha256,
+                          a.authorization_state,a.authorized_proposition,a.proposition_scope,
+                          a.human_authorization_manifest_id,a.original_packet_sha256
+                   FROM relation_evidence_links rel LEFT JOIN claims c ON c.claim_id=rel.claim_id
+                   LEFT JOIN relation_evidence_authorizations a ON a.link_candidate_id=rel.authorization_id
+                   WHERE rel.relation_id=? ORDER BY rel.provenance_mode,rel.claim_id,rel.evidence_id,rel.evidence_role""",
+                (relation_id,),
+            )
         return self.all(
             """SELECT rel.relation_id,rel.claim_id,rel.evidence_role,
                       rel.status AS evidence_status,rel.created_at AS evidence_created_at,
@@ -914,7 +937,7 @@ class Database:
         )
 
     def versions(self, node_id: str) -> list[str]:
-        return [r["version"] for r in self.all("SELECT version FROM current_views WHERE node_id=?", (node_id,))]
+        return [r["version"] for r in self.all("SELECT version FROM current_views WHERE node_id=? AND status='official'", (node_id,))]
 
     def pending_proposals(self) -> list[dict[str, Any]]:
         return self.all("SELECT * FROM proposals WHERE status='pending' ORDER BY created_at")

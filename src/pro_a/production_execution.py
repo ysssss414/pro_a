@@ -147,7 +147,12 @@ def payload_operation_counts(payload: Mapping[str, Any]) -> dict[str, int]:
     }
 
 
-def validate_supported_mutations(payload: Mapping[str, Any]) -> set[str]:
+def validate_supported_mutations(payload: Mapping[str, Any], *, verification_basis=None, completed_artifact=None) -> set[str]:
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .foundation_production_entry import validate_foundation_mutations
+        from .production_promotion import validate_payload
+        validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
+        return validate_foundation_mutations(payload)
     mutations = payload.get("intended_mutations") or []
     _require(bool(mutations), "EMPTY_PRODUCTION_MUTATION_SET")
     tables = {str(item.get("table")) for item in mutations}
@@ -162,6 +167,16 @@ def validate_supported_mutations(payload: Mapping[str, Any]) -> set[str]:
         "REUSE_ALIAS_MUTATION_FORBIDDEN",
     )
     return tables
+
+
+def execute_foundation_payload(**kwargs):
+    """Foundation SHADOW/PRODUCTION entry; both modes use the same verified executor.
+
+    Separate from the unchanged Phase 3D single-source candidate package API.
+    Payload builder and execution implementation commits are distinct bindings.
+    """
+    from .foundation_production_entry import execute
+    return execute(**kwargs)
 
 
 def validate_candidate_package(candidate_dir: Path) -> dict[str, Any]:

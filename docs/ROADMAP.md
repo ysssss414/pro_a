@@ -1,6 +1,6 @@
 # pro_a Roadmap — Source Expansion & External Knowledge Integration
 
-Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.2 closed at the governed automation boundary**
+Status: **Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.2 closed at the governed automation boundary; Phase 3F Foundation COMPLETE**
 
 Next: **No S-M acceptance is currently authorized. Further automation requires a separately authorized architectural phase and a newly frozen contract.**
 
@@ -178,7 +178,7 @@ Phase 3C artifacts、review decisions 与 exact Source identity 随后作为 Pha
 
 Phase 3D 交付 deterministic promotion payload、exact multi-artifact admission convergence、Source provenance/materialization contract、`CREATE` / `REUSE` / `DEFER` / `REJECT` operation layer、human Node authorization、Phase 1-style collision/baseline validation、shadow qualification、rollback/restore qualification、dedicated one-time executor、immutable authorization artifact、durable journal/receipt consumption state 以及 successful exact Production promotion。授权仅覆盖已冻结 payload 与 baseline，并在成功执行后终止；没有持续、通用或浏览器 Production write authority。
 
-当前 Production baseline 冻结为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 Current Views；integrity `ok`、foreign-key violations 0、无 SQLite sidecar。精确 byte identity、authorization、journal、receipt、backup 与 Source materialization 证据仅保留在本地受控运行时，不进入公开文档。
+Phase 3D 历史 Production baseline 冻结为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 Current Views；integrity `ok`、foreign-key violations 0、无 SQLite sidecar。该阶段精确 byte identity、authorization、journal、receipt、backup 与 Source materialization 证据仅保留在本地受控运行时；当前基线见下述 Phase 3F。
 
 详见 `docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`。
 
@@ -189,6 +189,12 @@ Phase 3D 交付 deterministic promotion payload、exact multi-artifact admission
 Phase 3E.1 已将 Phase 3C/3D clean-source correctness 与 review primitives 整理为单一 clean-PDF operational entrypoint。每个 SHA-bound run 先冻结 exact Source，再完成 parse/semantic table suppression、Evidence binding/bounded local subspan、post-binding table Claim safety、semantic guard、Claim review、Node operation review 和 deterministic non-executable promotion preview。运行可按 manifest artifact hashes 恢复，Production 全程 immutable/read-only，最终停在 `HUMAN_REVIEW_REQUIRED`。
 
 Phase 3E.2 保留原始 S-K fresh-source `FAIL`。后续 bounded repair 验证了 core correctness、safety precision 与 S-L6 deterministic pre-call partitioning；S-L7 同时确认复杂 clean Source 的 REVIEW 负担仍可能较高。最终 preregistered S-L8 atomicity 规则因释放合法负控而撤回，因此 full automation generalization 未获接受，不再授权 Phase 3E.2 内的规则级修复，S-M 亦未授权。完整边界见 [`PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
+
+### Phase 3F — Foundation governance and Production import
+
+状态：**COMPLETE**。33-source AI Hardware Foundation 已完成 295/295 Human Review，通过 Envelope V2、payload qualification 与 exact Production-entry qualification，最终以一次授权事务执行 239 个 INSERT：25 新 Nodes、43 admitted Claims、27 Relations；保留 86 个 Node REUSE、2 个 alias canonical no-op 与全部未批准内容的排除决定。
+
+权威 Production schema 为 `0.2.3`，SHA256 为 `6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1`；relation-native temporal/evidence 治理已落地，两个 Official Current Views 不变，1 个 historical Baseline 保持隔离。一次性授权已消费，恢复基线与三份独立资格/应用回执已冻结。详见 [`PHASE3F_FOUNDATION_FREEZE.md`](PHASE3F_FOUNDATION_FREEZE.md)。本次 Release Closure 只更新文档及本地证据，不修改 Production 或执行语义。
 
 ### Later — not started
 
@@ -216,7 +222,7 @@ DEFER_EVIDENCE_QUALITY_METADATA = true
 - contract-constrained functional Relation false negatives；
 - Phase 3D 的 7 个 Node DEFER：AI算力、TS芯片、摄像头马达驱动芯片、NFC芯片、EDSFF eSSD模组、聚辰股份、AI推理存储需求；
 - Phase 3D 的 10 个 Relation observations 保持 `REJECT`，不得自动重放；
-- schema `0.2.2` / `relation_evidence_links` 作为独立迁移阶段；
+- schema / `relation_evidence_links` 历史 backlog 已由 Phase 3F 独立迁移及治理收口至 `0.2.3`；不构成其他 Relation 的导入授权；
 - noisy Source、audio / ASR ingestion 作为独立质量阶段；
 - local-model preprocessing 作为未来独立能力；
 - Claim semantic deduplication / conflict retrieval；

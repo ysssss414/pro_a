@@ -766,7 +766,26 @@ def payload_semantic_body(payload: Mapping[str, Any]) -> dict[str, Any]:
     return {key: copy.deepcopy(value) for key, value in payload.items() if key not in {"payload_id", "payload_hash"}}
 
 
-def validate_payload(payload: Mapping[str, Any]) -> None:
+def validate_payload_artifact(payload_artifact, *, expected_payload_file_sha256: str,
+                              verification_basis=None, completed_artifact=None):
+    """Validate exact serialized bytes using an independently supplied file hash.
+
+    This read-only helper is not an executor or a source of authorization.
+    """
+    data = payload_artifact if isinstance(payload_artifact, bytes) else Path(payload_artifact).read_bytes()
+    payload = json.loads(data)
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .foundation_payload_envelope import verify_payload_review_basis
+        verify_payload_review_basis(payload, verification_basis, completed_artifact)
+    _require(hashlib.sha256(data).hexdigest() == expected_payload_file_sha256, "PAYLOAD_FILE_HASH_MISMATCH")
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
+    return payload
+
+
+def validate_payload(payload: Mapping[str, Any], *, verification_basis=None, completed_artifact=None) -> None:
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .foundation_payload_envelope import verify_payload_review_basis
+        verify_payload_review_basis(payload, verification_basis, completed_artifact)
     _require(
         payload.get("document_type") in {DOCUMENT_TYPE, AUTHORIZATION_DOCUMENT_TYPE},
         "PAYLOAD_DOCUMENT_TYPE_INVALID",
@@ -782,6 +801,10 @@ def validate_payload(payload: Mapping[str, Any]) -> None:
         "input_artifact_roles_and_sha256",
     ):
         _require(metadata.get(field) not in (None, "", []), f"PAYLOAD_BASELINE_FIELD_MISSING:{field}")
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .phase3f_foundation_baseline import validate_foundation_payload
+        validate_foundation_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
+        return
     mutations = payload.get("intended_mutations") or []
     mutation_ids = [item.get("mutation_id") for item in mutations]
     _require(len(mutation_ids) == len(set(mutation_ids)), "DUPLICATE_MUTATION_ID")
@@ -954,8 +977,12 @@ def _catalog_from_connection(connection: sqlite3.Connection) -> dict[str, Any]:
     return build_identity_catalog(nodes, aliases)
 
 
-def validate_executable_operations(connection: sqlite3.Connection, payload: Mapping[str, Any]) -> None:
-    validate_payload(payload)
+def validate_executable_operations(connection: sqlite3.Connection, payload: Mapping[str, Any], *, verification_basis=None, completed_artifact=None) -> None:
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
+    if payload.get("adapter_type") == "phase3f_complete_foundation_v1":
+        from .phase3f_foundation_baseline import validate_foundation_payload
+        validate_foundation_payload(payload, connection, verification_basis=verification_basis, completed_artifact=completed_artifact)
+        return
     catalog = _catalog_from_connection(connection)
     package_terms: dict[str, str] = {}
     created_ids: set[str] = set()
@@ -1181,21 +1208,36 @@ def apply_payload_to_shadow(
     configured_production_path: Path,
     *,
     inject_failure_after: int | None = None,
+    verification_basis=None,
+    completed_artifact=None,
 ) -> dict[str, Any]:
     """Apply only to an explicit shadow. Configured Production is unconditionally blocked."""
-    validate_payload(payload)
+    validate_payload(payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
     shadow_path = Path(shadow_path).resolve()
     configured_production_path = Path(configured_production_path).resolve()
     assert_shadow_target(shadow_path, configured_production_path)
+    return _apply_verified_payload(payload, shadow_path, inject_failure_after=inject_failure_after,
+                                   verification_basis=verification_basis, completed_artifact=completed_artifact)
+
+
+def _apply_verified_payload(payload, shadow_path, *, inject_failure_after=None,
+                            verification_basis=None, completed_artifact=None,
+                            expected_before_rows=None, expected_after_rows=None):
+    """Shared transaction primitive; public entries must authorize/select the target first."""
     _require(shadow_path.is_file(), "SHADOW_DATABASE_MISSING")
     pre_sha = sha256_file(shadow_path)
     connection = sqlite3.connect(shadow_path)
     connection.row_factory = sqlite3.Row
     try:
         connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("BEGIN IMMEDIATE")
+        _require(sha256_file(shadow_path) == pre_sha, "LOCKED_BASELINE_SHA_MISMATCH")
         schema_version = connection.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()[0]
         _require(schema_version == payload["metadata"]["production_schema_version"], "SHADOW_SCHEMA_VERSION_MISMATCH")
         _require(schema_sha256(connection) == payload["metadata"]["production_schema_sha256"], "SHADOW_SCHEMA_HASH_MISMATCH")
+        if expected_before_rows is not None:
+            _require({t: sorted(v) for t, v in database_rows(connection).items()} == expected_before_rows,
+                     "LOCKED_PREDICTED_BASELINE_MISMATCH")
         replay_state = _replay_state(connection, payload)
         if replay_state == "CONFLICT":
             raise PromotionError("PAYLOAD_REPLAY_CONFLICT")
@@ -1214,11 +1256,10 @@ def apply_payload_to_shadow(
             }
         _require(pre_sha == payload["metadata"]["production_sha256"], "SHADOW_NOT_EXACT_PRODUCTION_BASELINE")
         _require(table_counts(connection) == payload["metadata"]["production_counts"], "SHADOW_BASELINE_COUNTS_MISMATCH")
-        validate_executable_operations(connection, payload)
+        validate_executable_operations(connection, payload, verification_basis=verification_basis, completed_artifact=completed_artifact)
         before_rows = database_rows(connection)
         allowed_tables = {mutation["table"] for mutation in payload["intended_mutations"]}
         connection.set_authorizer(_write_authorizer(allowed_tables))
-        connection.execute("BEGIN IMMEDIATE")
         try:
             for index, mutation in enumerate(payload["intended_mutations"], start=1):
                 _insert_mutation(connection, mutation)
@@ -1229,6 +1270,9 @@ def apply_payload_to_shadow(
             integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
             _require(not foreign_keys, f"SHADOW_FOREIGN_KEY_CHECK_FAILED:{foreign_keys}")
             _require(integrity == "ok", f"SHADOW_INTEGRITY_CHECK_FAILED:{integrity}")
+            if expected_after_rows is not None:
+                _require({t: sorted(v) for t, v in database_rows(connection).items()} == expected_after_rows,
+                         "TRANSACTION_PREDICTED_DIFF_MISMATCH")
             connection.commit()
         except Exception:
             connection.set_authorizer(None)

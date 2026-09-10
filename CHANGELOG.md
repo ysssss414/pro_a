@@ -1,5 +1,12 @@
 # Changelog
 
+## Phase 3F Foundation Release Closure — 2026-09-10
+
+- Completed governed 33-source AI Hardware Foundation integration and 295 Human Review decisions; one qualified Production transaction inserted 239 rows, including 25 new Nodes, 43 admitted Claims and 27 Relations. Reuse, canonical no-ops and excluded decisions remain frozen.
+- Released schema `0.2.3` relation-native temporal/evidence support: 22 claim-linked and 5 relation-native Relations, with 8 native SUPPORTS and zero native CONTRADICTS; historical Baseline remains isolated and both Official Current Views are unchanged.
+- Preserved V4 Node-identity / Claim-admission separation, Envelope V2 actual completed-artifact semantic/file binding, content-addressed payload and separate payload/entry qualification receipts. Exact Production-entry execution and byte-exact recovery backups are frozen in a separate Production Apply Receipt.
+- Authoritative Production SHA256: `6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1`. See [Phase 3F freeze](docs/PHASE3F_FOUNDATION_FREEZE.md). This closure is documentation-only: no further Production write, payload rebuild/apply, version bump or tag.
+
 ## Phase 3E.1 Operational New-Source Ingestion — 2026-09-02
 
 - Added a single resumable clean-PDF ingestion entrypoint with exact Source freezing, SHA-bound run identity, a hashed run manifest, explicit stage receipts, and clean-source fail/defer behavior.
