@@ -1216,15 +1216,28 @@ def apply_payload_to_shadow(
     shadow_path = Path(shadow_path).resolve()
     configured_production_path = Path(configured_production_path).resolve()
     assert_shadow_target(shadow_path, configured_production_path)
+    return _apply_verified_payload(payload, shadow_path, inject_failure_after=inject_failure_after,
+                                   verification_basis=verification_basis, completed_artifact=completed_artifact)
+
+
+def _apply_verified_payload(payload, shadow_path, *, inject_failure_after=None,
+                            verification_basis=None, completed_artifact=None,
+                            expected_before_rows=None, expected_after_rows=None):
+    """Shared transaction primitive; public entries must authorize/select the target first."""
     _require(shadow_path.is_file(), "SHADOW_DATABASE_MISSING")
     pre_sha = sha256_file(shadow_path)
     connection = sqlite3.connect(shadow_path)
     connection.row_factory = sqlite3.Row
     try:
         connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("BEGIN IMMEDIATE")
+        _require(sha256_file(shadow_path) == pre_sha, "LOCKED_BASELINE_SHA_MISMATCH")
         schema_version = connection.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()[0]
         _require(schema_version == payload["metadata"]["production_schema_version"], "SHADOW_SCHEMA_VERSION_MISMATCH")
         _require(schema_sha256(connection) == payload["metadata"]["production_schema_sha256"], "SHADOW_SCHEMA_HASH_MISMATCH")
+        if expected_before_rows is not None:
+            _require({t: sorted(v) for t, v in database_rows(connection).items()} == expected_before_rows,
+                     "LOCKED_PREDICTED_BASELINE_MISMATCH")
         replay_state = _replay_state(connection, payload)
         if replay_state == "CONFLICT":
             raise PromotionError("PAYLOAD_REPLAY_CONFLICT")
@@ -1247,7 +1260,6 @@ def apply_payload_to_shadow(
         before_rows = database_rows(connection)
         allowed_tables = {mutation["table"] for mutation in payload["intended_mutations"]}
         connection.set_authorizer(_write_authorizer(allowed_tables))
-        connection.execute("BEGIN IMMEDIATE")
         try:
             for index, mutation in enumerate(payload["intended_mutations"], start=1):
                 _insert_mutation(connection, mutation)
@@ -1258,6 +1270,9 @@ def apply_payload_to_shadow(
             integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
             _require(not foreign_keys, f"SHADOW_FOREIGN_KEY_CHECK_FAILED:{foreign_keys}")
             _require(integrity == "ok", f"SHADOW_INTEGRITY_CHECK_FAILED:{integrity}")
+            if expected_after_rows is not None:
+                _require({t: sorted(v) for t, v in database_rows(connection).items()} == expected_after_rows,
+                         "TRANSACTION_PREDICTED_DIFF_MISMATCH")
             connection.commit()
         except Exception:
             connection.set_authorizer(None)
