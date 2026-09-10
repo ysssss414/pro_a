@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete; Phase 3E.2 closed at the governed automation boundary.** Phase 3E.2 保留 S-K fresh-source `FAIL`，验证了 bounded correctness、safety precision 与 deterministic pre-call partitioning，但未接受 full automation generalization；复杂 clean PDF 仍可能产生较高人工 REVIEW 负担。S-M 未授权，Production authorization/apply 仍保持独立且未授权。详见 [`docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete; Phase 3E.2 closed at the governed automation boundary; Phase 3F Foundation COMPLETE.** Phase 3F 已完成 33-source Foundation 治理、295 项 Human Review 和精确资格化入口的一次性 Production 导入，授权已消费。冻结记录见 [`docs/PHASE3F_FOUNDATION_FREEZE.md`](docs/PHASE3F_FOUNDATION_FREEZE.md)。Phase 3E.2 的 S-K fresh-source `FAIL` 与 full automation generalization 未获接受的边界不变；S-M 及其 Production apply 仍未授权。详见 [`docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -24,7 +24,7 @@ Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen base
 - [`docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md`](docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md)
 - [`docs/PHASE3E_OPERATIONAL_INGESTION.md`](docs/PHASE3E_OPERATIONAL_INGESTION.md)
 
-当前 Production baseline 为 schema `0.2.1`：302 Nodes、745 aliases、181 Node Relations、3 Sources、116 Claims、19 Claim–Node links、3 Source–Node links、2 个 official Current Views。Phase 2 的 deterministic read surfaces 与 Phase 3 的 controlled Source expansion 路径均保留原边界。
+当前 Production baseline 为 schema `0.2.3`：327 Nodes、760 aliases、208 Node Relations、36 Sources、159 Claims、19 Claim–Node links、3 Source–Node links、2 个 official Current Views，另有 1 个隔离的 historical Foundation Baseline。权威 Production SHA256：`6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1`。Phase 2 的 deterministic read surfaces 与 Phase 3 的 controlled Source expansion 路径均保留原边界。
 
 Phase 2 — **Knowledge Exploration & Interaction Layer** 已收口：Search、Browse、Trace、Research 与 Human Current View maintenance workflow 均 complete。原目标顺序为：
 
@@ -76,7 +76,7 @@ PHASE3C_HANDOFF_TO_PHASE3D = complete
 
 Phase 3D 建立并验证了 deterministic promotion payload、exact multi-artifact admission convergence、Source provenance/materialization contract、`CREATE` / `REUSE` / `DEFER` / `REJECT` operation layer、human Node authorization、Phase 1-style collision/baseline validation、shadow qualification、rollback/restore qualification、dedicated one-time executor、immutable authorization artifact 与 durable journal/receipt consumption state。已授权的 frozen payload 对 exact baseline 成功执行一次；授权随后终止，不能重用于其他 payload、baseline、Source 或后续 ingest。
 
-公开文档仅冻结 schema、计数、操作边界和结论。精确 Production byte identity、Source 原件、authorization、journal、receipt、backup 及运行时路径继续保存在本地受控证据中。7 个 Node DEFER 与 10 个 Relation REJECT 均未执行；schema `0.2.2` / `relation_evidence_links`、noisy Source / audio / ASR、local-model preprocessing、IMA live integration 和更高层 review UI 都是独立 backlog。
+Phase 3D 历史公开记录仅冻结 schema、计数、操作边界和结论；Source 原件、authorization、journal、receipt、backup 及运行时路径继续保存在本地受控证据中。7 个 Node DEFER 与 10 个 Relation REJECT 均未执行；其 schema / relation-evidence backlog 已由独立 Phase 3F 收口至 `0.2.3`，不改变原拒绝或延期决定。noisy Source / audio / ASR、local-model preprocessing、IMA live integration 和更高层 review UI 仍是独立 backlog。
 
 Phase 3E.1 Operational New-Source Ingestion 已提供 `python scripts/phase3e_ingest.py <pdf>`：冻结 exact Source 后复用 Phase 3C/3D correctness 与 review primitives，生成 Claim/Node review package 及 non-executable promotion preview，并停止等待 human review。Fresh clean-source pilot 属于 Phase 3E.2，不在本阶段自动执行。详见 [`docs/PHASE3E_OPERATIONAL_INGESTION.md`](docs/PHASE3E_OPERATIONAL_INGESTION.md) 与 [`docs/ROADMAP.md`](docs/ROADMAP.md)。
 
