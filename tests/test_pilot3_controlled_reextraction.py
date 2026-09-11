@@ -21,6 +21,9 @@ def _prepare_frozen_fixture(tmp_path: Path, monkeypatch):
     write_pdf(source, ["[[PAGE:1]] Fixture source statement."])
     source_sha = sha256_file(source)
     monkeypatch.setattr(s2, "ORIGINAL_SOURCE_SHA256", source_sha)
+    # Public-base file identity; the semantic prompt pin and runtime checks remain frozen.
+    monkeypatch.setattr(s2, "REPAIRED_PROMPT_FILE_SHA256",
+                        "518a31ec17694e4d5adea0e3111f212a86fd4de73d24066271c44e5ef06bef14")
     monkeypatch.setattr(s2, "PRODUCTION_BASELINE_SHA256", sha256_file(cfg.db_path))
 
     parsed = s2.parse_source_with_diagnostics(source)
@@ -273,3 +276,10 @@ def test_controlled_run_calls_extraction_once_and_finalizes_without_human_review
     )
     assert finalized["metrics"]["POST_REPAIR_INDEPENDENT_PILOT_REQUIRED"] is True
     assert production_snapshot(cfg.db_path)["sha256"] == sha256_file(cfg.db_path)
+
+
+def test_public_prompt_file_identity_still_rejects_drift(tmp_path, monkeypatch):
+    cfg, source, _ = _prepare_frozen_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(s2, "REPAIRED_PROMPT_FILE_SHA256", "0" * 64)
+    with pytest.raises(PilotError, match="PILOT3_REEXTRACTION_PROMPT_FREEZE_MISMATCH"):
+        s2.controlled_reextraction_preflight(source, cfg, "PILOT_20260901_A1B2C3D4")

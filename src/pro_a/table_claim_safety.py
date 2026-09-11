@@ -106,6 +106,12 @@ def _comparison_normalizer(locator: Mapping[str, Any]):
     method = str(locator.get("match_method") or "")
     if method.startswith("provenance_"):
         method = method.removeprefix("provenance_")
+    if (method == "pdf_normalized_exact_substring"
+            and "cjk_separator_linewrap" in str(locator.get("canonicalization") or "").split("+")):
+        # Locator offsets belong to their declared comparison representation.
+        # Keep historical offsets on the historical normalizer below.
+        from .corpus_pilot import normalize_pdf_locator_text
+        return normalize_pdf_locator_text
     return {
         "raw_exact_substring": lambda value: value or "",
         "canonical_exact_substring": _canonicalize_text,

@@ -6,3 +6,17 @@ workspace/phase3f_stage1_public_audit/** text eol=lf
 
 # Authorized migration is a byte identity, not a platform-normalized text file.
 src/pro_a/migrations/foundation_0_2_3_relation_native.sql -text
+
+# Keep the accepted v0.4.0 canonical runtime byte identities on every platform.
+src/pro_a/phase4_orchestration.py -text
+src/pro_a/phase4_retry.py -text
+src/pro_a/phase4_replay.py -text
+src/pro_a/phase4_source_audit.py -text
+src/pro_a/phase4_requalification.py -text
+src/pro_a/corpus_pilot.py -text
+src/pro_a/operational_ingestion.py -text
+src/pro_a/production_authorization.py -text
+src/pro_a/table_claim_safety.py -text
+
+# Public historical prompt fixture binds the unchanged public Git blob.
+src/pro_a/prompts.py text eol=lf

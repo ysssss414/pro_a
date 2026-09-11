@@ -240,3 +240,7 @@ DEFER_EVIDENCE_QUALITY_METADATA = true
 ## Decision rule
 
 错误 canonical knowledge 与 unsafe acceptance 的风险优先于 coverage。不得用 fuzzy linking、evidence-free association、Gold-specific hardcode 或 validator weakening 补偿 upstream model loss。SQLite 继续是唯一 Source of Truth，Phase 2 read layer 不获得 Production write authority。
+
+## v0.4.0 public source projection
+
+Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection. Phase 4.2 has not started.

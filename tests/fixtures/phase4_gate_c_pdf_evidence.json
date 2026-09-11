@@ -1,0 +1,185 @@
+{
+  "synthetic": true,
+  "source_text_included": false,
+  "description": "Wholly invented public fixture; no private source statements or numeric facts.",
+  "pages": {
+    "PAGE:4": "虚构驿站记录显示，\n青色风铃保持静止。",
+    "PAGE:8": "虚构道具包括 pebble、\nribbon、paper风车。\n暮色中的纸船沿着墨色河流漂行。\nlegend violet amber\nImaginary footer",
+    "PAGE:9": "Imaginary header\n清晨的小钟发出柔和回声。\nThe invented lantern opens a silver hatch.",
+    "PAGE:10": "Imaginary header\nA painted kite carries a violet ribbon.\nEnd of invented scene."
+  },
+  "layout": {
+    "segments": [
+      {
+        "page": 4,
+        "order": 1,
+        "text": "虚构驿站记录显示，\n青色风铃保持静止。",
+        "bbox": [
+          0,
+          20,
+          100,
+          40
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      },
+      {
+        "page": 8,
+        "order": 1,
+        "text": "legend violet amber",
+        "bbox": [
+          0,
+          5,
+          100,
+          15
+        ],
+        "kind": "unknown",
+        "native_kind": "picture"
+      },
+      {
+        "page": 8,
+        "order": 2,
+        "text": "虚构道具包括 pebble、\nribbon、paper风车。",
+        "bbox": [
+          0,
+          30,
+          100,
+          45
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      },
+      {
+        "page": 8,
+        "order": 3,
+        "text": "暮色中的纸船沿着墨色河流漂行。",
+        "bbox": [
+          0,
+          80,
+          100,
+          90
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      },
+      {
+        "page": 8,
+        "order": 4,
+        "text": "Imaginary footer",
+        "bbox": [
+          0,
+          95,
+          100,
+          99
+        ],
+        "kind": "unknown",
+        "native_kind": "page-footer"
+      },
+      {
+        "page": 9,
+        "order": 1,
+        "text": "Imaginary header",
+        "bbox": [
+          0,
+          0,
+          100,
+          10
+        ],
+        "kind": "unknown",
+        "native_kind": "page-header"
+      },
+      {
+        "page": 9,
+        "order": 2,
+        "text": "清晨的小钟发出柔和回声。",
+        "bbox": [
+          0,
+          15,
+          100,
+          30
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      },
+      {
+        "page": 9,
+        "order": 3,
+        "text": "The invented lantern opens a silver hatch.",
+        "bbox": [
+          0,
+          80,
+          100,
+          90
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      },
+      {
+        "page": 10,
+        "order": 1,
+        "text": "Imaginary header",
+        "bbox": [
+          0,
+          0,
+          100,
+          10
+        ],
+        "kind": "unknown",
+        "native_kind": "page-header"
+      },
+      {
+        "page": 10,
+        "order": 2,
+        "text": "A painted kite carries a violet ribbon.\nEnd of invented scene.",
+        "bbox": [
+          0,
+          15,
+          100,
+          30
+        ],
+        "kind": "narrative",
+        "native_kind": "text"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "claim_id": "SYN_COMMA",
+      "private_candidate_id": "CLM_230C13A60BE194D6",
+      "mechanism": "cjk_comma_physical_wrap",
+      "quote": "虚构驿站记录显示，青色风铃保持静止。",
+      "pointer": "[[PAGE:4]]",
+      "expected_pages": []
+    },
+    {
+      "claim_id": "SYN_ENUM",
+      "private_candidate_id": "CLM_A5CA4B4A73CE2F58",
+      "mechanism": "cjk_enumeration_physical_wrap",
+      "quote": "虚构道具包括 pebble、ribbon、paper风车。",
+      "pointer": "[[PAGE:8]]",
+      "expected_pages": []
+    },
+    {
+      "claim_id": "SYN_ADJACENT",
+      "private_candidate_id": "CLM_65E2880B0C28732A",
+      "mechanism": "bounded_adjacent_layout_continuation",
+      "quote": "暮色中的纸船沿着墨色河流漂行。清晨的小钟发出柔和回声。",
+      "pointer": "[[PAGE:8]]",
+      "expected_pages": [
+        "PAGE:8",
+        "PAGE:9"
+      ]
+    },
+    {
+      "claim_id": "SYN_ORDERED",
+      "private_candidate_id": "CLM_BF60CAEA71B1DA57",
+      "mechanism": "explicit_ordered_adjacent_layout_span",
+      "quote": "The invented lantern opens a silver hatch. A painted kite carries a violet ribbon.",
+      "pointer": "[[PAGE:9]][[PAGE:10]]",
+      "expected_pages": [
+        "PAGE:9",
+        "PAGE:10"
+      ]
+    }
+  ]
+}

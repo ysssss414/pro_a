@@ -174,3 +174,7 @@ Standard / Deep legacy ingestion 仍使用既有 CLI 和 frozen contracts。Phas
 Phase 3D closure 不把 Explorer、legacy ingestion、IMA 或未来 Source 变为 Production write-enabled。PyMuPDF licensing/deployment、可重复 operational ingestion、schema migration 与各 backlog 均须作为独立阶段重新验证和授权。
 
 后续里程碑和冻结规则分别见 [`docs/ROADMAP.md`](docs/ROADMAP.md) 与 [`docs/REQUIREMENTS_FROZEN.md`](docs/REQUIREMENTS_FROZEN.md)。
+
+## v0.4.0 public source projection
+
+Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection. Phase 4.2 has not started.
