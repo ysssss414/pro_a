@@ -133,7 +133,7 @@ PILOT2_GATE_A_ENTITY_TERMS = (
 )
 PDF_LOCATOR_CANONICALIZATION = (
     "unicode_nfkc+markdown_unescape+whitespace+han_spacing+hyphen_spacing+"
-    "punctuation_spacing+terminal_punctuation"
+    "punctuation_spacing+terminal_punctuation+cjk_separator_linewrap"
 )
 _PAGE_POINTER = re.compile(r"^\[\[(PAGE:[1-9]\d*)\]\]$")
 _CJK = r"[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]"
@@ -768,6 +768,8 @@ def _stage1_metrics(
 
 def normalize_pdf_span_text(value: str) -> str:
     """Normalize exact PDF text while preserving punctuation at page boundaries."""
+    # A physical wrap after a Chinese separator is layout, not an ASCII token boundary.
+    value = re.sub(r"(?<=[，、])[^\S\r\n]*\r?\n\s*", "", value or "")
     normalized = canonicalize_text(value).translate(_PDF_PUNCTUATION)
     normalized = re.sub(rf"(?<={_CJK})\s+|\s+(?={_CJK})", "", normalized)
     normalized = re.sub(r"(?<=[0-9A-Za-z])\s*-\s*(?=[0-9A-Za-z])", "-", normalized)
@@ -808,8 +810,60 @@ def _pdf_span_comparison_methods():
     )
 
 
+def _marked_cross_page_spans(
+    page_by_locator: dict[str, str], excerpt: str, pointer: str,
+) -> list[dict[str, Any]]:
+    """Ground structural PAGE-delimited fragments at consecutive page edges."""
+    parts = re.split(r"\[\[(PAGE:[1-9]\d*)\]\]", excerpt)
+    match = _PAGE_POINTER.fullmatch(pointer)
+    first_locator = match.group(1) if match else ""
+    if not parts[0].strip() and len(parts) > 1:
+        if first_locator and first_locator != parts[1]:
+            return []
+        first_locator, parts = parts[1], parts[2:]
+    fragments = [(first_locator, parts[0]), *zip(parts[1::2], parts[2::2])]
+    if len(fragments) < 2 or any(not text.strip() or "[[PAGE" in text for _, text in fragments):
+        return []
+    source_order = list(page_by_locator)
+    spans = []
+    for index, (locator, fragment) in enumerate(fragments):
+        if locator not in page_by_locator:
+            return []
+        if index and (source_order.index(locator) != source_order.index(fragments[index - 1][0]) + 1
+                      or _page_number(locator) != _page_number(fragments[index - 1][0]) + 1):
+            return []
+        body = page_by_locator[locator]
+        matched = None
+        for _, _, normalizer in _pdf_span_comparison_methods():
+            expected, page = normalizer(fragment), normalizer(body)
+            if not expected or expected not in page:
+                continue
+            if len(list(re.finditer(r"(?=" + re.escape(expected) + r")", page))) != 1:
+                return []
+            if index == 0 and page.endswith(expected):
+                candidates = _comparison_edge_texts(body, expected, normalizer, suffix=True)
+            elif index == len(fragments) - 1 and page.startswith(expected):
+                candidates = _comparison_edge_texts(body, expected, normalizer, suffix=False)
+            elif 0 < index < len(fragments) - 1 and page == expected:
+                candidates = [body.strip()]
+            else:
+                continue
+            if candidates:
+                shortest = [text for text in candidates if len(text) == len(candidates[0])]
+                if len(shortest) != 1:
+                    return []
+                matched = shortest[0]
+                break
+        if matched is None:
+            return []
+        spans.append({"order": index + 1, "locator": locator,
+                      "text": matched, "exact_source_text": True})
+    return spans
+
+
 def resolve_pdf_evidence_locator(
     full_text: str, evidence_excerpt: str, evidence_pointer: str = "",
+    *, layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Bind Evidence to one PDF page through provenance, then exact comparisons."""
     pages = [(locator, body) for locator, body in source_units(full_text) if locator.startswith("PAGE:")]
@@ -830,6 +884,29 @@ def resolve_pdf_evidence_locator(
         ),
     }
 
+    sequence = re.findall(r"\[\[(PAGE:[1-9]\d*)\]\]", evidence_pointer or "")
+    if "[[PAGE" in (evidence_pointer or "") and (
+        "".join(f"[[{page}]]" for page in sequence) != evidence_pointer
+        or any(page not in page_by_locator for page in sequence)
+        or any(_page_number(b) != _page_number(a) + 1 for a, b in zip(sequence, sequence[1:]))
+        or any(list(page_by_locator).index(b) != list(page_by_locator).index(a) + 1
+               for a, b in zip(sequence, sequence[1:]))
+    ):
+        return {"status": "unresolved", "reason": "invalid_page_sequence",
+                "spanning_locators": [], "provenance": provenance}
+    if len(sequence) > 1:
+        provenance["page_sequence"] = sequence
+
+    if "[[PAGE" in (evidence_excerpt or ""):
+        spans = _marked_cross_page_spans(page_by_locator, evidence_excerpt, evidence_pointer)
+        return {
+            "status": "unresolved",
+            "reason": "cross_page_span" if spans else "structural_page_span_unresolved",
+            "spanning_locators": [[span["locator"] for span in spans]] if spans else [],
+            "match_scope": "provenance", "match_method": "structural_ordered_exact_spans",
+            "canonicalization": PDF_LOCATOR_CANONICALIZATION, "provenance": provenance,
+        }
+
     def match_result(
         locator: str, body: str, method: str, canonicalization: str, normalizer, scope: str,
     ) -> dict[str, Any] | None:
@@ -838,6 +915,10 @@ def resolve_pdf_evidence_locator(
         start = comparison_body.find(comparison_excerpt) if comparison_excerpt else -1
         if start < 0:
             return None
+        if len(list(re.finditer(r"(?=" + re.escape(comparison_excerpt) + r")", comparison_body))) != 1:
+            return {"status": "ambiguous", "locators": [locator], "match_scope": scope,
+                    "match_method": method, "canonicalization": canonicalization,
+                    "provenance": copy.deepcopy(provenance)}
         return {
             "status": "resolved",
             "locator": locator,
@@ -885,12 +966,31 @@ def resolve_pdf_evidence_locator(
                 "canonicalization": canonicalization,
                 "provenance": copy.deepcopy(provenance),
             }
+    # Recover only the declared page and its immediate successor. Layout is an
+    # optional boundary witness; it never replaces canonical Source text.
+    pair = sequence if len(sequence) == 2 else (
+        [provenance_locator, f"PAGE:{_page_number(provenance_locator) + 1}"]
+        if provenance_locator else []
+    )
+    if len(pair) == 2:
+        for use_layout in (False, True) if layout_sidecar else (False,):
+            candidate = {"status": "unresolved", "reason": "cross_page_span",
+                         "spanning_locators": [pair], "match_scope": "provenance",
+                         "match_method": "bounded_ordered_exact_spans",
+                         "canonicalization": PDF_LOCATOR_CANONICALIZATION,
+                         "provenance": copy.deepcopy(provenance)}
+            if use_layout:
+                candidate["layout_continuation"] = True
+            if _ordered_cross_page_spans(page_by_locator, candidate, evidence_excerpt, layout_sidecar=layout_sidecar):
+                return candidate
     comparison_excerpt = normalize_pdf_locator_text(evidence_excerpt or "")
     spanning_locators = []
     if comparison_excerpt:
         for index in range(len(pages) - 1):
             first_locator, first_body = pages[index]
             second_locator, second_body = pages[index + 1]
+            if sequence and [first_locator, second_locator] != pair:
+                continue
             combined = normalize_pdf_locator_text(f"{first_body}\n{second_body}")
             if comparison_excerpt in combined:
                 spanning_locators.append([first_locator, second_locator])
@@ -978,12 +1078,15 @@ def phase3c_evidence_provenance_contract(
     }
 
 
-def _rebind_claim_locator(claim: dict[str, Any], full_text: str) -> dict[str, Any]:
+def _rebind_claim_locator(
+    claim: dict[str, Any], full_text: str, *, layout_sidecar: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     rebound = copy.deepcopy(claim)
     locator = resolve_pdf_evidence_locator(
         full_text,
         str(claim.get("evidence_excerpt") or ""),
         str(claim.get("evidence_pointer") or ""),
+        layout_sidecar=layout_sidecar,
     )
     resolved = locator["status"] == "resolved"
     validation = copy.deepcopy(claim.get("validation") or {})
@@ -1053,6 +1156,7 @@ def rebind_stage1_evidence_locators(
     *,
     output_dir: Path | None = None,
     production_db_path: Path | None = None,
+    layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Replay Stage 1 Evidence-to-PAGE binding without an Analyzer or LLM call."""
     bundle_path = Path(bundle_path).resolve()
@@ -1085,7 +1189,8 @@ def rebind_stage1_evidence_locators(
     before = _claim_quality_counts(original)
     rebound = copy.deepcopy(original)
     rebound["claims"] = [
-        _rebind_claim_locator(claim, parsed.text) for claim in original.get("claims") or []
+        _rebind_claim_locator(claim, parsed.text, layout_sidecar=layout_sidecar)
+        for claim in original.get("claims") or []
     ]
     rebound["human_review_flags"] = _human_review_flags(
         parsed.diagnostics, rebound["claims"], parsed.text,
@@ -3199,9 +3304,62 @@ def _comparison_edge_texts(
     return sorted(texts, key=lambda item: (len(item), item))
 
 
+def _layout_page_edge(
+    body: str, page: int, layout_sidecar: dict[str, Any], *, suffix: bool,
+) -> dict[str, Any] | None:
+    """Bind a geometrically exposed narrative edge back to unique canonical text."""
+    segments = [s for s in layout_sidecar.get("segments") or [] if s.get("page") == page]
+    if not segments or len({s.get("order") for s in segments}) != len(segments):
+        return None
+    for segment in segments:
+        bbox = segment.get("bbox") or []
+        if (len(bbox) != 4 or any(not isinstance(v, (int, float)) for v in bbox)
+                or bbox[0] >= bbox[2] or bbox[1] >= bbox[3]
+                or not isinstance(segment.get("order"), int)):
+            return None
+    content = [s for s in segments if s.get("native_kind") not in {"page-header", "page-footer"}]
+    if not content:
+        return None
+    edge = sorted(content, key=lambda s: s["order"])[-1 if suffix else 0]
+    if edge.get("kind") != "narrative" or edge.get("native_kind") != "text":
+        return None
+    for segment in segments:
+        if segment is edge:
+            continue
+        above = segment["bbox"][3] <= edge["bbox"][1]
+        below = segment["bbox"][1] >= edge["bbox"][3]
+        native = segment.get("native_kind")
+        if not (above if native == "page-header" else below if native == "page-footer"
+                else above if suffix else below):
+            return None
+    expected = normalize_pdf_locator_text(str(edge.get("text") or ""))
+    normalized = normalize_pdf_locator_text(body)
+    if not expected or len(list(re.finditer(r"(?=" + re.escape(expected) + r")", normalized))) != 1:
+        return None
+    start = normalized.index(expected)
+    offsets = _authoritative_raw_evidence_span(
+        body=body, evidence_excerpt=edge["text"], segment_start=0, segment_end=len(body),
+        locator={"status": "resolved", "match_method": "pdf_normalized_exact_substring",
+                 "comparison_start": start, "comparison_end": start + len(expected)},
+    )
+    if offsets is None:
+        return None
+    raw = body[offsets[0]:offsets[1]]
+    if normalize_pdf_span_text(raw) != normalize_pdf_span_text(edge["text"]):
+        return None
+    return {"text": raw, "layout_segment_order": edge["order"], "bbox": edge["bbox"],
+            "canonical_page_start": offsets[0], "canonical_page_end": offsets[1]}
+
+
 def _ordered_cross_page_spans(
     page_by_locator: dict[str, str], locator: dict[str, Any], evidence_excerpt: str,
+    *, layout_sidecar: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    if "[[PAGE" in evidence_excerpt:
+        spans = _marked_cross_page_spans(
+            page_by_locator, evidence_excerpt, (locator.get("provenance") or {}).get("pointer", ""),
+        )
+        return spans if locator.get("spanning_locators") == [[s["locator"] for s in spans]] else []
     pairs = locator.get("spanning_locators") or []
     if len(pairs) != 1 or not isinstance(pairs[0], list) or len(pairs[0]) != 2:
         return []
@@ -3210,8 +3368,19 @@ def _ordered_cross_page_spans(
         return []
     if _page_number(second_locator) != _page_number(first_locator) + 1:
         return []
+    if list(page_by_locator).index(second_locator) != list(page_by_locator).index(first_locator) + 1:
+        return []
     first_body = page_by_locator[first_locator]
     second_body = page_by_locator[second_locator]
+    edges = []
+    if locator.get("layout_continuation"):
+        if not layout_sidecar:
+            return []
+        edges = [_layout_page_edge(first_body, _page_number(first_locator), layout_sidecar, suffix=True),
+                 _layout_page_edge(second_body, _page_number(second_locator), layout_sidecar, suffix=False)]
+        if not all(edges):
+            return []
+        first_body, second_body = (edge["text"] for edge in edges)
     for _, _, normalizer in _pdf_span_comparison_methods():
         evidence = normalizer(evidence_excerpt)
         first = normalizer(first_body)
@@ -3246,7 +3415,14 @@ def _ordered_cross_page_spans(
             shortest = []
         if len(shortest) == 1:
             first_text, second_text = shortest[0]
-            return [
+            # Repeated fragments anywhere on either canonical page compete with
+            # an edge candidate; neither a pointer nor layout can disambiguate it.
+            for page, text in ((first_locator, first_text), (second_locator, second_text)):
+                expected = normalize_pdf_span_text(text)
+                if len(list(re.finditer(r"(?=" + re.escape(expected) + r")",
+                                        normalize_pdf_span_text(page_by_locator[page])))) != 1:
+                    return []
+            spans = [
                 {
                     "order": 1, "locator": first_locator,
                     "text": first_text, "exact_source_text": True,
@@ -3256,6 +3432,9 @@ def _ordered_cross_page_spans(
                     "text": second_text, "exact_source_text": True,
                 },
             ]
+            for span, edge in zip(spans, edges):
+                span["layout_boundary"] = {key: value for key, value in edge.items() if key != "text"}
+            return spans
         if candidates:
             return []
     return []
@@ -3263,6 +3442,7 @@ def _ordered_cross_page_spans(
 
 def _build_evidence_support_draft(
     bundle: dict[str, Any], parsed_text: str,
+    *, layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     pages = [
         (locator, body) for locator, body in source_units(parsed_text)
@@ -3289,6 +3469,7 @@ def _build_evidence_support_draft(
         elif locator.get("reason") == "cross_page_span":
             spans = _ordered_cross_page_spans(
                 page_by_locator, locator, str(claim.get("evidence_excerpt") or ""),
+                layout_sidecar=layout_sidecar,
             )
             mechanics_status = "ORDERED_SPAN_BOUND" if spans else "LOCATOR_UNRESOLVED"
         else:
@@ -3477,6 +3658,7 @@ def build_pilot2_evidence_support_draft(
     *,
     output_dir: Path | None = None,
     production_db_path: Path | None = None,
+    layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     bundle_path = Path(bundle_path).resolve()
     review_path = Path(review_path).resolve()
@@ -3510,7 +3692,7 @@ def build_pilot2_evidence_support_draft(
     parsed = parse_source_with_diagnostics(source_path)
     if parsed.source_type != "pdf" or parsed.diagnostics.get("empty_extraction"):
         raise PilotError("PILOT2_EVIDENCE_DRAFT_PARSE_INVALID")
-    draft = _build_evidence_support_draft(bundle, parsed.text)
+    draft = _build_evidence_support_draft(bundle, parsed.text, layout_sidecar=layout_sidecar)
     metrics = _pilot_pre_review_metrics(bundle, draft, parsed)
     if any(
         "v2_support_status" in item or "support_mode" in item
@@ -3697,6 +3879,7 @@ def _gate_a_resolved_fidelity_status(locator: dict[str, Any]) -> str:
 def _gate_a_claim_record(
     claim: dict[str, Any], pages: list[tuple[str, str]], page_by_locator: dict[str, str],
     evidence_draft_claim: dict[str, Any],
+    *, layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     evidence_excerpt = str(claim.get("evidence_excerpt") or "")
     evidence_pointer = str(claim.get("evidence_pointer") or "")
@@ -3705,6 +3888,7 @@ def _gate_a_claim_record(
         "\n".join(f"[[{locator}]]\n{body}" for locator, body in pages),
         evidence_excerpt,
         evidence_pointer,
+        layout_sidecar=layout_sidecar,
     )
     declared_page = (
         ((refreshed_locator.get("provenance") or {}).get("locator"))
@@ -3736,6 +3920,7 @@ def _gate_a_claim_record(
     elif refreshed_locator.get("reason") == "cross_page_span":
         spans = _ordered_cross_page_spans(
             page_by_locator, refreshed_locator, evidence_excerpt,
+            layout_sidecar=layout_sidecar,
         )
         if spans:
             ordered_spans = copy.deepcopy(spans)
@@ -3972,6 +4157,7 @@ def run_pilot2_gate_a_quote_fidelity(
     output_dir: Path | None = None,
     production_db_path: Path | None = None,
     original_review_path: Path | None = None,
+    layout_sidecar: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Audit Pilot #2 quote fidelity without changing extraction or semantic decisions."""
     original_bundle_path = Path(original_bundle_path).resolve()
@@ -4042,6 +4228,7 @@ def run_pilot2_gate_a_quote_fidelity(
             pages,
             page_by_locator,
             draft_by_id[rebound_claim.get("claim_id")],
+            layout_sidecar=layout_sidecar,
         )
         for rebound_claim in rebound_claims
     ]

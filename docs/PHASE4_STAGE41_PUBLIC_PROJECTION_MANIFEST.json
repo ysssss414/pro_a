@@ -1,0 +1,1064 @@
+{
+  "document_type": "phase4_stage41_public_source_projection",
+  "schema_version": "1",
+  "version": "0.4.0",
+  "private_release_tip": "2c71db7b6da1ea8d3d2c970b20b8b93831d24e2a",
+  "private_freeze_manifest_sha256": "59a29da84c7da11442bd4c078d53f80b2584e728587863dd082efc40a7c14adb",
+  "public_base_commit": "fe59d8a359ee6e9c6c7a4b68b08d34cc16f93f5b",
+  "canonical_runtime_equivalence": [
+    {
+      "path": "src/pro_a/phase4_orchestration.py",
+      "private_release_sha256": "8f9f8d46d228e25002a455525b5de773dbe064ccd7fe7a996e1808cd8861f797",
+      "public_projection_sha256": "8f9f8d46d228e25002a455525b5de773dbe064ccd7fe7a996e1808cd8861f797"
+    },
+    {
+      "path": "src/pro_a/phase4_retry.py",
+      "private_release_sha256": "53b0c1631b951311e860d4576d00de9f4263b5a2b130e0523ba7a1061f816d7f",
+      "public_projection_sha256": "53b0c1631b951311e860d4576d00de9f4263b5a2b130e0523ba7a1061f816d7f"
+    },
+    {
+      "path": "src/pro_a/phase4_replay.py",
+      "private_release_sha256": "f8f80bcceaabe1c492e6879d1579d27ca6f87fa5a93fac6f09c78f0653498712",
+      "public_projection_sha256": "f8f80bcceaabe1c492e6879d1579d27ca6f87fa5a93fac6f09c78f0653498712"
+    },
+    {
+      "path": "src/pro_a/phase4_source_audit.py",
+      "private_release_sha256": "19ac8381b33d96f4653922ab12ea8c76431395b45bc5df235a77975be59fc102",
+      "public_projection_sha256": "19ac8381b33d96f4653922ab12ea8c76431395b45bc5df235a77975be59fc102"
+    },
+    {
+      "path": "src/pro_a/phase4_requalification.py",
+      "private_release_sha256": "7ea605c0b1c39a5d68b9ef1196c895a6bdf3b3d7ba8103aee203219e86b27b81",
+      "public_projection_sha256": "7ea605c0b1c39a5d68b9ef1196c895a6bdf3b3d7ba8103aee203219e86b27b81"
+    },
+    {
+      "path": "src/pro_a/corpus_pilot.py",
+      "private_release_sha256": "97df711ec163de57a24d27d8426d0c32005176d3851dca4b24b47f586e058a9b",
+      "public_projection_sha256": "97df711ec163de57a24d27d8426d0c32005176d3851dca4b24b47f586e058a9b"
+    },
+    {
+      "path": "src/pro_a/operational_ingestion.py",
+      "private_release_sha256": "a84902b354fc804cc70baccb0390256e88cfa19e9e9ab6f8f71931be48b0255c",
+      "public_projection_sha256": "a84902b354fc804cc70baccb0390256e88cfa19e9e9ab6f8f71931be48b0255c"
+    },
+    {
+      "path": "src/pro_a/production_authorization.py",
+      "private_release_sha256": "52399fe15ab21bbd80d83c9bd0f9b29c761830247094ab546bd885fe1d5a4376",
+      "public_projection_sha256": "52399fe15ab21bbd80d83c9bd0f9b29c761830247094ab546bd885fe1d5a4376"
+    },
+    {
+      "path": "src/pro_a/table_claim_safety.py",
+      "private_release_sha256": "add499b42bdcc092f430f66947698731e42fd1fd9466698d53c2c159e2be84f5",
+      "public_projection_sha256": "add499b42bdcc092f430f66947698731e42fd1fd9466698d53c2c159e2be84f5"
+    }
+  ],
+  "public_unchanged_files": [
+    ".gitignore",
+    "CODEX_TASK.md",
+    "artifacts/phase2_3b/claim_coverage.csv",
+    "artifacts/phase2_3b/node_coverage.csv",
+    "artifacts/phase2_3b/source_coverage.csv",
+    "artifacts/phase2_3b/unlinked_claims.csv",
+    "artifacts/phase2_3c/claim_node_adjudication.csv",
+    "artifacts/phase2_3d/claim_node_human_adjudication_receipt.json",
+    "artifacts/phase2_3d/post_activation_coverage.json",
+    "artifacts/phase2_3e/claim_attribution_proposal.csv",
+    "artifacts/phase2_3e/claim_attribution_review.csv",
+    "artifacts/phase2_3e/company_node_proposal.json",
+    "artifacts/phase2_3f/claim_attribution_activation_receipt.json",
+    "artifacts/phase2_3f/post_attribution_summary.json",
+    "artifacts/phase2_4a/current_view_pilot_review.json",
+    "artifacts/phase2_4b/current_view_activation_receipt.json",
+    "artifacts/phase2_4b/post_current_view_summary.json",
+    "artifacts/phase3c/pilot6_delegated_reviewer_signoff.json",
+    "artifacts/phase3c/pilot6_delegated_reviewer_signoff.md",
+    "config.example.toml",
+    "config/nodes_seed.example.csv",
+    "config/relations_seed.example.csv",
+    "docs/IMA_INTEGRATION.md",
+    "docs/PHASE1_1A_NODE_UNIVERSE_CLOSURE.md",
+    "docs/PHASE1_1B_FUNCTIONAL_RELATION_CLOSURE.md",
+    "docs/PHASE1_1_AI_HARDWARE_UNIVERSE.md",
+    "docs/PHASE1_FREEZE.md",
+    "docs/PHASE2_3B_KNOWLEDGE_COVERAGE_AUDIT.md",
+    "docs/PHASE2_3C_CLAIM_NODE_ADJUDICATION.md",
+    "docs/PHASE2_3D_CLAIM_NODE_ACTIVATION.md",
+    "docs/PHASE2_3E_ENTITY_GRANULARITY_REVIEW.md",
+    "docs/PHASE2_3F_CLAIM_ATTRIBUTION_ACTIVATION.md",
+    "docs/PHASE2_4A_CURRENT_VIEW_PILOT.md",
+    "docs/PHASE2_4B_CURRENT_VIEW_ACTIVATION.md",
+    "docs/PHASE2_4C_CURRENT_VIEW_IA_REFINEMENT.md",
+    "docs/PHASE2_5A_CURRENT_VIEW_HISTORY.md",
+    "docs/PHASE2_5B_CURRENT_VIEW_COMPARE.md",
+    "docs/PHASE2_6A_DIRECT_IMPACT_CANDIDATES.md",
+    "docs/PHASE2_6B_HUMAN_IMPACT_REVIEW.md",
+    "docs/PHASE2_7A_HUMAN_REVIEW_INTAKE.md",
+    "docs/PHASE2_7B_PRODUCTION_PROPOSAL_GATEWAY.md",
+    "docs/PHASE2_7C_HUMAN_PROPOSAL_RESOLUTION.md",
+    "docs/PHASE3A_MULTIFORMAT_INGESTION_ACCEPTANCE.md",
+    "docs/PHASE3B_IMA_INTEGRATION_ACCEPTANCE.md",
+    "docs/PHASE3C_CORRECTNESS_CLOSURE.md",
+    "docs/PHASE3C_LIVE_CORPUS_EXPANSION_PILOT.md",
+    "docs/PHASE3D_ONE_TIME_PRODUCTION_EXECUTOR.md",
+    "docs/PHASE3D_PRODUCTION_PATH_PROMOTION.md",
+    "docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md",
+    "docs/PHASE3E_OPERATIONAL_INGESTION.md",
+    "docs/PHASE3F_FOUNDATION_FREEZE.md",
+    "docs/PHASE3F_FULL_OPERATIONAL_REVIEW_HANDOFF_CONTRACT.md",
+    "docs/PHASE3F_NODE_IDENTITY_CONTRACT_V4.md",
+    "docs/PHASE3F_PAYLOAD_ENVELOPE_BINDING.md",
+    "docs/PHASE3F_PRODUCTION_ENTRY.md",
+    "docs/PHASE3F_STAGE0_EXECUTION_CONTRACT.md",
+    "docs/PHASE3F_STAGE1_HANDOFF_CENSUS.md",
+    "docs/PHASE3F_STAGE1_HANDOFF_REQUALIFICATION.md",
+    "docs/PHASE3F_STAGE1_REVIEW_COMPLETION_CONTRACT.md",
+    "docs/R1_ACCEPTANCE.md",
+    "docs/RELATION_SEMANTICS.md",
+    "docs/REQUIREMENTS_FROZEN.md",
+    "docs/phase3f_foundation_complete_baseline.md",
+    "docs/phase3f_foundation_execution_contract_preparation.md",
+    "docs/phase3f_foundation_relation_native_governance.md",
+    "docs/phase3f_foundation_schema_migration.md",
+    "frontend/index.html",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/public/favicon.svg",
+    "frontend/src/App.test.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/ViewProposalReview.test.tsx",
+    "frontend/src/api/client.test.ts",
+    "frontend/src/api/client.ts",
+    "frontend/src/api/types.ts",
+    "frontend/src/components/CurrentViewCompare.tsx",
+    "frontend/src/components/GraphPanel.test.ts",
+    "frontend/src/components/GraphPanel.tsx",
+    "frontend/src/components/HumanImpactReview.tsx",
+    "frontend/src/components/NodeDetailPanel.test.tsx",
+    "frontend/src/components/NodeDetailPanel.tsx",
+    "frontend/src/components/ProposalResolutionDraft.tsx",
+    "frontend/src/components/ResearchTab.test.tsx",
+    "frontend/src/components/ResearchTab.tsx",
+    "frontend/src/components/SearchPanel.test.tsx",
+    "frontend/src/components/SearchPanel.tsx",
+    "frontend/src/components/SourceDetailPanel.test.tsx",
+    "frontend/src/components/SourceDetailPanel.tsx",
+    "frontend/src/components/SourceLocatorLabel.tsx",
+    "frontend/src/components/ViewProposalReview.tsx",
+    "frontend/src/components/ViewTab.test.tsx",
+    "frontend/src/components/ViewTab.tsx",
+    "frontend/src/currentViewPresentation.ts",
+    "frontend/src/humanImpactReview.test.ts",
+    "frontend/src/humanImpactReview.ts",
+    "frontend/src/humanProposalResolution.test.ts",
+    "frontend/src/humanProposalResolution.ts",
+    "frontend/src/main.tsx",
+    "frontend/src/styles.css",
+    "frontend/src/test/setup.ts",
+    "frontend/src/vite-env.d.ts",
+    "frontend/tsconfig.json",
+    "frontend/vite.config.ts",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/R1_GOLD_V1_1_ADJUDICATION_PROPOSAL.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/README.md",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/apply_b2c_approved.ps1",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/apply_b2c_approved.py",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/approved_aliases.csv",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/approved_nodes.csv",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/copy_receipt.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/db_resolution.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/deferred_items.csv",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/final_gate.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/human_decisions.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/manifest.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/manifest.sha256",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/production_identity_audit.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/qualification_report.json",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/rejected_items.csv",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/reuse_mapping.csv",
+    "pro_a_r1_node_import_package_B2C_FINAL_QUALIFIED_20260819/structural_relations.csv",
+    "pyproject.toml",
+    "scripts/activate_phase2_4b.py",
+    "scripts/bootstrap.ps1",
+    "scripts/intake_phase2_7a.py",
+    "scripts/phase2_7b_proposal_gateway.py",
+    "scripts/phase2_7c_proposal_resolution.py",
+    "scripts/phase3b_ima_sync.py",
+    "scripts/phase3c_corpus_pilot.py",
+    "scripts/phase3c_gate_c_quality_hardening.py",
+    "scripts/phase3c_pdf_table_structure_signal_evaluation.py",
+    "scripts/phase3c_pilot3.py",
+    "scripts/phase3c_pilot3_controlled_reextraction.py",
+    "scripts/phase3c_pilot3_evidence_v2_repair_report.py",
+    "scripts/phase3c_pilot3_human_review.py",
+    "scripts/phase3c_pilot4_bounded_local_subspan_repair.py",
+    "scripts/phase3c_pilot4_evidence_context_census.py",
+    "scripts/phase3c_pilot5_table_claim_failure_census.py",
+    "scripts/phase3c_pilot6.py",
+    "scripts/phase3c_reextraction_human_review.py",
+    "scripts/phase3c_table_claim_safety_boundary_replay.py",
+    "scripts/phase3c_table_suppression_replay.py",
+    "scripts/phase3c_table_suppression_scope_census.py",
+    "scripts/phase3d_authorization_prep.py",
+    "scripts/phase3d_final_qualification.py",
+    "scripts/phase3d_human_review.py",
+    "scripts/phase3d_production_execute.py",
+    "scripts/phase3d_promotion.py",
+    "scripts/phase3e_ingest.py",
+    "scripts/phase3f_foundation_contract_correction.py",
+    "scripts/phase3f_foundation_schema_migration.py",
+    "scripts/phase3f_handoff_requalification.py",
+    "scripts/phase3f_operational_handoff.py",
+    "scripts/phase3f_public_sanitization.py",
+    "scripts/phase3f_qualification_review.py",
+    "scripts/phase3f_review_completion.py",
+    "scripts/run_once.ps1",
+    "scripts/run_phase3e2se1_census.py",
+    "scripts/run_phase3e2se1_offline_replay.py",
+    "scripts/run_phase3e2se_qualification.py",
+    "scripts/run_phase3e2sh_qualification.py",
+    "scripts/run_phase3e2sl2_finalize.py",
+    "scripts/run_phase3e2sl2_historical_replay.py",
+    "scripts/run_phase3e2sl2_sk_replay.py",
+    "src/pro_a.egg-info/PKG-INFO",
+    "src/pro_a.egg-info/SOURCES.txt",
+    "src/pro_a.egg-info/dependency_links.txt",
+    "src/pro_a.egg-info/entry_points.txt",
+    "src/pro_a.egg-info/requires.txt",
+    "src/pro_a.egg-info/top_level.txt",
+    "src/pro_a/__init__.py",
+    "src/pro_a/__main__.py",
+    "src/pro_a/acceptance_metrics.py",
+    "src/pro_a/acceptance_preflight.py",
+    "src/pro_a/acceptance_runtime_validity.py",
+    "src/pro_a/adjudication.py",
+    "src/pro_a/analyzer.py",
+    "src/pro_a/api.py",
+    "src/pro_a/audit.py",
+    "src/pro_a/baseline_views.py",
+    "src/pro_a/claim_attribution_semantics.py",
+    "src/pro_a/claim_node_activation.py",
+    "src/pro_a/cli.py",
+    "src/pro_a/config.py",
+    "src/pro_a/constants.py",
+    "src/pro_a/corpus_pilot.py",
+    "src/pro_a/coverage.py",
+    "src/pro_a/current_view.py",
+    "src/pro_a/current_view_compare.py",
+    "src/pro_a/current_view_pilot.py",
+    "src/pro_a/db.py",
+    "src/pro_a/entity_granularity.py",
+    "src/pro_a/foundation_execution_contract.py",
+    "src/pro_a/foundation_identity_admission.py",
+    "src/pro_a/foundation_native_evidence.py",
+    "src/pro_a/foundation_payload_envelope.py",
+    "src/pro_a/foundation_production_entry.py",
+    "src/pro_a/foundation_requalification.py",
+    "src/pro_a/foundation_schema_migration.py",
+    "src/pro_a/foundation_schema_preparation.py",
+    "src/pro_a/gate_c_quality_hardening.py",
+    "src/pro_a/human_proposal_resolution.py",
+    "src/pro_a/human_review_intake.py",
+    "src/pro_a/ids.py",
+    "src/pro_a/ima.py",
+    "src/pro_a/ima_sync.py",
+    "src/pro_a/impact_recovery.py",
+    "src/pro_a/llm.py",
+    "src/pro_a/migrations/foundation_0_2_3_relation_native.sql",
+    "src/pro_a/operational_ingestion.py",
+    "src/pro_a/parsers.py",
+    "src/pro_a/pdf_layout.py",
+    "src/pro_a/phase3f_foundation_baseline.py",
+    "src/pro_a/phase3f_handoff_requalification.py",
+    "src/pro_a/phase3f_operational_handoff.py",
+    "src/pro_a/phase3f_public_sanitization.py",
+    "src/pro_a/phase3f_qualification_review.py",
+    "src/pro_a/phase3f_review_completion.py",
+    "src/pro_a/phase4_orchestration.py",
+    "src/pro_a/phase4_replay.py",
+    "src/pro_a/phase4_requalification.py",
+    "src/pro_a/phase4_retry.py",
+    "src/pro_a/phase4_source_audit.py",
+    "src/pro_a/pilot3.py",
+    "src/pro_a/pilot3_controlled_reextraction.py",
+    "src/pro_a/pilot3_controlled_reextraction_human_review.py",
+    "src/pro_a/pilot3_human_review.py",
+    "src/pro_a/pilot3_semantic_admission_replay.py",
+    "src/pro_a/pipeline.py",
+    "src/pro_a/production_authorization.py",
+    "src/pro_a/production_execution.py",
+    "src/pro_a/production_final_qualification.py",
+    "src/pro_a/production_promotion.py",
+    "src/pro_a/production_proposal_gateway.py",
+    "src/pro_a/prompts.py",
+    "src/pro_a/propagation.py",
+    "src/pro_a/proposals.py",
+    "src/pro_a/proposition_ir.py",
+    "src/pro_a/query.py",
+    "src/pro_a/receipts.py",
+    "src/pro_a/reextraction_human_review.py",
+    "src/pro_a/relation_structure.py",
+    "src/pro_a/schema.sql",
+    "src/pro_a/semantic_admission.py",
+    "src/pro_a/semantic_decomposition.py",
+    "src/pro_a/semantic_gold_replay.py",
+    "src/pro_a/source_quality.py",
+    "src/pro_a/storage.py",
+    "src/pro_a/table_claim_safety.py",
+    "src/pro_a/view_proposal_review.py",
+    "tests/conftest.py",
+    "tests/fixtures/phase3c_semantic_repair_cases.json",
+    "tests/fixtures/run_003_infrastructure_failures.json",
+    "tests/fixtures/run_005_runtime_failures.json",
+    "tests/fixtures/run_006_af007_invalid_node_candidates.json",
+    "tests/fixtures/semantic_admission_guard_cases.json",
+    "tests/ima_helpers.py",
+    "tests/multiformat_helpers.py",
+    "tests/stability_helpers.py",
+    "tests/test_acceptance_preflight.py",
+    "tests/test_acceptance_runtime_validity.py",
+    "tests/test_adjudication.py",
+    "tests/test_api.py",
+    "tests/test_archive_ingest.py",
+    "tests/test_claim_attribution_semantics.py",
+    "tests/test_claim_node_activation.py",
+    "tests/test_corpus_pilot.py",
+    "tests/test_coverage.py",
+    "tests/test_current_view_comparator.py",
+    "tests/test_current_view_compare_api.py",
+    "tests/test_current_view_history.py",
+    "tests/test_current_view_pilot.py",
+    "tests/test_db.py",
+    "tests/test_entity_granularity.py",
+    "tests/test_foundation_execution_preparation.py",
+    "tests/test_foundation_identity_admission.py",
+    "tests/test_foundation_native_evidence.py",
+    "tests/test_foundation_payload_envelope.py",
+    "tests/test_foundation_production_entry.py",
+    "tests/test_foundation_requalification.py",
+    "tests/test_foundation_schema_migration.py",
+    "tests/test_gate_c_quality_hardening.py",
+    "tests/test_human_proposal_resolution.py",
+    "tests/test_human_review_intake.py",
+    "tests/test_ima.py",
+    "tests/test_ima_sync.py",
+    "tests/test_impact_recovery.py",
+    "tests/test_llm.py",
+    "tests/test_multiformat_ingestion.py",
+    "tests/test_node_review_provenance.py",
+    "tests/test_operational_ingestion.py",
+    "tests/test_parent_placement_governance.py",
+    "tests/test_parsers.py",
+    "tests/test_pdf_table_suppression.py",
+    "tests/test_per_piece_node_catalog.py",
+    "tests/test_phase2_4b_activation.py",
+    "tests/test_phase3c_semantic_failure_repair.py",
+    "tests/test_phase3e2sj2_bounded_generalization.py",
+    "tests/test_phase3e2sl2_bounded_semantic_closure.py",
+    "tests/test_phase3e2sl4_duplicate_precision.py",
+    "tests/test_phase3e2sl6_precall_partition.py",
+    "tests/test_phase3f_foundation_baseline.py",
+    "tests/test_phase3f_handoff_requalification.py",
+    "tests/test_phase3f_operational_handoff.py",
+    "tests/test_phase3f_public_sanitization.py",
+    "tests/test_phase3f_qualification_review.py",
+    "tests/test_phase3f_review_completion.py",
+    "tests/test_phase4_gate_c_final_requalification.py",
+    "tests/test_phase4_gate_c_requalification.py",
+    "tests/test_phase4_orchestration.py",
+    "tests/test_phase4_provenance_remediation.py",
+    "tests/test_phase4_requalification.py",
+    "tests/test_phase4_source_audit.py",
+    "tests/test_piece_local_evidence_provenance.py",
+    "tests/test_pilot3.py",
+    "tests/test_pilot3_controlled_reextraction_human_review.py",
+    "tests/test_pilot3_human_review.py",
+    "tests/test_pilot4_evidence_context_census.py",
+    "tests/test_production_authorization.py",
+    "tests/test_production_execution.py",
+    "tests/test_production_final_qualification.py",
+    "tests/test_production_human_review.py",
+    "tests/test_production_promotion.py",
+    "tests/test_production_proposal_gateway.py",
+    "tests/test_proposal_current_view.py",
+    "tests/test_proposition_ir.py",
+    "tests/test_query.py",
+    "tests/test_reextraction_human_review.py",
+    "tests/test_relation_candidate_extraction.py",
+    "tests/test_relation_evidence.py",
+    "tests/test_relation_proposals.py",
+    "tests/test_semantic_admission.py",
+    "tests/test_semantic_gold_replay.py",
+    "tests/test_source_quality.py",
+    "tests/test_stability_current_view.py",
+    "tests/test_stability_migration.py",
+    "tests/test_stability_pipeline.py",
+    "tests/test_stability_propagation.py",
+    "tests/test_stability_proposals.py",
+    "tests/test_table_claim_safety.py",
+    "tests/test_v0_2_1_knowledge_quality.py",
+    "tests/test_v0_2_2_current_view_quality.py",
+    "tests/test_v0_2_analyzer_validation.py",
+    "tests/test_v0_2_ingestion_audit.py",
+    "tests/test_v0_2_relation_seed.py",
+    "tests/test_versioning.py",
+    "workspace/phase3f_stage1_public_audit/handoff_requalification_public_audit.json",
+    "workspace/phase3f_stage1_public_audit/operational_review_public_audit.json",
+    "workspace/phase3f_stage1_public_audit/public_audit_manifest.json",
+    "workspace/phase3f_stage1_public_audit/qualification_review_public_audit.json"
+  ],
+  "synthetic_replacement_files": [
+    "tests/fixtures/phase4_gate_c_pdf_evidence.json",
+    "tests/test_phase4_pdf_evidence_generalization.py",
+    "tests/test_pilot3_controlled_reextraction.py"
+  ],
+  "synthetic_case_mapping": [
+    {
+      "private_candidate_id": "CLM_230C13A60BE194D6",
+      "private_case_class": "cjk_comma_physical_wrap",
+      "public_synthetic_case": "SYN_COMMA",
+      "mechanism_under_test": "cjk_comma_physical_wrap"
+    },
+    {
+      "private_candidate_id": "CLM_A5CA4B4A73CE2F58",
+      "private_case_class": "cjk_enumeration_physical_wrap",
+      "public_synthetic_case": "SYN_ENUM",
+      "mechanism_under_test": "cjk_enumeration_physical_wrap"
+    },
+    {
+      "private_candidate_id": "CLM_65E2880B0C28732A",
+      "private_case_class": "bounded_adjacent_layout_continuation",
+      "public_synthetic_case": "SYN_ADJACENT",
+      "mechanism_under_test": "bounded_adjacent_layout_continuation"
+    },
+    {
+      "private_candidate_id": "CLM_BF60CAEA71B1DA57",
+      "private_case_class": "explicit_ordered_adjacent_layout_span",
+      "public_synthetic_case": "SYN_ORDERED",
+      "mechanism_under_test": "explicit_ordered_adjacent_layout_span"
+    }
+  ],
+  "sanitized_documentation": [
+    "README.md",
+    "CHANGELOG.md",
+    "docs/ROADMAP.md",
+    "docs/PHASE4_STAGE41_PUBLIC_RELEASE.md"
+  ],
+  "omitted_private_only_files": [
+    "docs/PHASE4_ARTIFACT_CONTRACT.md",
+    "docs/PHASE4_JOB_STATE_MACHINE.md",
+    "docs/PHASE4_OPERATIONAL_ARCHITECTURE_CENSUS.md",
+    "docs/PHASE4_PRODUCTION_SAFETY_BOUNDARY.md",
+    "docs/PHASE4_PROVIDER_ABSTRACTION_PLAN.md",
+    "docs/PHASE4_STAGE41_ACCEPTANCE_PLAN.md",
+    "docs/PHASE4_STAGE41_GATE_A_IMPLEMENTATION_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_B_LIVE_GOLDEN_PATH_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_B_PROVENANCE_REMEDIATION_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_B_RETRY1_LIVE_GOLDEN_PATH_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_B_RETRY2_LIVE_GOLDEN_PATH_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_C_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_C_EVIDENCE_REMEDIATION_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_C_NODE_PROVENANCE_BOUNDARY_REMEDIATION_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_C_RETRY1_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md",
+    "docs/PHASE4_STAGE41_GATE_C_RETRY2_FINAL_CROSS_DOMAIN_REQUALIFICATION_REPORT.md",
+    "docs/PHASE4_STAGE41_GOLDEN_PATH_PLAN.md",
+    "docs/PHASE4_STAGE41_RELEASE_FREEZE.md",
+    "scripts/phase4_gate_b_retry2_acceptance.py",
+    "scripts/phase4_gate_c_acceptance.py",
+    "scripts/phase4_gate_c_evidence_remediation.py",
+    "scripts/phase4_gate_c_retry1_acceptance.py",
+    "scripts/phase4_gate_c_retry2_acceptance.py",
+    "scripts/phase4_node_provenance_boundary.py",
+    "scripts/verify_phase4_release_freeze.py"
+  ],
+  "version_declarations": {
+    "pyproject.toml": "0.4.0",
+    "src/pro_a/__init__.py": "0.4.0",
+    "src/pro_a.egg-info/PKG-INFO": "0.4.0"
+  },
+  "release_file_classification": [
+    {
+      "path": "CHANGELOG.md",
+      "classification": "PUBLIC_SAFE_METADATA_ONLY",
+      "action": "public_base_plus_sanitized_release_notice",
+      "private_file_sha256": "3e1063a59ab7e4b2cfa9d8255c13bc3aefe96b70037071d78730dfb704a8c2df"
+    },
+    {
+      "path": "README.md",
+      "classification": "PUBLIC_SAFE_METADATA_ONLY",
+      "action": "public_base_plus_sanitized_release_notice",
+      "private_file_sha256": "f42d89cc08d683c025ffcf0e2331427adcff4cb6a13f70d21b70978626f1f1ec"
+    },
+    {
+      "path": "docs/PHASE4_ARTIFACT_CONTRACT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "dd47842085f14e20e38be75648c63366fa2f4224fe01b50b218ed012e8c0d95d"
+    },
+    {
+      "path": "docs/PHASE4_JOB_STATE_MACHINE.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "5f791fb2e4be6330d777600f6ca86cdf247e2db088ea76bb16629fa938b9b0ee"
+    },
+    {
+      "path": "docs/PHASE4_OPERATIONAL_ARCHITECTURE_CENSUS.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "1cd136dc8799421fa219046d0205fdfe36cdeecd8dc3ac43f615b255421ee941"
+    },
+    {
+      "path": "docs/PHASE4_PRODUCTION_SAFETY_BOUNDARY.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "869cde91e62d1c58cbee9b6733aa10742194f4df8eee18aa147d94a1dd1c3d21"
+    },
+    {
+      "path": "docs/PHASE4_PROVIDER_ABSTRACTION_PLAN.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "8dac52d7fef1dab679e5031c38a6b062890f43bac2366753e34b542da096997a"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_ACCEPTANCE_PLAN.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "5e922b1ef423c4648d1a6a75b19f98b92cc996e071d2cdb2781f765c4058d160"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_A_IMPLEMENTATION_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "d0152f63272652142b42c634d54fb2793265b038559fb07a33b60cf899c69c28"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_B_LIVE_GOLDEN_PATH_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "f7c38f92875a42a5657b10a0f741ad834a648aaa8f2944371a6ec9dd3b7f176f"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_B_PROVENANCE_REMEDIATION_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "82d73bba9de404234d22743101ace8ba6d79ebf03b30b98badec6276cde64a2f"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_B_RETRY1_LIVE_GOLDEN_PATH_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "e450e775cafe6b16eeeff6c4aae8d9dbe19e51e04bcfe1fcbe8132c5f6455cdd"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_B_RETRY2_LIVE_GOLDEN_PATH_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "bcbafd5b2b13601f71dac035e52aeef36c7d16befd6ac6c699400be8cc6e0712"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_C_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "7e0913ae56c1b6eda43d926581678a0ab9df615f50b11ca5d85ec54ffed9e526"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_C_EVIDENCE_REMEDIATION_REPORT.md",
+      "classification": "SOURCE_DERIVED_PROSE_PRESENT",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "8b35018d356ad321b25e29d395851c7f0b591b09126bcd692e453a168077cb48"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_C_NODE_PROVENANCE_BOUNDARY_REMEDIATION_REPORT.md",
+      "classification": "SOURCE_DERIVED_PROSE_PRESENT",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "a868ba20567b1bcb27b4f35f7e5461499a8bddbe820aeac36dacde090b90e69c"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_C_RETRY1_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md",
+      "classification": "SOURCE_DERIVED_PROSE_PRESENT",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "6f4fe6d2afb2ed524de9405ede503b6c2e4abcaad1df6cd668dcfd48cd27d86b"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GATE_C_RETRY2_FINAL_CROSS_DOMAIN_REQUALIFICATION_REPORT.md",
+      "classification": "SOURCE_DERIVED_PROSE_PRESENT",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "16482de49939d730f869c2dd4b674eea2b2222a23eef71eb4199f7c699086f86"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_GOLDEN_PATH_PLAN.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "108c85322a2e38f406dc6b0d6e72b68253dd400169eea32f5611125391bcad35"
+    },
+    {
+      "path": "docs/PHASE4_STAGE41_RELEASE_FREEZE.md",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "5778687209b25a1bd3bb5f6397ca4e5e6dba86f8e7d5634a825600f4fca003b6"
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "classification": "PUBLIC_SAFE_METADATA_ONLY",
+      "action": "public_base_plus_sanitized_release_notice",
+      "private_file_sha256": "4028b28894a7afe104c8b281a00b086a46c39d4dbf5d1d3194cd18e1b76c0c0b"
+    },
+    {
+      "path": "pyproject.toml",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "55842403a0749fc26fbee203ca513019b8e9dd1ee719161858ad416207fd4f1b"
+    },
+    {
+      "path": "scripts/phase4_gate_b_retry2_acceptance.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "9f24f5cb8e889510591948f5d315ee82b8954c6ac2ae2fa5a728d481c0279065"
+    },
+    {
+      "path": "scripts/phase4_gate_c_acceptance.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "e6a6c871c0ba727ff45dff0b69a9be74803985647e82ee64c9c4df3d682de362"
+    },
+    {
+      "path": "scripts/phase4_gate_c_evidence_remediation.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "8c21c7ecdb4453055f52f2d78ec5827fb4187533b5e8684e5fceff3dfb81a405"
+    },
+    {
+      "path": "scripts/phase4_gate_c_retry1_acceptance.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "b0474e518f97a69c17451c3496a7bb1baea339f84405047f69d06c649a18634d"
+    },
+    {
+      "path": "scripts/phase4_gate_c_retry2_acceptance.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "32f3935a9c44cae43979e64c09cfb739852a688131af9dc1f3e654ec3eed69b2"
+    },
+    {
+      "path": "scripts/phase4_node_provenance_boundary.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "cf10c87f2215c969e55e93865b21e6faf58c82da08cc302b9bbf2cb944dcec0b"
+    },
+    {
+      "path": "scripts/verify_phase4_release_freeze.py",
+      "classification": "OMIT_FROM_PUBLIC_RELEASE",
+      "action": "omit_private_report_or_driver_and_reference_public_summary",
+      "private_file_sha256": "4de1e3e6fc1c40d05e69b2249c1b9fb6d65f6129b7da51f21bfabd902179f77b"
+    },
+    {
+      "path": "src/pro_a.egg-info/PKG-INFO",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "be2204a8f2cdeba2058806a5b2983e65723214444dd2050d95d3ea57078119ee"
+    },
+    {
+      "path": "src/pro_a/__init__.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "e364931a8afff672985ee99f795e6d8b20ff33c55d71d757ec211ec6689b3c19"
+    },
+    {
+      "path": "src/pro_a/corpus_pilot.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "97df711ec163de57a24d27d8426d0c32005176d3851dca4b24b47f586e058a9b"
+    },
+    {
+      "path": "src/pro_a/operational_ingestion.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "a84902b354fc804cc70baccb0390256e88cfa19e9e9ab6f8f71931be48b0255c"
+    },
+    {
+      "path": "src/pro_a/phase4_orchestration.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "8f9f8d46d228e25002a455525b5de773dbe064ccd7fe7a996e1808cd8861f797"
+    },
+    {
+      "path": "src/pro_a/phase4_replay.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "f8f80bcceaabe1c492e6879d1579d27ca6f87fa5a93fac6f09c78f0653498712"
+    },
+    {
+      "path": "src/pro_a/phase4_requalification.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "7ea605c0b1c39a5d68b9ef1196c895a6bdf3b3d7ba8103aee203219e86b27b81"
+    },
+    {
+      "path": "src/pro_a/phase4_retry.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "53b0c1631b951311e860d4576d00de9f4263b5a2b130e0523ba7a1061f816d7f"
+    },
+    {
+      "path": "src/pro_a/phase4_source_audit.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "19ac8381b33d96f4653922ab12ea8c76431395b45bc5df235a77975be59fc102"
+    },
+    {
+      "path": "src/pro_a/production_authorization.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "52399fe15ab21bbd80d83c9bd0f9b29c761830247094ab546bd885fe1d5a4376"
+    },
+    {
+      "path": "src/pro_a/table_claim_safety.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "add499b42bdcc092f430f66947698731e42fd1fd9466698d53c2c159e2be84f5"
+    },
+    {
+      "path": "tests/fixtures/phase4_gate_c_pdf_evidence.json",
+      "classification": "SYNTHETIC_REPLACEMENT_REQUIRED",
+      "action": "replace_in_memory_before_writing_public_file",
+      "private_file_sha256": "4bfd0e797679f493acffbbdb6626d958743493540137882f7d854d3459bb89e3"
+    },
+    {
+      "path": "tests/test_node_review_provenance.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "ca9ccac043e094a307ff3104db1dd9c6354e33fb7dd65ae71094f863d2bfcc53"
+    },
+    {
+      "path": "tests/test_operational_ingestion.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "fc8f96073c0a8b0a023e060c50540d3dbdf90d08d30954094e22d3437968a3b4"
+    },
+    {
+      "path": "tests/test_phase4_gate_c_final_requalification.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "c2b7e5f2c8779e563b9eb7f4673b133e7dabba49fb8d3123d8d7860df661c930"
+    },
+    {
+      "path": "tests/test_phase4_gate_c_requalification.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "19b2cc32830b7c3d84cb70da8f06df73e48d28c418a33d381192f37845c9f54e"
+    },
+    {
+      "path": "tests/test_phase4_orchestration.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "811ebaf86f75af7f8d610eb3c5ab5de9494c6d820d99fb954f70f4899575b325"
+    },
+    {
+      "path": "tests/test_phase4_pdf_evidence_generalization.py",
+      "classification": "SYNTHETIC_REPLACEMENT_REQUIRED",
+      "action": "replace_in_memory_before_writing_public_file",
+      "private_file_sha256": "34b3c77eda98dcbdc111cbac81b80e415cb9aee3b529c9d11d3edfa6ca90988f"
+    },
+    {
+      "path": "tests/test_phase4_provenance_remediation.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "dce651e35859f51e39a1acda56b67f13327ee188fefd7e83c5518283cfedc789"
+    },
+    {
+      "path": "tests/test_phase4_requalification.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "3a4bb098a37cdb6cd091e7241b2ccff9a3f269c6dcd31d540cafe361d1d72dc8"
+    },
+    {
+      "path": "tests/test_phase4_source_audit.py",
+      "classification": "PUBLIC_SAFE_UNCHANGED",
+      "action": "copy_final_bytes",
+      "private_file_sha256": "5758c0e7788712bdbbf677183fde38da1af1764b79d1984669b2f5feb9c3919c"
+    }
+  ],
+  "distribution_byte_preservation_file": ".gitattributes",
+  "historical_public_fixture_identity": {
+    "path": "tests/test_pilot3_controlled_reextraction.py",
+    "scope": "fixture-specific private file identity only; semantic prompt SHA and runtime validators unchanged",
+    "prompt_path": "src/pro_a/prompts.py",
+    "public_base_blob_sha256": "518a31ec17694e4d5adea0e3111f212a86fd4de73d24066271c44e5ef06bef14",
+    "public_prompt_git_blob_unchanged": true,
+    "private_mixed_line_ending_file_sha256": "4ac7a3ed099797920e57702fd3860f0ed98153fa272f112f2618e5e3fb6edce5",
+    "negative_drift_control_added": true
+  },
+  "canonical_runtime_equivalence_result": "PASS",
+  "public_contract_equivalence": "PASS",
+  "public_private_artifact_identity_difference": "EXPECTED",
+  "source_text_included": false,
+  "local_evidence_retained": true,
+  "identity_note": "Private acceptance and public distribution are distinct evidence trees; canonical runtime hashes bind accepted working-file bytes. Git attributes preserve those bytes on checkout.",
+  "public_test_result": {
+    "tests": 1780,
+    "passed": 1719,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 61,
+    "junit_sha256": "788f529d1247ebc6ebb66471be0bea004212b2ca5def8512d152cb21ccd5a8fd",
+    "deselected": 23,
+    "result": "PASS",
+    "ignored_historical_cases": 31
+  },
+  "synthetic_fixture_qualification": {
+    "result": "PASS",
+    "pytest_cases": 49,
+    "case_matrix": {
+      "version": "0.4.0",
+      "metadata_version": "0.4.0",
+      "positive_cases": [
+        {
+          "case": "SYN_COMMA",
+          "mechanism": "cjk_comma_physical_wrap",
+          "result": "PASS",
+          "match_method": "provenance_pdf_normalized_exact_substring",
+          "reason": null,
+          "span_count": 0
+        },
+        {
+          "case": "SYN_ENUM",
+          "mechanism": "cjk_enumeration_physical_wrap",
+          "result": "PASS",
+          "match_method": "provenance_pdf_normalized_exact_substring",
+          "reason": null,
+          "span_count": 0
+        },
+        {
+          "case": "SYN_ADJACENT",
+          "mechanism": "bounded_adjacent_layout_continuation",
+          "result": "PASS",
+          "match_method": "bounded_ordered_exact_spans",
+          "reason": "cross_page_span",
+          "span_count": 2
+        },
+        {
+          "case": "SYN_ORDERED",
+          "mechanism": "explicit_ordered_adjacent_layout_span",
+          "result": "PASS",
+          "match_method": "bounded_ordered_exact_spans",
+          "reason": "cross_page_span",
+          "span_count": 2
+        }
+      ],
+      "negative_cases": [
+        {
+          "pointer": "[[PAGE:10]][[PAGE:9]]",
+          "result": "PASS"
+        },
+        {
+          "pointer": "[[PAGE:9]][[PAGE:11]]",
+          "result": "PASS"
+        },
+        {
+          "pointer": "[[PAGE:9]][[PAGE:x]]",
+          "result": "PASS"
+        },
+        {
+          "pointer": "[[PAGE:9]][[PAGE:10]",
+          "result": "PASS"
+        },
+        {
+          "pointer": "[[PAGE:9]][[PAGE:9]]",
+          "result": "PASS"
+        }
+      ],
+      "layout_required_negative": "PASS",
+      "input_unchanged": true,
+      "nonadjacent_single_pointer_expansion_negative": "PASS"
+    }
+  },
+  "phase3f_public_baseline": {
+    "result": "PASS",
+    "unchanged_base_paths": 52,
+    "persisted_public_audit_integrity": "PASS",
+    "applicable_cases": 268,
+    "passed": 254,
+    "skipped": 14
+  },
+  "public_test_selection": {
+    "deselected": [
+      "tests/test_archive_ingest.py::test_archive_mode_without_llm_or_ima",
+      "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+      "tests/test_relation_candidate_extraction.py::test_structural_admission_does_not_auto_split_relation_supporting_claim",
+      "tests/test_relation_candidate_extraction.py::test_unsplit_claim_without_relation_semantics_is_rejected",
+      "tests/test_relation_candidate_extraction.py::test_pipeline_maps_temp_ref_to_persistent_claim_and_only_creates_proposal",
+      "tests/test_relation_candidate_extraction.py::test_pipeline_preserves_c_number_scope_and_reason_identity",
+      "tests/test_relation_candidate_extraction.py::test_pipeline_unresolved_temp_ref_creates_no_proposal_and_is_audited",
+      "tests/test_relation_candidate_extraction.py::test_same_identity_candidates_merge_persistent_claims",
+      "tests/test_relation_candidate_extraction.py::test_pipeline_recovers_stale_pending_and_synchronizes_artifact",
+      "tests/test_relation_candidate_extraction.py::test_existing_formal_relation_still_gets_pending_proposal_without_evidence_attach",
+      "tests/test_relation_candidate_extraction.py::test_relation_candidate_pipeline_is_isolated_from_impact_and_propagation",
+      "tests/test_relation_candidate_extraction.py::test_mock_llm_positive_sample_creates_pending_relation_proposal",
+      "tests/test_relation_candidate_extraction.py::test_missing_evidence_staging_row_cannot_create_relation_proposal",
+      "tests/test_relation_candidate_extraction.py::test_mock_llm_negative_sample_creates_no_relation_proposal",
+      "tests/test_stability_pipeline.py::test_archive_source_upgrades_to_standard_and_deep_without_new_source",
+      "tests/test_stability_pipeline.py::test_parse_failure_keeps_request_and_does_not_create_source",
+      "tests/test_v0_2_1_knowledge_quality.py::test_invalid_candidate_backfill_does_not_insert_claims_or_proposals",
+      "tests/test_v0_2_1_knowledge_quality.py::test_parent_match_is_derived_from_confirmed_part_of_relation",
+      "tests/test_v0_2_1_knowledge_quality.py::test_accept_candidate_links_all_backfilled_validated_claims",
+      "tests/test_v0_2_analyzer_validation.py::test_unknown_node_only_does_not_fail_source_or_create_downstream_objects[case0]",
+      "tests/test_v0_2_analyzer_validation.py::test_unknown_node_only_does_not_fail_source_or_create_downstream_objects[case1]",
+      "tests/test_v0_2_analyzer_validation.py::test_invalid_source_analysis_does_not_insert_claims_or_proposals",
+      "tests/test_v0_2_ingestion_audit.py::test_standard_ingestion_receipt_and_source_show_are_auditable"
+    ],
+    "ignored_modules": {
+      "tests/test_foundation_requalification.py": 10,
+      "tests/test_phase3f_handoff_requalification.py": 4,
+      "tests/test_phase3f_qualification_review.py": 17
+    },
+    "private_fixture_skips_are_not_private_acceptance_replays": true,
+    "network_guarded": true,
+    "live_provider_calls": 0,
+    "production_writes": 0,
+    "guard_file_sha256": "0fae09f036953b91fee90f899acdc9e0067e5d247b1c7a00fb6953b28734c4df",
+    "test_config_sha256": "bae5d336594e246ef4276778b0380fac0154c7bffa6cab1fafd2b6028fc198ef",
+    "test_config_origin": "unchanged public config.example.toml; ignored local config.toml; both providers disabled"
+  },
+  "prior_diagnostics": {
+    "initial_attempt": {
+      "tests": 1779,
+      "passed": 1673,
+      "failed": 2,
+      "errors": 43,
+      "skipped": 61,
+      "junit_sha256": "9d222b5dee346e37b9bc87f87e3efeaa19f2d31c83384d8e04e9f926f8a75996"
+    },
+    "initial_result": "NOT_QUALIFYING_ENVIRONMENT_SETUP",
+    "initial_causes": [
+      "43 missing public test configuration setup errors",
+      "2 historical private line-ending file identity failures"
+    ],
+    "resolution": "Public example configuration and fixed public-base prompt fixture identity; runtime checks and semantic prompt hash unchanged.",
+    "affected_requalification": {
+      "tests": 129,
+      "passed": 129,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_sha256": "032e3a51c373ca23cc452e6131f0c700d6ad6c8d86ff2a0d59b62bed2552197c"
+    },
+    "overlapping_suites_not_additive": true
+  },
+  "source_content_scan": {
+    "threshold": 32,
+    "cjk_threshold": 16,
+    "cjk_minimum_han_characters": 8,
+    "normalization": "NFKC and whitespace removal; raw text plus parsed Python/JSON string values",
+    "rationale": "32 consecutive normalized characters, or 16 with at least 8 Han characters, detect substantial spans and short Chinese clauses while avoiding incidental domain terms; shorter evidence values require field-aware review.",
+    "source_windows_in_memory": 68549,
+    "exact_match_count": 0,
+    "result": "PASS",
+    "tracked_file_count": 360,
+    "private_source_exact_match_count": 0,
+    "private_source_files_tracked": 0,
+    "source_fragments_written": false,
+    "manifest_scanned_in_memory_before_write": true,
+    "corpus_artifact_hashes": [
+      {
+        "sha256": "e86652ae02f9ff29b64d780d8816e968bb3546657aca958a9d4424d03b947488",
+        "role": "source_layout_segments"
+      },
+      {
+        "sha256": "b9b09ab39f42bc4bf8a18b88445d295b733f1360614079abebbebeac20d4f11f",
+        "role": "source_layout_segments"
+      },
+      {
+        "sha256": "e86652ae02f9ff29b64d780d8816e968bb3546657aca958a9d4424d03b947488",
+        "role": "source_layout_segments"
+      },
+      {
+        "sha256": "b9b09ab39f42bc4bf8a18b88445d295b733f1360614079abebbebeac20d4f11f",
+        "role": "source_layout_segments"
+      },
+      {
+        "sha256": "e86652ae02f9ff29b64d780d8816e968bb3546657aca958a9d4424d03b947488",
+        "role": "source_layout_segments"
+      },
+      {
+        "sha256": "1e25ca485aa5f564e9154006504ceaad1947a466821ccb96b10dc714e22137b0",
+        "role": "evidence_fields"
+      },
+      {
+        "sha256": "3e74c7d57bbdcd6cb8dadb3076586d141b512763e5dd74c82804afc7543fe6d6",
+        "role": "evidence_fields"
+      },
+      {
+        "sha256": "2a162d21a5c38c3f9a6601f1a873be5a94cfd212bbdad21f13129fbeaaf3fcce",
+        "role": "evidence_fields"
+      },
+      {
+        "sha256": "3039cfb8fe1b1cce885278d3ecabd76700bcfd9f87457db6c4f7b08a6473d3bb",
+        "role": "evidence_fields"
+      },
+      {
+        "sha256": "cab006b2b3d31f23e126a4b86ec392a74a75a3f518d4a45c2b38970adb633181",
+        "role": "evidence_fields"
+      }
+    ],
+    "field_review_files": 118,
+    "short_literal_review": {
+      "scope": "decoded Python/JSON literals of 8-31 normalized characters with at least four Han characters",
+      "incidental_matches": 2,
+      "disposition": "pre-existing public generic table-section heading matchers; not private Source statements"
+    },
+    "inherited_public_audit_files": 4,
+    "inherited_public_path_metadata_files": 5,
+    "new_private_path_disclosures": 0,
+    "secret_scan": "credential-prefix, private-key-header and literal credential-assignment checks; no repository scanner command found",
+    "secret_pattern_matches": 0
+  },
+  "git_history_boundary": {
+    "public_base": "fe59d8a359ee6e9c6c7a4b68b08d34cc16f93f5b",
+    "excluded_private_commits": [
+      "2c71db7b6da1ea8d3d2c970b20b8b93831d24e2a",
+      "c7bc79689f5e2215ffb2c40e1f53d4c4eca78423"
+    ],
+    "excluded_private_blob_ids": {
+      "docs/PHASE4_ARTIFACT_CONTRACT.md": "db42d7faa65b4c6c9e0d0198260b78cfebf12ca1",
+      "docs/PHASE4_JOB_STATE_MACHINE.md": "ffc2ffe5a12cff0d05107ddff6462f87a1e9c978",
+      "docs/PHASE4_OPERATIONAL_ARCHITECTURE_CENSUS.md": "b0decdc070eabae174a2b4921ef263d191a35919",
+      "docs/PHASE4_PRODUCTION_SAFETY_BOUNDARY.md": "85529b5ebe609ce9609f0389b5bc8b2c1fff9298",
+      "docs/PHASE4_PROVIDER_ABSTRACTION_PLAN.md": "1273122d1ebaa6709e99f1c0edb8f842cb22003c",
+      "docs/PHASE4_STAGE41_ACCEPTANCE_PLAN.md": "abf9344b315e5ca529c92cd9a74564df64f271dd",
+      "docs/PHASE4_STAGE41_GATE_A_IMPLEMENTATION_REPORT.md": "c524b24192a62c472db1fb17d5ead7b47a8f4b13",
+      "docs/PHASE4_STAGE41_GATE_B_LIVE_GOLDEN_PATH_REPORT.md": "ac066ab95fa651372b338b6d6bb55c8333265bc7",
+      "docs/PHASE4_STAGE41_GATE_B_PROVENANCE_REMEDIATION_REPORT.md": "40e9f7e190ab1b38f064ea68360dde57fbfe2ca9",
+      "docs/PHASE4_STAGE41_GATE_B_RETRY1_LIVE_GOLDEN_PATH_REPORT.md": "8d6c86612f1c6f711f587c1fddeba861ddd65286",
+      "docs/PHASE4_STAGE41_GATE_B_RETRY2_LIVE_GOLDEN_PATH_REPORT.md": "42796fbadbe418e9d6be1140722813c796a86c95",
+      "docs/PHASE4_STAGE41_GATE_C_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md": "07181fac707bff9acd05ec3ee0abfad5602d55eb",
+      "docs/PHASE4_STAGE41_GATE_C_EVIDENCE_REMEDIATION_REPORT.md": "dc1be2c2cb6107acf5066ecc1b6d7c3bfdbd3a07",
+      "docs/PHASE4_STAGE41_GATE_C_NODE_PROVENANCE_BOUNDARY_REMEDIATION_REPORT.md": "7e49cff48239feda0d7d77f0d50db63e69f33fff",
+      "docs/PHASE4_STAGE41_GATE_C_RETRY1_CROSS_DOMAIN_LIVE_GOLDEN_PATH_REPORT.md": "3a0b1667d436d4f6098095ac064a0de55fc1e7c7",
+      "docs/PHASE4_STAGE41_GATE_C_RETRY2_FINAL_CROSS_DOMAIN_REQUALIFICATION_REPORT.md": "59815b36feb063b2e5c16b37097809429aac0326",
+      "docs/PHASE4_STAGE41_GOLDEN_PATH_PLAN.md": "e983faa8af795528ebdb3cf3c69640ecbaffa706",
+      "docs/PHASE4_STAGE41_RELEASE_FREEZE.md": "83c6af00d0842992d8847b00422d1c6cdae2c41c",
+      "scripts/phase4_gate_b_retry2_acceptance.py": "3203d4c3fbcf68aa6ef4fca0d26256dcbaf63d36",
+      "scripts/phase4_gate_c_acceptance.py": "4c0c92d4ebec7a56ffe1fcb78b66bbc6f18aa135",
+      "scripts/phase4_gate_c_evidence_remediation.py": "dfb814f052e353f9738941fa6251f472591745af",
+      "scripts/phase4_gate_c_retry1_acceptance.py": "62800d52cb0a18df124fcb09c7910a5a0ca4723d",
+      "scripts/phase4_gate_c_retry2_acceptance.py": "e99ea7761712efa80c77c406c666bcfb5c69b1cd",
+      "scripts/phase4_node_provenance_boundary.py": "04b1b9a920911fcea3618cfc85f168641c0800da",
+      "scripts/verify_phase4_release_freeze.py": "76545a36dfad91fd72cb669659a6fb2da28454ac",
+      "tests/fixtures/phase4_gate_c_pdf_evidence.json": "d5e6ecd72ea45423925f514ed2588d74a18a65d4",
+      "tests/test_phase4_pdf_evidence_generalization.py": "378bc3e0f2eaa2f2fd4b5d263488b2709cdcd4a3"
+    },
+    "private_commits_must_be_unreachable": true,
+    "excluded_blobs_must_be_unreachable": true,
+    "shared_local_object_database_is_not_public_ancestry": true
+  },
+  "actions": {
+    "push": false,
+    "pr": false,
+    "tag": false,
+    "github_release": false,
+    "live_ingestion": false,
+    "production_apply_attempts": 0,
+    "phase4_2_started": false
+  },
+  "next_action": "PHASE4_STAGE41_GITHUB_PUBLICATION_RETRY1",
+  "artifact_id": "PUBLIC_PHASE41_PROJECTION_0C667E4B7A1E49E0",
+  "artifact_sha256": "0c667e4b7a1e49e0d2b4bd6b83982ca21e1d2ef78868be66461dc43c96e83806"
+}

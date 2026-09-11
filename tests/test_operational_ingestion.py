@@ -353,6 +353,10 @@ def test_operational_node_review_reuses_exact_phase3d_resolution_logic(tmp_path:
     claims = [{
         "claim_id": "CLM_1",
         "evidence_id": "EVD_1",
+        "review_admitted": True,
+        "evidence_validation": {"bound": True, "authoritative_locator": {
+            "status": "resolved", "kind": "single_page", "locator": "PAGE:1", "authoritative": True}},
+        "semantic_admission": {"overall_guard_disposition": "ADMISSIBLE"},
         "immutable_projection": {
             "statement": "Existing Product demand increased.",
             "evidence_excerpt": "Existing Product demand increased.",
@@ -380,6 +384,7 @@ def test_operational_node_review_reuses_exact_phase3d_resolution_logic(tmp_path:
         run_id="INGEST_TEST",
         source_sha256="a" * 64,
         claim_review_sha256="b" * 64,
+        claim_review={"run_id": "INGEST_TEST", "source_sha256": "a" * 64, "claims": claims},
         claims=claims,
         node_operations=operations,
         relation_operations=[],
@@ -409,6 +414,10 @@ def test_operational_node_review_labels_parent_placement_as_separate_governance(
     claims = [{
         "claim_id": "CLM_CHILD",
         "evidence_id": "EVD_CHILD",
+        "review_admitted": True,
+        "evidence_validation": {"bound": True, "authoritative_locator": {
+            "status": "resolved", "kind": "single_page", "locator": "PAGE:1", "authoritative": True}},
+        "semantic_admission": {"overall_guard_disposition": "ADMISSIBLE"},
         "immutable_projection": {
             "statement": "New Product demand increased.",
             "evidence_excerpt": "New Product demand increased.",
@@ -440,6 +449,7 @@ def test_operational_node_review_labels_parent_placement_as_separate_governance(
         run_id="INGEST_PARENT_REVIEW",
         source_sha256="a" * 64,
         claim_review_sha256="b" * 64,
+        claim_review={"run_id": "INGEST_PARENT_REVIEW", "source_sha256": "a" * 64, "claims": claims},
         claims=claims,
         node_operations=operations,
         relation_operations=[],

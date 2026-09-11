@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pro-a"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local canonical knowledge engine for long-term research"
 requires-python = ">=3.10"
 dependencies = [

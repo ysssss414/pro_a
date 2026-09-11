@@ -12,11 +12,11 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from . import analyzer as analyzer_module
 from .analyzer import Analyzer
-from .config import AppConfig, load_config
+from .config import AppConfig, LLMConfig, load_config
 from .corpus_pilot import (
     BUNDLE_DOCUMENT_TYPE,
     _build_review_draft,
@@ -398,9 +398,12 @@ def _build_live_extraction(
     layout_sidecar_relative: str,
     adaptive_retry_policy: str = "allow",
     initial_plan_path: Path | None = None,
+    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
+    if llm_factory is not None:
+        analyzer.llm = llm_factory(cfg.llm)
 
     def persist_initial_plan(plan: dict[str, Any]) -> None:
         if initial_plan_path is not None:
@@ -582,6 +585,8 @@ def _run_extraction(
     manifest: dict[str, Any],
     cfg: AppConfig,
     production_path: Path,
+    *,
+    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
 ) -> list[Path]:
     extraction_dir = paths.path("extraction")
     gate_path = extraction_dir / "clean_source_gate.json"
@@ -622,6 +627,7 @@ def _run_extraction(
                 manifest["model"].get("adaptive_retry_policy") or "allow"
             ),
             initial_plan_path=initial_plan_path,
+            llm_factory=llm_factory,
         )
         _write_json(bundle_path, bundle)
         manifest["model"]["extraction_mode"] = "CONFIGURED_CLOUD_MODEL"
@@ -1042,13 +1048,18 @@ def _run_evidence(
     paths: RunPaths,
     manifest: dict[str, Any],
     cfg: AppConfig,
+    *,
+    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
+    semantic_replay: Callable[[list[dict[str, Any]]], dict[str, Any]] | None = None,
+    semantic_max_split_depth: int = 4,
 ) -> list[Path]:
     bundle_path = paths.path("extraction/extraction_bundle.json")
     extraction_review = paths.path("extraction/extraction_review_draft.json")
     source_path = paths.frozen_source
     evidence_dir = paths.path("evidence")
+    layout_sidecar = _load_json(paths.path("extraction/source_layout_sidecar.json"))
     rebound = rebind_stage1_evidence_locators(
-        bundle_path, source_path, output_dir=evidence_dir
+        bundle_path, source_path, output_dir=evidence_dir, layout_sidecar=layout_sidecar,
     )
     rebound_path = _move_output(
         rebound["rebound_bundle_path"], evidence_dir / "evidence_bound_extraction_bundle.json"
@@ -1063,7 +1074,7 @@ def _run_evidence(
         rebound["metrics_path"], evidence_dir / "evidence_locator_metrics.json"
     )
     evidence_result = build_pilot2_evidence_support_draft(
-        rebound_path, rebound_review, source_path, output_dir=evidence_dir
+        rebound_path, rebound_review, source_path, output_dir=evidence_dir, layout_sidecar=layout_sidecar,
     )
     evidence_binding = _move_output(
         evidence_result["draft_path"], evidence_dir / "evidence_binding.json"
@@ -1081,6 +1092,7 @@ def _run_evidence(
         source_path,
         output_dir=evidence_dir,
         original_review_path=extraction_review,
+        layout_sidecar=layout_sidecar,
     )
     quote_path = _move_output(
         gate_result["gate_a_path"], evidence_dir / "quote_fidelity.json"
@@ -1113,7 +1125,6 @@ def _run_evidence(
         if resolved.get("kind") == "single_page" and resolved.get("locator")
     })
     parsed = parse_source_with_diagnostics(source_path)
-    layout_sidecar = _load_json(paths.path("extraction/source_layout_sidecar.json"))
     table_result = apply_table_claim_safety_boundary_v1(
         canonical_source_text=parsed.text,
         layout_sidecar=layout_sidecar,
@@ -1130,7 +1141,7 @@ def _run_evidence(
         "result": table_result,
     })
     semantic_decomposition_path = evidence_dir / "semantic_decomposition.json"
-    semantic_llm = ChatLLM(replace(
+    semantic_llm = (llm_factory or ChatLLM)(replace(
         cfg.llm,
         max_output_tokens=min(
             cfg.llm.max_output_tokens,
@@ -1138,16 +1149,20 @@ def _run_evidence(
         ),
     ))
     proposition_results: dict[str, Mapping[str, Any]] = {}
-    if semantic_llm.available:
+    if semantic_replay is not None or semantic_llm.available:
         semantic_inputs = build_semantic_claim_inputs(
             bundle=bundle,
             evidence_draft=evidence_draft,
             quote_fidelity=gate,
         )
-        decomposition = SemanticDecomposer(
-            ChatLLMSemanticBackend(semantic_llm),
-            batch_size=8,
-        ).run(semantic_inputs)
+        if semantic_replay is not None:
+            decomposition = semantic_replay(semantic_inputs)
+        else:
+            decomposition = SemanticDecomposer(
+                ChatLLMSemanticBackend(semantic_llm),
+                batch_size=8,
+                max_split_depth=semantic_max_split_depth,
+            ).run(semantic_inputs)
         proposition_results = {
             item["parent_claim_id"]: item
             for item in decomposition["results"]
@@ -1164,6 +1179,14 @@ def _run_evidence(
                 == decomposition["output_parent_claim_ids"]
             ),
         }
+        if semantic_replay is not None:
+            manifest["semantic_model"].update(
+                execution_mode="FROZEN_RESULT_REPLAY",
+                llm_calls=0,
+                length_retries=0,
+                usage={},
+                historical_metadata_in="evidence/semantic_decomposition.json",
+            )
     else:
         decomposition = {
             "document_type": "phase3e2se_post_extraction_semantic_decomposition",
@@ -1317,6 +1340,10 @@ def _render_node_review(review: Mapping[str, Any]) -> str:
             f"**{record['suggested_operation']}** | {parent_text} | "
             f"{clean(record['suggestion_reason'])} | PENDING |"
         )
+    for excluded in review["audit_operations"].get("node_unsupported", []):
+        lines.append(f"Excluded `{excluded['candidate_id']}`: {excluded['reason']} (observation retained in audit inventory).")
+    for excluded in review["audit_operations"].get("parent_placement_excluded", []):
+        lines.append(f"Excluded `{excluded['suggestion_id']}`: {excluded['reason']}.")
     lines.extend([
         "",
         "Parent placement suggestions require separate human review and are not authorized by Node CREATE.",
@@ -1364,6 +1391,7 @@ def _run_node_review(
         run_id=manifest["run_id"],
         source_sha256=manifest["source"]["sha256"],
         claim_review_sha256=sha256_file(claim_review_path),
+        claim_review=claim_review,
         claims=review_claims,
         node_operations=node_operations,
         relation_operations=relation_operations,
@@ -1694,14 +1722,23 @@ def run_operational_ingestion(
     stop_after: str | None = None,
     frozen_extraction_path: Path | None = None,
     adaptive_retry_policy: str = "allow",
+    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
+    semantic_replay: Callable[[list[dict[str, Any]]], dict[str, Any]] | None = None,
+    semantic_max_split_depth: int = 4,
 ) -> dict[str, Any]:
-    """Run or resume the clean-PDF workflow through a non-executable preview."""
+    """Run or resume the clean-PDF workflow through a non-executable preview.
+
+    Optional caller-owned provider/replay seams do not change default behavior.
+    The caller must pin their configuration and replay input identities on resume.
+    """
     if stop_after is not None and stop_after not in STOP_AFTER:
         raise OperationalIngestionError(f"STOP_AFTER_INVALID:{stop_after}")
     if adaptive_retry_policy not in {"allow", "forbid"}:
         raise OperationalIngestionError(
             "ADAPTIVE_RETRY_POLICY_INVALID:expected allow or forbid"
         )
+    if semantic_max_split_depth < 0:
+        raise OperationalIngestionError("SEMANTIC_MAX_SPLIT_DEPTH_INVALID")
     cfg = load_config(config_path)
     if resume:
         if run_dir is None:
@@ -1737,12 +1774,15 @@ def run_operational_ingestion(
         (
             "EXTRACTION_COMPLETE",
             "EXTRACTION_FAILED",
-            lambda: _run_extraction(paths, manifest, cfg, production_path),
+            lambda: _run_extraction(paths, manifest, cfg, production_path, llm_factory=llm_factory),
         ),
         (
             "EVIDENCE_COMPLETE",
             "EVIDENCE_FAILED",
-            lambda: _run_evidence(paths, manifest, cfg),
+            lambda: _run_evidence(
+                paths, manifest, cfg, llm_factory=llm_factory,
+                semantic_replay=semantic_replay, semantic_max_split_depth=semantic_max_split_depth,
+            ),
         ),
         (
             "CLAIM_REVIEW_READY",

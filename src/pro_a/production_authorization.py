@@ -608,6 +608,7 @@ def build_operational_node_operation_review(
     run_id: str,
     source_sha256: str,
     claim_review_sha256: str,
+    claim_review: Mapping[str, Any],
     claims: Sequence[Mapping[str, Any]],
     node_operations: Sequence[Mapping[str, Any]],
     relation_operations: Sequence[Mapping[str, Any]],
@@ -618,6 +619,19 @@ def build_operational_node_operation_review(
     deferred = [item for item in node_operations if item.get("operation") == "DEFER"]
     rejected = [item for item in node_operations if item.get("operation") == "REJECT"]
     _require(bool(run_id and source_sha256 and claim_review_sha256), "OPERATIONAL_REVIEW_BINDING_MISSING")
+    _require(
+        claim_review.get("run_id") == run_id
+        and claim_review.get("source_sha256") == source_sha256,
+        "NODE_CLAIM_REVIEW_SOURCE_OR_RUN_MISMATCH",
+    )
+    qualifying_claim_ids = {
+        item["claim_id"] for item in claim_review.get("claims") or []
+        if item.get("review_admitted") is True
+        and (item.get("evidence_validation") or {}).get("bound") is True
+        and ((item.get("evidence_validation") or {}).get("authoritative_locator") or {}).get("authoritative") is True
+        and ((item.get("evidence_validation") or {}).get("authoritative_locator") or {}).get("status") == "resolved"
+        and (item.get("semantic_admission") or {}).get("overall_guard_disposition") in {"ADMISSIBLE", "REVIEW_REQUIRED"}
+    }
     _require(
         all(not item.get("executable") for item in [*node_operations, *relation_operations]),
         "OPERATIONAL_REVIEW_CONTAINS_EXECUTABLE_OPERATION",
@@ -652,6 +666,40 @@ def build_operational_node_operation_review(
         record_ids == [operation["candidate_id"] for operation in deferred],
         "OPERATIONAL_NODE_REVIEW_ORDER_OR_UNIVERSE_MISMATCH",
     )
+    unsupported = []
+    excluded_parents = []
+    eligibility = []
+    for record, operation in zip(records, deferred):
+        # Identity advice and extraction diagnostics do not confer review
+        # provenance. Keep existing support associations; never invent new ones.
+        supporting = record["supporting_claim_ids"]
+        grounded = [claim_id for claim_id in supporting if claim_id in qualifying_claim_ids]
+        eligibility.append({
+            "candidate_id": record["operation_candidate_id"],
+            "classification": "REVIEWABLE_CLAIM_GROUNDED" if grounded else "EXCLUDED_INSUFFICIENT_PROVENANCE",
+            "qualifying_claim_ids": grounded,
+            "nonqualifying_support_claim_ids": [claim_id for claim_id in supporting if claim_id not in qualifying_claim_ids],
+        })
+        if grounded:
+            continue
+        reason = (
+            "RESEARCH_QUESTION_WITHOUT_DETERMINISTIC_EVIDENCE"
+            if record["proposed_type"] == "ResearchQuestion"
+            else "NODE_WITHOUT_DETERMINISTIC_REVIEW_PROVENANCE"
+        )
+        unsupported.append({"candidate_id": record["operation_candidate_id"],
+                            "reason": reason, "executable": False,
+                            "operation": copy.deepcopy(operation), "record": copy.deepcopy(record)})
+        for parent_id in record["parent_placement_suggestion"]["suggested_parent_node_ids"]:
+            excluded_parents.append({
+                "suggestion_id": deterministic_id("PARENT_PLACEMENT", {
+                    "candidate_id": record["operation_candidate_id"], "parent_node_id": parent_id}),
+                "candidate_id": record["operation_candidate_id"], "parent_node_id": parent_id,
+                "reason": "CHILD_NODE_EXCLUDED:" + reason, "executable": False,
+            })
+    excluded_ids = {item["candidate_id"] for item in unsupported}
+    records = [record for record in records if record["operation_candidate_id"] not in excluded_ids]
+    record_ids = [record["operation_candidate_id"] for record in records]
     counts = Counter(record["suggested_operation"] for record in records)
     relation_deferred = sum(item.get("operation") == "DEFER" for item in relation_operations)
     relation_rejected = sum(item.get("operation") == "REJECT" for item in relation_operations)
@@ -672,7 +720,7 @@ def build_operational_node_operation_review(
             "sidecars": baseline["sidecars"],
         },
         "review_universe": {
-            "expected": len(deferred),
+            "expected": len(deferred) - len(unsupported),
             "observed": len(records),
             "candidate_ids": record_ids,
             "candidate_ids_sha256": canonical_sha256(record_ids),
@@ -696,6 +744,14 @@ def build_operational_node_operation_review(
             "node_rejected": copy.deepcopy(rejected),
             "relations": copy.deepcopy(list(relation_operations)),
         },
+        "provenance_eligibility": {
+            "policy": "AUTHORITATIVE_REVIEW_ADMITTED_CLAIM_SUPPORT",
+            "direct_evidence_only_authorized": False,
+            "records": eligibility + [
+                {"candidate_id": item["candidate_id"], "classification": "EXCLUDED_POLICY_REJECTION"}
+                for item in rejected
+            ],
+        },
         "records": records,
         "authorization": {
             "all_review_decisions_pending": all(
@@ -706,6 +762,10 @@ def build_operational_node_operation_review(
             "final_production_payload_generated": False,
         },
     }
+    if unsupported:
+        body["review_universe"]["unsupported_nodes_excluded"] = len(unsupported)
+        body["audit_operations"]["node_unsupported"] = unsupported
+        body["audit_operations"]["parent_placement_excluded"] = excluded_parents
     digest = canonical_sha256(body)
     return {
         **body,

@@ -245,3 +245,7 @@
 - 上下级优先、关联节点后续的 Impact Propagation 骨架。
 - IMA 文件上传 Adapter。
 - SQLite schema 与 Windows CLI。
+
+## v0.4.0 public source projection
+
+Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection. Phase 4.2 has not started.
