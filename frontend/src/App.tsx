@@ -24,6 +24,7 @@ import type {
   StatsResponse,
 } from "./api/types";
 import { GraphPanel } from "./components/GraphPanel";
+import { ChangesImpactWorkbench } from "./components/ChangesImpactWorkbench";
 import {
   NodeDetailPanel,
   type DetailTab,
@@ -38,7 +39,10 @@ function emptyKnowledgeErrors(): KnowledgeErrors {
 }
 
 export default function App() {
-  const [surface, setSurface] = useState(() => new URLSearchParams(window.location.search).get("surface") === "review" ? "review" : "explorer");
+  const [surface, setSurface] = useState<"explorer" | "proposals" | "impact" | "review">(() => {
+    const requested = new URLSearchParams(window.location.search).get("surface");
+    return requested === "review" || requested === "proposals" || requested === "impact" ? requested : "explorer";
+  });
   const [requestedViewId, setRequestedViewId] = useState<string | null>(null);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -233,7 +237,7 @@ export default function App() {
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (surface === "review") url.searchParams.set("surface", "review");
+    if (surface !== "explorer") url.searchParams.set("surface", surface);
     else url.searchParams.delete("surface");
     window.history.replaceState(null, "", url);
   }, [surface]);
@@ -260,6 +264,7 @@ export default function App() {
         <nav className="surface-nav" aria-label="Research surfaces">
           <button type="button" aria-pressed={surface === "explorer"} onClick={() => setSurface("explorer")}>Explorer</button>
           <button type="button" aria-pressed={surface === "proposals"} onClick={() => setSurface("proposals")}>Human View Proposals</button>
+          <button type="button" aria-pressed={surface === "impact"} onClick={() => setSurface("impact")}>Changes &amp; Impact</button>
           <button type="button" aria-pressed={surface === "review"} onClick={() => setSurface("review")}>Review</button>
         </nav>
         <div className="header-status">
@@ -293,7 +298,7 @@ export default function App() {
         </div>
       )}
 
-      {surface === "review" ? <ReviewRoute onAuthenticated={loadStatus} /> : surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
+      {surface === "review" ? <ReviewRoute onAuthenticated={loadStatus} /> : surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : surface === "impact" ? <ChangesImpactWorkbench onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
         <SearchPanel selectedNodeId={selectedNodeId} onSelect={selectNode} />
         <GraphPanel
           graph={graph}

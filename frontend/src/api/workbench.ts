@@ -77,6 +77,14 @@ const messages: Record<string, string> = {
   DRAFT_IDENTITY_MISMATCH: "The persisted draft identity or revision no longer matches.",
   PACKAGE_NOT_REGISTERED: "The qualified View package is not registered.",
   RECEIPT_MISMATCH: "The activation receipt does not match the qualified package.",
+  IMPACT_PATH_NOT_FOUND: "This direct evidence path no longer exists in the current snapshot.",
+  UNSUPPORTED_RELATION_TYPE: "This recorded relationship is outside the direct-impact contract.",
+  EVIDENCE_NOT_RESOLVED: "The recorded evidence identity could not be resolved.",
+  STALE_SNAPSHOT: "The evidence snapshot changed. Refresh before recording an attention outcome.",
+  TARGET_NOT_FOUND: "The requested recorded object was not found.",
+  NONCURRENT_RELATION: "The requested relationship or View is not current.",
+  AMBIGUOUS_TEMPORAL_STATE: "The recorded temporal state is ambiguous.",
+  IMPACT_SCHEMA_REQUIRED: "Prepare the Stage 4 Workbench schema before using Changes & Impact.",
 };
 
 export class WorkbenchError extends Error {
@@ -159,3 +167,68 @@ export const qualifyViewDraft = (nodeId: string, draftId: string, revision: numb
 export const reconcileViewReceipt = (nodeId: string, objectId: string, csrf: string, signal: AbortSignal) =>
   request<{ status: "VERIFIED"; receipt_id: string; package_id: string; official_view_id: string }>("/current-views/" + encodeURIComponent(nodeId) + "/reconcile", signal,
     { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify({ object_id: objectId }) });
+
+export type ImpactPathStep = {
+  object_type: "SOURCE" | "CLAIM" | "NODE" | "VIEW" | "VIEW_DRAFT" | "CLAIM_RELATION" | "RELATION";
+  object_id: string;
+  label: string;
+  status: string;
+};
+
+export type ImpactAttentionState = {
+  outcome: "NO_CHANGE" | "MINOR" | "MATERIAL" | "THESIS";
+  revision: number;
+  reviewer: string;
+  actor: string;
+  reason: string;
+  updated_at: string;
+  status: "CURRENT" | "STALE";
+  snapshot_id: string;
+};
+
+export type DirectImpactItem = {
+  impact_id: string;
+  impact_type: string;
+  origin_type: "SOURCE";
+  origin_id: string;
+  target_type: string;
+  target_id: string;
+  path_steps: ImpactPathStep[];
+  relationship_types: string[];
+  attribution_role: "subject" | "context" | "related" | null;
+  official_or_staged: "OFFICIAL" | "STAGED" | "RECORDED" | "CURRENT" | "CATEGORICAL" | "HISTORICAL";
+  reason_code: string;
+  evidence_refs: Array<Record<string, string>>;
+  temporal_status: Record<string, unknown>;
+  current_status: string;
+  is_current_impact: boolean;
+  snapshot_id: string;
+  attention_state: ImpactAttentionState | null;
+};
+
+export type ImpactChange = {
+  source: { source_id: string; title: string; publication_time: string; ingested_at: string; status: string; source_type: string; source_rank: string };
+  evidence_date: string;
+  current_status: string;
+  claim_count: number;
+  claims: Array<{ claim_id: string; statement: string; status: string; fact_time: string; publication_time: string }>;
+  snapshot_id: string;
+  items: DirectImpactItem[];
+};
+
+export type ImpactChangesResult = {
+  snapshot: { snapshot_id: string; knowledge_sha256: string; workbench_projection_sha256: string; cache: "NONE"; consistency: string; query_count: number };
+  changes: ImpactChange[];
+  items: DirectImpactItem[];
+  limit: number;
+  offset: number;
+};
+
+export const getImpactChanges = (signal: AbortSignal) =>
+  request<ImpactChangesResult>("/impact/changes?limit=50&offset=0", signal);
+
+export const saveImpactAttention = (impactId: string, body: object, csrf: string, signal: AbortSignal) =>
+  request<{ attention_state: ImpactAttentionState; canonical_write: false; production_authorized: false }>(
+    "/impact/item/" + encodeURIComponent(impactId) + "/attention", signal,
+    { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) },
+  );

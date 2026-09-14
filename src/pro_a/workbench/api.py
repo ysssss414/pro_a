@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from pro_a.api import create_app as create_explorer_app
+from pro_a.direct_impact import DirectImpact, ImpactError
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .config import BoundaryError, WorkbenchConfig
@@ -107,6 +108,16 @@ class ViewQualification(BaseModel):
     revision: int = Field(gt=0)
 
 
+class ImpactAttention(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    snapshot_id: str = Field(pattern=r'^[0-9a-f]{64}$')
+    expected_revision: int = Field(ge=0)
+    operation_id: str = Field(pattern=r'^[0-9a-f-]{32,36}$')
+    reviewer: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1, max_length=8000)
+    outcome: str = Field(pattern=r'^(NO_CHANGE|MINOR|MATERIAL|THESIS)$')
+
+
 def create_app(config: WorkbenchConfig | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
     config.validate()
@@ -121,6 +132,7 @@ def create_app(config: WorkbenchConfig | None = None):
     app.title = 'pro_a native Review Workbench'
     artifacts = Artifacts(config)
     reviews = ReviewWorkbench(config)
+    impacts = DirectImpact(config)
     host = urlsplit(config.origin).netloc
 
     def session(request):
@@ -183,6 +195,10 @@ def create_app(config: WorkbenchConfig | None = None):
     async def review_error(_request, error):
         return JSONResponse({'detail': str(error), 'current_revision': error.current_revision, 'native_code': error.native_code}, status_code=error.status)
 
+    @app.exception_handler(ImpactError)
+    async def impact_error(_request, error):
+        return JSONResponse({'detail': str(error), 'current_revision': error.current_revision}, status_code=error.status)
+
     @app.exception_handler(RequestValidationError)
     async def bad_input(_request, _error):
         if _request.url.path.startswith(PREFIX + '/reviews/'):
@@ -219,7 +235,7 @@ def create_app(config: WorkbenchConfig | None = None):
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
@@ -294,5 +310,33 @@ def create_app(config: WorkbenchConfig | None = None):
     def reconcile_current_view(node_id: str, body: ObjectReference):
         from pro_a.current_view_workbench import CurrentViewWorkbench
         return CurrentViewWorkbench(config).reconcile(node_id, body.object_id)
+
+    @app.get(PREFIX + '/impact/changes')
+    def impact_changes(limit: int = 50, offset: int = 0):
+        return impacts.changes(limit=limit, offset=offset)
+
+    @app.get(PREFIX + '/impact/item/{impact_id}')
+    def impact_item(impact_id: str):
+        return impacts.item(impact_id)
+
+    @app.put(PREFIX + '/impact/item/{impact_id}/attention')
+    def impact_attention(impact_id: str, body: ImpactAttention, request: Request):
+        return impacts.set_attention(impact_id, body.model_dump(), request.state.identity)
+
+    @app.get(PREFIX + '/sources/{source_id}/impact')
+    def source_impact(source_id: str):
+        return impacts.source(source_id)
+
+    @app.get(PREFIX + '/claims/{claim_id}/impact')
+    def claim_impact(claim_id: str):
+        return impacts.claim(claim_id)
+
+    @app.get(PREFIX + '/nodes/{node_id}/impact')
+    def node_impact(node_id: str):
+        return impacts.node(node_id)
+
+    @app.get(PREFIX + '/views/{view_id}/evidence-impact')
+    def view_impact(view_id: str):
+        return impacts.view(view_id)
 
     return app

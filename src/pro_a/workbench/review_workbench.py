@@ -240,7 +240,7 @@ class ReviewWorkbench:
             connection.execute('PRAGMA foreign_keys=ON')
             connection.execute('PRAGMA synchronous=FULL')
             connection.execute('BEGIN IMMEDIATE')
-            if schema_version(connection) not in ('2', '3', '4'):
+            if schema_version(connection) not in ('2', '3', '4', '5'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, audit = self._state(connection, handle, basis)
             self._sealed(connection, handle, draft, blank, run, states)
@@ -321,7 +321,7 @@ class ReviewWorkbench:
             raise ReviewError('IMMUTABLE_FIELD_DRIFT')
         with self.store.connect() as connection:
             connection.execute('BEGIN')
-            if schema_version(connection) not in ('2', '3', '4'):
+            if schema_version(connection) not in ('2', '3', '4', '5'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, _ = self._state(connection, handle, basis)
             revision = draft['revision'] if draft else 0

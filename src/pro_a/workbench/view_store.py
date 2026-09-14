@@ -11,8 +11,8 @@ def prepare_current_views(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == '4':
-            return {'status': 'ALREADY_PREPARED', 'schema_version': '4'}
+        if version in ('4', '5'):
+            return {'status': 'ALREADY_PREPARED', 'schema_version': version}
         if version != '3':
             raise BoundaryError('ATTRIBUTION_SCHEMA_REQUIRED')
     path = checked_path(config.state_db)
