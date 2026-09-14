@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--config', type=Path, required=True)
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('init')
+    commands.add_parser('prepare-review')
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
@@ -25,6 +26,10 @@ def main():
         if args.command == 'init':
             Store(config).initialize()
             print(json.dumps({'status': 'WORKBENCH_READY', 'mode': config.mode}))
+        elif args.command == 'prepare-review':
+            from .review_store import prepare_reviews, recover_workbench
+            recover_workbench(config)
+            print(json.dumps(prepare_reviews(config)))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
         else:

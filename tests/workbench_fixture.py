@@ -29,13 +29,16 @@ def seal(body, prefix, id_field, hash_field):
     return {**body, id_field: f'{prefix}_{digest[:16].upper()}', hash_field: digest}
 
 
-def make_fixture(root: Path, *, mode='DEMO', origin='http://127.0.0.1:8000', remote=False):
+def make_fixture(root: Path, *, mode='DEMO', origin='http://127.0.0.1:8000', remote=False, node_profile='stage0'):
     knowledge = root / 'knowledge' / 'synthetic.db'
     Database(knowledge).init_schema()
     migration = apply_synthetic_migration(knowledge, configured_production_path=root / 'never-open-production.db', expected_sha256=sha256_file(knowledge))
     if mode == 'DEMO':
         with closing(sqlite3.connect(knowledge)) as connection, connection:
             connection.execute("INSERT INTO meta VALUES('workbench_fixture_kind','SYNTHETIC_PUBLIC_SAFE')")
+    if node_profile == 'reuse':
+        with closing(sqlite3.connect(knowledge)) as connection, connection:
+            connection.execute("INSERT INTO nodes(node_id,canonical_name,primary_type,description,status,created_at,updated_at) VALUES('NODE_SYNTHETIC_EXISTING','Existing synthetic material','Product','Public-safe fixture','active','2026-01-01','2026-01-01')")
     baseline = {k: v for k, v in production_identity(knowledge).items() if k != 'path'}
     artifacts = root / 'artifacts'
     run = artifacts / 'EXEC_SYNTHETIC_STAGE0' / 'engine'
@@ -68,6 +71,12 @@ def make_fixture(root: Path, *, mode='DEMO', origin='http://127.0.0.1:8000', rem
             'exact_production_resolution': {'candidate_target_node_ids': []}, 'collision_diagnostics': {},
             'suggested_operation': 'DEFER', 'suggestion_reason': 'Synthetic advisory only.',
             'review_decision': 'PENDING', 'advisory_only': True, 'parent_placement_suggestion': {}}
+    if node_profile != 'stage0':
+        node['collision_diagnostics'] = {'prospective_node_id_exists': False, 'package_internal_normalized_term_collisions': [],
+            'production_nocase_or_nfkc_target_ids': ['NODE_SYNTHETIC_EXISTING'] if node_profile == 'reuse' else []}
+    if node_profile == 'reuse':
+        node['exact_production_resolution'] = {'candidate_target_node_ids': ['NODE_SYNTHETIC_EXISTING'],
+            'candidate_targets': [{'node_id': 'NODE_SYNTHETIC_EXISTING', 'canonical_name': 'Existing synthetic material', 'primary_type': 'Product'}]}
     write(run / 'review/node_operation_review.json', seal({
         'document_type': 'phase3e_node_operation_review', 'schema_version': '1', 'review_status': 'DRAFT',
         'operational_run': {'run_id': RUN, 'source_sha256': source_sha, 'claim_review_sha256': sha256_file(claim_path)},
@@ -105,10 +114,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', type=Path)
     parser.add_argument('--origin', default='http://127.0.0.1:5173')
+    parser.add_argument('--node-profile', choices=('stage0', 'create', 'reuse'), default='stage0')
     args = parser.parse_args()
     if args.output.exists():
         parser.error('Use a fresh output directory')
-    fixture = make_fixture(args.output.resolve(), origin=args.origin)
+    fixture = make_fixture(args.output.resolve(), origin=args.origin, node_profile=args.node_profile)
     config = fixture['config']
     toml = '[workbench]\n' + '\n'.join(f'{key} = {json.dumps(str(value).replace(chr(92), "/"))}' for key, value in {
         'mode': config.mode, 'knowledge_db': config.knowledge_db, 'state_db': config.state_db,

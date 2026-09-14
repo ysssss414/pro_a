@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getPacket, getSession, listPackets, loginWorkbench, WorkbenchError } from "../api/workbench";
 import type { PacketSummary, ReviewPacket } from "../api/workbench";
+import { ReviewItemDetail } from "./ReviewItemDetail";
+import { PersistentReview } from "./PersistentReview";
 import "./ReviewRoute.css";
 
 const show = (value: unknown) => value === undefined || value === null || value === "" ? "Not provided in native packet" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -9,6 +11,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
   const [needsLogin, setNeedsLogin] = useState(false);
   const [token, setToken] = useState("");
   const [mode, setMode] = useState("");
+  const [csrf, setCsrf] = useState("");
   const [packets, setPackets] = useState<PacketSummary[]>([]);
   const [packet, setPacket] = useState<ReviewPacket | null>(null);
   const [selected, setSelected] = useState("");
@@ -32,6 +35,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
       if (current.signal.aborted) return;
       setNeedsLogin(false);
       setMode(session.mode);
+      setCsrf(session.csrf_token ?? "");
       setPackets(result.packets);
       setPacket(detail);
       setSelected(detail?.items[0]?.candidate_id ?? "");
@@ -52,14 +56,27 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
     return () => controller.current?.abort();
   }, [load]);
 
+  const refresh = async () => {
+    if (!packet) throw new Error("No registered review selected");
+    controller.current?.abort();
+    const current = new AbortController();
+    controller.current = current;
+    try {
+      const detail = await getPacket(packet.artifact_id, current.signal);
+      if (!current.signal.aborted) setPacket(detail);
+      return detail;
+    } catch (error) {
+      if (error instanceof WorkbenchError && error.status === 401) { setNeedsLogin(true); setPacket(null); }
+      throw error;
+    }
+  };
+
   const item = packet?.items.find((row) => row.candidate_id === selected);
-  const evidence = item?.content.evidence_validation as { authoritative_locator?: Record<string, unknown> } | undefined;
-  const locator = evidence?.authoritative_locator;
 
   return <main className="review-route">
     <header>
       <h1>Native Review</h1>
-      <p>Stage 0 · Read-only. Native decision capabilities are metadata; decision saving is unavailable.</p>
+      <p>{packet?.review?.enabled ? "Human review only. Saving or sealing does not modify Production or authorize promotion." : "Stage 0 · Read-only. Native decision capabilities are metadata; decision saving is unavailable."}</p>
       {mode && <strong className="review-mode">{mode} · operator session</strong>}
     </header>
     {error && <p role="alert">{error}</p>}
@@ -92,27 +109,14 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
         <pre>{show(packet.excluded_relation_inventory.candidate_ids)}</pre>
         <p>Aliases remain part of native Node identity; they have no separate decision controls.</p>
       </section>
-      <div className="review-items">
+      {packet.review?.enabled ? <PersistentReview key={packet.artifact_id} packet={packet} review={packet.review} csrf={csrf} refresh={refresh} /> : <div className="review-items">
         <section aria-label="Review items"><h2>Native items ({packet.items.length})</h2>
           {packet.items.map((row) => <button type="button" key={row.candidate_id} aria-pressed={selected === row.candidate_id} onClick={() => setSelected(row.candidate_id)}>
             {row.candidate_type} · {row.candidate_id}
           </button>)}
         </section>
-        {item && <section aria-label="Selected item">
-          <h2>{item.candidate_type} · {item.candidate_id}</h2>
-          <h3>Evidence</h3>
-          <dl><dt>Pointer</dt><dd>{show(item.content.evidence_pointer)}</dd>
-            <dt>Excerpt</dt><dd>{show(item.content.evidence_excerpt)}</dd>
-            <dt>Page</dt><dd>{show(locator?.page ?? locator?.page_number)}</dd>
-            <dt>Section</dt><dd>{show(locator?.section)}</dd><dt>Paragraph</dt><dd>{show(locator?.paragraph)}</dd>
-          </dl>
-          <h3>Supporting evidence</h3><pre>{show(item.content.supporting_evidence)}</pre>
-          <h3>Native capabilities · unavailable in Stage 0</h3>
-          <p>{item.allowed_decisions.join(" · ")}</p><pre>{show(item.decision_effects)}</pre>
-          <h3>Native content, validation and warnings</h3><pre>{show(item.content)}</pre>
-          <p>Content SHA-256: {item.content_sha256}</p>
-        </section>}
-      </div>
+        {item && <ReviewItemDetail item={item} />}
+      </div>}
     </>}
   </main>;
 }

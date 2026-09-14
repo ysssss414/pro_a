@@ -46,6 +46,8 @@ class Store:
     @contextmanager
     def connect(self, *, operator_write: bool = False):
         path = checked_path(self.config.state_db)
+        for suffix in ('-journal', '-wal', '-shm'):
+            checked_path(path.with_name(path.name + suffix), missing=True)
         marker = checked_path(self.config.artifact_root / '.workbench-mode.json')
         if json.loads(marker.read_text()) != {'mode': self.config.mode}:
             raise BoundaryError('ARTIFACT_MODE_MISMATCH')
@@ -54,7 +56,10 @@ class Store:
         try:
             if not operator_write:
                 connection.execute('PRAGMA query_only=ON')
-            if dict(connection.execute('SELECT key,value FROM workbench_meta')) != self.config.bindings():
+            metadata = dict(connection.execute('SELECT key,value FROM workbench_meta'))
+            if metadata.get('schema_version') not in ('1', '2'):
+                raise BoundaryError('WORKBENCH_SCHEMA_UNSUPPORTED')
+            if metadata != {**self.config.bindings(), 'schema_version': metadata['schema_version']}:
                 raise BoundaryError('WORKBENCH_BINDING_MISMATCH')
             yield connection
             if operator_write:

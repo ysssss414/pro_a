@@ -18,4 +18,8 @@ body:has(.review-route) { overflow: auto; }
 .review-items { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr); gap: 20px; }
 .review-items button { display: block; width: 100%; text-align: left; overflow-wrap: anywhere; margin: 6px 0; }
 .review-items button[aria-pressed="true"] { background: #e5f3ee; border-color: #175346; }
+.review-route textarea { display: block; width: 100%; min-height: 90px; padding: 10px; font: inherit; }
+.review-editor { padding: 12px; margin: 12px 0; background: #f3f7f5; border-left: 3px solid #175346; }
+.review-route button:disabled { cursor: default; opacity: .6; }
+.review-route li { margin-bottom: 12px; }
 @media (max-width: 760px) { .review-items { grid-template-columns: 1fr; } .review-route { padding: 12px; } }

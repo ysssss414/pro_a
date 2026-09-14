@@ -55,7 +55,7 @@ class Artifacts:
                 raise BoundaryError('UNSAFE_PATH')
         return files
 
-    def validate(self, packet_relative: str, run_relative: str, artifact_id: str, expected: dict | None = None) -> tuple[dict, dict]:
+    def validate(self, packet_relative: str, run_relative: str, artifact_id: str, expected: dict | None = None) -> tuple[dict, dict, dict]:
         try:
             inventory = self.inventory(packet_relative, run_relative)
             if expected is not None and inventory != expected:
@@ -67,7 +67,7 @@ class Artifacts:
             dto = project(packet, validation, artifact_id, inventory[packet_relative], self.config.mode)
             if self.inventory(packet_relative, run_relative) != inventory:
                 raise BoundaryError('ARTIFACT_CHANGED_DURING_READ')
-            return dto, inventory
+            return dto, inventory, packet
         except BoundaryError:
             raise
         except Exception:
@@ -77,7 +77,7 @@ class Artifacts:
         """Operator-only registration references frozen bytes; no packet/execution writes."""
         self.config.validate()
         artifact_id = 'ART_' + uuid.uuid4().hex
-        dto, inventory = self.validate(packet_relative, run_relative, artifact_id)
+        dto, inventory, _ = self.validate(packet_relative, run_relative, artifact_id)
         with self.store.connect(operator_write=True) as connection:
             existing = connection.execute('SELECT * FROM registered_packets WHERE packet_id=?', (dto['packet_id'],)).fetchone()
             if existing:
@@ -88,17 +88,21 @@ class Artifacts:
                                (artifact_id, dto['packet_id'], packet_relative, run_relative, dto['packet_file_sha256'], json.dumps(inventory, sort_keys=True)))
         return {'artifact_id': artifact_id, 'packet_id': dto['packet_id']}
 
-    def read(self, artifact_id: str) -> dict:
+    def native(self, artifact_id: str) -> tuple[dict, Path, dict]:
+        """Validated native bytes/context for the internal completion service only."""
         if not re.fullmatch(r'ART_[0-9a-f]{32}', artifact_id):
             raise BoundaryError('ARTIFACT_NOT_REGISTERED')
         with self.store.connect() as connection:
             row = connection.execute('SELECT * FROM registered_packets WHERE artifact_id=?', (artifact_id,)).fetchone()
         if row is None:
             raise BoundaryError('ARTIFACT_NOT_REGISTERED')
-        dto, _ = self.validate(row['packet_relative'], row['run_relative'], artifact_id, json.loads(row['file_inventory']))
+        dto, _, packet = self.validate(row['packet_relative'], row['run_relative'], artifact_id, json.loads(row['file_inventory']))
         if dto['packet_id'] != row['packet_id'] or dto['packet_file_sha256'] != row['packet_sha256']:
             raise BoundaryError('REGISTRY_IDENTITY_MISMATCH')
-        return dto
+        return packet, self.resolve(row['run_relative']), dto
+
+    def read(self, artifact_id: str) -> dict:
+        return self.native(artifact_id)[2]
 
     def listing(self) -> list[dict]:
         with self.store.connect() as connection:
