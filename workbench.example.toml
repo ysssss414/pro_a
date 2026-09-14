@@ -1,0 +1,10 @@
+# Paths are relative to this file. Use dedicated, operator-owned directories.
+# Stage 0 never creates/prepares the knowledge DB. Existing schema 0.2.3 is required.
+[workbench]
+mode = "PRIVATE"
+knowledge_db = "workspace/knowledge/pro_a.db"
+state_db = "workspace/workbench/state.sqlite3"
+artifact_root = "workspace/review-artifacts"
+origin = "http://127.0.0.1:5173"
+session_token_env = "PRO_A_WORKBENCH_TOKEN"
+remote = false

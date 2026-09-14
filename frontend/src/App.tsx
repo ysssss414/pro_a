@@ -31,13 +31,14 @@ import {
 } from "./components/NodeDetailPanel";
 import { SearchPanel } from "./components/SearchPanel";
 import { ViewProposalReview } from "./components/ViewProposalReview";
+import { ReviewRoute } from "./components/ReviewRoute";
 
 function emptyKnowledgeErrors(): KnowledgeErrors {
   return { claims: null, sources: null, view: null, research: null, gaps: null };
 }
 
 export default function App() {
-  const [surface, setSurface] = useState("explorer");
+  const [surface, setSurface] = useState(() => new URLSearchParams(window.location.search).get("surface") === "review" ? "review" : "explorer");
   const [requestedViewId, setRequestedViewId] = useState<string | null>(null);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
   const [stats, setStats] = useState<StatsResponse | null>(null);
@@ -231,6 +232,13 @@ export default function App() {
   }, [loadStatus]);
 
   useEffect(() => {
+    const url = new URL(window.location.href);
+    if (surface === "review") url.searchParams.set("surface", "review");
+    else url.searchParams.delete("surface");
+    window.history.replaceState(null, "", url);
+  }, [surface]);
+
+  useEffect(() => {
     const nodeId = new URLSearchParams(window.location.search).get("node");
     if (nodeId) selectNode(nodeId);
     return () => {
@@ -252,6 +260,7 @@ export default function App() {
         <nav className="surface-nav" aria-label="Research surfaces">
           <button type="button" aria-pressed={surface === "explorer"} onClick={() => setSurface("explorer")}>Explorer</button>
           <button type="button" aria-pressed={surface === "proposals"} onClick={() => setSurface("proposals")}>Human View Proposals</button>
+          <button type="button" aria-pressed={surface === "review"} onClick={() => setSurface("review")}>Review</button>
         </nav>
         <div className="header-status">
           {stats && (
@@ -272,7 +281,7 @@ export default function App() {
         </div>
       </header>
 
-      {apiOnline === false && (
+      {apiOnline === false && surface !== "review" && (
         <div className="api-alert" role="alert">
           <div>
             <strong>Knowledge API unavailable.</strong>
@@ -284,7 +293,7 @@ export default function App() {
         </div>
       )}
 
-      {surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
+      {surface === "review" ? <ReviewRoute onAuthenticated={loadStatus} /> : surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
         <SearchPanel selectedNodeId={selectedNodeId} onSelect={selectNode} />
         <GraphPanel
           graph={graph}
