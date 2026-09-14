@@ -76,6 +76,37 @@ class ObjectReference(BaseModel):
     object_id: str = Field(min_length=1, max_length=150)
 
 
+class ViewDraftSave(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    basis_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    expected_revision: int = Field(ge=0)
+    operation_id: str = Field(pattern=r'^[0-9a-f-]{32,36}$')
+    reviewer: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1, max_length=8000)
+    mode: str = Field(pattern=r'^(INITIAL|UPDATE)$')
+    expected_official_view_id: str = Field(max_length=200)
+    content: dict[str, object]
+    primary_claim_ids: list[str] = Field(min_length=0, max_length=100)
+    context_claim_ids: list[str] = Field(min_length=0, max_length=100)
+    change_level: str = Field(pattern=r'^(initial|minor|material|thesis)$')
+
+
+class ViewDraftAction(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    basis_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    expected_revision: int = Field(ge=0)
+    operation_id: str = Field(pattern=r'^[0-9a-f-]{32,36}$')
+    reviewer: str = Field(min_length=1, max_length=200)
+    reason: str = Field(min_length=1, max_length=8000)
+    draft_id: str = Field(min_length=1, max_length=150)
+
+
+class ViewQualification(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    draft_id: str = Field(min_length=1, max_length=150)
+    revision: int = Field(gt=0)
+
+
 def create_app(config: WorkbenchConfig | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
     config.validate()
@@ -188,7 +219,7 @@ def create_app(config: WorkbenchConfig | None = None):
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) == '3': result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
@@ -235,5 +266,33 @@ def create_app(config: WorkbenchConfig | None = None):
     def reconcile(artifact_id: str, body: ObjectReference):
         from pro_a.operational_qualification import reconcile_registered
         return reconcile_registered(config, artifact_id, body.object_id)
+
+    @app.get(PREFIX + '/current-views/{node_id}')
+    def current_view_workbench(node_id: str):
+        from pro_a.current_view_workbench import CurrentViewWorkbench
+        return CurrentViewWorkbench(config).read(node_id)
+
+    @app.put(PREFIX + '/current-views/{node_id}/draft')
+    def save_current_view_draft(node_id: str, body: ViewDraftSave, request: Request):
+        from pro_a.current_view_workbench import CurrentViewWorkbench
+        return CurrentViewWorkbench(config).save(node_id, body.model_dump(), request.state.identity)
+
+    @app.post(PREFIX + '/current-views/{node_id}/validate')
+    def validate_current_view_draft(node_id: str, body: ViewDraftAction, request: Request):
+        from pro_a.current_view_workbench import CurrentViewWorkbench
+        return CurrentViewWorkbench(config).validate(node_id, body.model_dump(), request.state.identity)
+
+    @app.post(PREFIX + '/current-views/{node_id}/qualify')
+    def qualify_current_view_draft(node_id: str, body: ViewQualification):
+        from pro_a.current_view_workbench import CurrentViewWorkbench
+        package = CurrentViewWorkbench(config).qualify(node_id, body.draft_id, body.revision)
+        return {'object_id': package['object_id'], 'adapter_version': package['adapter_version'],
+                'production_authorized': False, 'predicted_diff': package['predicted_diff'],
+                'operator_action': 'EXTERNAL_OPERATOR_REQUIRED'}
+
+    @app.post(PREFIX + '/current-views/{node_id}/reconcile')
+    def reconcile_current_view(node_id: str, body: ObjectReference):
+        from pro_a.current_view_workbench import CurrentViewWorkbench
+        return CurrentViewWorkbench(config).reconcile(node_id, body.object_id)
 
     return app

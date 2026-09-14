@@ -19,6 +19,20 @@
   --success: #23825f;
 }
 
+.current-view-workbench { margin-top: 1rem; padding: 1rem; border: 2px solid #334155; border-radius: 12px; background: #f8fafc; }
+.view-workbench-title, .view-workbench-evidence-actions, .receipt-reconcile { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.view-state-strip, .view-workbench-nav { display: flex; gap: .5rem; flex-wrap: wrap; margin: .75rem 0; }
+.view-state-strip strong, .view-workbench-nav a { padding: .4rem .65rem; background: #e2e8f0; border-radius: 6px; }
+.current-view-workbench > section { border-top: 1px solid #cbd5e1; padding-top: .75rem; margin-top: .75rem; }
+.view-workbench-evidence { border: 1px solid #cbd5e1; border-radius: 8px; padding: .75rem; margin: .5rem 0; background: white; }
+.view-workbench-evidence > div:first-child { display: flex; justify-content: space-between; gap: 1rem; }
+.view-draft-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .65rem; }
+.view-draft-form label { display: grid; gap: .3rem; }
+.view-draft-form textarea { min-height: 4.5rem; }
+.official-draft-compare, .qualified-view-package { margin: .75rem 0; padding: .75rem; border: 1px solid #94a3b8; border-radius: 8px; background: white; display: grid; gap: .4rem; }
+.qualified-view-package pre { max-height: 24rem; overflow: auto; white-space: pre-wrap; }
+@media (max-width: 780px) { .view-draft-form { grid-template-columns: 1fr; } }
+
 .surface-nav, .proposal-pagination { display: flex; gap: 8px; }
 .surface-nav button, .proposal-pagination button, .proposal-review-detail button {
   border: 1px solid var(--border); border-radius: 5px; padding: 7px 11px;

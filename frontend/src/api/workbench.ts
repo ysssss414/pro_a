@@ -66,6 +66,17 @@ const messages: Record<string, string> = {
   SOURCE_MATERIALIZATION_MISMATCH: "Materialized Source bytes do not match the sealed evidence basis.",
   ATTRIBUTION_NODE_INVALID: "Select an exact Node identity from this sealed review's CREATE or REUSE results.",
   ATTRIBUTION_SCOPE_MISMATCH: "Attribution scope must match the immutable Claim scope.",
+  VIEW_NOT_FOUND: "No eligible Current View or Node was found.",
+  UNSUPPORTED_NODE_TYPE: "Stage 3 View maintenance supports Company and Product Nodes only.",
+  INITIAL_VIEW_RACE: "An official View now exists. This initial draft is stale and cannot become an update automatically.",
+  BASELINE_STALE: "The official View or evidence basis changed. Explicit re-evaluation is required.",
+  EVIDENCE_NOT_FOUND: "A selected evidence identity is no longer available.",
+  PRIMARY_EVIDENCE_INVALID: "Primary Evidence must consist only of eligible Subject Claims.",
+  QUALITY_VALIDATION_FAILED: "The existing Current View quality contract rejected this draft.",
+  NO_EFFECTIVE_CHANGE: "The deterministic comparison found no effective structured change.",
+  DRAFT_IDENTITY_MISMATCH: "The persisted draft identity or revision no longer matches.",
+  PACKAGE_NOT_REGISTERED: "The qualified View package is not registered.",
+  RECEIPT_MISMATCH: "The activation receipt does not match the qualified package.",
 };
 
 export class WorkbenchError extends Error {
@@ -97,3 +108,54 @@ export function mutateReview(id: string, action: "decisions" | "undo" | "validat
   return request<{ revision: number; validation?: Record<string, unknown> }>("/reviews/" + encodeURIComponent(id) + "/" + action, signal,
     { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) });
 }
+
+export type ViewEvidence = {
+  claim_id: string; statement: string; nature: string; status: string; confidence: number | null;
+  role: "subject" | "context" | "related"; scope: string; attributed_to: string;
+  evidence_excerpt: string; evidence_pointer: string; source_locator: Record<string, unknown> | null;
+  source: { source_id: string; title: string; publication_time: string; source_rank: string; source_type: string; organization: string; sha256: string };
+  business_date: string | null; freshness_basis: string; primary_eligible: boolean; evidence_class?: "PRIMARY" | "CONTEXT_ONLY";
+  resolved?: boolean; officially_referenced?: boolean;
+};
+
+export type PersistedViewDraft = {
+  draft_id: string; revision: number; reviewer: string; status: "DRAFT" | "VALIDATED" | "STALE";
+  basis_sha256: string; updated_at: string; mode: "INITIAL" | "UPDATE"; expected_official_view_id: string;
+  content: Record<string, unknown>; primary_claim_ids: string[]; context_claim_ids: string[];
+  change_level: "initial" | "minor" | "material" | "thesis"; quality_validation: Record<string, unknown> | null;
+  audit: Array<{ revision: number; action: string; reviewer: string; reason: string; updated_at: string }>;
+};
+
+export type CurrentViewWorkbenchState = {
+  node: { node_id: string; canonical_name: string; primary_type: string; status: string };
+  selection_rule: string; official: import("./types").CurrentViewResult | null;
+  previous_official: import("./types").CurrentViewResult | null;
+  history: import("./types").CurrentViewResult[]; baseline_views: import("./types").CurrentViewResult[];
+  history_labels: Array<{ view_id: string; state: "OFFICIAL" | "PRIOR_OFFICIAL" }>;
+  official_comparison: Record<string, unknown> | null;
+  official_evidence: Array<Partial<ViewEvidence> & { claim_id: string; resolved: boolean; officially_referenced: boolean; evidence_class: "PRIMARY" | "CONTEXT_ONLY"; error?: string }>;
+  available_evidence: ViewEvidence[]; freshness: Array<{ claim_id: string; business_date: string | null; basis: string }>;
+  uncertainty: Record<string, string[]>; basis_sha256: string; draft: PersistedViewDraft | null;
+  activation_packages: Array<{ object_id: string; draft_revision: number; predicted_diff: Record<string, unknown>; production_authorized: false }>;
+  activation_receipts: Array<{ object_id: string; package_id: string; status: string }>;
+  capabilities: { initial_supported: boolean; update_supported: boolean; browser_activation: false; canonical_write: false };
+};
+
+export const getViewWorkbench = (nodeId: string, signal: AbortSignal) =>
+  request<CurrentViewWorkbenchState>("/current-views/" + encodeURIComponent(nodeId), signal);
+
+export const saveViewDraft = (nodeId: string, body: object, csrf: string, signal: AbortSignal) =>
+  request<{ draft_id: string; revision: number; status: string; basis_sha256: string }>("/current-views/" + encodeURIComponent(nodeId) + "/draft", signal,
+    { method: "PUT", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) });
+
+export const validateViewDraft = (nodeId: string, body: object, csrf: string, signal: AbortSignal) =>
+  request<{ draft_id: string; revision: number; status: string; quality_validation: Record<string, unknown> }>("/current-views/" + encodeURIComponent(nodeId) + "/validate", signal,
+    { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body) });
+
+export const qualifyViewDraft = (nodeId: string, draftId: string, revision: number, csrf: string, signal: AbortSignal) =>
+  request<{ object_id: string; adapter_version: string; production_authorized: false; predicted_diff: Record<string, unknown>; operator_action: string }>("/current-views/" + encodeURIComponent(nodeId) + "/qualify", signal,
+    { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify({ draft_id: draftId, revision }) });
+
+export const reconcileViewReceipt = (nodeId: string, objectId: string, csrf: string, signal: AbortSignal) =>
+  request<{ status: "VERIFIED"; receipt_id: string; package_id: string; official_view_id: string }>("/current-views/" + encodeURIComponent(nodeId) + "/reconcile", signal,
+    { method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify({ object_id: objectId }) });

@@ -44,7 +44,7 @@ def prepare_reviews(config):
     """Operator-only v1 -> v2. Backup first; never migrate the knowledge DB."""
     config.validate()
     with Store(config).connect() as source:
-        if schema_version(source) in ('2', '3'):
+        if schema_version(source) in ('2', '3', '4'):
             return {'status': 'ALREADY_PREPARED', 'schema_version': schema_version(source)}
     path = checked_path(config.state_db)
     backup = checked_path(path.with_name(path.name + '.stage0-backup'), missing=True)

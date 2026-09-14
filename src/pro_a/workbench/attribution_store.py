@@ -9,7 +9,8 @@ def prepare_attribution(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == '3': return {'status': 'ALREADY_PREPARED', 'schema_version': '3'}
+        if version in ('3', '4'):
+            return {'status': 'ALREADY_PREPARED', 'schema_version': version}
         if version != '2': raise BoundaryError('REVIEW_SCHEMA_REQUIRED')
     path = checked_path(config.state_db)
     backup = checked_path(path.with_name(path.name + '.stage1-backup'), missing=True)

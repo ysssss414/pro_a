@@ -330,6 +330,8 @@ export function NodeDetailPanel(props: NodeDetailPanelProps) {
                 loading={knowledgeLoading}
                 error={knowledgeErrors.view}
                 onOpenSource={onOpenSource}
+                onOpenClaim={() => onTabChange("claims")}
+                nodeId={detail.node_id}
               />
             )}
             {activeTab === "research" && (

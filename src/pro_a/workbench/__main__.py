@@ -15,6 +15,7 @@ def main():
     commands.add_parser('init')
     commands.add_parser('prepare-review')
     commands.add_parser('prepare-attribution')
+    commands.add_parser('prepare-current-view')
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
@@ -34,6 +35,9 @@ def main():
         elif args.command == 'prepare-attribution':
             from .attribution_store import prepare_attribution
             print(json.dumps(prepare_attribution(config)))
+        elif args.command == 'prepare-current-view':
+            from .view_store import prepare_current_views
+            print(json.dumps(prepare_current_views(config)))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
         else:
