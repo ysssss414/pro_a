@@ -25,6 +25,7 @@ export type ReviewPacket = PacketSummary & {
   excluded_relation_inventory: { count: number; candidate_ids: string[]; policy: string; relation_review_reopened: boolean };
   capabilities: { read_only: boolean; decision_save_available: boolean; native_decisions_are_metadata_only: boolean };
   review?: { enabled: false } | PersistentReview;
+  attribution_available?: boolean;
 };
 
 export type DecisionState = { decision: string; reason: string; target_node_id: string; reviewer: string; actor: string; session_id: string; revision: number; updated_at: string };
@@ -52,6 +53,19 @@ const messages: Record<string, string> = {
   RECOVERY_REQUIRED: "Review storage requires operator recovery. No automatic repair was made.",
   REVIEWER_MISMATCH: "Use the named reviewer already bound to this review.",
   UNDO_NOT_AVAILABLE: "Only the most recent Save for this item can be undone before sealing.",
+  ATTRIBUTION_DEFERRED: "Deferred attribution blocks qualification. No canonical changes were authorized.",
+  ATTRIBUTION_INCOMPLETE: "Every accepted Claim requires an explicit attribution outcome before sealing.",
+  ATTRIBUTION_BASIS_MISMATCH: "The attribution basis differs from the sealed native review. Refresh and inspect the identities.",
+  ATTRIBUTION_ROLE_INVALID: "Choose a native subject, context or related role explicitly for each link.",
+  ATTRIBUTION_LINK_COUNT_INVALID: "LINK needs one Node; MULTI_LINK needs two or more. NO_LINK and DEFER have no links.",
+  STALE_BASELINE: "The canonical baseline changed. Qualification cannot be applied against this baseline.",
+  RECEIPT_NOT_REGISTERED: "An external operator must register a verified execution receipt first.",
+  NODE_QUALIFICATION_BLOCKED: "Native Node qualification is blocked by identity, collision or exact REUSE constraints. No package was staged.",
+  PARENT_QUALIFICATION_BLOCKED: "Parent placement failed native qualification. Inspect the child and parent identities.",
+  CLAIM_QUALIFICATION_BLOCKED: "The accepted Claim set does not match the qualified canonical inserts.",
+  SOURCE_MATERIALIZATION_MISMATCH: "Materialized Source bytes do not match the sealed evidence basis.",
+  ATTRIBUTION_NODE_INVALID: "Select an exact Node identity from this sealed review's CREATE or REUSE results.",
+  ATTRIBUTION_SCOPE_MISMATCH: "Attribution scope must match the immutable Claim scope.",
 };
 
 export class WorkbenchError extends Error {
@@ -61,7 +75,7 @@ export class WorkbenchError extends Error {
 }
 
 const prefix = "/api/workbench/v1";
-async function request<T>(path: string, signal: AbortSignal, options: RequestInit = {}): Promise<T> {
+export async function request<T>(path: string, signal: AbortSignal, options: RequestInit = {}): Promise<T> {
   const response = await fetch(prefix + path, {
     signal, credentials: "same-origin", cache: "no-store",
     ...options,

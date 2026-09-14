@@ -14,6 +14,7 @@ def main():
     commands = parser.add_subparsers(dest='command', required=True)
     commands.add_parser('init')
     commands.add_parser('prepare-review')
+    commands.add_parser('prepare-attribution')
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
@@ -30,6 +31,9 @@ def main():
             from .review_store import prepare_reviews, recover_workbench
             recover_workbench(config)
             print(json.dumps(prepare_reviews(config)))
+        elif args.command == 'prepare-attribution':
+            from .attribution_store import prepare_attribution
+            print(json.dumps(prepare_attribution(config)))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
         else:

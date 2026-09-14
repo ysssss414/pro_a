@@ -16,10 +16,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from pro_a.api import create_app as create_explorer_app
+from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .config import BoundaryError, WorkbenchConfig
 from .store import Store
-from .review_store import recover_workbench
+from .review_store import recover_workbench, schema_version
 from .review_workbench import ReviewError, ReviewWorkbench
 
 PREFIX = '/api/workbench/v1'
@@ -55,6 +56,24 @@ class Undo(ReviewOperation):
 
 class Seal(ReviewOperation):
     confirm: bool
+
+
+class AttributionLink(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    node_id: str = Field(min_length=1, max_length=200)
+    role: str = Field(min_length=1, max_length=32)
+
+
+class AttributionDecision(ReviewOperation):
+    claim_id: str = Field(min_length=1, max_length=200)
+    outcome: str = Field(min_length=1, max_length=32)
+    scope: str = Field(max_length=8000)
+    links: list[AttributionLink] = Field(max_length=100)
+
+
+class ObjectReference(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    object_id: str = Field(min_length=1, max_length=150)
 
 
 def create_app(config: WorkbenchConfig | None = None):
@@ -112,10 +131,13 @@ def create_app(config: WorkbenchConfig | None = None):
             config.check_knowledge()
             return await call_next(request)
 
+        marker = WEB_REQUEST.set(True)
         try:
             response = await guarded()
         except Exception:
             response = denied('APPLICATION_UNAVAILABLE', 503)
+        finally:
+            WEB_REQUEST.reset(marker)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Referrer-Policy'] = 'no-referrer'
@@ -164,7 +186,10 @@ def create_app(config: WorkbenchConfig | None = None):
 
     @app.get(PREFIX + '/reviews/{artifact_id}')
     def review(artifact_id: str):
-        return reviews.read(artifact_id)
+        result = reviews.read(artifact_id)
+        with Store(config).connect() as connection:
+            if schema_version(connection) == '3': result['attribution_available'] = result['review']['status'] == 'SEALED'
+        return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):
@@ -185,5 +210,30 @@ def create_app(config: WorkbenchConfig | None = None):
     @app.get(PREFIX + '/reviews/{artifact_id}/sealed')
     def sealed(artifact_id: str):
         return reviews.sealed_result(artifact_id)
+
+    @app.get(PREFIX + '/attribution/{artifact_id}')
+    def attribution(artifact_id: str):
+        from .attribution import Attribution
+        return Attribution(config).read(artifact_id)
+
+    @app.post(PREFIX + '/attribution/{artifact_id}/decisions')
+    def attribution_decision(artifact_id: str, body: AttributionDecision, request: Request):
+        from .attribution import Attribution
+        return Attribution(config).mutate(artifact_id, 'SAVE', body.model_dump(), request.state.identity)
+
+    @app.post(PREFIX + '/attribution/{artifact_id}/seal')
+    def attribution_seal(artifact_id: str, body: Seal, request: Request):
+        from .attribution import Attribution
+        return Attribution(config).mutate(artifact_id, 'SEAL', body.model_dump(), request.state.identity)
+
+    @app.post(PREFIX + '/attribution/{artifact_id}/qualify')
+    def shadow_qualify(artifact_id: str, body: ObjectReference):
+        from pro_a.operational_qualification import qualify, package_projection
+        return package_projection(qualify(config, artifact_id, body.object_id))
+
+    @app.post(PREFIX + '/attribution/{artifact_id}/reconcile')
+    def reconcile(artifact_id: str, body: ObjectReference):
+        from pro_a.operational_qualification import reconcile_registered
+        return reconcile_registered(config, artifact_id, body.object_id)
 
     return app

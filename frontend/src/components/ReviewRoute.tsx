@@ -3,6 +3,7 @@ import { getPacket, getSession, listPackets, loginWorkbench, WorkbenchError } fr
 import type { PacketSummary, ReviewPacket } from "../api/workbench";
 import { ReviewItemDetail } from "./ReviewItemDetail";
 import { PersistentReview } from "./PersistentReview";
+import { AttributionReview } from "./AttributionReview";
 import "./ReviewRoute.css";
 
 const show = (value: unknown) => value === undefined || value === null || value === "" ? "Not provided in native packet" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -117,6 +118,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
         </section>
         {item && <ReviewItemDetail item={item} />}
       </div>}
+      {packet.attribution_available && <AttributionReview key={packet.artifact_id + '-attribution'} handle={packet.artifact_id} csrf={csrf} />}
     </>}
   </main>;
 }
