@@ -1,5 +1,22 @@
 # Changelog
 
+## Phase 4.2 release candidate — unreleased
+
+- Added the authenticated private-host Workbench across persistent human review,
+  explicit attribution, guarded promotion handoff, Current View drafts, Direct
+  Impact, Research Explorer, follow-up notes and private clean-PDF Source flow.
+- Added durable `cloud-inference-v1` jobs with bound runtime/model/budgets, worker
+  fencing, deterministic fake-provider acceptance and fail-closed unknown-outcome
+  recovery. Live-provider smoke, latency, cost and token accounting remain not run.
+- Added coordinated, drained Workbench backup/restore for SQLite state and private
+  artifacts, portable path rebinding, Windows path preflight and an exercised
+  private-host operator runbook.
+- Serialized concurrent privileged operator execution before database preflight,
+  preventing a competing reader from making the winning two-database commit
+  ambiguous. Production Apply remains external and separately authorized.
+- Recommended release version: `0.5.0`. No version bump, tag or publication is
+  included in this candidate.
+
 ## Phase 3F Foundation Release Closure — 2026-09-10
 
 - Completed governed 33-source AI Hardware Foundation integration and 295 Human Review decisions; one qualified Production transaction inserted 239 rows, including 25 new Nodes, 43 admitted Claims and 27 Relations. Reuse, canonical no-ops and excluded decisions remain frozen.

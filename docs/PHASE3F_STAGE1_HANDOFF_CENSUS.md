@@ -39,7 +39,7 @@ commit `849eb91339d9d57679fd8fb33951f5f13591f49d` before this census.
 | Node-operation review | `workspace/phase3e2sl6/operational_run/review/node_operation_review.json` | `ab4dfc63c077010a7da4616cc43ed35fda9c4f9f9890cc4ffd4739c56958c7ea`; review `NODE_REVIEW_DCF77E9B2809B897` |
 | Non-executable promotion preview | `workspace/phase3e2sl6/operational_run/promotion/promotion_preview.json` | `7a3ea43961e7a7929472289fc859305708dd435c173ae718ea92a8131e70b0fb` |
 | S-L6 semantic-evaluation gold | `workspace/phase3e2sl6/phase3e2sl6_human_semantic_review.json` | `ad7862fd7865029263438b7f27d3c7e49577dff5aee01baad6ec40e8f8e1bad5` |
-| Frozen Source | `workspace/phase3e2sl6/operational_run/source/20260831_通信设备行业研究超节点，从“堆卡”走向系统级协同.pdf` | Source `SRC_1D42C19206AE3622`; `2644cbdb2693d5e0ed3b9f13761123e268bfeae76ad1ebb04bb89416cba44c85` |
+| Frozen Source | private path and filename omitted | Source `SRC_1D42C19206AE3622`; `2644cbdb2693d5e0ed3b9f13761123e268bfeae76ad1ebb04bb89416cba44c85` |
 
 The operational Claim review is `DRAFT`: all 121 `human_decision` values are
 `PENDING`, and `authorization.human_decisions_bound` is false. The operational

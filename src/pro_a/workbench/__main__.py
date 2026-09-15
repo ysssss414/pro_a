@@ -21,6 +21,12 @@ def main():
     commands.add_parser('prepare-cloud-jobs')
     commands.add_parser('prepare-source-operations')
     commands.add_parser('reconcile-cloud-jobs')
+    preflight = commands.add_parser('preflight')
+    preflight.add_argument('--max-path-chars', type=int, default=240)
+    backup = commands.add_parser('backup')
+    backup.add_argument('--output', type=Path, required=True)
+    restore = commands.add_parser('restore')
+    restore.add_argument('--backup', type=Path, required=True)
     worker = commands.add_parser('run-fake-cloud-job')
     worker.add_argument('--job-id')
     worker.add_argument('--worker-id', default='stage6-fake-worker')
@@ -80,6 +86,18 @@ def main():
         elif args.command == 'reconcile-cloud-jobs':
             from .cloud_jobs import CloudJobs
             print(json.dumps(CloudJobs(config).reconcile()))
+        elif args.command == 'preflight':
+            from .operations import path_preflight
+            result = path_preflight(config, limit=args.max_path_chars)
+            print(json.dumps(result))
+            if result['status'] != 'PASS':
+                raise BoundaryError('PATH_LENGTH_UNSAFE')
+        elif args.command == 'backup':
+            from .operations import create_backup
+            print(json.dumps(create_backup(config, args.output)))
+        elif args.command == 'restore':
+            from .operations import restore_backup
+            print(json.dumps(restore_backup(config, args.backup)))
         elif args.command == 'run-fake-cloud-job':
             if config.mode != 'DEMO':
                 raise BoundaryError('FAKE_PROVIDER_DEMO_ONLY')

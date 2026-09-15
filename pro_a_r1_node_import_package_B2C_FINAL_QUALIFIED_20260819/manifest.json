@@ -11,7 +11,7 @@
   "database_precondition": {
     "bytes": 466944,
     "identity": "canonical project Production DB resolved from config.toml",
-    "path_absolute_at_qualification": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "path_absolute_at_qualification": "<repository-root>\\workspace\\pro_a.db",
     "path_relative_to_repo": "workspace/pro_a.db",
     "pragma_user_version": 0,
     "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",

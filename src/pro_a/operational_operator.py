@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from contextlib import closing
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
@@ -20,6 +20,30 @@ from .workbench.attribution import Attribution
 from .workbench.config import BoundaryError, WorkbenchConfig, checked_path
 from .workbench.review_workbench import encode
 from .workbench.store import Store
+
+
+@contextmanager
+def _execution_lock(ledger: Path):
+    """Serialize the privileged operator across threads and local processes."""
+    path = checked_path(ledger.with_name(ledger.name + '.execution.lock'), missing=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open('a+b') as handle:
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() == 0:
+            handle.write(b'0'); handle.flush(); os.fsync(handle.fileno())
+        handle.seek(0)
+        if os.name == 'nt':
+            import msvcrt
+            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+            try: yield
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try: yield
+            finally: fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 @dataclass(frozen=True)
@@ -126,6 +150,10 @@ class Operator:
 
     def execute(self, envelope_id, *, confirm, fault=None):
         """Consume a registered operator grant. There is no raw-mutations writer API."""
+        with _execution_lock(checked_path(self.config.ledger, missing=True)):
+            return self._execute_locked(envelope_id, confirm=confirm, fault=fault)
+
+    def _execute_locked(self, envelope_id, *, confirm, fault=None):
         require(confirm == envelope_id, 'OPERATOR_CONFIRMATION_REQUIRED')
         target, _ = self.config.paths()
         with closing(self.connect()) as connection:

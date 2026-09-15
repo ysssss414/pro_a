@@ -1,4 +1,4 @@
-# pro_a v0.3.0 — Phase 3 Source Expansion
+# pro_a v0.4.0 — Phase 4 private-host research workbench
 
 `pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `<production-db>` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
 
@@ -177,4 +177,12 @@ Phase 3D closure 不把 Explorer、legacy ingestion、IMA 或未来 Source 变�
 
 ## v0.4.0 public source projection
 
-Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection. Phase 4.2 has not started.
+Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection.
+
+Phase 4.2 now has a local release candidate for an authenticated private-host
+Review Workbench, durable cloud job boundary, Research Explorer and private
+clean-PDF Source Golden Path. Installation, schema preparation, provider boundary,
+recovery and coordinated backup/restore are documented in the
+[operator runbook](docs/PHASE4_STAGE42_OPERATOR_RUNBOOK.md). The proposed 0.5.0
+release remains untagged and unpublished; see the
+[release notes draft](docs/PHASE4_STAGE42_RELEASE_NOTES_DRAFT.md).

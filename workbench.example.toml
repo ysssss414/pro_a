@@ -1,5 +1,6 @@
-# Paths are relative to this file. Use dedicated, operator-owned directories.
-# Stage 0 never creates/prepares the knowledge DB. Existing schema 0.2.3 is required.
+# Paths are relative to this file. Use dedicated, operator-owned private directories.
+# Keep the workspace root short on Windows and run the `preflight` command first.
+# Workbench never creates/prepares the knowledge DB. Existing schema 0.2.3 is required.
 [workbench]
 mode = "PRIVATE"
 knowledge_db = "workspace/knowledge/pro_a.db"

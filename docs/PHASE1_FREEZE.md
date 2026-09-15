@@ -21,7 +21,7 @@ The maintenance contract was verified on an isolated Production copy: backup, ap
 
 ## Production baseline
 
-- Absolute path at freeze: `D:\ej\材料\codex\get_knowledge\pro_a_v0_1\workspace\pro_a.db`
+- Absolute path at freeze: `<repository-root>\workspace\pro_a.db`
 - SHA-256: `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
 - Nodes: 280
 - Aliases: 706

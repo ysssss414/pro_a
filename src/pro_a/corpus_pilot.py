@@ -49,7 +49,7 @@ PILOT2_REEXTRACTION_QUOTE_DOCUMENT_TYPE = (
 PILOT2_REEXTRACTION_COMPARISON_DOCUMENT_TYPE = (
     "phase3c_pilot2_historical_vs_reextraction_pre_review_comparison"
 )
-PILOT2_SOURCE_NAME = "光互连研究方法与框架20260819.pdf"
+PILOT2_SOURCE_NAME = "synthetic-clean-source-a.pdf"
 PILOT2_SOURCE_SHA256 = "1ea71205fb04885f44ab0aa48b57586647c9c823d4b321f11d23d7505aa65f52"
 PILOT2_HISTORICAL_RUN_ID = "PILOT_20260831_DEA82C1F"
 SCHEMA_VERSION = "1"
@@ -5906,7 +5906,7 @@ def run_pilot2_real_extraction(
     source_search_root = Path(source_search_root).resolve()
     pilot1_bundle_path = Path(pilot1_bundle_path).resolve()
     pilot1_source_path = Path(pilot1_source_path).resolve()
-    expected_name = "光互连研究方法与框架20260819.pdf"
+    expected_name = "synthetic-clean-source-a.pdf"
     if source_path.name != expected_name or not source_path.is_file():
         raise PilotError("PILOT2_SOURCE_INVALID: exact authorized filename required")
     matches = [path.resolve() for path in source_search_root.rglob(expected_name) if path.is_file()]
@@ -5995,7 +5995,7 @@ def format_stage1_report(result: dict[str, Any], *, branch: str = "main", commit
         f"Branch = {branch}", f"Commit = {commit}", f"Draft PR = {draft_pr}", "",
         f"Baseline main = {commit}",
         "Contains Phase 3B merge commit = true", "",
-        "Pilot #1 = TGV玻璃专家交流.pdf",
+        "Pilot #1 = synthetic-clean-source-b.pdf",
         "Pilot #2 status = NOT_RUN", "",
         "REAL_LLM_EXTRACTION_AUTHORIZED = true",
         "Real model extraction = PASS",

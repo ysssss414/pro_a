@@ -1458,7 +1458,7 @@ def test_gate_b_exact_ordered_cross_page_quote_is_accepted():
 
 def test_pilot2_prompt_freeze_fails_before_extraction(tmp_path, monkeypatch):
     cfg, _ = make_config(tmp_path)
-    source = cfg.root / "光互连研究方法与框架20260819.pdf"
+    source = cfg.root / "synthetic-clean-source-a.pdf"
     write_pdf(source, [EXCERPT])
 
     def forbidden(*args, **kwargs):
@@ -1476,7 +1476,7 @@ def test_pilot2_evidence_draft_is_mechanics_only_deterministic_and_exact(
 ):
     cfg, _ = make_config(tmp_path)
     monkeypatch.setattr("pro_a.corpus_pilot.Analyzer", StubAnalyzer)
-    source = cfg.root / "光互连研究方法与框架20260819.pdf"
+    source = cfg.root / "synthetic-clean-source-a.pdf"
     write_pdf(source, [f"{EXCERPT} Context after.", "First half,", "second half."])
     stage1 = extract_pilot_source(source, cfg, output_dir=cfg.root / "stage1")
     bundle = copy.deepcopy(stage1["bundle"])
@@ -1533,8 +1533,8 @@ def test_pilot2_evidence_draft_is_mechanics_only_deterministic_and_exact(
 
 def test_pilot2_fails_closed_on_nonidentical_exact_name_sources(tmp_path, monkeypatch):
     cfg, _ = make_config(tmp_path)
-    first = cfg.root / "search" / "a" / "光互连研究方法与框架20260819.pdf"
-    second = cfg.root / "search" / "b" / "光互连研究方法与框架20260819.pdf"
+    first = cfg.root / "search" / "a" / "synthetic-clean-source-a.pdf"
+    second = cfg.root / "search" / "b" / "synthetic-clean-source-a.pdf"
     first.parent.mkdir(parents=True)
     second.parent.mkdir(parents=True)
     write_pdf(first, ["first"])
@@ -1564,7 +1564,7 @@ def test_pilot2_orchestration_runs_one_extraction_and_stops_at_pending_review(
             return super().analyze_source(filename, text, mode)
 
     monkeypatch.setattr("pro_a.corpus_pilot.Analyzer", CountingAnalyzer)
-    pilot1_source = cfg.root / "TGV玻璃专家交流.pdf"
+    pilot1_source = cfg.root / "synthetic-clean-source-b.pdf"
     write_pdf(pilot1_source, [EXCERPT, "Pilot one context."])
     pilot1_stage1 = extract_pilot_source(
         pilot1_source, cfg, output_dir=cfg.root / "pilot1-stage1",
@@ -1575,7 +1575,7 @@ def test_pilot2_orchestration_runs_one_extraction_and_stops_at_pending_review(
     )
     CountingAnalyzer.calls = 0
 
-    pilot2_source = cfg.root / "search" / "光互连研究方法与框架20260819.pdf"
+    pilot2_source = cfg.root / "search" / "synthetic-clean-source-a.pdf"
     pilot2_source.parent.mkdir(parents=True)
     write_pdf(pilot2_source, [f"{EXCERPT} Pilot two context."])
 

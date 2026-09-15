@@ -14,7 +14,7 @@ Functional Relation validation and import are outside this closure and have not 
 ## Sol Pro V2 staging input
 
 - Package: `pro_a_ai_hardware_foundation_v2_final_20260818`
-- Local staging source at review time: `D:\ej\材料\codex\get_knowledge\pro_a_v0_1\pro_a_ai_hardware_foundation_v2_final_20260818`
+- Local staging source at review time: `<repository-root>\pro_a_ai_hardware_foundation_v2_final_20260818`
 - Role: offline candidate input only
 - Identity policy: exact canonical, exact alias, SQLite NOCASE, and Unicode NFKC/casefold checks only
 - Prohibited identity mechanisms: embedding, semantic similarity, and fuzzy matching
@@ -113,7 +113,7 @@ Policy constraints:
 The clean package was applied atomically after the Production precondition, schema, identity resolution, collisions, types, endpoints, and sidecar state were revalidated.
 
 - Receipt: `workspace/phase1_1_ai_hardware_production_import_20260825/PRODUCTION_IMPORT_RECEIPT.json`
-- Production path: `D:\ej\材料\codex\get_knowledge\pro_a_v0_1\workspace\pro_a.db`
+- Production path: `<repository-root>\workspace\pro_a.db`
 - Pre-SHA-256: `8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c`
 - Post-SHA-256: `8a4247b9da2c3d6f288f8a8af8519f33673bc45b5a4327a57c50436d39dd50b4`
 - Atomic apply: **PASS**

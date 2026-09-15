@@ -192,7 +192,7 @@
   },
   "metadata": {
     "artifact": "B2C final qualification deterministic canonical-Production DB resolution",
-    "database_path_absolute": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "database_path_absolute": "<repository-root>\\workspace\\pro_a.db",
     "database_path_relative_to_repo": "workspace/pro_a.db",
     "database_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
     "embedding_used_for_identity_or_structure": false,
