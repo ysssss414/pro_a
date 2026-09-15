@@ -2096,6 +2096,33 @@ blockquote {
 
 .research-breadcrumbs { display: flex; max-width: 1320px; align-items: center; gap: 7px; margin: 0 auto 14px; color: #8794a1; font-size: 9px; }
 .research-breadcrumbs button { padding: 0; border: 0; background: transparent; color: #52789e; font: inherit; cursor: pointer; }
+
+.jobs-workspace, .jobs-login { min-height: calc(100vh - 72px); background: #f4f1ea; color: #18232d; padding: 34px clamp(20px, 4vw, 58px); }
+.jobs-login { display: grid; place-items: center; }
+.jobs-login form { width: min(520px, 100%); padding: 34px; border: 1px solid #d8d0c2; border-radius: 14px; background: #fffdf8; box-shadow: 0 18px 50px #26333d14; display: grid; gap: 18px; }
+.jobs-login label, .jobs-submit label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; color: #53616d; }
+.jobs-login input, .jobs-submit select, .jobs-submit input { padding: 10px 12px; border: 1px solid #c9c1b4; border-radius: 6px; background: white; }
+.jobs-hero { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 24px; }
+.jobs-hero h1 { margin: 5px 0; font: 500 clamp(34px, 5vw, 58px)/1.05 Georgia, serif; }
+.jobs-hero p { margin: 0; color: #62717d; }
+.jobs-submit { padding: 20px; background: #fffdf8; border: 1px solid #d8d0c2; border-radius: 10px; margin-bottom: 18px; }
+.jobs-submit h2 { margin: 0 0 14px; font: 500 20px Georgia, serif; }
+.jobs-submit form { display: grid; grid-template-columns: minmax(250px, 2fr) minmax(220px, 1fr) auto auto; gap: 10px; align-items: end; }
+.jobs-message { color: #22634f; }.jobs-error { color: #9b3434; }.jobs-loading { padding: 40px; }
+.jobs-layout { display: grid; grid-template-columns: minmax(270px, .8fr) minmax(500px, 1.8fr); gap: 18px; }
+.jobs-list, .job-detail { background: #fffdf8; border: 1px solid #d8d0c2; border-radius: 10px; padding: 18px; min-height: 300px; }
+.jobs-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.jobs-heading h2 { margin: 0; font: 500 22px Georgia, serif; }.jobs-heading code { font-size: 10px; overflow-wrap: anywhere; }
+.jobs-list > button { width: 100%; text-align: left; display: grid; gap: 5px; padding: 13px; margin: 0 0 8px; border: 1px solid #e1dbd0; border-radius: 7px; background: white; }
+.jobs-list > button.selected { border-color: #326b64; box-shadow: inset 3px 0 #326b64; }.jobs-list code { font-size: 10px; overflow-wrap: anywhere; }
+.job-state { width: max-content; padding: 3px 7px; border-radius: 99px; background: #e8ecef; color: #42515d; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.state-succeeded { background: #dceee7; color: #1f664f; }.state-failed, .state-recovery_required { background: #f4deda; color: #913c35; }.state-running { background: #dfeaf3; color: #315d80; }.state-queued { background: #eee7d7; color: #756027; }
+.recovery-banner { padding: 12px; background: #f7e3df; border-left: 4px solid #a5473e; margin-bottom: 16px; }
+.job-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #ded8ce; border: 1px solid #ded8ce; }
+.job-facts > div { padding: 12px; background: #fffdf8; }.job-facts dt { color: #75818b; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }.job-facts dd { margin: 5px 0 0; overflow-wrap: anywhere; }
+.job-events { padding: 0; list-style: none; border-top: 1px solid #e4ded4; }.job-events li { display: grid; grid-template-columns: 35px 1fr auto; gap: 10px; padding: 9px 0; border-bottom: 1px solid #e4ded4; font-size: 12px; }.job-events time { color: #77838c; }
+.job-artifact { display: grid; gap: 5px; padding: 12px; border: 1px solid #e1dbd0; }.job-artifact code, .job-artifact small { overflow-wrap: anywhere; }
+@media (max-width: 980px) { .jobs-layout { grid-template-columns: 1fr; }.jobs-submit form { grid-template-columns: 1fr 1fr; } }
 .research-breadcrumbs strong { min-width: 0; overflow: hidden; color: #657588; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 .research-content { display: grid; max-width: 1320px; gap: 14px; margin: auto; }
 .research-identity { padding: 20px 24px; border-left: 4px solid #527ca3; border-radius: 7px; background: #fff; }

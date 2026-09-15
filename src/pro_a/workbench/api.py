@@ -20,6 +20,7 @@ from pro_a.direct_impact import DirectImpact, ImpactError
 from pro_a.research_explorer import ResearchError, ResearchExplorer
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
+from .cloud_jobs import CloudJobs, CloudProfile, JobError
 from .config import BoundaryError, WorkbenchConfig
 from .store import Store
 from .review_store import recover_workbench, schema_version
@@ -137,7 +138,14 @@ class FollowupNoteUpdate(BaseModel):
     status: str = Field(pattern=r'^(OPEN|DONE|DEFERRED)$')
 
 
-def create_app(config: WorkbenchConfig | None = None):
+class CloudJobSubmission(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
+    input_artifact_id: str = Field(pattern=r'^ART_[0-9a-f]{32}$')
+    operation_kind: str = Field(pattern=r'^SEMANTIC_DECOMPOSITION$')
+
+
+def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudProfile | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
     config.validate()
     recover_workbench(config)
@@ -153,6 +161,7 @@ def create_app(config: WorkbenchConfig | None = None):
     reviews = ReviewWorkbench(config)
     impacts = DirectImpact(config)
     research = ResearchExplorer(config)
+    jobs = CloudJobs(config, cloud_profile)
     host = urlsplit(config.origin).netloc
 
     def session(request):
@@ -227,6 +236,10 @@ def create_app(config: WorkbenchConfig | None = None):
     async def note_error(_request, error):
         return JSONResponse({'detail': str(error), 'current_revision': error.current_revision}, status_code=error.status)
 
+    @app.exception_handler(JobError)
+    async def job_error(_request, error):
+        return JSONResponse({'detail': str(error)}, status_code=error.status)
+
     @app.exception_handler(RequestValidationError)
     async def bad_input(_request, _error):
         if _request.url.path.startswith(PREFIX + '/reviews/'):
@@ -263,7 +276,7 @@ def create_app(config: WorkbenchConfig | None = None):
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5', '6'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6', '7'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
@@ -440,5 +453,25 @@ def create_app(config: WorkbenchConfig | None = None):
     @app.put(PREFIX + '/research/notes/{note_id}')
     def update_research_note(note_id: str, body: FollowupNoteUpdate, request: Request):
         return research.notes.update(note_id, body.model_dump(), request.state.identity)
+
+    @app.post(PREFIX + '/jobs')
+    def submit_cloud_job(body: CloudJobSubmission):
+        return jobs.submit(**body.model_dump())
+
+    @app.get(PREFIX + '/jobs')
+    def list_cloud_jobs(status: str = '', cursor: str | None = None, limit: int = 25):
+        return jobs.list(status=status, cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/jobs/{job_id}')
+    def get_cloud_job(job_id: str):
+        return jobs.get(job_id)
+
+    @app.get(PREFIX + '/jobs/{job_id}/events')
+    def get_cloud_job_events(job_id: str, cursor: str | None = None, limit: int = 50):
+        return jobs.events(job_id, cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/jobs/{job_id}/artifacts')
+    def get_cloud_job_artifacts(job_id: str):
+        return jobs.results(job_id)
 
     return app

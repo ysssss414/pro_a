@@ -293,7 +293,7 @@ class DirectImpact:
 
         with self.store.connect() as workbench:
             workbench.execute('BEGIN')
-            require(schema_version(workbench) in ('5', '6'), 'IMPACT_SCHEMA_REQUIRED')
+            require(schema_version(workbench) in ('5', '6', '7'), 'IMPACT_SCHEMA_REQUIRED')
             query_count[0] += 1
             drafts = [dict(row) for row in workbench.execute('SELECT node_id,draft_id,revision,status,body,updated_at FROM view_drafts ORDER BY node_id')]
             query_count[0] += 1
@@ -501,7 +501,7 @@ class DirectImpact:
         fingerprint = canonical_sha256({'action': 'ATTENTION', 'request': request, 'actor': identity['actor']})
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            require(schema_version(connection) in ('5', '6'), 'IMPACT_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('5', '6', '7'), 'IMPACT_SCHEMA_REQUIRED')
             prior = connection.execute('SELECT request_sha256,response_json FROM impact_attention_events WHERE impact_id=? AND operation_id=?',
                                        (impact_id, request['operation_id'])).fetchone()
             if prior:

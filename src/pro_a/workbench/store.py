@@ -57,7 +57,7 @@ class Store:
             if not operator_write:
                 connection.execute('PRAGMA query_only=ON')
             metadata = dict(connection.execute('SELECT key,value FROM workbench_meta'))
-            if metadata.get('schema_version') not in ('1', '2', '3', '4', '5', '6'):
+            if metadata.get('schema_version') not in ('1', '2', '3', '4', '5', '6', '7'):
                 raise BoundaryError('WORKBENCH_SCHEMA_UNSUPPORTED')
             if metadata != {**self.config.bindings(), 'schema_version': metadata['schema_version']}:
                 raise BoundaryError('WORKBENCH_BINDING_MISMATCH')

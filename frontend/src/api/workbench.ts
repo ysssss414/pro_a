@@ -95,6 +95,17 @@ const messages: Record<string, string> = {
   NOTE_NOT_FOUND: "The requested follow-up note was not found.",
   UNSUPPORTED_RESEARCH_OBJECT: "This object type is not supported by Research Explorer.",
   RESEARCH_SCHEMA_REQUIRED: "Prepare the Stage 5 Workbench schema before using Research Explorer.",
+  CLOUD_JOBS_SCHEMA_REQUIRED: "Prepare the Stage 6 Workbench schema before using Durable Jobs.",
+  CLOUD_PROFILE_REQUIRED: "A bounded cloud execution profile is not configured.",
+  JOB_NOT_FOUND: "The requested durable job was not found.",
+  INVALID_JOB_FILTER: "The durable job filter is invalid.",
+  INVALID_IDEMPOTENCY_KEY: "The durable submission identity is invalid.",
+  UNSUPPORTED_CLOUD_OPERATION: "This cloud operation is not supported by the current contract.",
+  BUDGET_EXCEEDED: "The durable job budget does not authorize another provider attempt.",
+  RUNTIME_DRIFT: "The job runtime identity differs from the current compatible runtime.",
+  OUTPUT_VALIDATION_FAILED: "Provider output failed the existing deterministic semantic validator.",
+  MODEL_IDENTITY_MISMATCH: "The provider reported an unexpected model identity.",
+  UNKNOWN_EXTERNAL_OUTCOME: "The external outcome is unknown; automatic retry is blocked.",
 };
 
 export class WorkbenchError extends Error {

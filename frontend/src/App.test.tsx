@@ -59,6 +59,10 @@ vi.mock("./components/ResearchExplorer", async () => {
   };
 });
 
+vi.mock("./components/CloudJobsWorkbench", () => ({
+  CloudJobsWorkbench: () => <div>Durable Jobs route</div>,
+}));
+
 describe("App error boundary", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
@@ -83,6 +87,13 @@ describe("App error boundary", () => {
     expect(screen.getByText("Start the local pro_a API and retry.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
+  });
+
+  it("opens the durable Jobs surface from its stable route", () => {
+    window.history.replaceState(null, "", "/jobs");
+    render(<App />);
+    expect(screen.getByText("Durable Jobs route")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Durable Jobs" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("opens the read-only Human View Proposal surface", async () => {

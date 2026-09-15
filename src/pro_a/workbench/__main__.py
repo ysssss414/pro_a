@@ -18,6 +18,20 @@ def main():
     commands.add_parser('prepare-current-view')
     commands.add_parser('prepare-impact')
     commands.add_parser('prepare-research')
+    commands.add_parser('prepare-cloud-jobs')
+    commands.add_parser('reconcile-cloud-jobs')
+    worker = commands.add_parser('run-fake-cloud-job')
+    worker.add_argument('--job-id')
+    worker.add_argument('--worker-id', default='stage6-fake-worker')
+    worker.add_argument('--delay-seconds', type=float, default=0.0)
+    worker.add_argument('--scenario', choices=(
+        'success', 'rate_limit_then_success', 'transport_failure', 'timeout_before_dispatch',
+        'unknown_external_outcome', 'accepted_alias', 'model_mismatch', 'usage_unknown',
+        'invalid_output'), default='success')
+    worker.add_argument('--fault-at', choices=(
+        'before_claim', 'after_claim', 'after_dispatch_intent', 'before_network_call',
+        'after_provider_response', 'before_result_artifact_durable',
+        'after_result_artifact_durable', 'before_terminal_update', 'after_terminal_update'))
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
@@ -46,6 +60,23 @@ def main():
         elif args.command == 'prepare-research':
             from .research_store import prepare_research
             print(json.dumps(prepare_research(config)))
+        elif args.command == 'prepare-cloud-jobs':
+            from .cloud_jobs import prepare_cloud_jobs
+            print(json.dumps(prepare_cloud_jobs(config)))
+        elif args.command == 'reconcile-cloud-jobs':
+            from .cloud_jobs import CloudJobs
+            print(json.dumps(CloudJobs(config).reconcile()))
+        elif args.command == 'run-fake-cloud-job':
+            if config.mode != 'DEMO':
+                raise BoundaryError('FAKE_PROVIDER_DEMO_ONLY')
+            if not 0 <= args.delay_seconds <= 30:
+                raise BoundaryError('FAKE_PROVIDER_DELAY_INVALID')
+            from pro_a.cloud_contract import DeterministicFakeProvider
+            from .cloud_jobs import CloudJobs
+            provider = DeterministicFakeProvider(args.scenario, delay_seconds=args.delay_seconds)
+            result = CloudJobs(config).run_once(provider, worker_id=args.worker_id,
+                                                job_id=args.job_id, fault_at=args.fault_at)
+            print(json.dumps({'job': result, 'fake_provider_calls': provider.call_count}))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
         else:

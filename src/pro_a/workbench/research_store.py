@@ -36,8 +36,8 @@ def prepare_research(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == '6':
-            return {'status': 'ALREADY_PREPARED', 'schema_version': '6'}
+        if version in ('6', '7'):
+            return {'status': 'ALREADY_PREPARED', 'schema_version': version}
         if version != '5':
             raise BoundaryError('IMPACT_SCHEMA_REQUIRED')
     path = checked_path(config.state_db)
@@ -98,7 +98,7 @@ class FollowupNotes:
             clauses.append('status=?'); args.append(status)
         where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
         with self.store.connect() as connection:
-            if schema_version(connection) != '6':
+            if schema_version(connection) not in ('6', '7'):
                 raise BoundaryError('RESEARCH_SCHEMA_REQUIRED')
             rows = [dict(row) for row in connection.execute(
                 f'''SELECT note_id,object_type,object_id,text,status,revision,operator,created_at,updated_at
@@ -113,7 +113,7 @@ class FollowupNotes:
         now = _now()
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            if schema_version(connection) != '6':
+            if schema_version(connection) not in ('6', '7'):
                 raise BoundaryError('RESEARCH_SCHEMA_REQUIRED')
             prior = connection.execute(
                 'SELECT request_sha256,response_json FROM followup_note_events WHERE operation_id=?',
@@ -144,7 +144,7 @@ class FollowupNotes:
         now = _now()
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            if schema_version(connection) != '6':
+            if schema_version(connection) not in ('6', '7'):
                 raise BoundaryError('RESEARCH_SCHEMA_REQUIRED')
             prior = connection.execute(
                 'SELECT request_sha256,response_json FROM followup_note_events WHERE operation_id=?',

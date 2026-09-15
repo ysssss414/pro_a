@@ -153,7 +153,7 @@ class CurrentViewWorkbench:
     def read(self, node_id):
         node, official, history, baselines, evidence, basis = self._context(node_id)
         with self.store.connect() as connection:
-            require(schema_version(connection) in ('4', '5', '6'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('4', '5', '6', '7'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
             draft = _draft(connection, node_id, basis)
             packages = [json.loads(row[0]) for row in connection.execute(
                 'SELECT body FROM view_activation_packages WHERE node_id=? ORDER BY object_id', (node_id,))]
@@ -229,7 +229,7 @@ class CurrentViewWorkbench:
         fingerprint = canonical_sha256({'action': 'SAVE', 'request': request, 'actor': identity['actor']})
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            require(schema_version(connection) in ('4', '5', '6'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('4', '5', '6', '7'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
             old = connection.execute('SELECT * FROM view_drafts WHERE node_id=?', (node_id,)).fetchone()
             operation = connection.execute('SELECT request_sha256,response_json FROM view_draft_events WHERE node_id=? AND operation_id=?', (node_id, request['operation_id'])).fetchone()
             if operation:
