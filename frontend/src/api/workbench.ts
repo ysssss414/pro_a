@@ -85,6 +85,16 @@ const messages: Record<string, string> = {
   NONCURRENT_RELATION: "The requested relationship or View is not current.",
   AMBIGUOUS_TEMPORAL_STATE: "The recorded temporal state is ambiguous.",
   IMPACT_SCHEMA_REQUIRED: "Prepare the Stage 4 Workbench schema before using Changes & Impact.",
+  NODE_NOT_FOUND: "The requested Node was not found.",
+  CLAIM_NOT_FOUND: "The requested Claim was not found.",
+  SOURCE_NOT_FOUND: "The requested Source was not found.",
+  RELATION_NOT_FOUND: "The requested relation was not found.",
+  INVALID_FILTER: "The research filter is invalid.",
+  INVALID_CURSOR: "The research page cursor is invalid.",
+  NOTE_REVISION_CONFLICT: "This note changed in another tab. Refresh before saving again.",
+  NOTE_NOT_FOUND: "The requested follow-up note was not found.",
+  UNSUPPORTED_RESEARCH_OBJECT: "This object type is not supported by Research Explorer.",
+  RESEARCH_SCHEMA_REQUIRED: "Prepare the Stage 5 Workbench schema before using Research Explorer.",
 };
 
 export class WorkbenchError extends Error {

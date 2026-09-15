@@ -33,13 +33,15 @@ import {
 import { SearchPanel } from "./components/SearchPanel";
 import { ViewProposalReview } from "./components/ViewProposalReview";
 import { ReviewRoute } from "./components/ReviewRoute";
+import { ResearchExplorer } from "./components/ResearchExplorer";
 
 function emptyKnowledgeErrors(): KnowledgeErrors {
   return { claims: null, sources: null, view: null, research: null, gaps: null };
 }
 
 export default function App() {
-  const [surface, setSurface] = useState<"explorer" | "proposals" | "impact" | "review">(() => {
+  const [surface, setSurface] = useState<"explorer" | "research" | "proposals" | "impact" | "review">(() => {
+    if (/^\/(research(?:\/|$)|node\/|claim\/|source\/|relation\/|coverage(?:\/|$))/.test(window.location.pathname)) return "research";
     const requested = new URLSearchParams(window.location.search).get("surface");
     return requested === "review" || requested === "proposals" || requested === "impact" ? requested : "explorer";
   });
@@ -230,14 +232,23 @@ export default function App() {
     setSurface("explorer");
   }, [selectNode]);
 
+  const changeSurface = useCallback((next: "explorer" | "research" | "proposals" | "impact" | "review") => {
+    if (next === "research") {
+      window.history.pushState(null, "", "/research");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+    else if (window.location.pathname !== "/") window.history.pushState(null, "", "/");
+    setSurface(next);
+  }, []);
+
   useEffect(() => {
-    void loadStatus();
+    if (surface !== "research") void loadStatus();
     return () => statusController.current?.abort();
-  }, [loadStatus]);
+  }, [loadStatus, surface]);
 
   useEffect(() => {
     const url = new URL(window.location.href);
-    if (surface !== "explorer") url.searchParams.set("surface", surface);
+    if (surface !== "explorer" && surface !== "research") url.searchParams.set("surface", surface);
     else url.searchParams.delete("surface");
     window.history.replaceState(null, "", url);
   }, [surface]);
@@ -262,10 +273,11 @@ export default function App() {
           </div>
         </div>
         <nav className="surface-nav" aria-label="Research surfaces">
-          <button type="button" aria-pressed={surface === "explorer"} onClick={() => setSurface("explorer")}>Explorer</button>
-          <button type="button" aria-pressed={surface === "proposals"} onClick={() => setSurface("proposals")}>Human View Proposals</button>
-          <button type="button" aria-pressed={surface === "impact"} onClick={() => setSurface("impact")}>Changes &amp; Impact</button>
-          <button type="button" aria-pressed={surface === "review"} onClick={() => setSurface("review")}>Review</button>
+          <button type="button" aria-pressed={surface === "research"} onClick={() => changeSurface("research")}>Research Home</button>
+          <button type="button" aria-pressed={surface === "explorer"} onClick={() => changeSurface("explorer")}>Explorer</button>
+          <button type="button" aria-pressed={surface === "proposals"} onClick={() => changeSurface("proposals")}>Human View Proposals</button>
+          <button type="button" aria-pressed={surface === "impact"} onClick={() => changeSurface("impact")}>Changes &amp; Impact</button>
+          <button type="button" aria-pressed={surface === "review"} onClick={() => changeSurface("review")}>Review</button>
         </nav>
         <div className="header-status">
           {stats && (
@@ -286,7 +298,7 @@ export default function App() {
         </div>
       </header>
 
-      {apiOnline === false && surface !== "review" && (
+      {apiOnline === false && surface !== "review" && surface !== "impact" && surface !== "research" && (
         <div className="api-alert" role="alert">
           <div>
             <strong>Knowledge API unavailable.</strong>
@@ -298,7 +310,7 @@ export default function App() {
         </div>
       )}
 
-      {surface === "review" ? <ReviewRoute onAuthenticated={loadStatus} /> : surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : surface === "impact" ? <ChangesImpactWorkbench onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
+      {surface === "review" ? <ReviewRoute onAuthenticated={loadStatus} /> : surface === "research" ? <ResearchExplorer onAuthenticated={loadStatus} /> : surface === "proposals" ? <ViewProposalReview onOpenSource={openProposalSource} onOpenOfficialView={openOfficialView} /> : surface === "impact" ? <ChangesImpactWorkbench onOpenOfficialView={openOfficialView} /> : <main className="workspace-grid">
         <SearchPanel selectedNodeId={selectedNodeId} onSelect={selectNode} />
         <GraphPanel
           graph={graph}

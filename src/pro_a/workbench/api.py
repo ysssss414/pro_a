@@ -17,12 +17,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from pro_a.api import create_app as create_explorer_app
 from pro_a.direct_impact import DirectImpact, ImpactError
+from pro_a.research_explorer import ResearchError, ResearchExplorer
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .config import BoundaryError, WorkbenchConfig
 from .store import Store
 from .review_store import recover_workbench, schema_version
 from .review_workbench import ReviewError, ReviewWorkbench
+from .research_store import NoteError
 
 PREFIX = '/api/workbench/v1'
 COOKIE = 'pro_a_workbench_session'
@@ -118,6 +120,23 @@ class ImpactAttention(BaseModel):
     outcome: str = Field(pattern=r'^(NO_CHANGE|MINOR|MATERIAL|THESIS)$')
 
 
+class FollowupNoteCreate(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    operation_id: str = Field(pattern=r'^[0-9a-f-]{32,36}$')
+    object_type: str = Field(pattern=r'^(NODE|CLAIM|SOURCE|RELATION|GAP|RESEARCH_QUESTION)$')
+    object_id: str = Field(min_length=1, max_length=240)
+    text: str = Field(min_length=1, max_length=8000)
+    status: str = Field(pattern=r'^(OPEN|DONE|DEFERRED)$')
+
+
+class FollowupNoteUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    operation_id: str = Field(pattern=r'^[0-9a-f-]{32,36}$')
+    expected_revision: int = Field(ge=1)
+    text: str = Field(min_length=1, max_length=8000)
+    status: str = Field(pattern=r'^(OPEN|DONE|DEFERRED)$')
+
+
 def create_app(config: WorkbenchConfig | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
     config.validate()
@@ -133,6 +152,7 @@ def create_app(config: WorkbenchConfig | None = None):
     artifacts = Artifacts(config)
     reviews = ReviewWorkbench(config)
     impacts = DirectImpact(config)
+    research = ResearchExplorer(config)
     host = urlsplit(config.origin).netloc
 
     def session(request):
@@ -199,6 +219,14 @@ def create_app(config: WorkbenchConfig | None = None):
     async def impact_error(_request, error):
         return JSONResponse({'detail': str(error), 'current_revision': error.current_revision}, status_code=error.status)
 
+    @app.exception_handler(ResearchError)
+    async def research_error(_request, error):
+        return JSONResponse({'detail': str(error)}, status_code=error.status)
+
+    @app.exception_handler(NoteError)
+    async def note_error(_request, error):
+        return JSONResponse({'detail': str(error), 'current_revision': error.current_revision}, status_code=error.status)
+
     @app.exception_handler(RequestValidationError)
     async def bad_input(_request, _error):
         if _request.url.path.startswith(PREFIX + '/reviews/'):
@@ -235,7 +263,7 @@ def create_app(config: WorkbenchConfig | None = None):
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
@@ -338,5 +366,79 @@ def create_app(config: WorkbenchConfig | None = None):
     @app.get(PREFIX + '/views/{view_id}/evidence-impact')
     def view_impact(view_id: str):
         return impacts.view(view_id)
+
+    @app.get(PREFIX + '/research/home')
+    def research_home():
+        return research.home()
+
+    @app.get(PREFIX + '/research/search')
+    def research_search(q: str, object_type: str = '', limit: int = 30):
+        return research.search(q, object_type=object_type, limit=limit)
+
+    @app.get(PREFIX + '/research/nodes/{node_id}')
+    def research_node(node_id: str):
+        return research.node(node_id)
+
+    @app.get(PREFIX + '/research/claims')
+    def research_claims(cursor: str | None = None, limit: int = 25, q: str = '', source_id: str = '',
+                        node_id: str = '', role: str = '', nature: str = '', status: str = '',
+                        date_from: str = '', date_to: str = '', cited: bool | None = None,
+                        linked: bool | None = None):
+        return research.claims(cursor=cursor, limit=limit, q=q, source_id=source_id,
+                               node_id=node_id, role=role, nature=nature, status=status,
+                               date_from=date_from, date_to=date_to, cited=cited, linked=linked)
+
+    @app.get(PREFIX + '/research/claims/{claim_id}')
+    def research_claim(claim_id: str):
+        return research.claim(claim_id)
+
+    @app.get(PREFIX + '/research/sources')
+    def research_sources(cursor: str | None = None, limit: int = 25, q: str = '', source_type: str = '',
+                         status: str = '', date_from: str = '', date_to: str = '',
+                         has_claims: bool | None = None, has_attribution: bool | None = None):
+        return research.sources(cursor=cursor, limit=limit, q=q, source_type=source_type,
+                                status=status, date_from=date_from, date_to=date_to,
+                                has_claims=has_claims, has_attribution=has_attribution)
+
+    @app.get(PREFIX + '/research/sources/{source_id}')
+    def research_source(source_id: str, claim_cursor: str | None = None, claim_limit: int = 25,
+                        claim_q: str = '', claim_status: str = '', claim_nature: str = ''):
+        return research.source(source_id, claim_cursor=claim_cursor, claim_limit=claim_limit,
+                               claim_q=claim_q, claim_status=claim_status, claim_nature=claim_nature)
+
+    @app.get(PREFIX + '/research/relations')
+    def research_relations(cursor: str | None = None, limit: int = 25, node_id: str = '',
+                           status: str = '', relation_type: str = ''):
+        return research.relations(cursor=cursor, limit=limit, node_id=node_id,
+                                  status=status, relation_type=relation_type)
+
+    @app.get(PREFIX + '/research/relations/{relation_id}')
+    def research_relation(relation_id: str):
+        return research.relation(relation_id)
+
+    @app.get(PREFIX + '/research/coverage')
+    def research_coverage(cursor: str | None = None, limit: int = 25):
+        return research.coverage(cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/research/questions')
+    def research_questions(cursor: str | None = None, limit: int = 25, status: str = ''):
+        return research.questions(cursor=cursor, limit=limit, status=status)
+
+    @app.get(PREFIX + '/research/gaps')
+    def research_gaps(cursor: str | None = None, limit: int = 25, status: str = ''):
+        return research.gaps(cursor=cursor, limit=limit, status=status)
+
+    @app.get(PREFIX + '/research/notes')
+    def research_notes(object_type: str = '', object_id: str = '', status: str = '', limit: int = 50):
+        return research.notes.list(object_type=object_type, object_id=object_id, status=status, limit=limit)
+
+    @app.post(PREFIX + '/research/notes')
+    def create_research_note(body: FollowupNoteCreate, request: Request):
+        research.validate_object(body.object_type, body.object_id)
+        return research.notes.create(body.model_dump(), request.state.identity)
+
+    @app.put(PREFIX + '/research/notes/{note_id}')
+    def update_research_note(note_id: str, body: FollowupNoteUpdate, request: Request):
+        return research.notes.update(note_id, body.model_dump(), request.state.identity)
 
     return app

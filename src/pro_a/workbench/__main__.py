@@ -17,6 +17,7 @@ def main():
     commands.add_parser('prepare-attribution')
     commands.add_parser('prepare-current-view')
     commands.add_parser('prepare-impact')
+    commands.add_parser('prepare-research')
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
@@ -42,6 +43,9 @@ def main():
         elif args.command == 'prepare-impact':
             from .impact_store import prepare_impact
             print(json.dumps(prepare_impact(config)))
+        elif args.command == 'prepare-research':
+            from .research_store import prepare_research
+            print(json.dumps(prepare_research(config)))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
         else:

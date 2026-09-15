@@ -13,8 +13,8 @@ def prepare_impact(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == '5':
-            return {'status': 'ALREADY_PREPARED', 'schema_version': '5'}
+        if version in ('5', '6'):
+            return {'status': 'ALREADY_PREPARED', 'schema_version': version}
         if version != '4':
             raise BoundaryError('CURRENT_VIEW_SCHEMA_REQUIRED')
     path = checked_path(config.state_db)
