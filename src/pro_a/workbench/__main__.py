@@ -19,6 +19,7 @@ def main():
     commands.add_parser('prepare-impact')
     commands.add_parser('prepare-research')
     commands.add_parser('prepare-cloud-jobs')
+    commands.add_parser('prepare-source-operations')
     commands.add_parser('reconcile-cloud-jobs')
     worker = commands.add_parser('run-fake-cloud-job')
     worker.add_argument('--job-id')
@@ -35,9 +36,19 @@ def main():
     register = commands.add_parser('register')
     register.add_argument('--packet', required=True, help='Relative to configured artifact root')
     register.add_argument('--run', required=True, help='Relative native engine/run root')
+    source_worker = commands.add_parser('run-fake-source-operation')
+    source_worker.add_argument('--phase4-config', type=Path, required=True)
+    source_worker.add_argument('--processing-run-id')
+    source_worker.add_argument('--worker-id', default='stage7-fake-worker')
+    source_worker.add_argument('--scenario', choices=(
+        'success', 'rate_limit_then_success', 'transport_failure', 'timeout_before_dispatch',
+        'unknown_external_outcome', 'accepted_alias', 'model_mismatch', 'usage_unknown',
+        'invalid_output'), default='success')
     serve = commands.add_parser('serve')
     serve.add_argument('--host', default='127.0.0.1')
     serve.add_argument('--port', type=int, default=8000)
+    serve.add_argument('--phase4-config', type=Path)
+    serve.add_argument('--max-pdf-mib', type=int, default=20)
     args = parser.parse_args()
     try:
         config = WorkbenchConfig.load(args.config)
@@ -63,6 +74,9 @@ def main():
         elif args.command == 'prepare-cloud-jobs':
             from .cloud_jobs import prepare_cloud_jobs
             print(json.dumps(prepare_cloud_jobs(config)))
+        elif args.command == 'prepare-source-operations':
+            from .source_operations import prepare_source_operations
+            print(json.dumps(prepare_source_operations(config)))
         elif args.command == 'reconcile-cloud-jobs':
             from .cloud_jobs import CloudJobs
             print(json.dumps(CloudJobs(config).reconcile()))
@@ -79,12 +93,27 @@ def main():
             print(json.dumps({'job': result, 'fake_provider_calls': provider.call_count}))
         elif args.command == 'register':
             print(json.dumps(Artifacts(config).register(args.packet, args.run)))
+        elif args.command == 'run-fake-source-operation':
+            from pro_a.cloud_contract import DeterministicFakeProvider
+            from .cloud_jobs import CloudProfile
+            from .source_operations import SourceOperations, SourceProfile
+            provider = DeterministicFakeProvider(args.scenario)
+            service = SourceOperations(
+                config, SourceProfile(args.phase4_config), CloudProfile.demo())
+            result = service.advance_once(
+                worker_id=args.worker_id, provider=provider,
+                processing_run_id=args.processing_run_id)
+            print(json.dumps({'run': result, 'fake_provider_calls': provider.call_count}))
         else:
             if not config.remote and args.host not in ('127.0.0.1', '::1', 'localhost'):
                 raise BoundaryError('REMOTE_DISABLED')
             import uvicorn
             from .api import create_app
-            uvicorn.run(create_app(config), host=args.host, port=args.port, proxy_headers=False, access_log=False)
+            from .source_operations import SourceProfile
+            source_profile = (SourceProfile(args.phase4_config, args.max_pdf_mib * 1024 * 1024)
+                              if args.phase4_config else None)
+            uvicorn.run(create_app(config, source_profile=source_profile), host=args.host, port=args.port,
+                        proxy_headers=False, access_log=False)
     except Exception:
         parser.exit(1, 'Workbench command failed; verify configuration, schema and artifact boundaries.\n')
 

@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import secrets
 import time
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -26,6 +26,7 @@ from .store import Store
 from .review_store import recover_workbench, schema_version
 from .review_workbench import ReviewError, ReviewWorkbench
 from .research_store import NoteError
+from .source_operations import SourceOperationError, SourceOperations, SourceProfile
 
 PREFIX = '/api/workbench/v1'
 COOKIE = 'pro_a_workbench_session'
@@ -145,7 +146,14 @@ class CloudJobSubmission(BaseModel):
     operation_kind: str = Field(pattern=r'^SEMANTIC_DECOMPOSITION$')
 
 
-def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudProfile | None = None):
+class SourceProcessRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
+    reprocess_reason: str = Field(default='', max_length=1000)
+
+
+def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudProfile | None = None,
+               source_profile: SourceProfile | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
     config.validate()
     recover_workbench(config)
@@ -162,6 +170,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     impacts = DirectImpact(config)
     research = ResearchExplorer(config)
     jobs = CloudJobs(config, cloud_profile)
+    sources = SourceOperations(config, source_profile, cloud_profile) if source_profile else None
     host = urlsplit(config.origin).netloc
 
     def session(request):
@@ -240,6 +249,10 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     async def job_error(_request, error):
         return JSONResponse({'detail': str(error)}, status_code=error.status)
 
+    @app.exception_handler(SourceOperationError)
+    async def source_operation_error(_request, error):
+        return JSONResponse({'detail': str(error)}, status_code=error.status)
+
     @app.exception_handler(RequestValidationError)
     async def bad_input(_request, _error):
         if _request.url.path.startswith(PREFIX + '/reviews/'):
@@ -276,7 +289,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5', '6', '7'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6', '7', '8'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
@@ -473,5 +486,43 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.get(PREFIX + '/jobs/{job_id}/artifacts')
     def get_cloud_job_artifacts(job_id: str):
         return jobs.results(job_id)
+
+    def source_service() -> SourceOperations:
+        if sources is None:
+            raise SourceOperationError('SOURCE_OPERATIONS_UNAVAILABLE', 503)
+        return sources
+
+    @app.post(PREFIX + '/source-operations/upload')
+    async def upload_source(request: Request):
+        filename = unquote(request.headers.get('x-source-filename', ''))
+        return await source_service().upload(
+            request.stream(), filename=filename,
+            mime_type=request.headers.get('content-type', ''),
+        )
+
+    @app.post(PREFIX + '/source-operations/{source_id}/process')
+    def process_source(source_id: str, body: SourceProcessRequest):
+        return source_service().start(source_id, **body.model_dump())
+
+    @app.get(PREFIX + '/source-operations')
+    def list_source_operations(status: str = '', cursor: str | None = None, limit: int = 25):
+        return source_service().list(status=status, cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/source-operations/metrics')
+    def source_operation_metrics():
+        return source_service().metrics()
+
+    @app.get(PREFIX + '/source-operations/runs/{processing_run_id}')
+    def source_processing_run(processing_run_id: str):
+        return source_service().get_run(processing_run_id)
+
+    @app.get(PREFIX + '/source-operations/runs/{processing_run_id}/events')
+    def source_processing_events(processing_run_id: str, cursor: str | None = None,
+                                 limit: int = 50):
+        return source_service().events(processing_run_id, cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/source-operations/{source_id}')
+    def source_operation_detail(source_id: str):
+        return source_service().source(source_id)
 
     return app

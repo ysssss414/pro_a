@@ -106,6 +106,15 @@ const messages: Record<string, string> = {
   OUTPUT_VALIDATION_FAILED: "Provider output failed the existing deterministic semantic validator.",
   MODEL_IDENTITY_MISMATCH: "The provider reported an unexpected model identity.",
   UNKNOWN_EXTERNAL_OUTCOME: "The external outcome is unknown; automatic retry is blocked.",
+  SOURCE_OPERATIONS_UNAVAILABLE: "Private Source operations are not configured for this application.",
+  SOURCE_TOO_LARGE: "This PDF exceeds the configured private Source limit.",
+  UNSUPPORTED_SOURCE_MIME: "Upload one application/pdf file.",
+  INVALID_PDF_SIGNATURE: "The uploaded bytes do not have a valid PDF signature.",
+  CORRUPT_PDF_UNSUPPORTED: "The PDF structure is corrupt or unsupported.",
+  ENCRYPTED_PDF_UNSUPPORTED: "Encrypted PDFs are unsupported.",
+  OCR_REQUIRED_UNSUPPORTED: "This PDF lacks complete extractable text. OCR is unsupported.",
+  SOURCE_ALREADY_EXISTS_IN_PRODUCTION: "This exact Source already exists in the canonical Source universe.",
+  RECOVERY_REQUIRED_REQUIRES_RECONCILIATION: "Manual job reconciliation is required before any new processing run.",
 };
 
 export class WorkbenchError extends Error {

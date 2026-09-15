@@ -69,6 +69,7 @@ SCHEMA_VERSION = "1"
 STAGES = (
     "SOURCE_FROZEN",
     "EXTRACTION_COMPLETE",
+    "SEMANTIC_INPUT_READY",
     "EVIDENCE_COMPLETE",
     "CLAIM_REVIEW_READY",
     "NODE_REVIEW_READY",
@@ -77,6 +78,7 @@ STAGES = (
 STOP_AFTER = {
     "source": "SOURCE_FROZEN",
     "extraction": "EXTRACTION_COMPLETE",
+    "semantic-input": "SEMANTIC_INPUT_READY",
     "evidence": "EVIDENCE_COMPLETE",
     "claim-review": "CLAIM_REVIEW_READY",
     "node-review": "NODE_REVIEW_READY",
@@ -359,20 +361,7 @@ def _clean_pdf_parse(source_path: Path, gate_path: Path) -> Any:
     except (OSError, ParseError) as exc:
         raise CleanSourceGateError(f"CLEAN_SOURCE_PARSE_FAILED:{exc}") from exc
     diagnostics = parsed.diagnostics
-    checks = {
-        "source_type_pdf": parsed.source_type == "pdf",
-        "has_pages": bool(diagnostics.get("total_units")),
-        "all_pages_have_text": (
-            diagnostics.get("text_units") == diagnostics.get("total_units")
-            and diagnostics.get("empty_units") == 0
-        ),
-        "no_parse_errors": diagnostics.get("error_units") == 0,
-        "not_partial": diagnostics.get("partial_parse") is False,
-        "not_empty": diagnostics.get("empty_extraction") is False,
-        "not_image_only": diagnostics.get("image_only_or_no_extractable_text") is False,
-        "layout_sidecar_available": parsed.layout_sidecar is not None,
-        "semantic_segments_available": parsed.segments is not None,
-    }
+    checks = _clean_pdf_checks(parsed)
     gate = {
         "document_type": "phase3e_clean_source_gate",
         "schema_version": SCHEMA_VERSION,
@@ -387,6 +376,65 @@ def _clean_pdf_parse(source_path: Path, gate_path: Path) -> Any:
     if gate["gate"] != "PASS":
         raise CleanSourceGateError("CLEAN_SOURCE_GATE_FAILED")
     return parsed
+
+
+def _clean_pdf_checks(parsed: Any) -> dict[str, bool]:
+    diagnostics = parsed.diagnostics
+    return {
+        "source_type_pdf": parsed.source_type == "pdf",
+        "has_pages": bool(diagnostics.get("total_units")),
+        "all_pages_have_text": (
+            diagnostics.get("text_units") == diagnostics.get("total_units")
+            and diagnostics.get("empty_units") == 0
+        ),
+        "no_parse_errors": diagnostics.get("error_units") == 0,
+        "not_partial": diagnostics.get("partial_parse") is False,
+        "not_empty": diagnostics.get("empty_extraction") is False,
+        "not_image_only": diagnostics.get("image_only_or_no_extractable_text") is False,
+        "layout_sidecar_available": parsed.layout_sidecar is not None,
+        "semantic_segments_available": parsed.segments is not None,
+    }
+
+
+def plan_external_source_analysis(
+    run_dir: Path, *, config_path: Path = Path("config.toml")
+) -> dict[str, Any]:
+    """Freeze the existing Analyzer plan without making a model call or changing the run."""
+    cfg = load_config(config_path)
+    paths, manifest = _resume_run(run_dir=Path(run_dir), source_path=None, config=cfg)
+    if "EXTRACTION_COMPLETE" in manifest.get("completed_stages", []):
+        raise OperationalIngestionError("EXTRACTION_ALREADY_COMPLETE")
+    try:
+        parsed = parse_source_with_diagnostics(paths.frozen_source, include_semantic_segments=True)
+    except (OSError, ParseError) as exc:
+        raise CleanSourceGateError(f"CLEAN_SOURCE_PARSE_FAILED:{exc}") from exc
+    if not all(_clean_pdf_checks(parsed).values()):
+        raise CleanSourceGateError("CLEAN_SOURCE_GATE_FAILED")
+    semantic_text = semantic_eligible_source_text(parsed)
+    analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(cfg.db_path.resolve()))
+    plan = analyzer.plan_initial_extraction(
+        manifest["source"]["filename"], semantic_text, "deep",
+        adaptive_retry_policy="forbid",
+    )
+    return {
+        "run_id": manifest["run_id"],
+        "source_id": manifest["source"]["source_id"],
+        "source_sha256": manifest["source"]["sha256"],
+        "plan": copy.deepcopy(plan.artifact),
+        "pieces": [{
+            "piece_id": piece.source_piece.piece_id,
+            "piece_index": piece.source_piece.chunk_index,
+            "piece_count": piece.source_piece.chunk_count,
+            "source_text": piece.source_piece.source_text,
+            "source_piece_sha256": piece.source_piece.source_sha256,
+            "user_prompt": piece.user_prompt,
+            "user_prompt_sha256": hashlib.sha256(piece.user_prompt.encode("utf-8")).hexdigest(),
+            "system_prompt_sha256": hashlib.sha256(
+                analyzer_module.SOURCE_ANALYSIS_SYSTEM.encode("utf-8")
+            ).hexdigest(),
+            "initial_plan_sha256": plan.plan_sha256,
+        } for piece in plan.pieces],
+    }
 
 
 def _build_live_extraction(
@@ -1044,15 +1092,9 @@ def _semantic_admission_artifact(
     }
 
 
-def _run_evidence(
-    paths: RunPaths,
-    manifest: dict[str, Any],
-    cfg: AppConfig,
-    *,
-    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
-    semantic_replay: Callable[[list[dict[str, Any]]], dict[str, Any]] | None = None,
-    semantic_max_split_depth: int = 4,
-) -> list[Path]:
+def _prepare_evidence_context(
+    paths: RunPaths, manifest: dict[str, Any], cfg: AppConfig
+) -> dict[str, Any]:
     bundle_path = paths.path("extraction/extraction_bundle.json")
     extraction_review = paths.path("extraction/extraction_review_draft.json")
     source_path = paths.frozen_source
@@ -1140,21 +1182,98 @@ def _run_evidence(
         "gate": "PASS" if table_result["raw_claims_unchanged"] else "FAIL",
         "result": table_result,
     })
+    return {
+        "bundle": bundle,
+        "evidence_draft": evidence_draft,
+        "gate": gate,
+        "table_result": table_result,
+        "outputs": [
+            rebound_path, rebound_review, rebound_markdown, rebound_metrics,
+            evidence_binding, evidence_markdown, evidence_metrics, quote_path,
+            quote_report, quote_metrics, quote_surface, table_path,
+        ],
+    }
+
+
+def _load_evidence_context(paths: RunPaths) -> dict[str, Any]:
+    evidence_dir = paths.path("evidence")
+    outputs = [
+        evidence_dir / "evidence_bound_extraction_bundle.json",
+        evidence_dir / "evidence_bound_review_draft.json",
+        evidence_dir / "evidence_locator_review.md",
+        evidence_dir / "evidence_locator_metrics.json",
+        evidence_dir / "evidence_binding.json",
+        evidence_dir / "evidence_binding.md",
+        evidence_dir / "evidence_binding_metrics.json",
+        evidence_dir / "quote_fidelity.json",
+        evidence_dir / "quote_fidelity.md",
+        evidence_dir / "quote_fidelity_metrics.json",
+        evidence_dir / "quote_fidelity_review.md",
+        evidence_dir / "table_claim_safety.json",
+    ]
+    if any(not path.is_file() for path in outputs):
+        raise OperationalIngestionError("SEMANTIC_INPUT_CHECKPOINT_INCOMPLETE")
+    return {
+        "bundle": _load_json(outputs[0]),
+        "evidence_draft": _load_json(outputs[4]),
+        "gate": _load_json(outputs[7]),
+        "table_result": _load_json(outputs[11])["result"],
+        "outputs": outputs,
+    }
+
+
+def _run_evidence(
+    paths: RunPaths,
+    manifest: dict[str, Any],
+    cfg: AppConfig,
+    *,
+    llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
+    semantic_replay: Callable[[list[dict[str, Any]]], dict[str, Any]] | None = None,
+    semantic_max_split_depth: int = 4,
+    checkpoint_only: bool = False,
+    semantic_execution_metadata: Mapping[str, Any] | None = None,
+) -> list[Path]:
+    checkpoint_ready = "SEMANTIC_INPUT_READY" in manifest.get("completed_stages", [])
+    context = (_load_evidence_context(paths) if checkpoint_ready
+               else _prepare_evidence_context(paths, manifest, cfg))
+    bundle = context["bundle"]
+    evidence_draft = context["evidence_draft"]
+    gate = context["gate"]
+    table_result = context["table_result"]
+    evidence_dir = paths.path("evidence")
+    semantic_inputs = build_semantic_claim_inputs(
+        bundle=bundle, evidence_draft=evidence_draft, quote_fidelity=gate,
+    )
+    semantic_input_path = evidence_dir / "stage6_semantic_input.json"
+    semantic_input = {
+        "document_type": "phase42_stage7_native_semantic_input",
+        "schema_version": "1",
+        "run_id": manifest["run_id"],
+        "source_id": manifest["source"]["source_id"],
+        "source_sha256": manifest["source"]["sha256"],
+        "payload": {"claims": semantic_inputs},
+        "payload_sha256": canonical_sha256({"claims": semantic_inputs}),
+        "basis": [{
+            "path": path.relative_to(paths.root).as_posix(),
+            "sha256": sha256_file(path),
+        } for path in context["outputs"]],
+    }
+    if checkpoint_only:
+        _write_json(semantic_input_path, semantic_input)
+        return [*context["outputs"], semantic_input_path]
+    if checkpoint_ready:
+        if _load_json(semantic_input_path) != semantic_input:
+            raise OperationalIngestionError("SEMANTIC_INPUT_CHECKPOINT_MISMATCH")
+
     semantic_decomposition_path = evidence_dir / "semantic_decomposition.json"
-    semantic_llm = (llm_factory or ChatLLM)(replace(
-        cfg.llm,
-        max_output_tokens=min(
-            cfg.llm.max_output_tokens,
-            SEMANTIC_MAX_OUTPUT_TOKENS,
-        ),
-    ))
     proposition_results: dict[str, Mapping[str, Any]] = {}
-    if semantic_replay is not None or semantic_llm.available:
-        semantic_inputs = build_semantic_claim_inputs(
-            bundle=bundle,
-            evidence_draft=evidence_draft,
-            quote_fidelity=gate,
-        )
+    semantic_llm = None
+    if semantic_replay is None:
+        semantic_llm = (llm_factory or ChatLLM)(replace(
+            cfg.llm,
+            max_output_tokens=min(cfg.llm.max_output_tokens, SEMANTIC_MAX_OUTPUT_TOKENS),
+        ))
+    if semantic_replay is not None or (semantic_llm is not None and semantic_llm.available):
         if semantic_replay is not None:
             decomposition = semantic_replay(semantic_inputs)
         else:
@@ -1179,7 +1298,19 @@ def _run_evidence(
                 == decomposition["output_parent_claim_ids"]
             ),
         }
-        if semantic_replay is not None:
+        if semantic_execution_metadata is not None:
+            manifest["semantic_model"].update(
+                execution_mode="DURABLE_CLOUD_JOB",
+                provider=semantic_execution_metadata["provider"],
+                requested_model=semantic_execution_metadata["requested_model"],
+                provider_reported_model=semantic_execution_metadata.get("provider_reported_model"),
+                job_id=semantic_execution_metadata["job_id"],
+                attempt_count=semantic_execution_metadata["attempt_count"],
+                llm_calls=semantic_execution_metadata["provider_calls"],
+                length_retries=0,
+                usage=copy.deepcopy(semantic_execution_metadata["usage"]),
+            )
+        elif semantic_replay is not None:
             manifest["semantic_model"].update(
                 execution_mode="FROZEN_RESULT_REPLAY",
                 llm_calls=0,
@@ -1212,22 +1343,7 @@ def _run_evidence(
         table_boundary=table_result,
         proposition_results=proposition_results,
     ))
-    return [
-        rebound_path,
-        rebound_review,
-        rebound_markdown,
-        rebound_metrics,
-        evidence_binding,
-        evidence_markdown,
-        evidence_metrics,
-        quote_path,
-        quote_report,
-        quote_metrics,
-        quote_surface,
-        table_path,
-        semantic_decomposition_path,
-        semantic_path,
-    ]
+    return [*context["outputs"], semantic_decomposition_path, semantic_path]
 
 
 def _render_claim_review(review: Mapping[str, Any]) -> str:
@@ -1725,6 +1841,8 @@ def run_operational_ingestion(
     llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
     semantic_replay: Callable[[list[dict[str, Any]]], dict[str, Any]] | None = None,
     semantic_max_split_depth: int = 4,
+    external_semantic_checkpoint: bool = False,
+    semantic_execution_metadata: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run or resume the clean-PDF workflow through a non-executable preview.
 
@@ -1770,20 +1888,36 @@ def run_operational_ingestion(
     if stop_after and STOP_AFTER[stop_after] in manifest.get("completed_stages", []):
         return _result(paths, manifest)
 
+    evidence_stages = ((
+        "EVIDENCE_COMPLETE",
+        "EVIDENCE_FAILED",
+        lambda: _run_evidence(
+            paths, manifest, cfg, llm_factory=llm_factory,
+            semantic_replay=semantic_replay, semantic_max_split_depth=semantic_max_split_depth,
+        ),
+    ),) if not external_semantic_checkpoint else (
+        (
+            "SEMANTIC_INPUT_READY",
+            "EVIDENCE_FAILED",
+            lambda: _run_evidence(paths, manifest, cfg, checkpoint_only=True),
+        ),
+        (
+            "EVIDENCE_COMPLETE",
+            "EVIDENCE_FAILED",
+            lambda: _run_evidence(
+                paths, manifest, cfg, semantic_replay=semantic_replay,
+                semantic_max_split_depth=0,
+                semantic_execution_metadata=semantic_execution_metadata,
+            ),
+        ),
+    )
     stage_specs = (
         (
             "EXTRACTION_COMPLETE",
             "EXTRACTION_FAILED",
             lambda: _run_extraction(paths, manifest, cfg, production_path, llm_factory=llm_factory),
         ),
-        (
-            "EVIDENCE_COMPLETE",
-            "EVIDENCE_FAILED",
-            lambda: _run_evidence(
-                paths, manifest, cfg, llm_factory=llm_factory,
-                semantic_replay=semantic_replay, semantic_max_split_depth=semantic_max_split_depth,
-            ),
-        ),
+        *evidence_stages,
         (
             "CLAIM_REVIEW_READY",
             "REVIEW_BLOCKED",

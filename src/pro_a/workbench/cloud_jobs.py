@@ -108,14 +108,14 @@ class CloudProfile:
         return value
 
 
-def runtime_identity(adapter_version: str) -> dict[str, Any]:
+def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7") -> dict[str, Any]:
     phase4 = phase4_runtime()
     value = {
         "git_sha": phase4["repository_commit"],
         "phase4_contract_version": phase4["contract_version"],
         "phase4_processing_code_sha256": phase4["processing_code_sha256"],
         "cloud_contract_version": CONTRACT_VERSION,
-        "workbench_schema_version": "7",
+        "workbench_schema_version": workbench_schema_version,
         "provider_adapter_version": adapter_version,
     }
     value["runtime_sha256"] = digest(value)
@@ -127,8 +127,8 @@ def prepare_cloud_jobs(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == "7":
-            return {"status": "ALREADY_PREPARED", "schema_version": "7"}
+        if version in ("7", "8"):
+            return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "6":
             raise BoundaryError("RESEARCH_SCHEMA_REQUIRED")
     path = checked_path(config.state_db)
@@ -241,7 +241,12 @@ class CloudJobs:
     def current_runtime(self) -> dict[str, Any]:
         if self.profile is None:
             raise JobError("CLOUD_PROFILE_REQUIRED", 503)
-        return dict(self._runtime_override or runtime_identity(self.profile.provider_adapter_version))
+        if self._runtime_override is not None:
+            return dict(self._runtime_override)
+        with self.store.connect() as connection:
+            version = schema_version(connection)
+        return runtime_identity(self.profile.provider_adapter_version,
+                                workbench_schema_version=version)
 
     @staticmethod
     def _event(connection: sqlite3.Connection, job_id: str, event_type: str,
@@ -281,6 +286,42 @@ class CloudJobs:
         return expected_sequence > 1
 
     def _native_identity(self, artifact_id: str) -> tuple[dict, Path, dict, dict]:
+        with self.store.connect() as connection:
+            version = schema_version(connection)
+            source_input = (connection.execute(
+                "SELECT * FROM source_cloud_inputs WHERE artifact_id=?", (artifact_id,)
+            ).fetchone() if version == "8" else None)
+        if source_input is not None:
+            try:
+                path = self.artifacts.resolve(source_input["artifact_relative"])
+            except BoundaryError:
+                raise JobError("INPUT_ARTIFACT_UNAVAILABLE") from None
+            if sha256_file(path) != source_input["sha256"]:
+                raise JobError("INPUT_ARTIFACT_HASH_MISMATCH")
+            try:
+                document = json.loads(path.read_text(encoding="utf-8"))
+                required = {
+                    "document_type", "schema_version", "operation_kind", "source_id",
+                    "source_sha256", "processing_run_id", "native_execution_id",
+                    "payload", "payload_sha256", "checkpoint",
+                }
+                if (not isinstance(document, dict) or set(document) != required
+                        or document["document_type"] != "phase42_stage7_cloud_input"
+                        or document["schema_version"] != "1"
+                        or document["operation_kind"] != source_input["operation_kind"]
+                        or document["source_id"] != source_input["source_id"]
+                        or document["processing_run_id"] != source_input["processing_run_id"]
+                        or document["payload_sha256"] != digest(document["payload"])
+                        or canonical(document["checkpoint"]) != source_input["checkpoint_json"]):
+                    raise JobError("INPUT_ARTIFACT_BINDING_MISMATCH")
+            except JobError:
+                raise
+            except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+                raise JobError("INPUT_ARTIFACT_INVALID") from None
+            directory = path.parent
+            dto = {"packet_file_sha256": source_input["sha256"],
+                   "source": {"source_id": source_input["source_id"]}}
+            return document, directory, dto, document["checkpoint"]
         packet, run, dto = self.artifacts.native(artifact_id)
         manifest = json.loads(checked_path(run / "run_manifest.json").read_text(encoding="utf-8"))
         checkpoint = {
@@ -330,7 +371,7 @@ class CloudJobs:
         intent_sha = digest(intent)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
-            if schema_version(connection) != "7":
+            if schema_version(connection) not in ("7", "8"):
                 raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
             prior = connection.execute(
                 "SELECT intent_sha256,job_id,response_json FROM cloud_job_submissions WHERE idempotency_key=?",
@@ -464,11 +505,15 @@ class CloudJobs:
         return {"items": rows, "private_artifacts": True, "raw_output_exposed": False}
 
     def _input_payload(self, row: sqlite3.Row) -> dict[str, Any]:
-        _, run, dto, checkpoint = self._native_identity(row["input_artifact_id"])
+        document, run, dto, checkpoint = self._native_identity(row["input_artifact_id"])
         if dto["packet_file_sha256"] != row["input_sha256"]:
             raise JobError("INPUT_ARTIFACT_HASH_MISMATCH")
         if checkpoint != json.loads(row["native_checkpoint_json"]):
             raise JobError("NATIVE_CHECKPOINT_DRIFT")
+        if document.get("document_type") == "phase42_stage7_cloud_input":
+            if document["operation_kind"] != row["operation_kind"]:
+                raise JobError("INPUT_ARTIFACT_BINDING_MISMATCH")
+            return dict(document["payload"])
         bundle_path = checked_path(run / "evidence/evidence_bound_extraction_bundle.json")
         if not bundle_path.is_relative_to(run):
             raise JobError("INPUT_ARTIFACT_INVALID")
@@ -599,7 +644,7 @@ class CloudJobs:
                     job_id=job_id, attempt_id=attempt_id, attempt_number=attempt_number,
                     operation_kind=row["operation_kind"], input_artifact_id=row["input_artifact_id"],
                     input_sha256=row["input_sha256"], source_id=row["source_id"],
-                    runtime_identity=runtime, schema_version="7", provider=row["provider"],
+                    runtime_identity=runtime, schema_version=schema_version(connection), provider=row["provider"],
                     requested_model=row["requested_model"], prompt_identity=prompt,
                     configuration_identity=configuration, timeout_seconds=row["timeout_seconds"],
                     max_output_tokens=row["max_output_tokens"], retry_policy_id=row["retry_policy_id"],
@@ -909,7 +954,7 @@ class CloudJobs:
                 attempt_number=attempt["attempt_number"], operation_kind=row["operation_kind"],
                 input_artifact_id=row["input_artifact_id"], input_sha256=row["input_sha256"],
                 source_id=row["source_id"], runtime_identity=json.loads(row["runtime_json"]),
-                schema_version="7", provider=row["provider"], requested_model=row["requested_model"],
+                schema_version=str(attempt_identity["schema_version"]), provider=row["provider"], requested_model=row["requested_model"],
                 prompt_identity=json.loads(row["prompt_json"]),
                 configuration_identity=json.loads(row["configuration_json"]),
                 timeout_seconds=row["timeout_seconds"], max_output_tokens=row["max_output_tokens"],
@@ -995,6 +1040,27 @@ class CloudJobs:
             self._event(connection, row["job_id"], "RECONCILED",
                         {"from": "DURABLE_RESULT_ARTIFACT", "provider_call_repeated": False})
         return True
+
+    def private_result(self, job_id: str) -> dict[str, Any]:
+        """Return a verified private result to trusted orchestration code only."""
+        self.results(job_id)
+        with self.store.connect() as connection:
+            job = connection.execute("SELECT state FROM cloud_jobs WHERE job_id=?", (job_id,)).fetchone()
+            row = connection.execute(
+                "SELECT attempt_id,artifact_relative,sha256 FROM cloud_job_results WHERE job_id=?",
+                (job_id,),
+            ).fetchone()
+        if job is None:
+            raise JobError("JOB_NOT_FOUND", 404)
+        if row is None or job["state"] not in ("SUCCEEDED", "FAILED"):
+            raise JobError("RESULT_NOT_AVAILABLE")
+        path, expected = self._artifact_path(job_id, row["attempt_id"], create=False)
+        if row["artifact_relative"] != expected or sha256_file(path) != row["sha256"]:
+            raise JobError("RESULT_ARTIFACT_HASH_MISMATCH")
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            raise JobError("RESULT_ARTIFACT_INVALID") from None
 
     def reconcile(self) -> dict[str, int]:
         counts = {"requeued": 0, "reconciled": 0, "recovery_required": 0,

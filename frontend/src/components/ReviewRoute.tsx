@@ -53,7 +53,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
   }, [onAuthenticated]);
 
   useEffect(() => {
-    void load();
+    void load(undefined, new URLSearchParams(window.location.search).get("artifact") ?? undefined);
     return () => controller.current?.abort();
   }, [load]);
 

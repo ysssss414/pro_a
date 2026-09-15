@@ -79,7 +79,13 @@ class Artifacts:
         artifact_id = 'ART_' + uuid.uuid4().hex
         dto, inventory, _ = self.validate(packet_relative, run_relative, artifact_id)
         with self.store.connect(operator_write=True) as connection:
-            existing = connection.execute('SELECT * FROM registered_packets WHERE packet_id=?', (dto['packet_id'],)).fetchone()
+            existing = connection.execute(
+                "SELECT * FROM registered_packets WHERE packet_id=? AND "
+                "(artifact_kind='REVIEW_PACKET' OR artifact_kind IS NULL)"
+                if 'artifact_kind' in {row[1] for row in connection.execute('PRAGMA table_info(registered_packets)')}
+                else 'SELECT * FROM registered_packets WHERE packet_id=?',
+                (dto['packet_id'],),
+            ).fetchone()
             if existing:
                 if existing['file_inventory'] != json.dumps(inventory, sort_keys=True) or existing['packet_relative'] != packet_relative or existing['run_relative'] != run_relative:
                     raise BoundaryError('PACKET_ALREADY_REGISTERED_DIFFERENTLY')
@@ -96,6 +102,8 @@ class Artifacts:
             row = connection.execute('SELECT * FROM registered_packets WHERE artifact_id=?', (artifact_id,)).fetchone()
         if row is None:
             raise BoundaryError('ARTIFACT_NOT_REGISTERED')
+        if 'artifact_kind' in row.keys() and row['artifact_kind'] != 'REVIEW_PACKET':
+            raise BoundaryError('ARTIFACT_NOT_REGISTERED')
         dto, _, packet = self.validate(row['packet_relative'], row['run_relative'], artifact_id, json.loads(row['file_inventory']))
         if dto['packet_id'] != row['packet_id'] or dto['packet_file_sha256'] != row['packet_sha256']:
             raise BoundaryError('REGISTRY_IDENTITY_MISMATCH')
@@ -106,6 +114,9 @@ class Artifacts:
 
     def listing(self) -> list[dict]:
         with self.store.connect() as connection:
-            handles = [row[0] for row in connection.execute('SELECT artifact_id FROM registered_packets ORDER BY registered_at,artifact_id')]
+            columns = {row[1] for row in connection.execute('PRAGMA table_info(registered_packets)')}
+            where = " WHERE artifact_kind='REVIEW_PACKET'" if 'artifact_kind' in columns else ''
+            handles = [row[0] for row in connection.execute(
+                'SELECT artifact_id FROM registered_packets' + where + ' ORDER BY registered_at,artifact_id')]
         return [{key: dto[key] for key in ('artifact_id', 'packet_id', 'run_id', 'source', 'summary', 'validation_state', 'mode')}
                 for dto in (self.read(handle) for handle in handles)]
