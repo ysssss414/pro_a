@@ -104,6 +104,21 @@ def test_streamed_upload_hash_immutable_duplicates_and_canonical_preflight(tmp_p
             "SELECT COUNT(*) FROM source_upload_events WHERE outcome='DUPLICATE'").fetchone()[0] == 2
 
 
+def test_source_list_batches_registered_source_projection(tmp_path, monkeypatch):
+    case = stage7_fixture(tmp_path)
+    for index in range(3):
+        upload(case, clean_pdf(tmp_path, f"source-{index}.pdf", TEXT + f" {index}."))
+
+    def unexpected_source_lookup(_source_id):
+        raise AssertionError("SOURCE_LIST_N_PLUS_ONE")
+
+    monkeypatch.setattr(case["service"], "source", unexpected_source_lookup)
+    result = case["service"].list(limit=25)
+    assert result["total"] == len(result["items"]) == 3
+    assert all(item["processing_runs"] == [] and item["latest_run"] is None
+               for item in result["items"])
+
+
 @pytest.mark.parametrize("kind,code", [
     ("empty", "EMPTY_SOURCE"),
     ("signature", "INVALID_PDF_SIGNATURE"),

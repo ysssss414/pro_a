@@ -9,6 +9,7 @@ import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 from uuid import uuid4
@@ -108,7 +109,9 @@ class CloudProfile:
         return value
 
 
+@lru_cache(maxsize=None)
 def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7") -> dict[str, Any]:
+    """Identify code loaded by this process; a new process resolves changed code."""
     phase4 = phase4_runtime()
     value = {
         "git_sha": phase4["repository_commit"],
@@ -237,6 +240,7 @@ class CloudJobs:
         if self.profile is not None:
             self.profile.validate()
         self._runtime_override = dict(runtime) if runtime is not None else None
+        self._registered_identity_cache: dict[str, tuple[dict, dict]] = {}
 
     def current_runtime(self) -> dict[str, Any]:
         if self.profile is None:
@@ -245,8 +249,8 @@ class CloudJobs:
             return dict(self._runtime_override)
         with self.store.connect() as connection:
             version = schema_version(connection)
-        return runtime_identity(self.profile.provider_adapter_version,
-                                workbench_schema_version=version)
+        return dict(runtime_identity(self.profile.provider_adapter_version,
+                                     workbench_schema_version=version))
 
     @staticmethod
     def _event(connection: sqlite3.Connection, job_id: str, event_type: str,
@@ -332,6 +336,19 @@ class CloudJobs:
         }
         return packet, run, dto, checkpoint
 
+    def _registered_identity(self, artifact_id: str) -> tuple[dict, dict]:
+        """Reuse a validated immutable registration while enqueueing in this process.
+
+        Provider dispatch still calls ``_native_identity`` and revalidates the
+        registered files before any external call.
+        """
+        cached = self._registered_identity_cache.get(artifact_id)
+        if cached is None:
+            _, _, dto, checkpoint = self._native_identity(artifact_id)
+            cached = (dto, checkpoint)
+            self._registered_identity_cache[artifact_id] = cached
+        return cached
+
     def submit(self, *, idempotency_key: str, input_artifact_id: str,
                operation_kind: str = OPERATION_KIND) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
@@ -356,7 +373,7 @@ class CloudJobs:
                         or prior["configuration_sha256"] != configuration["configuration_sha256"]):
                     raise JobError("IDEMPOTENCY_CONFLICT")
                 return {"job": self._project(connection, prior["job_id"]), "duplicate": True}
-        _, _, dto, checkpoint = self._native_identity(input_artifact_id)
+        dto, checkpoint = self._registered_identity(input_artifact_id)
         prompt_sha = operation["prompt_bundle_sha256"]
         intent = {
             "contract_version": CONTRACT_VERSION,

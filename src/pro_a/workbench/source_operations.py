@@ -1010,14 +1010,29 @@ class SourceOperations:
             where = ""
         args: tuple[Any, ...] = ((status,) if "r.state=?" in where else ())
         with self.store.connect() as connection:
-            ids = [row[0] for row in connection.execute(
-                f"SELECT s.source_id FROM private_sources s {joins} {where} "
+            sources = list(connection.execute(
+                f"SELECT s.* FROM private_sources s {joins} {where} "
                 "ORDER BY s.uploaded_at DESC,s.source_id LIMIT ? OFFSET ?",
                 (*args, limit, offset),
-            )]
+            ))
             total = connection.execute(
                 f"SELECT COUNT(*) FROM private_sources s {joins} {where}", args).fetchone()[0]
-        items = [self.source(source_id) for source_id in ids]
+            run_ids: dict[str, list[str]] = {row["source_id"]: [] for row in sources}
+            if run_ids:
+                placeholders = ",".join("?" for _ in run_ids)
+                for row in connection.execute(
+                    f"SELECT source_id,processing_run_id FROM source_processing_runs "
+                    f"WHERE source_id IN ({placeholders}) ORDER BY source_id,created_at DESC",
+                    tuple(run_ids),
+                ):
+                    run_ids[row["source_id"]].append(row["processing_run_id"])
+        items = []
+        for source in sources:
+            value = self._source_projection(source)
+            value["processing_runs"] = [self.get_run(run_id)
+                                        for run_id in run_ids[source["source_id"]]]
+            value["latest_run"] = value["processing_runs"][0] if value["processing_runs"] else None
+            items.append(value)
         return {
             "items": items, "total": total, "limit": limit, "offset": offset,
             "next_cursor": str(offset + limit) if offset + limit < total else None,

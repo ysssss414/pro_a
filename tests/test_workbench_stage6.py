@@ -13,9 +13,11 @@ from pro_a.cloud_contract import (
     CloudResult, DeterministicFakeProvider, SemanticBackendProvider, operation_contract,
 )
 from pro_a.production_promotion import sha256_file
+from pro_a.workbench import cloud_jobs as cloud_jobs_module
 from pro_a.workbench.api import PREFIX, create_app
 from pro_a.workbench.cloud_jobs import (
     CloudJobs, CloudProfile, InjectedCrash, JobError, digest, prepare_cloud_jobs,
+    runtime_identity,
 )
 from workbench_stage6_fixture import stage6_fixture
 
@@ -58,6 +60,48 @@ def test_schema_migration_contract_and_submission_idempotency(tmp_path):
     with pytest.raises(Exception, match="UNSUPPORTED_CLOUD_OPERATION"):
         case["jobs"].submit(idempotency_key="stage6-submission-0003",
                             input_artifact_id=case["artifact_id"], operation_kind="SOURCE_UPLOAD")
+
+
+def test_runtime_and_registered_identity_reuse_preserves_dispatch_revalidation(
+        tmp_path, monkeypatch):
+    runtime_identity.cache_clear()
+    runtime_calls = 0
+
+    def static_runtime():
+        nonlocal runtime_calls
+        runtime_calls += 1
+        return {
+            "repository_commit": "a" * 40,
+            "contract_version": "phase4-execution-v1",
+            "processing_code_sha256": "b" * 64,
+        }
+
+    monkeypatch.setattr(cloud_jobs_module, "phase4_runtime", static_runtime)
+    first_runtime = runtime_identity("adapter-v1", workbench_schema_version="8")
+    second_runtime = runtime_identity("adapter-v1", workbench_schema_version="8")
+    assert first_runtime == second_runtime and runtime_calls == 1
+    runtime_identity.cache_clear()
+
+    case = stage6_fixture(tmp_path)
+    identity_calls = 0
+    original = case["jobs"]._native_identity
+
+    def counted_identity(artifact_id):
+        nonlocal identity_calls
+        identity_calls += 1
+        return original(artifact_id)
+
+    monkeypatch.setattr(case["jobs"], "_native_identity", counted_identity)
+    first = submit(case, "cache-0001")
+    submit(case, "cache-0002")
+    assert identity_calls == 1
+    with case["jobs"].store.connect() as connection:
+        row = connection.execute(
+            "SELECT * FROM cloud_jobs WHERE job_id=?", (first["job"]["job_id"],)
+        ).fetchone()
+        case["jobs"]._input_payload(row)
+    assert identity_calls == 2
+    runtime_identity.cache_clear()
 
 
 def test_typed_contract_preserves_request_result_and_attempt_identity(tmp_path):
