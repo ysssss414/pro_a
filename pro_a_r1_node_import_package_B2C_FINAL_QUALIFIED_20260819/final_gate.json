@@ -2,7 +2,7 @@
   "PRODUCTION_IMPORT_EXECUTED": false,
   "READY_FOR_PRODUCTION_IMPORT_AUTHORIZATION": true,
   "RUN_007_STARTED": false,
-  "canonical_production_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+  "canonical_production_absolute_path": "<repository-root>\\workspace\\pro_a.db",
   "canonical_production_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
   "checks": {
     "all_other_tables_delta_zero": true,
@@ -43,7 +43,7 @@
     "proposals": 0,
     "source_claim_and_link_tables": 0
   },
-  "fresh_isolated_copy_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
+  "fresh_isolated_copy_absolute_path": "<repository-root>\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
   "fresh_isolated_post_sha256": "8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c",
   "generated_at": "2026-08-19T14:36:23.316605+08:00",
   "manifest_sha256": "2974da9a0a03ddd7d36bc18a478e8b17e8e9e1b6fc2b934c955138c336593a80",

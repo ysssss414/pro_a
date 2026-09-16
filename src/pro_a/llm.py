@@ -108,10 +108,14 @@ class ChatLLM:
 
     @property
     def last_call_metadata(self) -> dict[str, Any]:
+        attempts = [dict(event) for event in self._attempt_events]
         return {
-            "attempts_used": len(self._attempt_events),
+            "attempts_used": len(attempts),
             "max_attempts": 1 + self.cfg.max_retries,
-            "attempts": [dict(event) for event in self._attempt_events],
+            "provider_request_id": (
+                attempts[-1].get("provider_request_id") if attempts else None
+            ),
+            "attempts": attempts,
         }
 
     @property
@@ -239,7 +243,11 @@ class ChatLLM:
             raise LLMError(f"Unexpected LLM response: {data}")
 
         usage = data.get("usage")
+        response_id = data.get("id")
         self._attempt_events[-1].update(
+            provider_request_id=(
+                response_id if isinstance(response_id, str) and response_id else None
+            ),
             response_model=data.get("model"),
             finish_reason=finish_reason,
             prompt_tokens=(

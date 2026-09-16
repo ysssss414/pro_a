@@ -6,7 +6,7 @@ Status: `FINAL_ISOLATED_QUALIFICATION_PACKAGE`; Production import is **not autho
 
 The target precondition is the project-configured database `workspace/pro_a.db`:
 
-- absolute path: `D:\ej\材料\codex\get_knowledge\pro_a_v0_1\workspace\pro_a.db`
+- absolute path: `<repository-root>\workspace\pro_a.db`
 - SHA-256: `d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b`
 - schema version: `0.2.1`
 - schema SHA-256: `31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718`

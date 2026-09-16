@@ -1,10 +1,10 @@
 {
   "canonical_production": {
-    "absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "absolute_path": "<repository-root>\\workspace\\pro_a.db",
     "bytes": 466944,
     "creation_time_local": "2026-08-13T16:07:16.707116+08:00",
     "creation_time_utc": "2026-08-13T08:07:16.707116+00:00",
-    "current_config_resolved_db_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "current_config_resolved_db_path": "<repository-root>\\workspace\\pro_a.db",
     "last_write_time_local": "2026-08-17T09:29:54.271666+08:00",
     "last_write_time_utc": "2026-08-17T01:29:54.271666+00:00",
     "path_determination_sources": [
@@ -66,7 +66,7 @@
   },
   "old_package_audit": {
     "apply_target_resolution": "One explicit DatabasePath resolved to one absolute file; config.toml is not consulted. Target mechanism is safe but the old manifest precondition is the wrong DB identity for Production.",
-    "attempt_002_copy_source_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
+    "attempt_002_copy_source_absolute_path": "<repository-root>\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
     "attempt_002_copy_source_basis": "Old manifest/README bind this path; report copy equality and pre-SHA are a5b05; filesystem hash identifies this run_006 runtime DB.",
     "attempt_002_immutable_baseline": {
       "algorithm": "sha256(canonical-json(sorted relative path, bytes, file sha256))",
@@ -74,7 +74,7 @@
       "tree_sha256": "824d6ece0d43a270383b68404ced0cc4030afdf412d8a19cb747cd6f427b1470"
     },
     "attempt_002_pre_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
-    "attempt_002_target_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_approved_20260819_isolated_attempt_002\\pro_a_b2c_dry_run.db",
+    "attempt_002_target_absolute_path": "<repository-root>\\workspace\\r1_acceptance\\b2c_approved_20260819_isolated_attempt_002\\pro_a_b2c_dry_run.db",
     "db_resolution_metadata": {
       "artifact": "B2C deterministic DB resolution",
       "database_path_relative_to_repo": "workspace/r1_acceptance/run_006/runtime_workspace/pro_a.db",
@@ -122,11 +122,11 @@
         "sources": 12
       }
     },
-    "package_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\pro_a_r1_node_import_package_B2C_APPROVED_20260819",
+    "package_absolute_path": "<repository-root>\\pro_a_r1_node_import_package_B2C_APPROVED_20260819",
     "readme_source_binding": "workspace/r1_acceptance/run_006/runtime_workspace/pro_a.db"
   },
   "run_006": {
-    "isolated_runtime_absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
+    "isolated_runtime_absolute_path": "<repository-root>\\workspace\\r1_acceptance\\run_006\\runtime_workspace\\pro_a.db",
     "isolated_runtime_sha256": "a5b05b29e0b7ca32965e2906154111d6563610244c096f765d4591216fd6b480",
     "production": {
       "actual_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
@@ -140,7 +140,7 @@
         "sources": 2
       },
       "expected_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
-      "path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db"
+      "path": "<repository-root>\\workspace\\pro_a.db"
     },
     "provenance_chain": [
       "run006.py defines Production as project workspace/pro_a.db (d461)",

@@ -44,6 +44,25 @@ vi.mock("./api/client", () => ({
   searchNodes: vi.fn(),
 }));
 
+vi.mock("./components/ResearchExplorer", async () => {
+  const React = await import("react");
+  return {
+    ResearchExplorer: () => {
+      const [path, setPath] = React.useState(window.location.pathname);
+      React.useEffect(() => {
+        const update = () => setPath(window.location.pathname);
+        window.addEventListener("popstate", update);
+        return () => window.removeEventListener("popstate", update);
+      }, []);
+      return React.createElement("div", null, `Research path: ${path}`);
+    },
+  };
+});
+
+vi.mock("./components/CloudJobsWorkbench", () => ({
+  CloudJobsWorkbench: () => <div>Durable Jobs route</div>,
+}));
+
 describe("App error boundary", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
@@ -70,6 +89,13 @@ describe("App error boundary", () => {
     expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
   });
 
+  it("opens the durable Jobs surface from its stable route", () => {
+    window.history.replaceState(null, "", "/jobs");
+    render(<App />);
+    expect(screen.getByText("Durable Jobs route")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Durable Jobs" })).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("opens the read-only Human View Proposal surface", async () => {
     vi.mocked(getViewProposals).mockResolvedValue([]);
     render(<App />);
@@ -77,6 +103,14 @@ describe("App error boundary", () => {
     expect(await screen.findByText("No pending Human View Proposals")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Explorer" }));
     expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
+  });
+
+  it("returns a research detail route to Research Home from the header", async () => {
+    window.history.replaceState(null, "", "/relation/REL_CURRENT");
+    render(<App />);
+    expect(screen.getByText("Research path: /relation/REL_CURRENT")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Research Home" }));
+    expect(await screen.findByText("Research path: /research")).toBeInTheDocument();
   });
 
   it("restores a selected node from the URL in StrictMode", async () => {

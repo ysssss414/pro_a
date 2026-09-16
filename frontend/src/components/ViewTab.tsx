@@ -4,6 +4,7 @@ import { getCurrentViewCompare } from "../api/client";
 import type { CurrentViewCompareResult, CurrentViewResult } from "../api/types";
 import { buildCurrentViewPresentation } from "../currentViewPresentation";
 import { CurrentViewCompare } from "./CurrentViewCompare";
+import { CurrentViewWorkbench } from "./CurrentViewWorkbench";
 
 interface ViewTabProps {
   currentViews: CurrentViewResult[];
@@ -12,9 +13,11 @@ interface ViewTabProps {
   loading: boolean;
   error: string | null;
   onOpenSource: (sourceId: string) => void;
+  onOpenClaim?: (claimId: string) => void;
+  nodeId?: string;
 }
 
-export function ViewTab({ currentViews, requestedViewId, primaryType = "", loading, error, onOpenSource }: ViewTabProps) {
+export function ViewTab({ currentViews, requestedViewId, primaryType = "", loading, error, onOpenSource, onOpenClaim, nodeId = "" }: ViewTabProps) {
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [baseViewId, setBaseViewId] = useState("");
@@ -22,7 +25,7 @@ export function ViewTab({ currentViews, requestedViewId, primaryType = "", loadi
   const [compare, setCompare] = useState<CurrentViewCompareResult | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
   const [compareError, setCompareError] = useState<string | null>(null);
-  const nodeId = currentViews[0]?.node_id ?? "";
+  const resolvedNodeId = nodeId || currentViews[0]?.node_id || "";
   const comparePairAvailable = currentViews.some((view) => view.view_id === baseViewId)
     && currentViews.some((view) => view.view_id === targetViewId);
 
@@ -36,14 +39,14 @@ export function ViewTab({ currentViews, requestedViewId, primaryType = "", loadi
   }, [currentViews, requestedViewId]);
 
   useEffect(() => {
-    if (!compareMode || !nodeId || !comparePairAvailable) return;
+    if (!compareMode || !resolvedNodeId || !comparePairAvailable) return;
     const controller = new AbortController();
     setCompare(null);
     setCompareError(null);
     setCompareLoading(true);
     const loadCompare = async () => {
       try {
-        const result = await getCurrentViewCompare(nodeId, baseViewId, targetViewId, controller.signal);
+        const result = await getCurrentViewCompare(resolvedNodeId, baseViewId, targetViewId, controller.signal);
         if (!controller.signal.aborted) setCompare(result);
       } catch (reason) {
         if ((reason as Error).name !== "AbortError" && !controller.signal.aborted) {
@@ -55,7 +58,7 @@ export function ViewTab({ currentViews, requestedViewId, primaryType = "", loadi
     };
     void loadCompare();
     return () => controller.abort();
-  }, [baseViewId, compareMode, comparePairAvailable, nodeId, targetViewId]);
+  }, [baseViewId, compareMode, comparePairAvailable, resolvedNodeId, targetViewId]);
 
   const currentView = currentViews.find((view) => view.view_id === selectedViewId)
     ?? currentViews[0]
@@ -65,7 +68,7 @@ export function ViewTab({ currentViews, requestedViewId, primaryType = "", loadi
   if (!loading && requestedViewId && !currentViews.some((view) => view.view_id === requestedViewId)) {
     return <div className="tab-empty is-error" role="alert">Requested official View is unavailable.</div>;
   }
-  if (!currentView) return <div className="tab-empty">No official Current View has been recorded for this Node.</div>;
+  if (!currentView) return <>{nodeId ? <CurrentViewWorkbench nodeId={nodeId} onOpenSource={onOpenSource} onOpenClaim={onOpenClaim} /> : <div className="tab-empty">No official Current View has been recorded for this Node.</div>}</>;
 
   const previousOfficialView = (targetId: string): CurrentViewResult | null => {
     const targetIndex = currentViews.findIndex((view) => view.view_id === targetId);
@@ -198,6 +201,7 @@ export function ViewTab({ currentViews, requestedViewId, primaryType = "", loadi
           </dl>
         </details>
       </article>
+      {nodeId && <CurrentViewWorkbench nodeId={nodeId} onOpenSource={onOpenSource} onOpenClaim={onOpenClaim} />}
     </div>
   );
 }

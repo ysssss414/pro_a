@@ -41,7 +41,7 @@ The SQLite authorizer permits only the required `INSERT` operations on `sources`
 
 ## Stage 1 TGV pilot
 
-This pilot is limited to the explicitly provided `TGV玻璃专家交流.pdf` and runs with `analysis_mode=deep` using the existing configured model, prompt, Analyzer, retry, and validation contracts. `光互连研究方法与框架20260819.pdf` is intentionally **NOT RUN** and remains reserved for a later noisy-transcript robustness pilot.
+This pilot is limited to one explicitly provided private clean PDF and runs with `analysis_mode=deep` using the existing configured model, prompt, Analyzer, retry, and validation contracts. A second private PDF is intentionally **NOT RUN** and remains reserved for a later noisy-transcript robustness pilot. Private Source filenames are omitted from the public record.
 
 Runtime artifacts are written below the gitignored `workspace/phase3c/` directory:
 
@@ -132,7 +132,7 @@ The completed result is 34 `KEEP`, 17 `DROP`, 2 `KEEP_NEEDS_REVIEW`, and 0 `PEND
 
 Confidence was audited but not changed. Analyzer confidence is the formal validation-gated value: failed Evidence location sets it to `0.0`, while the original extraction value remains in `validation.model_confidence`. Confidence is not a schema-v1 review admission field, and Claim content including confidence is immutable during review. The 46 formal zero-confidence values therefore remain conservative and auditable; no scores were fabricated or restored.
 
-Source metadata (`TGV玻璃专家交流.pdf`, `UNRANKED`, `unknown`, empty author/organization/publication time) is explicitly accepted as incomplete. The controlled apply contract can preserve these empty/default values, so no metadata was inferred. Node and Relation observations remain non-canonical and unadjudicated.
+Source metadata (private filename omitted, `UNRANKED`, `unknown`, empty author/organization/publication time) is explicitly accepted as incomplete. The controlled apply contract can preserve these empty/default values, so no metadata was inferred. Node and Relation observations remain non-canonical and unadjudicated.
 
 The review is complete but not Production-apply-ready. The Stage 1.2 artifact records `production_apply_ready=false`, and review validation blocks preview/apply while either retained Claim lacks a single deterministic PAGE locator. Resolving that narrow Evidence-contract blocker, or explicitly dropping those Claims in a later human decision, requires a separate gate. Stage 1.2 made 0 LLM, Production, IMA, propagation, legacy-pipeline, or governance calls/writes. Production remained byte-identical at SHA-256 `581978e1c587b065a6eef9c980013af3de1a9e8a8781857385404c9f61105250`, integrity `ok`, and zero foreign-key violations.
 
@@ -164,7 +164,7 @@ The extraction prompt received only four failure-driven clarifications: Claim at
 
 ## Pilot #2 independent real extraction - 2026-08-31
 
-The single authorized Pilot #2 run processed `光互连研究方法与框架20260819.pdf` as `PILOT_20260831_DEA82C1F`. The 11-page PDF produced 11 non-empty parsed units, no parse errors, and 9,964 extracted non-whitespace characters. The Stage 1.4 prompt was frozen before extraction at SHA-256 `a9c639085a36217d96edcef2a4637ecfe19d215559d25c3c81c03998e26c3c80`. One logical `deepseek-chat` call completed with response model `deepseek-v4-flash`, using 25,123 prompt, 14,659 completion, and 39,782 total tokens.
+The single authorized Pilot #2 run processed a private Source whose filename is omitted from the public record as `PILOT_20260831_DEA82C1F`. The 11-page PDF produced 11 non-empty parsed units, no parse errors, and 9,964 extracted non-whitespace characters. The Stage 1.4 prompt was frozen before extraction at SHA-256 `a9c639085a36217d96edcef2a4637ecfe19d215559d25c3c81c03998e26c3c80`. One logical `deepseek-chat` call completed with response model `deepseek-v4-flash`, using 25,123 prompt, 14,659 completion, and 39,782 total tokens.
 
 The non-canonical bundle contains 29 Claims. Deterministic locator replay and Evidence Contract v2 mechanics bound 20 Claims to one page and 2 Claims to exact ordered adjacent-page spans (`PAGE:8`/`PAGE:9` and `PAGE:10`/`PAGE:11`); 0 are ambiguous and 7 remain unresolved. Bounded local context candidates are available for the 20 single-page Claims. All 29 Human decisions remain `PENDING`; no semantic `SUPPORTED`/`UNSUPPORTED` decision or KEEP/DROP review was performed.
 

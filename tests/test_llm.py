@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import requests
 
-from pro_a.config import LLMConfig
+from pro_a.config import LLMConfig, load_config
 from pro_a.llm import ChatLLM, LLMError
 
 
@@ -23,12 +23,14 @@ class FakeResponse:
 def completion(
     content: str,
     *,
+    response_id: str | None = "deepseek-request-test",
     finish_reason: str = "stop",
     model: str = "deepseek-chat",
     completion_tokens: int = 3,
     prompt_tokens: int | None = None,
+    total_tokens: int | None = None,
 ) -> dict:
-    return {
+    result = {
         "choices": [
             {
                 "finish_reason": finish_reason,
@@ -39,8 +41,12 @@ def completion(
         "usage": {
             "completion_tokens": completion_tokens,
             **({"prompt_tokens": prompt_tokens} if prompt_tokens is not None else {}),
+            **({"total_tokens": total_tokens} if total_tokens is not None else {}),
         },
     }
+    if response_id is not None:
+        result["id"] = response_id
+    return result
 
 
 def make_llm(
@@ -88,6 +94,65 @@ def make_llm(
 
 def test_default_max_output_tokens_is_32768():
     assert LLMConfig().max_output_tokens == 32768
+
+
+def test_deepseek_provider_and_model_are_resolved_from_config(tmp_path):
+    config_path = tmp_path / "config.toml"
+    config_path.write_text(
+        '[llm]\nbase_url = "https://api.deepseek.com"\nmodel = "deepseek-flash"\n',
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.llm.provider == "deepseek"
+    assert config.llm.model == "deepseek-flash"
+
+
+def test_provider_metadata_captures_real_response_id_model_and_usage(monkeypatch):
+    llm, _ = make_llm(
+        monkeypatch,
+        FakeResponse(completion(
+            '{"ok": true}', response_id="chatcmpl-ID-A", model="deepseek-flash",
+            prompt_tokens=11, completion_tokens=3, total_tokens=14,
+        )),
+    )
+
+    assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
+    metadata = llm.last_call_metadata
+    attempt = metadata["attempts"][0]
+    assert metadata["provider_request_id"] == "chatcmpl-ID-A"
+    assert attempt["provider_request_id"] == "chatcmpl-ID-A"
+    assert attempt["response_model"] == "deepseek-flash"
+    assert attempt["prompt_tokens"] == 11
+    assert attempt["completion_tokens"] == 3
+    assert attempt["total_tokens"] == 14
+
+
+def test_missing_response_id_is_explicit_and_failed_next_call_clears_prior_id(monkeypatch):
+    llm, _ = make_llm(
+        monkeypatch,
+        [
+            FakeResponse(completion('{"ok": true}', response_id="chatcmpl-ID-A")),
+            FakeResponse({}, status_code=401, text="unauthorized"),
+        ],
+    )
+    llm.json("Return JSON.", "first input")
+    assert llm.last_call_metadata["provider_request_id"] == "chatcmpl-ID-A"
+
+    with pytest.raises(LLMError, match="LLM HTTP 401"):
+        llm.json("Return JSON.", "second input")
+
+    assert llm.last_call_metadata["provider_request_id"] is None
+    assert llm.last_call_metadata["attempts"][0].get("provider_request_id") is None
+
+    without_id, _ = make_llm(
+        monkeypatch,
+        FakeResponse(completion('{"ok": true}', response_id=None)),
+    )
+    without_id.json("Return JSON.", "missing ID")
+    assert without_id.last_call_metadata["provider_request_id"] is None
+    assert without_id.last_call_metadata["attempts"][0]["provider_request_id"] is None
 
 
 def test_json_request_uses_default_max_tokens(monkeypatch):

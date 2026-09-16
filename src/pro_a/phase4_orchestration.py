@@ -34,7 +34,7 @@ PROCESSING_MODULES = (
     "production_authorization", "production_promotion", "phase3f_review_completion",
     "db", "ids", "storage", "relation_structure",
 )
-CHECKPOINTS = {"SOURCE_READY", "SEMANTIC_COMPLETE", "REVIEW_READY"}
+CHECKPOINTS = {"SOURCE_READY", "SEMANTIC_INPUT_READY", "SEMANTIC_COMPLETE", "REVIEW_READY"}
 
 
 class ExecutionBlocked(ValueError):
@@ -209,14 +209,15 @@ def _review(root: Path) -> None:
     pending.rename(root / "review")
 
 
-def _advance(root: Path, identity: dict, config_path: Path, stop_after: str) -> dict:
+def _advance(root: Path, identity: dict, config_path: Path, stop_after: str, *,
+             extraction_llm_factory=None, semantic_replay=None,
+             semantic_execution_metadata: dict | None = None) -> dict:
     policy = RetryPolicy(identity["configuration"]["retry_policy"])
     replay_path = root / "inputs/semantic_replay.json"
     replay = FrozenSemanticReplay(read_json(replay_path), lambda e: _emit(root, e)) if replay_path.exists() else None
     factory = lambda cfg: ExecutionLLM(cfg, policy=policy, emit=lambda e: _emit(root, e), offline=replay is not None)
     kwargs = dict(config_path=config_path, run_dir=root / "engine",
-                  adaptive_retry_policy="forbid", semantic_max_split_depth=0,
-                  llm_factory=factory, semantic_replay=replay)
+                  adaptive_retry_policy="forbid", semantic_max_split_depth=0)
     state = read_json(root / "execution_manifest.json")["state"]
     if state == "STOPPED":
         return _result(root)
@@ -227,14 +228,42 @@ def _advance(root: Path, identity: dict, config_path: Path, stop_after: str) -> 
             if sha256_file(source) != identity["source_sha256"]:
                 raise ExecutionBlocked("SOURCE_INPUT_CHANGED")
             run_operational_ingestion(source, stop_after="source", frozen_extraction_path=(
-                root / "inputs/extraction.json" if replay is not None else None), **kwargs)
+                root / "inputs/extraction.json" if replay is not None else None),
+                llm_factory=factory, semantic_replay=replay, **kwargs)
             _commit(root, identity, "SOURCE_READY")
             state = "SOURCE_READY"
         if stop_after == "SOURCE_READY":
             return _result(root)
+        if state == "SOURCE_READY" and identity["mode"] == "DURABLE_CLOUD_JOB":
+            if extraction_llm_factory is None:
+                return _result(root)
+            _commit(root, identity, "PROCESSING", code="EXTRACTION_AND_EVIDENCE_INPUT")
+            run_operational_ingestion(
+                resume=True, stop_after="semantic-input", external_semantic_checkpoint=True,
+                llm_factory=extraction_llm_factory, **kwargs,
+            )
+            _commit(root, identity, "SEMANTIC_INPUT_READY")
+            state = "SEMANTIC_INPUT_READY"
+        if stop_after == "SEMANTIC_INPUT_READY":
+            return _result(root)
+        if state == "SEMANTIC_INPUT_READY":
+            if semantic_replay is None or semantic_execution_metadata is None:
+                return _result(root)
+            _commit(root, identity, "PROCESSING", code="DURABLE_SEMANTIC_RESULT")
+            run_operational_ingestion(
+                resume=True, stop_after="evidence", external_semantic_checkpoint=True,
+                semantic_replay=semantic_replay,
+                semantic_execution_metadata=semantic_execution_metadata, **kwargs,
+            )
+            semantic = read_json(root / "engine/evidence/semantic_decomposition.json")
+            if semantic.get("status") == "SKIPPED_LLM_UNAVAILABLE":
+                raise ExecutionBlocked("SEMANTIC_PROVIDER_UNAVAILABLE")
+            _commit(root, identity, "SEMANTIC_COMPLETE")
+            state = "SEMANTIC_COMPLETE"
         if state == "SOURCE_READY":
             _commit(root, identity, "PROCESSING", code="EXTRACTION_AND_EVIDENCE")
-            run_operational_ingestion(resume=True, stop_after="evidence", **kwargs)
+            run_operational_ingestion(resume=True, stop_after="evidence",
+                                      llm_factory=factory, semantic_replay=replay, **kwargs)
             semantic = read_json(root / "engine/evidence/semantic_decomposition.json")
             if semantic.get("status") == "SKIPPED_LLM_UNAVAILABLE":
                 raise ExecutionBlocked("SEMANTIC_PROVIDER_UNAVAILABLE")
@@ -244,7 +273,8 @@ def _advance(root: Path, identity: dict, config_path: Path, stop_after: str) -> 
             return _result(root)
         if state == "SEMANTIC_COMPLETE":
             _commit(root, identity, "PROCESSING", code="RESOLUTION_AND_REVIEW")
-            run_operational_ingestion(resume=True, **kwargs)
+            run_operational_ingestion(resume=True, llm_factory=factory,
+                                      semantic_replay=replay, **kwargs)
             _review(root)
             _commit(root, identity, "REVIEW_READY")
         _commit(root, identity, "STOPPED", code="HUMAN_REVIEW_REQUIRED")
@@ -260,13 +290,16 @@ def _advance(root: Path, identity: dict, config_path: Path, stop_after: str) -> 
 
 def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"),
                     retry_policy: RetryPolicy = RetryPolicy.FORBID_ALL,
-                    replay_run: Path | None = None, stop_after: str = "REVIEW_READY") -> dict:
+                    replay_run: Path | None = None, stop_after: str = "REVIEW_READY",
+                    external_semantic: bool = False) -> dict:
     if stop_after not in CHECKPOINTS:
         raise ValueError("INVALID_STOP_CHECKPOINT")
     policy = RetryPolicy(retry_policy)
     config = load_config(config_path)
     source = Path(source_path).resolve()
     source_sha = sha256_file(source)
+    if replay_run is not None and external_semantic:
+        raise ExecutionBlocked("EXTERNAL_SEMANTIC_REPLAY_CONFLICT")
     capture = frozen_replay_inputs(Path(replay_run)) if replay_run is not None else None
     if capture is not None and capture["source_sha256"] != source_sha:
         raise ExecutionBlocked("REPLAY_SOURCE_MISMATCH")
@@ -283,7 +316,8 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
         "created_at": _now(), "runtime": _runtime(),
         "configuration": configuration, "configuration_sha256": canonical_sha256(configuration),
         "production_baseline": production_identity(config.db_path),
-        "mode": "FROZEN_RESULT_REPLAY" if capture else "CONFIGURED_PROVIDER",
+        "mode": ("FROZEN_RESULT_REPLAY" if capture else
+                 "DURABLE_CLOUD_JOB" if external_semantic else "CONFIGURED_PROVIDER"),
         "replay_origin": capture["origin_manifest_sha256"] if capture else None,
     }
     root.mkdir(parents=True)
@@ -305,7 +339,9 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
 def resume_execution(execution_root: Path, *, execution_id: str,
                      config_path: Path = Path("config.toml"),
                      retry_policy: RetryPolicy = RetryPolicy.FORBID_ALL,
-                     stop_after: str = "REVIEW_READY") -> dict:
+                     stop_after: str = "REVIEW_READY", extraction_llm_factory=None,
+                     semantic_replay=None,
+                     semantic_execution_metadata: dict | None = None) -> dict:
     if stop_after not in CHECKPOINTS:
         raise ValueError("INVALID_STOP_CHECKPOINT")
     root = Path(execution_root).resolve()
@@ -323,7 +359,12 @@ def resume_execution(execution_root: Path, *, execution_id: str,
             identity = _compatible(root, execution_id, config, RetryPolicy(retry_policy))
         except (ExecutionBlocked, ValueError, KeyError, OSError) as exc:
             return _result(root, "BLOCKED", str(exc))
-        return _advance(root, identity, config_path, stop_after)
+        return _advance(
+            root, identity, config_path, stop_after,
+            extraction_llm_factory=extraction_llm_factory,
+            semantic_replay=semantic_replay,
+            semantic_execution_metadata=semantic_execution_metadata,
+        )
     finally:
         lock.close()
         (root / ".lock").unlink()

@@ -1,10 +1,10 @@
-# pro_a v0.3.0 — Phase 3 Source Expansion
+# pro_a v0.5.0 — Phase 4.2 private-host research workbench
 
 `pro_a` 是面向长期投研的本地 Canonical Knowledge Engine。SQLite / `<production-db>` 仍是唯一 canonical knowledge Source of Truth；Phase 2 在其上增加确定性、只读的知识探索入口，不替换 Phase 1 的知识生产与人工治理流程。
 
 ## 当前状态
 
-**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete; Phase 3E.2 closed at the governed automation boundary; Phase 3F Foundation COMPLETE.** Phase 3F 已完成 33-source Foundation 治理、295 项 Human Review 和精确资格化入口的一次性 Production 导入，授权已消费。冻结记录见 [`docs/PHASE3F_FOUNDATION_FREEZE.md`](docs/PHASE3F_FOUNDATION_FREEZE.md)。Phase 3E.2 的 S-K fresh-source `FAIL` 与 full automation generalization 未获接受的边界不变；S-M 及其 Production apply 仍未授权。详见 [`docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
+**Phase 1 complete and frozen; Phase 1.1 complete; Phase 2 complete; Phase 3A complete; Phase 3B complete; Phase 3C complete; Phase 3D complete; Phase 3E.1 complete; Phase 3E.2 closed at the governed automation boundary; Phase 3F Foundation COMPLETE; Phase 4.2 qualified for the v0.5.0 public projection.** Phase 3F 已完成 33-source Foundation 治理、295 项 Human Review 和精确资格化入口的一次性 Production 导入，授权已消费。冻结记录见 [`docs/PHASE3F_FOUNDATION_FREEZE.md`](docs/PHASE3F_FOUNDATION_FREEZE.md)。Phase 3E.2 的 S-K fresh-source `FAIL` 与 full automation generalization 未获接受的边界不变；S-M 及其 Production apply 仍未授权。详见 [`docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md`](docs/PHASE3E2_GOVERNED_AUTOMATION_BOUNDARY.md)。
 
 Phase 1 已完成并冻结，Phase 1.1 已完成。以下为 Phase 1 frozen baseline（不是当前 Production 状态）：
 
@@ -177,4 +177,23 @@ Phase 3D closure 不把 Explorer、legacy ingestion、IMA 或未来 Source 变�
 
 ## v0.4.0 public source projection
 
-Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection. Phase 4.2 has not started.
+Phase 4.1 adds qualified incremental orchestration, bounded retry and replay, deterministic PDF evidence recovery, and Claim-grounded operational Node eligibility. See [the public release](docs/PHASE4_STAGE41_PUBLIC_RELEASE.md) for accepted contracts, qualification history and distribution identity. Private evidence remains outside this source projection.
+
+## v0.5.0 public source projection
+
+Phase 4.2 adds an authenticated private-host Review Workbench, explicit
+Claim–Node attribution, guarded operational promotion handoff, Current View and
+Direct Impact workbenches, Research Explorer integration, durable cloud jobs,
+and the private clean-PDF Source workflow. The bounded real Source-analysis and
+semantic-decomposition adapters were each validated through the durable
+cloud-job path with `provider=deepseek` and `model=deepseek-flash`.
+
+This qualification does not cover live-provider latency or cost SLOs, full live
+Golden Path quality, or real Production Apply. Installation, schema preparation,
+provider boundaries, recovery and coordinated backup/restore are documented in
+the [operator runbook](docs/PHASE4_STAGE42_OPERATOR_RUNBOOK.md). See the
+[v0.5.0 public release notes](docs/PHASE4_STAGE42_PUBLIC_RELEASE.md) for the
+complete scope and limitations, and the
+[public candidate manifest](docs/PHASE4_STAGE42_PUBLIC_CANDIDATE_MANIFEST.json)
+for the exact tracked-file and protected-runtime identities. The release remains
+untagged and unpublished.

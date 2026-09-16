@@ -100,7 +100,7 @@
     "copy_equality_verified": true,
     "post_import_sha256": "8bce2b47df971e527de3552ca0415160868b258c0fcd4a8f6d2f20f40a60541c",
     "pre_import_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
-    "production_source_absolute_path_at_copy": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+    "production_source_absolute_path_at_copy": "<repository-root>\\workspace\\pro_a.db",
     "production_source_sha256_at_copy": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
     "schema_sha256": "31f9b03ab06f62336104424cccb82962b8096aec66b1f23942397c6f4a637718",
     "schema_version": "0.2.1"
@@ -171,7 +171,7 @@
       "unchanged": true
     },
     "production_db": {
-      "absolute_path": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\pro_a.db",
+      "absolute_path": "<repository-root>\\workspace\\pro_a.db",
       "actual_sha256_after_qualification": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
       "expected_sha256": "d4611908d276200833fbac2adca8918cf3d3f58662080e492d87e593765c046b",
       "unchanged": true
@@ -209,7 +209,7 @@
   },
   "metadata": {
     "artifact": "B2C isolated/apply deterministic report",
-    "database_path_resolved_absolute": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
+    "database_path_resolved_absolute": "<repository-root>\\workspace\\r1_acceptance\\b2c_final_qualified_20260819_isolated_fresh\\pro_a_b2c_final_qualification.db",
     "decision_set_sha256": "1b7b7587400fab0aaa4bc80ceb4c3021ae5f8b821386cb701b48c60e32ad0cd1",
     "generated_at_utc": "2026-08-19T06:34:58.805057+00:00",
     "manifest_sha256": "2974da9a0a03ddd7d36bc18a478e8b17e8e9e1b6fc2b934c955138c336593a80",
