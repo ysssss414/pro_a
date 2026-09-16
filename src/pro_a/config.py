@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 try:
     import tomllib
@@ -30,6 +31,11 @@ class LLMConfig:
     max_output_tokens: int = 32768
     max_chunk_chars: int = 22000
     max_nodes_in_prompt: int = 500
+
+    @property
+    def provider(self) -> str:
+        host = (urlsplit(self.base_url).hostname or "").lower()
+        return "deepseek" if host == "api.deepseek.com" else ""
 
     @property
     def api_key(self) -> str:

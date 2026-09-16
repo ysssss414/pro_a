@@ -4,14 +4,19 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 import json
 import sqlite3
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from pro_a.cloud_contract import (
     CONTRACT_VERSION, OPERATION_KIND, RETRY_OWNER, CloudContractError, CloudRequest,
-    CloudResult, DeterministicFakeProvider, SemanticBackendProvider, operation_contract,
+    CloudResult, DeterministicFakeProvider, SemanticBackendProvider,
+    SourceAnalysisPieceProvider, SOURCE_ANALYSIS_OPERATION, operation_contract,
 )
+from pro_a.config import LLMConfig
+from pro_a.llm import ChatLLM
+from pro_a.semantic_decomposition import ChatLLMSemanticBackend
 from pro_a.production_promotion import sha256_file
 from pro_a.workbench import cloud_jobs as cloud_jobs_module
 from pro_a.workbench.api import PREFIX, create_app
@@ -146,6 +151,82 @@ def test_nested_retry_owner_is_rejected():
 
     with pytest.raises(CloudContractError, match="NESTED_RETRY_OWNER_FORBIDDEN"):
         SemanticBackendProvider(Backend(), provider_identity="CLOUD")
+
+
+def _live_adapter_llm(monkeypatch, output, request_id):
+    class Response:
+        status_code = 200
+        text = ""
+
+        @staticmethod
+        def json():
+            return {
+                "id": request_id,
+                "model": "deepseek-flash",
+                "choices": [{"finish_reason": "stop", "message": {
+                    "content": json.dumps(output),
+                }}],
+                "usage": {
+                    "prompt_tokens": 17,
+                    "completion_tokens": 5,
+                    "total_tokens": 22,
+                },
+            }
+
+    monkeypatch.setenv("TEST_DEEPSEEK_API_KEY", "offline-fixture-key")
+    monkeypatch.setattr("pro_a.llm.requests.post", lambda *_args, **_kwargs: Response())
+    return ChatLLM(LLMConfig(
+        enabled=True, api_key_env="TEST_DEEPSEEK_API_KEY", model="deepseek-flash",
+        timeout_seconds=60, max_retries=0, max_output_tokens=8192,
+    ))
+
+
+def test_source_analysis_real_adapter_projects_provider_request_id(monkeypatch):
+    llm = _live_adapter_llm(monkeypatch, {"source_analysis": "ok"}, "chatcmpl-source")
+    provider = SourceAnalysisPieceProvider(llm, provider_identity="deepseek")
+    request = SimpleNamespace(
+        operation_kind=SOURCE_ANALYSIS_OPERATION,
+        requested_model="deepseek-flash",
+        timeout_seconds=60,
+        max_output_tokens=8192,
+        payload={"user_prompt": "Analyze this bounded synthetic Source."},
+        attempt_number=1,
+    )
+
+    result = provider.invoke(request)
+
+    assert result.provider_request_id == "chatcmpl-source"
+    assert result.provider_reported_model == "deepseek-flash"
+    assert result.usage_status == "KNOWN"
+    assert result.total_tokens == 22
+
+
+def test_semantic_real_adapter_projects_provider_request_id(monkeypatch):
+    llm = _live_adapter_llm(monkeypatch, {"results": []}, "chatcmpl-semantic")
+    provider = SemanticBackendProvider(
+        ChatLLMSemanticBackend(llm), provider_identity="deepseek",
+    )
+    request = SimpleNamespace(
+        operation_kind=OPERATION_KIND,
+        requested_model="deepseek-flash",
+        timeout_seconds=60,
+        max_output_tokens=8192,
+        payload={"claims": []},
+        attempt_number=1,
+    )
+
+    result = provider.invoke(request)
+
+    assert result.provider_request_id == "chatcmpl-semantic"
+    assert result.provider_reported_model == "deepseek-flash"
+    assert result.usage_status == "KNOWN"
+    assert result.total_tokens == 22
+
+
+def test_deepseek_profile_has_no_hidden_model_fallback():
+    profile = CloudProfile("deepseek", "deepseek-flash")
+
+    assert profile.public_identity()["hidden_fallback"] is False
 
 
 @pytest.mark.parametrize("scenario,expected_status,usage,model_status", [
