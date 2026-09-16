@@ -1,21 +1,24 @@
 # Changelog
 
-## Phase 4.2 release candidate — unreleased
+## v0.5.0 public source projection — 2026-09-16
 
 - Added the authenticated private-host Workbench across persistent human review,
   explicit attribution, guarded promotion handoff, Current View drafts, Direct
   Impact, Research Explorer, follow-up notes and private clean-PDF Source flow.
 - Added durable `cloud-inference-v1` jobs with bound runtime/model/budgets, worker
   fencing, deterministic fake-provider acceptance and fail-closed unknown-outcome
-  recovery. Live-provider smoke, latency, cost and token accounting remain not run.
+  recovery. A bounded live-provider smoke passed for the real Source-analysis and
+  semantic-decomposition adapters through the durable job path with
+  `provider=deepseek` and `model=deepseek-flash`.
 - Added coordinated, drained Workbench backup/restore for SQLite state and private
   artifacts, portable path rebinding, Windows path preflight and an exercised
   private-host operator runbook.
 - Serialized concurrent privileged operator execution before database preflight,
   preventing a competing reader from making the winning two-database commit
   ambiguous. Production Apply remains external and separately authorized.
-- Recommended release version: `0.5.0`. No version bump, tag or publication is
-  included in this candidate.
+- Advanced the public project version to `0.5.0`. Live-provider latency and cost
+  SLOs, full live Golden Path quality and real Production Apply remain
+  unqualified; no tag or publication is included in this projection.
 
 ## Phase 3F Foundation Release Closure — 2026-09-10
 

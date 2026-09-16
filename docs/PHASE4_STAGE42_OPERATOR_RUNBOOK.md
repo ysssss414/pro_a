@@ -87,9 +87,11 @@ Node, Claim, Source, Current View and processing detail remain authenticated.
 
 The durable job service is the only provider execution seam. DEMO acceptance can
 run `run-fake-cloud-job` and `run-fake-source-operation`; those commands reject
-PRIVATE mode. A live deployment must inject the existing
-`SemanticBackendProvider` into the worker under a separate, operator-owned process.
-No live-provider CLI or live smoke is qualified by this release candidate.
+PRIVATE mode. A live deployment must inject the existing real adapter into the
+worker under a separate, operator-owned process. The real Source-analysis and
+semantic-decomposition adapters have each passed one bounded live-provider call
+through the durable job path. This establishes integration readiness only; live
+latency/cost SLOs and full live Golden Path quality remain unqualified.
 
 For shutdown, stop new uploads, wait until no Source run or cloud job is queued or
 running, stop the worker, then stop the backend. A `RECOVERY_REQUIRED` item is a
@@ -97,8 +99,10 @@ durable manual state and does not block a drained backup.
 
 ## Provider configuration
 
-`PRO_A_CLOUD_PROVIDER` selects the provider identity and `PRO_A_CLOUD_MODEL`
-selects the requested model. Credentials belong only in the provider backend's
+The currently qualified live configuration resolves `provider=deepseek` from
+`https://api.deepseek.com` and requests `model=deepseek-flash`. Operator-owned
+worker profiles must bind those exact identities; no model fallback is qualified.
+Credentials belong only in the provider backend's
 environment or secret store; do not put them in TOML, logs, job payloads or backup
 archives. `cloud-inference-v1` binds the request, accepted model aliases,
 `semantic-backend-adapter-v1` or `source-analysis-piece-adapter-v1`, timeout,
