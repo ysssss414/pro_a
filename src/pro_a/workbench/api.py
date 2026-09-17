@@ -289,7 +289,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5', '6', '7', '8'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')

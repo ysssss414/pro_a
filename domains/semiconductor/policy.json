@@ -1,0 +1,10 @@
+{
+  "admission_policy": "core_floor",
+  "contract_version": "domain-policy-references-v1",
+  "entity_policy": "GLOBAL_CANONICAL_IDENTITY",
+  "prompt_hooks_enabled": false,
+  "prompt_profile": "UNCHANGED_CORE_PROMPTS",
+  "relation_policy": "EXISTING_NATIVE_VALIDATORS",
+  "review_policy": "explicit_human_review",
+  "source_policy": "PRIVATE_CLEAN_PDF_COMPLETE_TEXT_V1"
+}
