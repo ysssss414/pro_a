@@ -1859,8 +1859,11 @@ blockquote {
 }
 
 .impact-workbench {
-  min-height: calc(100vh - 64px);
+  min-height: 0;
+  flex: 1;
   padding: 28px 34px 48px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #f4f6f8;
   color: #24364b;
 }
@@ -2055,8 +2058,11 @@ blockquote {
 }
 
 .research-workspace {
-  min-height: calc(100vh - 64px);
+  min-height: 0;
+  flex: 1;
   padding: 26px 34px 56px;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #f3f5f7;
   color: #24364b;
 }
@@ -2097,7 +2103,7 @@ blockquote {
 .research-breadcrumbs { display: flex; max-width: 1320px; align-items: center; gap: 7px; margin: 0 auto 14px; color: #8794a1; font-size: 9px; }
 .research-breadcrumbs button { padding: 0; border: 0; background: transparent; color: #52789e; font: inherit; cursor: pointer; }
 
-.jobs-workspace, .jobs-login { min-height: calc(100vh - 72px); background: #f4f1ea; color: #18232d; padding: 34px clamp(20px, 4vw, 58px); }
+.jobs-workspace, .jobs-login { min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; background: #f4f1ea; color: #18232d; padding: 34px clamp(20px, 4vw, 58px); }
 .jobs-login { display: grid; place-items: center; }
 .jobs-login form { width: min(520px, 100%); padding: 34px; border: 1px solid #d8d0c2; border-radius: 14px; background: #fffdf8; box-shadow: 0 18px 50px #26333d14; display: grid; gap: 18px; }
 .jobs-login label, .jobs-submit label { display: grid; gap: 7px; font-size: 12px; font-weight: 700; color: #53616d; }
@@ -2204,7 +2210,7 @@ blockquote {
 .note-list select { padding: 4px 6px; }
 .research-loading { max-width: 1320px; margin: 24px auto; color: #708195; font-size: 10px; }
 .research-error { display: flex; max-width: 1320px; gap: 8px; margin: 12px auto; padding: 11px; border: 1px solid #e5bfc4; border-radius: 6px; background: #fff2f3; color: #923f49; font-size: 9px; }
-.research-login { display: grid; min-height: calc(100vh - 64px); place-items: center; padding: 28px; background: #f3f5f7; }
+.research-login { display: grid; min-height: 0; flex: 1; overflow-x: hidden; overflow-y: auto; place-items: center; padding: 28px; background: #f3f5f7; }
 .research-login form { display: grid; width: min(470px, 100%); gap: 14px; padding: 28px; border: 1px solid #d8e0e7; border-radius: 9px; background: #fff; box-shadow: 0 8px 28px rgba(23, 43, 64, .08); }
 .research-login p { margin: 0; color: #66788b; font-size: 10px; line-height: 1.6; }
 .research-login label { display: grid; gap: 5px; color: #53677b; font-size: 9px; }
