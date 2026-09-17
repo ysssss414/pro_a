@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5.1 scroll maintenance release — 2026-09-17
+
+- Fixed desktop vertical scrolling across Phase 4.2 long-page Workbench
+  surfaces while preserving the classic three-column Explorer's viewport-bound
+  internal scrolling.
+- Requalified Research Home, long Research routes, Source Operations, Durable
+  Jobs, Human View Proposals, Changes & Impact, Review and classic Explorer at
+  1920×1080 and 1366×768.
+- Preserved all knowledge, backend API, database schema, provider and Production
+  contracts. No live provider or model call was required for this patch.
+
 ## v0.5.0 public source projection — 2026-09-16
 
 - Added the authenticated private-host Workbench across persistent human review,
