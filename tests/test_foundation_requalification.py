@@ -2,6 +2,7 @@
 import copy
 from contextlib import closing
 import importlib.util
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -16,7 +17,41 @@ from pro_a.production_promotion import connect_read_only, production_identity, P
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def load_migration_runbook():
+    spec = importlib.util.spec_from_file_location("migration_runbook", ROOT / "scripts/phase3f_foundation_schema_migration.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def require_private_foundation_baseline(module):
+    """Discover local authority; presence is never a substitute for the strict audit."""
+    requested = os.environ.get("RUN_PRIVATE_FOUNDATION_AUDIT", "false").strip().lower()
+    if requested not in {"true", "false"}:
+        pytest.fail("RUN_PRIVATE_FOUNDATION_AUDIT must be true or false")
+    # Reuse the existing local packet locator. Partial/broken authority also opts in,
+    # so neither an explicit false nor an incomplete bundle can conceal invalidity.
+    authority = (module.OLD, module.GOV, module.PRIOR_OUT, module.ARCHIVE, module.INSTRUCTION)
+    configured = any(path.exists() or path.is_symlink() for path in authority)
+    if requested == "false" and not configured:
+        pytest.skip("historical private Foundation baseline is not configured in this checkout")
+    required = (
+        module.PRODUCTION,
+        module.ARCHIVE,
+        module.OLD / "foundation_complete_review_packet.json",
+        module.GOV / "human_evidence_governance_authorization_manifest.json",
+        module.PRIOR_OUT / "schema_migration_stop_receipt.json",
+        module.INSTRUCTION,
+    )
+    for path in required:
+        if not path.is_file():
+            pytest.fail(f"historical private Foundation audit prerequisite missing: {path}")
+    # Exact bytes, nested artifacts, DB/configuration and Git authority remain
+    # validated by the original runbook, with no exception-to-skip conversion.
+
+
 def test_full_old_baseline_preflight_releases_handle_without_gc():
+    require_private_foundation_baseline(load_migration_runbook())
     # Fresh process isolates the production gate from unrelated test fixture readers.
     # Automatic GC is disabled so an accidentally leaked cycle cannot hide the bug.
     code = """
@@ -34,11 +69,8 @@ assert m['production_identity'](m['PRODUCTION']) == before
 
 @pytest.fixture
 def inputs():
-    spec = importlib.util.spec_from_file_location("migration_runbook", ROOT / "scripts/phase3f_foundation_schema_migration.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    if not (module.OLD / "foundation_complete_review_packet.json").exists():
-        pytest.skip("Immutable local Foundation corpus not supplied")
+    module = load_migration_runbook()
+    require_private_foundation_baseline(module)
     old, manifest, evidence = module.immutable_inputs()
     receipt = module.OUT / "migration_receipt.json"
     if receipt.exists():
@@ -46,8 +78,9 @@ def inputs():
         target, backup = module.PRODUCTION, Path(migration["backup"]["path"])
     else:
         target, backup = module.OUT / "rehearsal_only.db", module.PRODUCTION
-    if not target.exists():
-        pytest.skip("Run the schema-only rehearsal before local requalification tests")
+    for path in (target, backup):
+        if not path.is_file():
+            pytest.fail(f"historical private Foundation audit database missing: {path}; run the authorized schema-only rehearsal first")
     return module, old, manifest, evidence, target, backup
 
 

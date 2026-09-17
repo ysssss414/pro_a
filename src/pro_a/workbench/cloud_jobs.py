@@ -121,6 +121,12 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         "workbench_schema_version": workbench_schema_version,
         "provider_adapter_version": adapter_version,
     }
+    if workbench_schema_version == "9":
+        package = Path(__file__).parent.parent
+        names = ('domain_packs.py', 'run_context.py', 'workbench/domains.py',
+                 'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py')
+        value["domain_contract_version"] = "run-domain-context-v1"
+        value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     value["runtime_sha256"] = digest(value)
     return value
 
@@ -130,7 +136,7 @@ def prepare_cloud_jobs(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version in ("7", "8"):
+        if version in ("7", "8", "9"):
             return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "6":
             raise BoundaryError("RESEARCH_SCHEMA_REQUIRED")
@@ -294,7 +300,7 @@ class CloudJobs:
             version = schema_version(connection)
             source_input = (connection.execute(
                 "SELECT * FROM source_cloud_inputs WHERE artifact_id=?", (artifact_id,)
-            ).fetchone() if version == "8" else None)
+            ).fetchone() if version in ("8", "9") else None)
         if source_input is not None:
             try:
                 path = self.artifacts.resolve(source_input["artifact_relative"])
@@ -322,6 +328,13 @@ class CloudJobs:
                 raise
             except (KeyError, TypeError, ValueError, json.JSONDecodeError):
                 raise JobError("INPUT_ARTIFACT_INVALID") from None
+            from .domains import Domains
+            try:
+                reference = Domains(self.config).guard(document["processing_run_id"], self)
+                if document["checkpoint"].get("domain_context") != reference:
+                    raise JobError("INPUT_DOMAIN_CONTEXT_MISMATCH")
+            except BoundaryError as error:
+                raise JobError(str(error)) from None
             directory = path.parent
             dto = {"packet_file_sha256": source_input["sha256"],
                    "source": {"source_id": source_input["source_id"]}}
@@ -388,7 +401,7 @@ class CloudJobs:
         intent_sha = digest(intent)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
-            if schema_version(connection) not in ("7", "8"):
+            if schema_version(connection) not in ("7", "8", "9"):
                 raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
             prior = connection.execute(
                 "SELECT intent_sha256,job_id,response_json FROM cloud_job_submissions WHERE idempotency_key=?",
@@ -594,6 +607,11 @@ class CloudJobs:
         if (provider.provider_identity != row["provider"]
                 or provider.adapter_version != row["provider_adapter_version"]):
             raise JobError("PROVIDER_CONTRACT_MISMATCH")
+        checkpoint = json.loads(row["native_checkpoint_json"])
+        if checkpoint.get("domain_context") is not None:
+            from pro_a.cloud_contract import DeterministicFakeProvider
+            if type(provider) is not DeterministicFakeProvider:
+                raise JobError("DOMAIN_ACTIVATION_REQUIRED")
         return self._input_payload(row)
 
     def _claim(self, worker_id: str, job_id: str | None, lease_seconds: int) -> tuple[str, int] | None:

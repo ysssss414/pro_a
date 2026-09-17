@@ -1,0 +1,116 @@
+{
+  "acceptance_fixtures": [
+    {
+      "expected_schema_version": "fixture-spec-v1",
+      "path": "fixtures.json",
+      "sha256": "11ded3fcc65a6722d2cc6a87c9b6cf43631b9f0fde6d780b15b1b777b063b4e7",
+      "suite_version": "phase43-fixtures-v1"
+    }
+  ],
+  "admission_policy": {
+    "additional_review_tags": [],
+    "mode": "core_floor"
+  },
+  "claim_pattern_hints": [],
+  "compatibility": {
+    "canonical_schema": "0.2.3",
+    "core_capabilities": [
+      "shared_core",
+      "core_floor",
+      "existing_direct_paths_only"
+    ],
+    "fixture_suite_version": "phase43-fixtures-v1"
+  },
+  "configuration": {
+    "source_class": "PRIVATE_CLEAN_PDF"
+  },
+  "contract_version": "domain-pack-v1",
+  "coverage_dimensions": [],
+  "current_view_hints": {},
+  "description": "Declarative shared-core compatibility descriptor. Stage 0 offline foundation only.",
+  "display_name": "Semiconductor",
+  "domain_id": "semiconductor",
+  "file_inventory": [
+    {
+      "path": "fixtures.json",
+      "sha256": "11ded3fcc65a6722d2cc6a87c9b6cf43631b9f0fde6d780b15b1b777b063b4e7"
+    },
+    {
+      "path": "hints.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "policy.json",
+      "sha256": "b67831ae189948492d54caba9dca785787acf100ce54634e83f6fd9b4d20d06f"
+    }
+  ],
+  "impact_policy": {
+    "mode": "existing_direct_paths_only"
+  },
+  "known_limitations": [
+    "STAGE0_OFFLINE_ONLY",
+    "NO_INDUSTRY_QUALIFICATION",
+    "NO_PROMPT_HOOKS",
+    "FIXTURE_SPECS_AWAIT_HUMAN_GOLD"
+  ],
+  "lifecycle": {
+    "qualification_refs": [],
+    "state": "PROPOSED"
+  },
+  "normalization_candidates": [],
+  "parent_placement_rules": [],
+  "references": {
+    "admission_policy": "policy.json",
+    "entity_policy": "policy.json",
+    "prompt_profile": "policy.json",
+    "relation_policy": "policy.json",
+    "review_policy": "policy.json",
+    "source_policy": "policy.json"
+  },
+  "relation_policies": [],
+  "semantic_decomposition": {
+    "mode": "shared_core_only"
+  },
+  "source_analysis_hints": {
+    "examples_ref": "hints.txt",
+    "max_chars": 0,
+    "terminology_ref": "hints.txt"
+  },
+  "supported_node_types": [
+    "Application",
+    "Company",
+    "Entity",
+    "Equipment",
+    "Event",
+    "Industry",
+    "Material",
+    "Policy",
+    "Product",
+    "ResearchQuestion",
+    "Segment",
+    "Standard",
+    "Technology",
+    "Theme"
+  ],
+  "supported_relations": [
+    "applied_in",
+    "benefits_from",
+    "competes_with",
+    "constrains",
+    "depends_on",
+    "drives",
+    "exposed_to",
+    "invalidates",
+    "part_of",
+    "produces",
+    "regulated_by",
+    "related_to",
+    "substitutes",
+    "supplies",
+    "upstream_of",
+    "uses",
+    "validates"
+  ],
+  "technical_identifiers": [],
+  "version": "1.0.0"
+}

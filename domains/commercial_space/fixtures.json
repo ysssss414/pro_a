@@ -1,0 +1,365 @@
+{
+  "cases": [
+    {
+      "case_id": "commercial_space-01-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "clean_prose",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-01-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "clean_prose",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-02-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "table",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-02-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "table",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-03-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "technical_id",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-03-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "technical_id",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-04-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "company_product",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-04-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "company_product",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-05-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "multi_node_claim",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-05-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "multi_node_claim",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-06-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "cross_domain_source",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-06-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "cross_domain_source",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-07-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "temporal_updates",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-07-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "temporal_updates",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-08-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "categorical_relations",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-08-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "categorical_relations",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-09-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "no_link",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-09-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "DEVELOPMENT",
+      "pattern": "no_link",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-10-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "identity_collision",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-10-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "identity_collision",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-11-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "current_view",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-11-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "current_view",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-12-positive",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "direct_impact",
+      "polarity": "positive",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    },
+    {
+      "case_id": "commercial_space-12-negative",
+      "domain_ids": [
+        "commercial_space"
+      ],
+      "expected_outcome": null,
+      "expected_schema_version": "fixture-spec-v1",
+      "material": "SYNTHETIC_SPEC_ONLY",
+      "partition": "HOLDOUT_RESERVED_NOT_FROZEN",
+      "pattern": "direct_impact",
+      "polarity": "negative",
+      "qualification_status": "PENDING_HUMAN_GOLD",
+      "reviewer": null,
+      "source_sha256": null
+    }
+  ],
+  "suite_version": "phase43-fixtures-v1"
+}

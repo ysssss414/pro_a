@@ -20,3 +20,7 @@ src/pro_a/table_claim_safety.py -text
 
 # Public historical prompt fixture binds the unchanged public Git blob.
 src/pro_a/prompts.py text eol=lf
+
+# Domain pack inventories bind exact file bytes on every checkout platform.
+# Treat preserved CRLF as line endings while retaining normal whitespace checks.
+domains/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

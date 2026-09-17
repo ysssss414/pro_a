@@ -27,6 +27,7 @@ from .config import BoundaryError, WorkbenchConfig, checked_path
 from .review_store import schema_version
 from .review_workbench import ReviewWorkbench
 from .store import Store
+from .domains import Domains
 
 
 PDF_MIME = "application/pdf"
@@ -121,8 +122,8 @@ def prepare_source_operations(config: WorkbenchConfig) -> dict[str, Any]:
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == "8":
-            return {"status": "ALREADY_PREPARED", "schema_version": "8"}
+        if version in ("8", "9"):
+            return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "7":
             raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
     path = checked_path(config.state_db)
@@ -252,7 +253,7 @@ class SourceOperations:
         self.artifacts = Artifacts(config)
         self.jobs = CloudJobs(config, cloud_profile)
         with self.store.connect() as connection:
-            if schema_version(connection) != "8":
+            if schema_version(connection) not in ("8", "9"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
 
     def _record_upload(self, *, source_id: str | None, outcome: str, filename: str,
@@ -414,6 +415,7 @@ class SourceOperations:
             raise SourceOperationError("INVALID_REPROCESS_REASON", 422)
         runtime = self.jobs.current_runtime()
         runtime_sha = runtime["runtime_sha256"]
+        domains = Domains(self.config)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
@@ -422,13 +424,24 @@ class SourceOperations:
                 raise SourceOperationError("SOURCE_NOT_FOUND", 404)
             if source["canonical_source_id"]:
                 raise SourceOperationError("SOURCE_ALREADY_EXISTS_IN_PRODUCTION")
+            basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
+                     if schema_version(connection) == "9" else None)
+
+            def equivalent(row):
+                if row["runtime_sha256"] != runtime_sha:
+                    return False
+                frozen = domains.read(row["processing_run_id"], connection=connection)
+                return ((frozen is None and basis is None) or
+                        (frozen is not None and basis is not None and
+                         frozen["resume_sha256"] == canonical_sha256(basis)))
+
             prior_key = connection.execute(
                 "SELECT * FROM source_processing_runs WHERE idempotency_key=?",
                 (idempotency_key,),
             ).fetchone()
             if prior_key:
                 if (prior_key["source_id"] != source_id
-                        or prior_key["runtime_sha256"] != runtime_sha
+                        or not equivalent(prior_key)
                         or prior_key["reprocess_reason"] != reprocess_reason):
                     raise SourceOperationError("IDEMPOTENCY_CONFLICT")
                 return {"run": self._project_run(connection, prior_key["processing_run_id"]),
@@ -439,7 +452,7 @@ class SourceOperations:
             ))
             if any(row["state"] == "RECOVERY_REQUIRED" for row in rows):
                 raise SourceOperationError("RECOVERY_REQUIRED_REQUIRES_RECONCILIATION")
-            same_runtime = next((row for row in rows if row["runtime_sha256"] == runtime_sha), None)
+            same_runtime = next((row for row in rows if equivalent(row)), None)
             if same_runtime is not None:
                 if same_runtime["state"] not in ("FAILED", "BLOCKED") or not reprocess_reason:
                     return {"run": self._project_run(connection, same_runtime["processing_run_id"]),
@@ -449,13 +462,15 @@ class SourceOperations:
             run_id = "SOURCE_RUN_" + uuid4().hex.upper()
             created = _now()
             connection.execute(
-                '''INSERT INTO source_processing_runs(
+                f'''INSERT INTO source_processing_runs(
                     processing_run_id,source_id,idempotency_key,runtime_json,runtime_sha256,
-                    state,stage,reprocess_reason,created_at,updated_at)
-                    VALUES(?,?,?,?,?,'QUEUED','VALIDATED',?,?,?)''',
+                    state,stage,reprocess_reason,created_at,updated_at{',domain_context_required' if basis else ''})
+                    VALUES(?,?,?,?,?,'QUEUED','VALIDATED',?,?,?{',1' if basis else ''})''',
                 (run_id, source_id, idempotency_key, _canonical(runtime), runtime_sha,
                  reprocess_reason, created, created),
             )
+            if basis is not None:
+                domains.bind_run(connection, run_id, basis, self.profile, created, reprocess_reason)
             self._event(connection, run_id, "PROCESSING_QUEUED",
                         {"runtime_sha256": runtime_sha, "source_id": source_id})
             return {"run": self._project_run(connection, run_id), "duplicate": False}
@@ -513,6 +528,10 @@ class SourceOperations:
 
     def _register_input(self, run: Mapping[str, Any], operation: str, ordinal: int,
                         payload: Mapping[str, Any], checkpoint: Mapping[str, Any]) -> str:
+        checkpoint = dict(checkpoint)
+        reference = Domains(self.config).guard(run["processing_run_id"], self.jobs, self.profile)
+        if reference is not None:
+            checkpoint["domain_context"] = reference
         body = {
             "document_type": "phase42_stage7_cloud_input", "schema_version": "1",
             "operation_kind": operation, "source_id": run["source_id"],
@@ -699,7 +718,9 @@ class SourceOperations:
         shutil.copytree(native_root, destination)
         packet_relative = f"{destination_relative}/review/packet.json"
         run_relative = f"{destination_relative}/engine"
-        return self.artifacts.register(packet_relative, run_relative)
+        registered = self.artifacts.register(packet_relative, run_relative)
+        Domains(self.config).bind_packet(run["processing_run_id"], registered["artifact_id"])
+        return registered
 
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
@@ -754,6 +775,10 @@ class SourceOperations:
                                      (run_id,)).fetchone()
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
                                         (row["source_id"],)).fetchone()
+        try:
+            Domains(self.config).guard(run_id, self.jobs, self.profile)
+        except BoundaryError as error:
+            raise SourceOperationError(str(error)) from None
         if row["runtime_sha256"] != self.jobs.current_runtime()["runtime_sha256"]:
             self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
             return self.get_run(run_id)
@@ -934,6 +959,9 @@ class SourceOperations:
     def get_run(self, run_id: str) -> dict[str, Any]:
         with self.store.connect() as connection:
             result = self._project_run(connection, run_id)
+        context = Domains(self.config).read(run_id)
+        result["domain_context"] = context
+        result["domain_context_status"] = "FROZEN" if context else "LEGACY_NO_DOMAIN_CONTEXT"
         detailed_jobs = [self.jobs.get(item["job_id"]) for item in result.pop("jobs")]
         result["jobs"] = detailed_jobs
         usage_status = ("KNOWN" if detailed_jobs and

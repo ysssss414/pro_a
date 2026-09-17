@@ -20,6 +20,12 @@ def main():
     commands.add_parser('prepare-research')
     commands.add_parser('prepare-cloud-jobs')
     commands.add_parser('prepare-source-operations')
+    commands.add_parser('prepare-domains')
+    commands.add_parser('rollback-domains')
+    register_domain = commands.add_parser('register-domain')
+    register_domain.add_argument('--pack', type=Path, required=True)
+    assign_domain = commands.add_parser('assign-domains')
+    assign_domain.add_argument('--assignment', type=Path, required=True)
     commands.add_parser('reconcile-cloud-jobs')
     preflight = commands.add_parser('preflight')
     preflight.add_argument('--max-path-chars', type=int, default=240)
@@ -83,6 +89,18 @@ def main():
         elif args.command == 'prepare-source-operations':
             from .source_operations import prepare_source_operations
             print(json.dumps(prepare_source_operations(config)))
+        elif args.command in ('prepare-domains', 'rollback-domains', 'register-domain', 'assign-domains'):
+            from .domains import Domains, prepare_domains, rollback_domains
+            from pro_a.domain_packs import read_json
+            if args.command == 'prepare-domains':
+                result = prepare_domains(config)
+            elif args.command == 'rollback-domains':
+                result = rollback_domains(config)
+            elif args.command == 'register-domain':
+                result = Domains(config).register(args.pack)
+            else:
+                result = Domains(config).assign(**read_json(args.assignment))
+            print(json.dumps(result))
         elif args.command == 'reconcile-cloud-jobs':
             from .cloud_jobs import CloudJobs
             print(json.dumps(CloudJobs(config).reconcile()))

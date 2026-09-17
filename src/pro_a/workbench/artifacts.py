@@ -104,6 +104,8 @@ class Artifacts:
             raise BoundaryError('ARTIFACT_NOT_REGISTERED')
         if 'artifact_kind' in row.keys() and row['artifact_kind'] != 'REVIEW_PACKET':
             raise BoundaryError('ARTIFACT_NOT_REGISTERED')
+        from .domains import Domains
+        Domains(self.config).validate_packet(artifact_id)
         dto, _, packet = self.validate(row['packet_relative'], row['run_relative'], artifact_id, json.loads(row['file_inventory']))
         if dto['packet_id'] != row['packet_id'] or dto['packet_file_sha256'] != row['packet_sha256']:
             raise BoundaryError('REGISTRY_IDENTITY_MISMATCH')
