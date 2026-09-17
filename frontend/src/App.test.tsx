@@ -54,7 +54,7 @@ vi.mock("./components/ResearchExplorer", async () => {
         window.addEventListener("popstate", update);
         return () => window.removeEventListener("popstate", update);
       }, []);
-      return React.createElement("div", null, `Research path: ${path}`);
+      return React.createElement("main", { className: "research-workspace" }, `Research path: ${path}`);
     },
   };
 });
@@ -111,6 +111,19 @@ describe("App error boundary", () => {
     expect(screen.getByText("Research path: /relation/REL_CURRENT")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Research Home" }));
     expect(await screen.findByText("Research path: /research")).toBeInTheDocument();
+  });
+
+  it("preserves the bounded Research and classic Explorer layouts across route changes", async () => {
+    window.history.replaceState(null, "", "/research");
+    const { container } = render(<App />);
+    expect(container.querySelector("main.research-workspace")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Explorer" }));
+    expect(container.querySelector("main.workspace-grid")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Research Home" }));
+    expect(await screen.findByText("Research path: /research")).toBeInTheDocument();
+    expect(container.querySelector("main.research-workspace")).toBeInTheDocument();
   });
 
   it("restores a selected node from the URL in StrictMode", async () => {
