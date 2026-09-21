@@ -43,6 +43,9 @@ class Artifacts:
                 path = checked_path(Path(directory) / name)
                 if path.is_file():
                     files[path.relative_to(self.config.artifact_root.resolve()).as_posix()] = digest(path)
+        from .foundation_import import is_foundation
+        if is_foundation(read_review_packet(packet)):
+            return files
         # Check paths the native validator is about to resolve BEFORE invoking it.
         manifest = read_review_packet(run / 'run_manifest.json')
         referenced = [manifest['source']['frozen_relative_path']]
@@ -61,6 +64,12 @@ class Artifacts:
             if expected is not None and inventory != expected:
                 raise BoundaryError('ARTIFACT_HASH_MISMATCH')
             packet = read_review_packet(self.resolve(packet_relative))
+            from .foundation_import import is_foundation, validate_projection
+            if is_foundation(packet):
+                dto = validate_projection(packet, self.resolve(run_relative), artifact_id, inventory[packet_relative], self.config.mode)
+                if self.inventory(packet_relative, run_relative) != inventory:
+                    raise BoundaryError('ARTIFACT_CHANGED_DURING_READ')
+                return dto, inventory, packet
             validation = validate_blank_review_packet(packet, run_root=self.resolve(run_relative))
             if self.config.mode == 'DEMO' and packet['source']['source_type'] != 'SYNTHETIC_TEXT':
                 raise BoundaryError('ARTIFACT_MODE_MISMATCH')

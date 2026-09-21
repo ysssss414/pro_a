@@ -1,0 +1,842 @@
+[
+  {
+    "item_id": "SC-BV-0001",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0002",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0003",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0004",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0005",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0006",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0007",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-BV-0008",
+    "section": "A",
+    "object_type": "baseline_views",
+    "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CL-0017",
+    "section": "A",
+    "object_type": "claims",
+    "system_recommended_decision": "KEEP_NEEDS_REVIEW",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CL-0018",
+    "section": "A",
+    "object_type": "claims",
+    "system_recommended_decision": "KEEP_NEEDS_REVIEW",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0004",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0006",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0009",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0014",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0020",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0021",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0022",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0025",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0029",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0052",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0056",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0060",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0072",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0094",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0100",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0101",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0107",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0112",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0115",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0123",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0125",
+    "section": "A",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0001",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0009",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0013",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0021",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0022",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0023",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0026",
+    "section": "B",
+    "object_type": "aliases",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CL-0019",
+    "section": "B",
+    "object_type": "claims",
+    "system_recommended_decision": "KEEP_NEEDS_REVIEW",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0007",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0010",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0011",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0015",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0016",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0017",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0018",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0019",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0028",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "REJECT",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0037",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0050",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0057",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0082",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0083",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0093",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0095",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0096",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0108",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0120",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0121",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0122",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "REJECT",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0124",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0128",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0131",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0135",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0143",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0152",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0153",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0159",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0163",
+    "section": "B",
+    "object_type": "nodes",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0008",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0028",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0037",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0051",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0052",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0053",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0054",
+    "section": "B",
+    "object_type": "relations",
+    "system_recommended_decision": "DEFER",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0002",
+    "section": "C",
+    "object_type": "aliases",
+    "system_recommended_decision": "ACCEPT_OWNER SC-CN-0014",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0007",
+    "section": "C",
+    "object_type": "aliases",
+    "system_recommended_decision": "ACCEPT_OWNER SC-CN-0047",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-AL-0020",
+    "section": "C",
+    "object_type": "aliases",
+    "system_recommended_decision": "ACCEPT_OWNER SC-CN-0111",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CL-0003",
+    "section": "C",
+    "object_type": "claims",
+    "system_recommended_decision": "KEEP",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CL-0014",
+    "section": "C",
+    "object_type": "claims",
+    "system_recommended_decision": "KEEP",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0013",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0023",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0034",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0046",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0073",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0074",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0085",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0086",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0088",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0090",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0109",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0116",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0129",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0148",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "REUSE NODE_B7B4CB43F4C30F10",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0154",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "REUSE NODE_20260817_8006A0B4",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0156",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-CN-0161",
+    "section": "C",
+    "object_type": "nodes",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0004",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0009",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0013",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0022",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0036",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0043",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  },
+  {
+    "item_id": "SC-RL-0046",
+    "section": "C",
+    "object_type": "relations",
+    "system_recommended_decision": "CREATE",
+    "human_user_decision": null,
+    "human_user_note": null
+  }
+]

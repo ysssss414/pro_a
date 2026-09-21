@@ -163,6 +163,10 @@ class ReviewWorkbench:
 
     def read(self, handle):
         blank, run, dto, basis = self._context(handle)
+        from .foundation_import import is_foundation
+        if is_foundation(blank):
+            return {**dto, 'review': {'enabled': False, 'basis_id': basis,
+                    'reason': 'FOUNDATION_NATIVE_REVIEW_REQUIRED', 'production_authorized': False}}
         with self.store.connect() as connection:
             connection.execute('BEGIN')
             if schema_version(connection) == '1':
@@ -240,6 +244,9 @@ class ReviewWorkbench:
 
     def mutate(self, handle, action, request, identity):
         blank, run, dto, basis = self._context(handle)
+        from .foundation_import import is_foundation
+        if is_foundation(blank):
+            raise ReviewError('FOUNDATION_NATIVE_REVIEW_REQUIRED')
         if request['basis_id'] != basis:
             raise ReviewError('IMMUTABLE_FIELD_DRIFT')
         for key in ('reviewer', 'reason'):
