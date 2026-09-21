@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import json
 from pathlib import Path
 
@@ -270,6 +272,7 @@ def test_unknown_node_only_does_not_fail_source_or_create_downstream_objects(
         / f"run_005_source_{case['source_number']}_offline_replay.txt"
     )
     request.write_text("中际旭创预计2026年产能增长20%。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -310,6 +313,7 @@ def test_invalid_source_analysis_does_not_insert_claims_or_proposals(tmp_path: P
     pipeline.analyzer.llm = StaticLLM(payload)
     request = cfg.root / "inbox" / "standard" / "invalid.txt"
     request.write_text("中际旭创预计2026年产能增长20%。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 

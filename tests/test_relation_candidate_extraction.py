@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from pathlib import Path
 
 import pytest
@@ -540,6 +542,7 @@ def test_structural_admission_does_not_auto_split_relation_supporting_claim(tmp_
     ))
     request = cfg.root / "inbox" / "standard" / "atomic.md"
     request.write_text(text, encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -582,6 +585,7 @@ def test_unsplit_claim_without_relation_semantics_is_rejected(tmp_path: Path):
     ))
     request = cfg.root / "inbox" / "standard" / "atomic-zero.md"
     request.write_text(text, encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -710,6 +714,7 @@ def test_pipeline_maps_temp_ref_to_persistent_claim_and_only_creates_proposal(tm
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "relation.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -747,6 +752,7 @@ def test_pipeline_preserves_c_number_scope_and_reason_identity(tmp_path: Path):
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "scope-integrity.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -778,6 +784,7 @@ def test_pipeline_unresolved_temp_ref_creates_no_proposal_and_is_audited(tmp_pat
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "unresolved.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -818,6 +825,7 @@ def test_same_identity_candidates_merge_persistent_claims(tmp_path: Path):
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "merge.md"
     request.write_text("Rubin GPU 将采用 HBM4。Rubin GPU 使用 HBM4 扩展带宽。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -855,6 +863,7 @@ def test_pipeline_recovers_stale_pending_and_synchronizes_artifact(tmp_path: Pat
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "recover.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -894,6 +903,7 @@ def test_existing_formal_relation_still_gets_pending_proposal_without_evidence_a
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "existing.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -914,6 +924,7 @@ def test_relation_candidate_pipeline_is_isolated_from_impact_and_propagation(tmp
     pipeline.propagation.analyzer = analyzer
     request = cfg.root / "inbox" / "standard" / "isolated.md"
     request.write_text("Rubin GPU 将采用 HBM4。", encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -941,6 +952,7 @@ def test_mock_llm_positive_sample_creates_pending_relation_proposal(tmp_path: Pa
     ))
     request = cfg.root / "inbox" / "standard" / "positive.md"
     request.write_text(text, encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -969,6 +981,7 @@ def test_missing_evidence_staging_row_cannot_create_relation_proposal(tmp_path: 
     ))
     request = cfg.root / "inbox" / "standard" / "functional.csv"
     request.write_text(text, encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 
@@ -1081,6 +1094,7 @@ def test_mock_llm_negative_sample_creates_no_relation_proposal(tmp_path: Path):
     ))
     request = cfg.root / "inbox" / "standard" / "negative.md"
     request.write_text(text, encoding="utf-8")
+    os.utime(request, (1, 1))  # Stable synthetic input; no wall-clock race.
 
     result = pipeline.process_all()[0]
 

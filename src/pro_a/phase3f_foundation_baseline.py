@@ -123,9 +123,16 @@ def validate_review(packet, *, expected_sha256, completed):
     require(registry["registry_sha256"] == canonical_sha256({k: v for k, v in registry.items() if k != "registry_sha256"}), "REGISTRY_HASH_DRIFT")
     require(registry["package_sha256"] == packet["package"]["sha256"], "PACKAGE_HASH_DRIFT")
     require(registry["package_inventory_sha256"] == packet["package"]["inventory_sha256"], "PACKAGE_INVENTORY_DRIFT")
-    require(len(source_ids) == registry["expected_sources"] == registry["materialized_sources"], "SOURCE_MISSING")
-    for source in registry["sources"]:
-        require(source["exact_match"] is True and source["actual_sha256"] == source["expected_sha256"], "SOURCE_SHA_MISMATCH")
+    if registry.get("materialization_mode") == "QUALIFIED_STRUCTURED_FOUNDATION_BACKFILL":
+        require(packet["package"].get("mode") == registry["materialization_mode"], "SOURCE_PROVENANCE_MODE_MISMATCH")
+        require(len(source_ids) == registry["expected_sources"] == registry["qualified_provenance_sources"]
+                and registry["materialized_sources"] == 0, "SOURCE_MISSING")
+        for source in registry["sources"]:
+            require(source["provenance_verified"] is True and source["upstream_sha256"] == source["expected_sha256"], "SOURCE_SHA_MISMATCH")
+    else:
+        require(len(source_ids) == registry["expected_sources"] == registry["materialized_sources"], "SOURCE_MISSING")
+        for source in registry["sources"]:
+            require(source["exact_match"] is True and source["actual_sha256"] == source["expected_sha256"], "SOURCE_SHA_MISMATCH")
     seen = set()
     sources = {s["source_id"]: s for s in registry["sources"]}
     for kind, records in packet["objects"].items():
@@ -170,6 +177,8 @@ def validate_review(packet, *, expected_sha256, completed):
 
 def validate_files(packet):
     """Hash bytes only, including on handoff reruns. No file is parsed here."""
+    require(packet["package"].get("mode") != "QUALIFIED_STRUCTURED_FOUNDATION_BACKFILL",
+            "STRUCTURED_CANDIDATE_NOT_PRODUCTION_HANDOFF")
     bindings = [("PACKAGE", packet["package"]), ("QUALIFICATION", packet["package"]["qualification_receipt"])]
     bindings.extend(("QUALIFICATION_ARTIFACT", item) for item in packet["package"].get("qualification_artifacts", []))
     for name, binding in bindings:
@@ -471,6 +480,8 @@ def _snapshot_tables(packet):
 
 def build_foundation_handoff(*, packet, blank_packet, production_path, repository_commit,
                              verification_basis=None, completed_artifact=None):
+    require(packet["package"].get("mode") != "QUALIFIED_STRUCTURED_FOUNDATION_BACKFILL",
+            "STRUCTURED_CANDIDATE_NOT_PRODUCTION_HANDOFF")
     from .foundation_payload_envelope import verify_completed_artifact, BOUND_CONTRACT as ENVELOPE_CONTRACT
     actual_packet, review_basis = verify_completed_artifact(verification_basis, completed_artifact)
     require(canonical_sha256(packet) == canonical_sha256(actual_packet), "EMBEDDED_COMPLETED_ARTIFACT_MISMATCH")

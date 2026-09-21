@@ -329,7 +329,12 @@ class Stage1ReviewProjection:
                     domain_id = str(identity.get("domain_id") or "")
                     if domain_id and domain_id not in domains:
                         domains.append(domain_id)
-            native = [row for group in GROUPS for row in blank[group]]
+            from .foundation_import import is_foundation, projection_rows
+            if is_foundation(blank):
+                native = projection_rows(blank)
+                domains = dto["domain_ids"]
+            else:
+                native = [row for group in GROUPS for row in blank[group]]
             status = draft["status"] if draft else "DRAFT"
             revision = int(draft["revision"]) if draft else 0
             snapshot_id = _snapshot(artifact_id, basis, revision, status, len(native))
@@ -491,6 +496,21 @@ class Stage1ReviewProjection:
             native = json.loads(row["native_json"])
             state = json.loads(row["state_json"]) if row["state_json"] else None
             states = {candidate_id: state} if state else {}
+            if native.get("structured_import"):
+                return {
+                    "artifact_id": artifact_id, "candidate_id": candidate_id,
+                    "basis_id": meta["basis_id"], "snapshot_id": meta["snapshot_id"],
+                    "revision": meta["revision"], "status": meta["status"],
+                    "native": native, "state": state,
+                    "queues": json.loads(row["queues_json"]),
+                    "domains": json.loads(row["domains_json"]),
+                    "attention": json.loads(row["attention_json"]),
+                    "available_decisions": [],
+                    "blocked_decisions": {d: "FOUNDATION_NATIVE_REVIEW_REQUIRED" for d in native["allowed_decisions"]},
+                    "reuse_target": native["content"].get("resolved_node_id"),
+                    "decision_effect": None, "nonpromotable": True,
+                    "undo_event_id": None, "projection_authority": False,
+                }
             blank = {
                 "human_completion": {"reviewer": ""},
                 "claims": [], "nodes": [], "relations": [],

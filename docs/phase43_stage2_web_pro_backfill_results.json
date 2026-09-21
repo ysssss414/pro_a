@@ -1,0 +1,186 @@
+{
+  "accepted_claims_verified": 19,
+  "alias_collisions": 0,
+  "apply_executed": false,
+  "baseline_views": 8,
+  "classifications": {
+    "aliases": {
+      "REVIEW": 30
+    },
+    "baseline_views": {
+      "REVIEW": 8
+    },
+    "claims": {
+      "ACCEPTABLE": 19
+    },
+    "nodes": {
+      "CREATE": 98,
+      "REJECT": 2,
+      "REUSE": 19,
+      "REVIEW": 44
+    },
+    "relations": {
+      "REVIEW": 54
+    }
+  },
+  "cloud_jobs": 0,
+  "cross_domain_reuse": 19,
+  "cross_domain_reuse_evidence_sha256": "4b92ae5983a5ffffceca208a3a33a75ce4646db95af0df1ca93c701ec21d0d83",
+  "cross_source_leakage": 0,
+  "current_view_candidates": 0,
+  "document_type": "phase43_stage2_qualified_structured_foundation_results",
+  "evidence_binding_rate": 1.0,
+  "field_mapping_counts": {
+    "DIRECT_MAPPING": 319,
+    "NORMALIZED_MAPPING": 416,
+    "REVIEW_REQUIRED": 5334
+  },
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS",
+    "F": "PASS",
+    "G": "PASS",
+    "H": "PASS",
+    "I": "PASS",
+    "J": "PASS"
+  },
+  "git": {
+    "branch": "codex/phase43-stage2-semiconductor-foundation-ingestion",
+    "merged": false,
+    "status": "NOT_ATTEMPTED_AT_RECEIPT_FREEZE"
+  },
+  "gold_regression": {
+    "binding_manifest_sha256": "1a4390a0f80af70e9b8756b1b23b3eb6b7106764c2bb5807925ac7eb677dbdc2",
+    "candidate_outcomes_modified": false,
+    "cases_passed": 120,
+    "cases_total": 120,
+    "checks": {
+      "all_final_states_pass": true,
+      "binding_case_count": true,
+      "binding_manifest_sha256": true,
+      "exact_case_bindings": true,
+      "gold_state": true,
+      "human_authority": true,
+      "manifest_case_count": true,
+      "manifest_sha256": true,
+      "outcome_hashes": true,
+      "partition_counts": true,
+      "qualification_pass": true,
+      "unique_case_ids": true
+    },
+    "development_cases": 90,
+    "document_type": "phase43_stage1_frozen_gold_regression",
+    "gold_state": "HUMAN_AUTHORIZED_FROZEN_GOLD",
+    "hidden_truth_read": false,
+    "holdout_cases": 30,
+    "manifest_sha256": "d833b8a6af622630c5113da3149af50fba6c4d46de59fa7ec0d178dde1a22385",
+    "status": "PASS"
+  },
+  "human_qualification": "PENDING",
+  "input_boundary_corrected": true,
+  "live_source_runs": 0,
+  "logical_sources": 21,
+  "lossless_original_fields": true,
+  "mandatory_exception_distribution_nonexclusive": {
+    "ALIAS_OWNERSHIP_REVIEW": 30,
+    "AMBIGUOUS_IDENTITY": 44,
+    "EVIDENCE_WARNING": 13,
+    "LOW_OR_UNKNOWN_CONFIDENCE": 54,
+    "NEW_CANONICAL_NODE": 98,
+    "ONTOLOGY_PRESSURE": 4,
+    "PARENT_OR_CAUSAL_REVIEW": 22,
+    "RELATION_AMBIGUITY": 14,
+    "VIEW_ACTIVATION_REQUIRES_SEPARATE_GOVERNANCE": 8
+  },
+  "mandatory_exceptions": 234,
+  "manifest_sha256": "8c42e3d30b2439548eb8bd2ebc2a2983b993f45336d1c5b4df6b2cd89b9bd3f1",
+  "native_relation_evidence": 41,
+  "objects_deferred": 0,
+  "objects_imported_candidate_state": 274,
+  "objects_read": 274,
+  "objects_rejected_retained_for_audit": 2,
+  "package_files": 47,
+  "package_name": "semiconductor_foundation_backfill_web_pro_v1",
+  "package_sha256": "131421d3bbe3b968a1c72ee6e3767cfad6141a0cdaea1850ba30cccbd3932918",
+  "physical_sources": 20,
+  "private_import_contract_sha256": "f207a16c9a88e5dbae585bc06e51320ef5f81d656f5a7e3f46cfde5c4e998ee1",
+  "private_review_handoff_sha256": "36cc5cb9d65ef266120e9006b87bb1e46dabe8223b185d7a79d3931132de57ac",
+  "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "production_write_count": 0,
+  "provider_calls": 0,
+  "qualification_receipt_sha256": "dd912919db744cd6b3cce92f675c3355fcff9298986a2394ef009a0cb2565ee9",
+  "raw_source_extraction_calls": 0,
+  "regression": {
+    "backend": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 93,
+      "tests": 2274
+    },
+    "compileall": "PASS",
+    "final_import_tests": "19 passed",
+    "frontend": "124 passed",
+    "frontend_build": "PASS",
+    "frontend_tracked_files_match": 63,
+    "frozen_gold": "120/120 PASS",
+    "stable_fixture_and_crash_recovery_rerun": "93 passed",
+    "stage0_stage1_and_initial_import_tests": "203 passed"
+  },
+  "replay_duplicate_candidates_added": 0,
+  "residual_sample_recommendation": {
+    "claim_acceptable": 4,
+    "node_reject": 1,
+    "node_reuse": 5,
+    "total": 10
+  },
+  "residual_universe": 40,
+  "review_limits": {
+    "default_page": 25,
+    "hard": 200,
+    "max_page": 100,
+    "next_new_intake_allowed": false,
+    "post_import_state": "HARD_STOP",
+    "post_import_wip": 274,
+    "soft": 100
+  },
+  "review_projection_count": 274,
+  "runtime_sha256": "107116d134f1dcc6c2301043e69598d239ce5cfa1cc41a7e7702a0cf230f29b0",
+  "source_collisions": 0,
+  "source_identity": {
+    "CREATE": 17,
+    "REUSE": 3
+  },
+  "source_provenance_rate": 1.0,
+  "stage1_frozen_baseline": "8e07cc2b7270ac08cb4166b5f62b4dc76f396f35",
+  "stage2_entry_commit": "e575fe624fb7df5ecf7c6d032c2371b299ddf364",
+  "stage3_started": false,
+  "status": "AUTOMATED_QUALIFICATION_PASS_HUMAN_PENDING",
+  "structural_sha256": "40f020cb4da2ac9ff045fc85249f44e3d5d555062170ea86dd912504a2976504",
+  "structured_only_revalidation_checks_passed": 100,
+  "structured_table_rows": {
+    "aliases": 30,
+    "claims": 19,
+    "evidence": 158,
+    "native_evidence": 41,
+    "nodes": 163,
+    "relations": 54,
+    "sources": 20
+  },
+  "temporal_claims": 19,
+  "two_workspace_match": true,
+  "upstream_checks_passed": 330,
+  "validation_environment": {
+    "earlier_environment_attempts_retained_privately": true,
+    "existing_test_assertions_modified": false,
+    "fixture_inputs_stabilized": 14,
+    "fixture_root": "SYSTEM_TEMP",
+    "isolated_python": "3.12.14",
+    "legacy_public_example_config_used": true,
+    "legacy_test_modules_with_stable_input_timestamps": 2,
+    "subprocess_dependencies_available": true
+  }
+}
