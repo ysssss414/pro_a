@@ -106,16 +106,25 @@ def test_streamed_upload_hash_immutable_duplicates_and_canonical_preflight(tmp_p
 
 def test_source_list_batches_registered_source_projection(tmp_path, monkeypatch):
     case = stage7_fixture(tmp_path)
+    sources = []
     for index in range(3):
-        upload(case, clean_pdf(tmp_path, f"source-{index}.pdf", TEXT + f" {index}."))
+        source = upload(case, clean_pdf(tmp_path, f"source-{index}.pdf", TEXT + f" {index}."))
+        sources.append(source)
+        case["service"].start(
+            source["source_id"], idempotency_key=f"stage7-list-batch-{index:02d}",
+        )
 
     def unexpected_source_lookup(_source_id):
         raise AssertionError("SOURCE_LIST_N_PLUS_ONE")
 
     monkeypatch.setattr(case["service"], "source", unexpected_source_lookup)
+    monkeypatch.setattr(case["service"], "get_run", unexpected_source_lookup)
     result = case["service"].list(limit=25)
     assert result["total"] == len(result["items"]) == 3
-    assert all(item["processing_runs"] == [] and item["latest_run"] is None
+    assert all(item["latest_run"]["state"] == "QUEUED" for item in result["items"])
+    assert all(item["latest_run"]["overview_only"] is True
+               and item["latest_run"]["jobs"] == []
+               and item["latest_run"]["usage"]["attempts"] == 0
                for item in result["items"])
 
 

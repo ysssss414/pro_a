@@ -12,7 +12,7 @@ from pro_a.prompts import SOURCE_ANALYSIS_SYSTEM
 
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "phase3c_semantic_repair_cases.json"
 FIXTURES = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
-EXPECTED_PROMPT_SHA256 = "4bc28ae13b1b23f1645bec2b133bc264b50aa0b3f29fc61df67b45465129dfa5"
+EXPECTED_PROMPT_SHA256 = "cee72e35310ecff6e38a6a9021d3e3478906195e84f9491356c583e92dae5138"
 
 
 def test_semantic_repair_fixtures_cover_a_through_j_without_pilot_memorization():

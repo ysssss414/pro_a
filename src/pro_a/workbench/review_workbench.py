@@ -209,6 +209,18 @@ class ReviewWorkbench:
         require_safe_projection(result)
         return result
 
+    def rebuild_projection(self, handle):
+        from .stage1_scale import Stage1ReviewProjection
+        return Stage1ReviewProjection(self.config).rebuild(handle)
+
+    def page(self, handle, **filters):
+        from .stage1_scale import Stage1ReviewProjection
+        return Stage1ReviewProjection(self.config).page(handle, **filters)
+
+    def projected_item(self, handle, candidate_id):
+        from .stage1_scale import Stage1ReviewProjection
+        return Stage1ReviewProjection(self.config).item(handle, candidate_id)
+
     def _write_state(self, connection, handle, candidate_id, state):
         if state is None:
             connection.execute('DELETE FROM review_decisions WHERE artifact_id=? AND candidate_id=?', (handle, candidate_id))
@@ -240,7 +252,7 @@ class ReviewWorkbench:
             connection.execute('PRAGMA foreign_keys=ON')
             connection.execute('PRAGMA synchronous=FULL')
             connection.execute('BEGIN IMMEDIATE')
-            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9'):
+            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, audit = self._state(connection, handle, basis)
             self._sealed(connection, handle, draft, blank, run, states)
@@ -262,6 +274,7 @@ class ReviewWorkbench:
                 connection.execute('INSERT INTO review_drafts VALUES(?,?,?,?,?,?,?)',
                     (handle, 'REVIEW_' + basis, basis, request['reviewer'], 0, 'DRAFT', timestamp))
             response = {'operation_id': request['operation_id'], 'revision': revision}
+            projection_candidate_ids: list[str] = []
             if action in ('decision', 'undo'):
                 native = {row['candidate_id']: row for group in GROUPS for row in blank[group]}
                 candidate_id = request['candidate_id']
@@ -293,6 +306,8 @@ class ReviewWorkbench:
                     self._audit(connection, handle, request, identity, revision, 'DEPENDENCY_INVALIDATED', parent_id, old_parent, None,
                                 'Child decision no longer permits parent CREATE; explicit review is required.', timestamp)
                 response['invalidated_items'] = [item[0] for item in invalidated]
+                states = proposed
+                projection_candidate_ids = [candidate_id, *(item[0] for item in invalidated)]
             elif action == 'seal':
                 if request.get('confirm') is not True:
                     raise ReviewError('SEAL_CONFIRMATION_REQUIRED', status=422)
@@ -312,6 +327,12 @@ class ReviewWorkbench:
             self.artifacts.read(handle)
             connection.execute('UPDATE review_drafts SET revision=?,status=?,updated_at=? WHERE artifact_id=?',
                 (revision, 'SEALED' if action == 'seal' else 'DRAFT', timestamp, handle))
+            if schema_version(connection) == '10':
+                from .stage1_scale import Stage1ReviewProjection
+                Stage1ReviewProjection.refresh_states(
+                    connection, handle, projection_candidate_ids, states,
+                    revision=revision, status='SEALED' if action == 'seal' else 'DRAFT',
+                )
             connection.execute('INSERT INTO review_operations VALUES(?,?,?,?)', (handle, request['operation_id'], fingerprint, encode(response)))
         return response
 
@@ -321,7 +342,7 @@ class ReviewWorkbench:
             raise ReviewError('IMMUTABLE_FIELD_DRIFT')
         with self.store.connect() as connection:
             connection.execute('BEGIN')
-            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9'):
+            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, _ = self._state(connection, handle, basis)
             revision = draft['revision'] if draft else 0

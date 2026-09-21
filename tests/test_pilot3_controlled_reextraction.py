@@ -13,6 +13,9 @@ from pro_a.storage import sha256_file, write_json
 from stability_helpers import make_config
 
 
+STAGE1_SOURCE_ANALYSIS_SYSTEM = s2.prompts_module.SOURCE_ANALYSIS_SYSTEM
+
+
 def _prepare_frozen_fixture(tmp_path: Path, monkeypatch):
     cfg, _ = make_config(tmp_path)
     cfg.llm.enabled = True
@@ -21,9 +24,25 @@ def _prepare_frozen_fixture(tmp_path: Path, monkeypatch):
     write_pdf(source, ["[[PAGE:1]] Fixture source statement."])
     source_sha = sha256_file(source)
     monkeypatch.setattr(s2, "ORIGINAL_SOURCE_SHA256", source_sha)
-    # Public-base file identity; the semantic prompt pin and runtime checks remain frozen.
-    monkeypatch.setattr(s2, "REPAIRED_PROMPT_FILE_SHA256",
-                        "518a31ec17694e4d5adea0e3111f212a86fd4de73d24066271c44e5ef06bef14")
+    # Replay the historical prompt identity instead of authorizing the Stage 1 Company update
+    # for this retired controlled-re-extraction workflow.
+    historical_prompt = STAGE1_SOURCE_ANALYSIS_SYSTEM.replace(
+        "Entity, Company, Application", "Entity, Application"
+    )
+    assert s2.phase3c_prompt_repair_status(historical_prompt)["prompt_sha256"] == (
+        s2.REPAIRED_PROMPT_SHA256
+    )
+    monkeypatch.setattr(s2.prompts_module, "SOURCE_ANALYSIS_SYSTEM", historical_prompt)
+    frozen_prompt_file_sha = "518a31ec17694e4d5adea0e3111f212a86fd4de73d24066271c44e5ef06bef14"
+    monkeypatch.setattr(s2, "REPAIRED_PROMPT_FILE_SHA256", frozen_prompt_file_sha)
+    real_sha256_file = s2.sha256_file
+    prompt_path = Path(s2.prompts_module.__file__).resolve()
+
+    def historical_file_identity(path):
+        return (frozen_prompt_file_sha if Path(path).resolve() == prompt_path
+                else real_sha256_file(path))
+
+    monkeypatch.setattr(s2, "sha256_file", historical_file_identity)
     monkeypatch.setattr(s2, "PRODUCTION_BASELINE_SHA256", sha256_file(cfg.db_path))
 
     parsed = s2.parse_source_with_diagnostics(source)
@@ -102,6 +121,15 @@ def test_s2_preflight_rejects_original_run_id_before_extraction(tmp_path, monkey
 
     with pytest.raises(PilotError, match="RUN_ID_INVALID"):
         s2.controlled_reextraction_preflight(source, cfg, s2.ORIGINAL_RUN_ID)
+
+
+def test_historical_s2_preflight_rejects_stage1_prompt_identity(tmp_path, monkeypatch):
+    cfg, source, _ = _prepare_frozen_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        s2.prompts_module, "SOURCE_ANALYSIS_SYSTEM", STAGE1_SOURCE_ANALYSIS_SYSTEM
+    )
+    with pytest.raises(PilotError, match="PILOT3_REEXTRACTION_PROMPT_FREEZE_MISMATCH"):
+        s2.controlled_reextraction_preflight(source, cfg, "PILOT_20260901_A1B2C3D4")
 
 
 def test_structural_comparison_is_diagnostic_and_allows_no_new_candidate():

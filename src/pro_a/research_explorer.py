@@ -6,9 +6,9 @@ import hashlib
 import json
 from pathlib import Path
 import sqlite3
+import unicodedata
 from typing import Any, Iterator
 
-from pro_a.coverage import run_audit
 from pro_a.direct_impact import DirectImpact
 from pro_a.workbench.research_store import FollowupNotes, OBJECT_TYPES
 
@@ -70,6 +70,11 @@ class ResearchExplorer:
         path = Path(self.config.knowledge_db).resolve(strict=True)
         connection = sqlite3.connect(f'{path.as_uri()}?mode=ro', uri=True)
         connection.row_factory = sqlite3.Row
+        connection.create_function(
+            'nfkc_casefold', 1,
+            lambda value: unicodedata.normalize('NFKC', str(value or '')).casefold(),
+            deterministic=True,
+        )
         connection.execute('PRAGMA query_only=ON')
         try:
             connection.execute('BEGIN')
@@ -159,18 +164,22 @@ class ResearchExplorer:
             raise ResearchError('INVALID_FILTER')
         if object_type and object_type not in SEARCH_TYPES:
             raise ResearchError('UNSUPPORTED_RESEARCH_OBJECT')
-        needle, like = q.casefold(), '%' + q.casefold() + '%'
+        needle = unicodedata.normalize('NFKC', q).casefold()
         results: list[dict] = []
         with self.connect() as conn:
             if object_type in ('', 'NODE'):
                 rows = conn.execute('''SELECT n.node_id,n.canonical_name,n.primary_type,n.status,
                         GROUP_CONCAT(a.alias,' | ') AS matched_aliases,
-                        MIN(CASE WHEN lower(n.canonical_name)=? THEN 0 WHEN lower(a.alias)=? THEN 1
-                                 WHEN lower(n.canonical_name) LIKE ? THEN 2 ELSE 3 END) AS match_rank
+                        MIN(CASE WHEN nfkc_casefold(n.canonical_name)=? THEN 0
+                                 WHEN nfkc_casefold(a.alias)=? THEN 1
+                                 WHEN instr(nfkc_casefold(n.canonical_name),?)>0 THEN 2 ELSE 3 END) AS match_rank
                         FROM nodes n LEFT JOIN node_aliases a ON a.node_id=n.node_id
-                        WHERE lower(n.canonical_name) LIKE ? OR lower(COALESCE(a.alias,'')) LIKE ?
-                        GROUP BY n.node_id,n.canonical_name,n.primary_type,n.status LIMIT ?''',
-                    (needle, needle, like, like, like, limit)).fetchall()
+                        WHERE instr(nfkc_casefold(n.canonical_name),?)>0
+                           OR instr(nfkc_casefold(COALESCE(a.alias,'')),?)>0
+                        GROUP BY n.node_id,n.canonical_name,n.primary_type,n.status
+                        ORDER BY match_rank,nfkc_casefold(n.canonical_name),n.canonical_name,n.node_id
+                        LIMIT ?''',
+                    (needle, needle, needle, needle, needle, limit)).fetchall()
                 results.extend({'object_type': 'NODE', 'object_id': r['node_id'],
                                 'label': r['canonical_name'], 'subtitle': r['primary_type'],
                                 'node_type': r['primary_type'], 'status': r['status'],
@@ -189,9 +198,9 @@ class ResearchExplorer:
                 for row in conn.execute(f'''SELECT {id_col} object_id,{label_col} label,
                         {subtitle_col} subtitle,{status_col} status,
                         {node_column},
-                        CASE WHEN lower({label_col})=? THEN 0 ELSE 3 END match_rank
-                        FROM {table} WHERE lower({label_col}) LIKE ?
-                        ORDER BY match_rank,{id_col} LIMIT ?''', (needle, like, limit)):
+                        CASE WHEN nfkc_casefold({label_col})=? THEN 0 ELSE 3 END match_rank
+                        FROM {table} WHERE instr(nfkc_casefold({label_col}),?)>0
+                        ORDER BY match_rank,{id_col} LIMIT ?''', (needle, needle, limit)):
                     results.append({'object_type': kind, 'object_id': row['object_id'],
                                     'label': row['label'], 'subtitle': row['subtitle'],
                                     'status': row['status'], 'node_id': row['node_id'], '_rank': row['match_rank']})
@@ -498,10 +507,78 @@ class ResearchExplorer:
 
     def coverage(self, *, cursor: str | None = None, limit: int = 25) -> dict:
         offset, limit = _page(cursor, limit)
-        result = run_audit(self.config.knowledge_db)
-        nodes = result['node_coverage'][offset:offset + limit]
-        unlinked = result['unlinked_claims'][offset:offset + limit]
         with self.connect() as conn:
+            active_nodes = int(conn.execute(
+                "SELECT COUNT(*) FROM nodes WHERE status='active'"
+            ).fetchone()[0])
+            total_nodes = int(conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0])
+            node_rows = [dict(row) for row in conn.execute('''
+                SELECT n.node_id,n.canonical_name,n.primary_type,
+                  (SELECT COUNT(*) FROM node_aliases a WHERE a.node_id=n.node_id) alias_count,
+                  (SELECT COUNT(*) FROM node_relations r WHERE r.status='current'
+                    AND r.relation_type='part_of' AND r.from_node_id=n.node_id) parent_count,
+                  (SELECT COUNT(*) FROM node_relations r WHERE r.status='current'
+                    AND r.relation_type='part_of' AND r.to_node_id=n.node_id) child_count,
+                  (SELECT COUNT(DISTINCT l.source_id) FROM source_node_links l
+                    WHERE l.node_id=n.node_id) source_count,
+                  (SELECT COUNT(DISTINCT l.claim_id) FROM claim_node_links l
+                    WHERE l.node_id=n.node_id) claim_count,
+                  (SELECT COUNT(*) FROM current_views v WHERE v.node_id=n.node_id
+                    AND v.status='official') current_view_count,
+                  (SELECT COUNT(*) FROM research_questions q WHERE q.node_id=n.node_id)
+                    research_question_count,
+                  (SELECT COUNT(*) FROM knowledge_gaps g WHERE g.node_id=n.node_id)
+                    knowledge_gap_count,
+                  (SELECT COUNT(*) FROM node_relations r WHERE r.status='current'
+                    AND r.relation_type<>'part_of'
+                    AND (r.from_node_id=n.node_id OR r.to_node_id=n.node_id)) functional_relation_count
+                FROM nodes n WHERE n.status='active'
+                ORDER BY n.primary_type COLLATE NOCASE,n.primary_type,
+                         n.canonical_name COLLATE NOCASE,n.canonical_name,n.node_id
+                LIMIT ? OFFSET ?''', (limit, offset))]
+            for row in node_rows:
+                if row['research_question_count'] or row['knowledge_gap_count']:
+                    row['knowledge_level'] = 'LEVEL_4_RESEARCH_ACTIVE'
+                elif row['current_view_count']:
+                    row['knowledge_level'] = 'LEVEL_3_CANONICAL_VIEW'
+                elif row['claim_count']:
+                    row['knowledge_level'] = 'LEVEL_2_EVIDENCE_CONNECTED'
+                elif row['source_count']:
+                    row['knowledge_level'] = 'LEVEL_1_SOURCE_CONNECTED'
+                else:
+                    row['knowledge_level'] = 'LEVEL_0_STRUCTURE_ONLY'
+            unlinked_total = int(conn.execute('''SELECT COUNT(*) FROM claims c
+                WHERE NOT EXISTS(SELECT 1 FROM claim_node_links l WHERE l.claim_id=c.claim_id)''').fetchone()[0])
+            unlinked = [dict(row) for row in conn.execute('''SELECT c.claim_id,c.source_id,
+                    s.title source_title,s.source_type,s.source_rank,c.statement,c.evidence_excerpt,
+                    c.nature,c.status,c.confidence,c.evidence_pointer,0 claim_node_link_count
+                FROM claims c JOIN sources s ON s.source_id=c.source_id
+                WHERE NOT EXISTS(SELECT 1 FROM claim_node_links l WHERE l.claim_id=c.claim_id)
+                ORDER BY c.claim_id LIMIT ? OFFSET ?''', (limit, offset))]
+            summary_row = conn.execute('''SELECT
+                (SELECT COUNT(*) FROM node_aliases) alias_count,
+                (SELECT COUNT(*) FROM sources) sources,
+                (SELECT COUNT(*) FROM claims) claims,
+                (SELECT COUNT(*) FROM claim_node_links) claim_node_links,
+                (SELECT COUNT(*) FROM current_views WHERE status='official') current_views,
+                (SELECT COUNT(*) FROM research_questions) research_questions,
+                (SELECT COUNT(*) FROM knowledge_gaps) knowledge_gaps,
+                (SELECT COUNT(*) FROM knowledge_gaps WHERE status='open') open_knowledge_gaps,
+                (SELECT COUNT(*) FROM node_relations WHERE status='current') current_relations,
+                (SELECT COUNT(*) FROM node_relations WHERE status='current' AND relation_type='part_of') current_part_of
+            ''').fetchone()
+            node_coverage = {
+                'with_sources': int(conn.execute('''SELECT COUNT(*) FROM nodes n WHERE n.status='active'
+                    AND EXISTS(SELECT 1 FROM source_node_links l WHERE l.node_id=n.node_id)''').fetchone()[0]),
+                'with_claims': int(conn.execute('''SELECT COUNT(*) FROM nodes n WHERE n.status='active'
+                    AND EXISTS(SELECT 1 FROM claim_node_links l WHERE l.node_id=n.node_id)''').fetchone()[0]),
+                'with_current_view': int(conn.execute('''SELECT COUNT(*) FROM nodes n WHERE n.status='active'
+                    AND EXISTS(SELECT 1 FROM current_views v WHERE v.node_id=n.node_id AND v.status='official')''').fetchone()[0]),
+                'with_rq': int(conn.execute('''SELECT COUNT(*) FROM nodes n WHERE n.status='active'
+                    AND EXISTS(SELECT 1 FROM research_questions q WHERE q.node_id=n.node_id)''').fetchone()[0]),
+                'with_gaps': int(conn.execute('''SELECT COUNT(*) FROM nodes n WHERE n.status='active'
+                    AND EXISTS(SELECT 1 FROM knowledge_gaps g WHERE g.node_id=n.node_id)''').fetchone()[0]),
+            }
             gaps = [dict(row) for row in conn.execute('''SELECT g.gap_id,g.node_id,n.canonical_name,g.title,
                     g.description,g.status,g.freshness_due,g.resolution_claim_id
                     FROM knowledge_gaps g JOIN nodes n ON n.node_id=g.node_id
@@ -512,10 +589,17 @@ class ResearchExplorer:
             gap_notes.setdefault(note['object_id'], []).append(note)
         for gap in gaps:
             gap['notes'] = gap_notes.get(gap['gap_id'], [])
-        value = {'summary': result['summary'],
-                 'node_coverage': _page_result(nodes, len(result['node_coverage']), offset, limit,
+        summary = {
+            'total_nodes': total_nodes, 'active_nodes': active_nodes,
+            'inactive_nodes': total_nodes - active_nodes,
+            **dict(summary_row), 'unlinked_claims': unlinked_total,
+            'node_coverage': node_coverage,
+            'projection_mode': 'BOUNDED_SQL_PAGE_V1',
+        }
+        value = {'summary': summary,
+                 'node_coverage': _page_result(node_rows, active_nodes, offset, limit,
                                                'primary_type ASC, canonical_name ASC, node_id ASC'),
-                 'unlinked_claims': _page_result(unlinked, len(result['unlinked_claims']), offset, limit,
+                 'unlinked_claims': _page_result(unlinked, unlinked_total, offset, limit,
                                                  'claim_id ASC'),
                  'knowledge_gaps': gaps,
                  'coverage_is_attribution': False, 'canonical_write': False,

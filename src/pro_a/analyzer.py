@@ -285,7 +285,8 @@ class PlannedExtractionPiece:
 @dataclass(frozen=True)
 class InitialExtractionPlan:
     effective_max_chars: int
-    full_prompt_catalog: tuple[dict[str, Any], ...]
+    full_prompt_catalog_count: int
+    full_prompt_catalog_sha256: str
     pieces: tuple[PlannedExtractionPiece, ...]
     artifact: dict[str, Any]
     plan_sha256: str
@@ -318,11 +319,40 @@ class Analyzer:
         return self.llm.available
 
     def node_catalog(self) -> list[dict[str, Any]]:
-        rows = self.db.list_nodes(self.cfg.llm.max_nodes_in_prompt)
-        return [
-            {"node_id": r["node_id"], "canonical_name": r["canonical_name"], "primary_type": r["primary_type"], "aliases": r.get("aliases", [])}
-            for r in rows
-        ]
+        catalog: list[dict[str, Any]] = []
+        for page in self.db.iter_node_catalog(
+            page_size=min(500, self.cfg.llm.max_nodes_in_prompt)
+        ):
+            remaining = self.cfg.llm.max_nodes_in_prompt - len(catalog)
+            catalog.extend(copy.deepcopy(page[:remaining]))
+            if len(catalog) >= self.cfg.llm.max_nodes_in_prompt:
+                break
+        return catalog
+
+    def _catalog_inventory(self) -> tuple[int, str]:
+        count = 0
+        digest = hashlib.sha256()
+        digest.update(b"[")
+        first = True
+        for page in self.db.iter_node_catalog():
+            for node in page:
+                if not first:
+                    digest.update(b",")
+                digest.update(json.dumps(
+                    node, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                ).encode("utf-8"))
+                first = False
+                count += 1
+        digest.update(b"]")
+        return count, digest.hexdigest()
+
+    def _node_catalog_for_text(self, text: str) -> list[dict[str, Any]]:
+        scoped: list[dict[str, Any]] = []
+        for page in self.db.iter_node_catalog():
+            scoped.extend(copy.deepcopy(scope_node_catalog(page, text)))
+            if len(scoped) > self.cfg.llm.max_nodes_in_prompt:
+                raise LLMError("NODE_CATALOG_SCOPE_LIMIT_EXCEEDED")
+        return scoped
 
     @staticmethod
     def _piece_locators(text: str, start: int, end: int) -> tuple[str, ...]:
@@ -364,7 +394,7 @@ class Analyzer:
         chunks = chunk_source_text(text, effective_max_chars)
         if "".join(chunks) != text:
             raise ValueError("initial extraction partition does not reconstruct Source")
-        full_prompt_catalog = self.node_catalog()
+        full_catalog_count, full_catalog_sha256 = self._catalog_inventory()
         planned: list[PlannedExtractionPiece] = []
         cursor = 0
         for index, chunk in enumerate(chunks, 1):
@@ -380,9 +410,7 @@ class Analyzer:
                 source_text=chunk,
                 prompt_text=prompt_piece_text,
             )
-            scoped_node_catalog = tuple(
-                copy.deepcopy(scope_node_catalog(full_prompt_catalog, chunk))
-            )
+            scoped_node_catalog = tuple(self._node_catalog_for_text(chunk))
             user_prompt = SOURCE_ANALYSIS_USER.format(
                 mode=mode,
                 filename=filename,
@@ -438,8 +466,9 @@ class Analyzer:
                 "mode": mode,
                 "source_text_sha256": _sha256_text(text),
                 "source_text_chars": len(text),
-                "full_node_catalog_count": len(full_prompt_catalog),
-                "full_node_catalog_sha256": _canonical_sha256(full_prompt_catalog),
+                "full_node_catalog_count": full_catalog_count,
+                "full_node_catalog_sha256": full_catalog_sha256,
+                "full_node_catalog_hash_contract": "canonical-json-array-stream-v1",
                 "system_prompt_sha256": _sha256_text(SOURCE_ANALYSIS_SYSTEM),
             },
             "partition_policy": {
@@ -471,7 +500,8 @@ class Analyzer:
         artifact = {**body, "initial_extraction_plan_sha256": plan_sha256}
         return InitialExtractionPlan(
             effective_max_chars=effective_max_chars,
-            full_prompt_catalog=tuple(copy.deepcopy(full_prompt_catalog)),
+            full_prompt_catalog_count=full_catalog_count,
+            full_prompt_catalog_sha256=full_catalog_sha256,
             pieces=tuple(planned),
             artifact=artifact,
             plan_sha256=plan_sha256,
@@ -1518,7 +1548,7 @@ class Analyzer:
         self.last_initial_extraction_plan = copy.deepcopy(initial_plan.artifact)
         if initial_plan_sink is not None:
             initial_plan_sink(copy.deepcopy(initial_plan.artifact))
-        full_prompt_catalog = list(initial_plan.full_prompt_catalog)
+        full_prompt_catalog_count = initial_plan.full_prompt_catalog_count
         merged = {
             "source_metadata": {}, "node_matches": [], "node_candidates": [], "claims": [],
             "source_references": [], "relation_candidates": [],
@@ -1560,8 +1590,8 @@ class Analyzer:
                         source_text=piece,
                         prompt_text=prompt_piece_text,
                     )
-                    scoped_node_catalog = scope_node_catalog(
-                        full_prompt_catalog, source_piece.source_text
+                    scoped_node_catalog = self._node_catalog_for_text(
+                        source_piece.source_text
                     )
                     catalog_json = json.dumps(scoped_node_catalog, ensure_ascii=False)
                     user = SOURCE_ANALYSIS_USER.format(
@@ -1574,7 +1604,7 @@ class Analyzer:
                     **source_piece.diagnostic(),
                     "initial_plan_sha256": initial_plan.plan_sha256,
                     "preplanned_initial_piece": planned_piece is not None,
-                    "full_prompt_catalog_count": len(full_prompt_catalog),
+                    "full_prompt_catalog_count": full_prompt_catalog_count,
                     "scoped_node_catalog_count": len(scoped_node_catalog),
                     "scoped_node_ids": [
                         str(node.get("node_id") or "")

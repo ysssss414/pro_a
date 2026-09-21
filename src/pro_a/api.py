@@ -46,6 +46,14 @@ class NodeSearchResult(NodeSummary):
     matched_text: str
 
 
+class NodeSearchPage(BaseModel):
+    items: list[NodeSearchResult]
+    next_cursor: str | None
+    limit: int
+    query_sha256: str
+    ordering: str
+
+
 class RelationResult(BaseModel):
     relation_id: str
     from_node_id: str
@@ -408,6 +416,18 @@ def create_app(
         query_model: ReadOnlyQuery = Depends(read_model),
     ) -> list[dict]:
         return query_model.search_nodes(q, primary_type=primary_type, limit=limit)
+
+    @app.get("/api/nodes/search-page", response_model=NodeSearchPage)
+    def search_nodes_page(
+        q: str = Query(..., min_length=1, max_length=200),
+        primary_type: str | None = None,
+        limit: int = Query(20, ge=1, le=MAX_QUERY_LIMIT),
+        cursor: str | None = None,
+        query_model: ReadOnlyQuery = Depends(read_model),
+    ) -> dict:
+        return query_model.search_nodes_page(
+            q, primary_type=primary_type, limit=limit, cursor=cursor
+        )
 
     @app.get("/api/nodes/{node_id}", response_model=NodeDetail)
     def node_detail(

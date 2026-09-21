@@ -21,6 +21,11 @@ from pro_a.operational_ingestion import plan_external_source_analysis
 from pro_a.phase4_orchestration import resume_execution, start_execution
 from pro_a.phase4_retry import RetryPolicy
 from pro_a.production_promotion import canonical_sha256, deterministic_id, sha256_file
+from pro_a.semantic_decomposition import (
+    SEMANTIC_MAX_PARENTS_PER_BATCH,
+    SemanticDecompositionError,
+    partition_semantic_claims,
+)
 from .artifacts import Artifacts
 from .cloud_jobs import CloudJobs, CloudProfile, JobError
 from .config import BoundaryError, WorkbenchConfig, checked_path
@@ -45,6 +50,7 @@ SOURCE_STATES = (
 TERMINAL_PROCESSING_STATES = (
     "HUMAN_REVIEW_REQUIRED", "FAILED", "BLOCKED", "RECOVERY_REQUIRED",
 )
+MAX_STAGE1_JOBS_PER_RUN = 31
 
 
 class SourceOperationError(RuntimeError):
@@ -122,7 +128,7 @@ def prepare_source_operations(config: WorkbenchConfig) -> dict[str, Any]:
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version in ("8", "9"):
+        if version in ("8", "9", "10"):
             return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "7":
             raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
@@ -253,7 +259,7 @@ class SourceOperations:
         self.artifacts = Artifacts(config)
         self.jobs = CloudJobs(config, cloud_profile)
         with self.store.connect() as connection:
-            if schema_version(connection) not in ("8", "9"):
+            if schema_version(connection) not in ("8", "9", "10"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
 
     def _record_upload(self, *, source_id: str | None, outcome: str, filename: str,
@@ -425,7 +431,7 @@ class SourceOperations:
             if source["canonical_source_id"]:
                 raise SourceOperationError("SOURCE_ALREADY_EXISTS_IN_PRODUCTION")
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
-                     if schema_version(connection) == "9" else None)
+                     if schema_version(connection) in ("9", "10") else None)
 
             def equivalent(row):
                 if row["runtime_sha256"] != runtime_sha:
@@ -459,6 +465,12 @@ class SourceOperations:
                             "duplicate": True}
             if rows and same_runtime is None and not reprocess_reason:
                 raise SourceOperationError("EXPLICIT_RUNTIME_REPROCESS_REASON_REQUIRED", 422)
+            if schema_version(connection) == "10":
+                from .stage1_scale import require_stage1_intake
+                try:
+                    require_stage1_intake(connection)
+                except BoundaryError as error:
+                    raise SourceOperationError(str(error)) from None
             run_id = "SOURCE_RUN_" + uuid4().hex.upper()
             created = _now()
             connection.execute(
@@ -636,6 +648,14 @@ class SourceOperations:
     def _run_pending_jobs(self, jobs: list[dict[str, Any]], provider: Any,
                           worker_id: str) -> list[dict[str, Any]]:
         if provider is not None:
+            with self.store.connect() as connection:
+                if schema_version(connection) == "10":
+                    from .stage1_scale import stage1_capacity
+                    capacity = stage1_capacity(connection)
+                    if (capacity["wip_state"] == "HARD_STOP"
+                            or capacity["unprojected_review_packets"]
+                            or capacity["intake_paused"]):
+                        return jobs
             for job in jobs:
                 if job["status"] == "QUEUED":
                     self.jobs.run_once(provider, worker_id=worker_id, job_id=job["job_id"])
@@ -676,12 +696,82 @@ class SourceOperations:
         phase4 = load_config(self.profile.phase4_config_path)
         return _ExtractionReplay(phase4.llm, responses, metadata)
 
-    @staticmethod
-    def _semantic_replay(job: Mapping[str, Any], envelope: Mapping[str, Any]):
-        normalized = envelope["normalized_output"]
-        results = copy.deepcopy(normalized["results"])
-        ids = [row["parent_claim_id"] for row in results]
-        usage = job["usage"]
+    def _semantic_replay(
+        self,
+        jobs: list[Mapping[str, Any]],
+        envelopes: list[Mapping[str, Any]],
+        frozen_claims: list[Mapping[str, Any]],
+    ) -> dict[str, Any]:
+        """Exactly reconstruct ordered semantic results from bounded durable jobs."""
+        if len(jobs) != len(envelopes):
+            raise SourceOperationError("SEMANTIC_BATCH_ENVELOPE_COUNT_MISMATCH")
+        expected_ids = [str(claim.get("claim_id") or "") for claim in frozen_claims]
+        if not all(expected_ids) or len(expected_ids) != len(set(expected_ids)):
+            raise SourceOperationError("SEMANTIC_PARENT_IDS_MISSING_OR_DUPLICATE")
+        expected_evidence = {
+            str(claim["claim_id"]): [
+                str(unit.get("evidence_unit_id") or "")
+                for unit in claim.get("evidence_units") or []
+            ]
+            for claim in frozen_claims
+        }
+        result_by_id: dict[str, dict[str, Any]] = {}
+        reconstructed_inputs: list[dict[str, Any]] = []
+        call_records: list[dict[str, Any]] = []
+        for batch_index, (job, envelope) in enumerate(zip(jobs, envelopes, strict=True), 1):
+            with self.store.connect() as connection:
+                source_input = connection.execute(
+                    "SELECT artifact_relative FROM source_cloud_inputs WHERE artifact_id=?",
+                    (job["input"]["artifact_id"],),
+                ).fetchone()
+            if source_input is None:
+                raise SourceOperationError("SEMANTIC_BATCH_INPUT_MISSING")
+            document = json.loads(
+                self.artifacts.resolve(source_input[0]).read_text(encoding="utf-8")
+            )
+            batch_claims = list((document.get("payload") or {}).get("claims") or [])
+            if not 1 <= len(batch_claims) <= SEMANTIC_MAX_PARENTS_PER_BATCH:
+                raise SourceOperationError("SEMANTIC_BATCH_PARENT_CAP_VIOLATION")
+            batch_ids = [str(claim.get("claim_id") or "") for claim in batch_claims]
+            normalized = envelope.get("normalized_output") or {}
+            results = copy.deepcopy(normalized.get("results") or [])
+            result_ids = [str(row.get("parent_claim_id") or "") for row in results]
+            if result_ids != batch_ids or len(result_ids) != len(set(result_ids)):
+                raise SourceOperationError("SEMANTIC_BATCH_RESULT_ID_MISMATCH")
+            for row in results:
+                parent_id = str(row["parent_claim_id"])
+                if parent_id in result_by_id:
+                    raise SourceOperationError("SEMANTIC_DUPLICATE_PARENT_RESULT")
+                evidence_ids = [
+                    str(unit.get("evidence_unit_id") or "")
+                    for unit in row.get("evidence_units") or []
+                ]
+                if evidence_ids != expected_evidence.get(parent_id):
+                    raise SourceOperationError("SEMANTIC_EVIDENCE_IDENTITY_CHANGED")
+                result_by_id[parent_id] = row
+            reconstructed_inputs.extend(copy.deepcopy(batch_claims))
+            call_records.append({
+                "call_index": batch_index,
+                "batch_parent_claim_ids": batch_ids,
+                "batch_claim_count": len(batch_ids),
+                "status": "SUCCESS",
+                "metadata": {
+                    "execution_mode": "DURABLE_CLOUD_JOB",
+                    "job_id": job["job_id"],
+                    "attempt_count": job["attempt_count"],
+                    "usage": copy.deepcopy(job["usage"]),
+                },
+            })
+        if _canonical(reconstructed_inputs) != _canonical(list(frozen_claims)):
+            raise SourceOperationError("SEMANTIC_BATCH_RECONSTRUCTION_MISMATCH")
+        if set(result_by_id) != set(expected_ids):
+            raise SourceOperationError("SEMANTIC_PARENT_COVERAGE_MISMATCH")
+        results = [result_by_id[parent_id] for parent_id in expected_ids]
+        usage_known = all(job["usage"]["status"] == "KNOWN" for job in jobs)
+        usage = {
+            key: (sum(int(job["usage"][key] or 0) for job in jobs) if usage_known else 0)
+            for key in ("input_tokens", "output_tokens", "total_tokens")
+        }
         return {
             "document_type": "phase3e2se1_post_extraction_semantic_decomposition",
             "schema_version": "2.1", "proposition_ir_version": "2.1",
@@ -690,23 +780,31 @@ class SourceOperations:
             "invariants": {"MODEL_GENERATED_RAW_EVIDENCE_OFFSETS": False,
                            "PARENT_EVIDENCE_IDENTITY_DETERMINISTIC": True,
                            "PROPOSITION_SUPPORT_REFERENCES_EXISTING_EVIDENCE_IDS": True},
-            "backend": "DURABLE_CLOUD_JOB", "batch_size": len(ids),
-            "input_parent_claim_ids": ids, "output_parent_claim_ids": ids,
-            "parent_claims_before": len(ids), "parent_claims_after": len(ids),
-            "parent_claim_id_match": len(ids), "new_parent_claims": 0,
+            "backend": ("DURABLE_CLOUD_JOB" if jobs
+                        else "NO_SEMANTIC_CALL_EMPTY_PARENT_SET"),
+            "batch_size": SEMANTIC_MAX_PARENTS_PER_BATCH,
+            "batch_parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
+            "batch_count": len(jobs),
+            "input_parent_claim_ids": expected_ids,
+            "output_parent_claim_ids": expected_ids,
+            "parent_claims_before": len(expected_ids),
+            "parent_claims_after": len(expected_ids),
+            "parent_claim_id_match": len(expected_ids), "new_parent_claims": 0,
             "missing_parent_claims": 0, "unexpected_model_parent_ids": [],
             "primary_extraction_llm_calls": 0,
             "semantic_length_retry_changes_claims": False,
             "semantic_length_retry_changes_evidence_units": False,
-            "semantic_llm_calls": job["attempt_count"], "semantic_length_retries": 0,
-            "usage": {"prompt_tokens": usage["input_tokens"] or 0,
-                      "completion_tokens": usage["output_tokens"] or 0,
-                      "total_tokens": usage["total_tokens"] or 0},
+            "semantic_llm_calls": sum(int(job["attempt_count"]) for job in jobs),
+            "semantic_length_retries": 0,
+            "usage_status": "KNOWN" if usage_known else "UNKNOWN",
+            "usage": {"prompt_tokens": usage["input_tokens"],
+                      "completion_tokens": usage["output_tokens"],
+                      "total_tokens": usage["total_tokens"]},
             "counts": {"valid_proposition_ir_claims": len(results),
                        "ambiguous_or_invalid_ir_claims": 0,
                        "proposition_evidence_binding_failures": 0,
                        "unsupported_proposition_content": 0},
-            "call_records": [], "results": results,
+            "call_records": call_records, "results": results,
         }
 
     def _copy_and_register_packet(self, run: Mapping[str, Any], native_root: Path) -> dict[str, Any]:
@@ -841,10 +939,45 @@ class SourceOperations:
                           "execution_id": row["native_execution_id"],
                           "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],
                           "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
+            claims = list(document["payload"].get("claims") or [])
+            input_token_budget = (
+                self.jobs.profile.max_total_tokens - self.jobs.profile.max_output_tokens
+            )
+            try:
+                batches = partition_semantic_claims(
+                    claims,
+                    max_parents=SEMANTIC_MAX_PARENTS_PER_BATCH,
+                    max_input_tokens=input_token_budget,
+                )
+            except (SemanticDecompositionError, ValueError) as error:
+                raise SourceOperationError(str(error)) from None
+            extraction_jobs = self._jobs_for(run_id, SOURCE_ANALYSIS_OPERATION)
+            if len(extraction_jobs) + len(batches) > MAX_STAGE1_JOBS_PER_RUN:
+                raise SourceOperationError("SOURCE_JOB_BUDGET_EXCEEDED")
             current = self.get_run(run_id)
-            artifact = self._register_input(current, SEMANTIC_OPERATION, 1,
-                                            document["payload"], checkpoint)
-            self._bind_job(run_id, SEMANTIC_OPERATION, 1, artifact)
+            partition_identity = canonical_sha256({
+                "payload_sha256": document["payload_sha256"],
+                "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
+                "input_token_budget": input_token_budget,
+                "batches": [[claim["claim_id"] for claim in batch] for batch in batches],
+            })
+            for ordinal, batch in enumerate(batches, 1):
+                batch_checkpoint = {
+                    **checkpoint,
+                    "semantic_partition": {
+                        "partition_sha256": partition_identity,
+                        "batch_index": ordinal,
+                        "batch_count": len(batches),
+                        "parent_claim_ids": [claim["claim_id"] for claim in batch],
+                        "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
+                        "input_token_budget": input_token_budget,
+                    },
+                }
+                artifact = self._register_input(
+                    current, SEMANTIC_OPERATION, ordinal,
+                    {"claims": batch}, batch_checkpoint,
+                )
+                self._bind_job(run_id, SEMANTIC_OPERATION, ordinal, artifact)
             self._transition(run_id, "SEMANTIC_PROCESSING", "SEMANTIC_JOB")
             return self.get_run(run_id)
 
@@ -853,16 +986,40 @@ class SourceOperations:
                                           provider, worker_id)
             if self._propagate_job_state(run_id, jobs, "SEMANTIC_JOB"):
                 return self.get_run(run_id)
-            if not jobs or jobs[0]["status"] != "SUCCEEDED":
+            if any(job["status"] != "SUCCEEDED" for job in jobs):
                 return self.get_run(run_id)
-            job = jobs[0]
-            envelope = self.jobs.private_result(job["job_id"])
-            replay_result = self._semantic_replay(job, envelope)
-            metadata = {"provider": job["provider"], "requested_model": job["requested_model"],
-                        "provider_reported_model": job["provider_reported_model"],
-                        "job_id": job["job_id"], "attempt_count": job["attempt_count"],
-                        "provider_calls": job["attempt_count"], "usage": job["usage"]}
             native_root = self._native_root(row)
+            semantic_document = json.loads(
+                (native_root / "engine/evidence/stage6_semantic_input.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            envelopes = [self.jobs.private_result(job["job_id"]) for job in jobs]
+            replay_result = self._semantic_replay(
+                jobs, envelopes, list(semantic_document["payload"].get("claims") or [])
+            )
+            metadata = None
+            if jobs:
+                known = all(job["usage"]["status"] == "KNOWN" for job in jobs)
+                metadata = {
+                    "provider": jobs[0]["provider"],
+                    "requested_model": jobs[0]["requested_model"],
+                    "provider_reported_model": jobs[0]["provider_reported_model"],
+                    "provider_reported_models": [job["provider_reported_model"] for job in jobs],
+                    "job_id": jobs[0]["job_id"],
+                    "job_ids": [job["job_id"] for job in jobs],
+                    "attempt_count": sum(job["attempt_count"] for job in jobs),
+                    "provider_calls": sum(job["attempt_count"] for job in jobs),
+                    "usage": {
+                        "status": "KNOWN" if known else "UNKNOWN",
+                        "input_tokens": (sum(job["usage"]["input_tokens"] for job in jobs)
+                                         if known else None),
+                        "output_tokens": (sum(job["usage"]["output_tokens"] for job in jobs)
+                                          if known else None),
+                        "total_tokens": (sum(job["usage"]["total_tokens"] for job in jobs)
+                                         if known else None),
+                    },
+                }
             result = resume_execution(
                 native_root, execution_id=row["native_execution_id"],
                 config_path=self.profile.phase4_config_path,
@@ -989,6 +1146,50 @@ class SourceOperations:
                                       "packet_id": result["packet_id"]})
         return self._post_processing(result)
 
+    @staticmethod
+    def _run_overview(row: sqlite3.Row, source_sha256: str, effective_state: str,
+                      usage: Mapping[str, Any] | None) -> dict[str, Any]:
+        """Bounded list projection; full job/review context stays on the detail endpoint."""
+        usage = dict(usage or {})
+        known = usage.get("usage_status") == "KNOWN"
+        result = {
+            "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
+            "source_sha256": source_sha256, "state": effective_state,
+            "stage": row["stage"], "runtime_identity": json.loads(row["runtime_json"]),
+            "native_execution_id": row["native_execution_id"],
+            "native_checkpoint": {"available": bool(row["native_execution_id"]),
+                                  "completed_stage": row["stage"]},
+            "packet_artifact_id": row["packet_artifact_id"], "packet_id": row["packet_id"],
+            "error": ({"code": row["error_code"], "stage": row["stage"],
+                       "retry_safe": bool(row["retry_safe"]),
+                       "manual_recovery_required": bool(row["manual_recovery_required"]),
+                       "operator_action": ("Manual job reconciliation is required."
+                                           if row["manual_recovery_required"] else
+                                           "Inspect the registered artifacts and start an explicit reprocess if allowed.")}
+                      if row["error_code"] else None),
+            "jobs": [],
+            "usage": {
+                "status": "KNOWN" if known else "UNKNOWN",
+                "input_tokens": usage.get("input_tokens") if known else None,
+                "output_tokens": usage.get("output_tokens") if known else None,
+                "total_tokens": usage.get("total_tokens") if known else None,
+                "attempts": int(usage.get("attempts") or 0),
+            },
+            "review": None, "attribution": None, "qualification": None,
+            "activation_receipt": None,
+            "lineage": [
+                {"kind": "SOURCE", "id": row["source_id"]},
+                {"kind": "PROCESSING_RUN", "id": row["processing_run_id"]},
+            ],
+            "created_at": row["created_at"], "updated_at": row["updated_at"],
+            "ended_at": row["ended_at"], "overview_only": True,
+        }
+        if row["packet_artifact_id"]:
+            result["lineage"].append({"kind": "REVIEW_PACKET",
+                                      "id": row["packet_artifact_id"],
+                                      "packet_id": row["packet_id"]})
+        return result
+
     def source(self, source_id: str) -> dict[str, Any]:
         with self.store.connect() as connection:
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
@@ -997,12 +1198,43 @@ class SourceOperations:
                 raise SourceOperationError("SOURCE_NOT_FOUND", 404)
             ids = [row[0] for row in connection.execute(
                 "SELECT processing_run_id FROM source_processing_runs WHERE source_id=? "
-                "ORDER BY created_at DESC", (source_id,),
+                "ORDER BY created_at DESC,processing_run_id DESC LIMIT 25", (source_id,),
             )]
+            run_total = int(connection.execute(
+                "SELECT COUNT(*) FROM source_processing_runs WHERE source_id=?", (source_id,)
+            ).fetchone()[0])
             value = self._source_projection(source)
         value["processing_runs"] = [self.get_run(run_id) for run_id in ids]
         value["latest_run"] = value["processing_runs"][0] if ids else None
+        value["run_history"] = {
+            "total": run_total, "limit": 25,
+            "next_cursor": "25" if run_total > 25 else None,
+        }
         return value
+
+    def run_history(self, source_id: str, *, cursor: str | None = None,
+                    limit: int = 25) -> dict[str, Any]:
+        if not 1 <= limit <= 100 or (cursor not in (None, "") and not str(cursor).isdigit()):
+            raise SourceOperationError("INVALID_CURSOR", 422)
+        offset = int(cursor or 0)
+        with self.store.connect() as connection:
+            if connection.execute(
+                "SELECT 1 FROM private_sources WHERE source_id=?", (source_id,)
+            ).fetchone() is None:
+                raise SourceOperationError("SOURCE_NOT_FOUND", 404)
+            total = int(connection.execute(
+                "SELECT COUNT(*) FROM source_processing_runs WHERE source_id=?", (source_id,)
+            ).fetchone()[0])
+            ids = [row[0] for row in connection.execute(
+                """SELECT processing_run_id FROM source_processing_runs
+                   WHERE source_id=? ORDER BY created_at DESC,processing_run_id DESC
+                   LIMIT ? OFFSET ?""", (source_id, limit, offset),
+            )]
+        return {
+            "items": [self.get_run(run_id) for run_id in ids],
+            "total": total, "limit": limit, "offset": offset,
+            "next_cursor": str(offset + limit) if offset + limit < total else None,
+        }
 
     def list(self, *, status: str = "", cursor: str | None = None,
              limit: int = 25) -> dict[str, Any]:
@@ -1039,26 +1271,48 @@ class SourceOperations:
         args: tuple[Any, ...] = ((status,) if "r.state=?" in where else ())
         with self.store.connect() as connection:
             sources = list(connection.execute(
-                f"SELECT s.* FROM private_sources s {joins} {where} "
+                f"SELECT s.*,r.processing_run_id AS latest_processing_run_id,"
+                "CASE WHEN x.artifact_id IS NOT NULL THEN 'ACTIVATED' "
+                "WHEN p.artifact_id IS NOT NULL THEN 'QUALIFIED' "
+                "WHEN a.artifact_id IS NOT NULL THEN 'ATTRIBUTION_COMPLETE' "
+                "WHEN d.status='SEALED' THEN 'ATTRIBUTION_REQUIRED' "
+                "ELSE r.state END AS latest_effective_state "
+                f"FROM private_sources s {joins} {where} "
                 "ORDER BY s.uploaded_at DESC,s.source_id LIMIT ? OFFSET ?",
                 (*args, limit, offset),
             ))
             total = connection.execute(
                 f"SELECT COUNT(*) FROM private_sources s {joins} {where}", args).fetchone()[0]
-            run_ids: dict[str, list[str]] = {row["source_id"]: [] for row in sources}
-            if run_ids:
-                placeholders = ",".join("?" for _ in run_ids)
-                for row in connection.execute(
-                    f"SELECT source_id,processing_run_id FROM source_processing_runs "
-                    f"WHERE source_id IN ({placeholders}) ORDER BY source_id,created_at DESC",
-                    tuple(run_ids),
-                ):
-                    run_ids[row["source_id"]].append(row["processing_run_id"])
+            latest_ids = [row["latest_processing_run_id"] for row in sources
+                          if row["latest_processing_run_id"]]
+            run_by_id: dict[str, sqlite3.Row] = {}
+            usage_by_id: dict[str, dict[str, Any]] = {}
+            if latest_ids:
+                placeholders = ",".join("?" for _ in latest_ids)
+                run_by_id = {row["processing_run_id"]: row for row in connection.execute(
+                    f"SELECT * FROM source_processing_runs WHERE processing_run_id IN ({placeholders})",
+                    latest_ids,
+                )}
+                usage_by_id = {row["processing_run_id"]: dict(row) for row in connection.execute(
+                    f'''SELECT spj.processing_run_id,COUNT(*) AS job_count,
+                        COALESCE(SUM(j.attempt_count),0) AS attempts,
+                        CASE WHEN SUM(CASE WHEN j.usage_status='KNOWN' THEN 1 ELSE 0 END)=COUNT(*)
+                             THEN 'KNOWN' ELSE 'UNKNOWN' END AS usage_status,
+                        SUM(j.input_tokens) AS input_tokens,SUM(j.output_tokens) AS output_tokens,
+                        SUM(j.total_tokens) AS total_tokens
+                        FROM source_processing_jobs spj JOIN cloud_jobs j ON j.job_id=spj.job_id
+                        WHERE spj.processing_run_id IN ({placeholders})
+                        GROUP BY spj.processing_run_id''', latest_ids,
+                )}
         items = []
         for source in sources:
             value = self._source_projection(source)
-            value["processing_runs"] = [self.get_run(run_id)
-                                        for run_id in run_ids[source["source_id"]]]
+            latest_id = source["latest_processing_run_id"]
+            overview = (self._run_overview(
+                run_by_id[latest_id], value["source_sha256"],
+                source["latest_effective_state"], usage_by_id.get(latest_id),
+            ) if latest_id else None)
+            value["processing_runs"] = [overview] if overview else []
             value["latest_run"] = value["processing_runs"][0] if value["processing_runs"] else None
             items.append(value)
         return {
@@ -1102,7 +1356,10 @@ class SourceOperations:
             usage = connection.execute(
                 "SELECT COUNT(*),COALESCE(SUM(attempt_count),0),COALESCE(SUM(total_tokens),0) "
                 "FROM cloud_jobs").fetchone()
+            from .stage1_scale import stage1_capacity
+            capacity = stage1_capacity(connection)
         return {"uploads": uploads, "processing": states, "cloud_jobs": usage[0],
                 "provider_attempts": usage[1], "known_total_tokens": usage[2],
                 "recovery_required": states.get("RECOVERY_REQUIRED", 0),
-                "human_review_backlog": states.get("HUMAN_REVIEW_REQUIRED", 0)}
+                "human_review_backlog": states.get("HUMAN_REVIEW_REQUIRED", 0),
+                "stage1_capacity": capacity}

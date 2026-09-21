@@ -1,0 +1,253 @@
+{
+  "catalog": {
+    "complete_traversal_ms": 103.076,
+    "continuation_complete": true,
+    "exact_match_retrieved_before_substrings": true,
+    "first_page": {
+      "iterations": 30,
+      "max_ms": 11.454,
+      "p50_ms": 7.842,
+      "p95_ms": 11.418,
+      "query_count": 2,
+      "total_duration_ms": 252.986
+    },
+    "first_two_ids": [
+      "NODE_EXACT",
+      "NODE_ALIAS"
+    ],
+    "ordering": "exact_canonical,exact_alias,substring_canonical,substring_alias",
+    "result_count": 602,
+    "unique_result_count": 602
+  },
+  "document_type": "phase43_stage1_performance_capacity_report",
+  "method": {
+    "fixture": "disposable offline SQLite Workbench and canonical catalog",
+    "live_provider_calls": 0,
+    "load_note": "No portable worker-utilization percentage was available; bounded concurrency, queue backpressure, timings, query counts, and traced memory are reported instead.",
+    "load_percentage_claimed": false,
+    "timed_iterations": 30,
+    "warmup_iterations": 3
+  },
+  "overall_result": "PASS",
+  "queue_and_worker": {
+    "duplicate_dispatch_count": 0,
+    "duplicate_dispatch_evidence": "single-worker claim guard plus full regression concurrency tests",
+    "jobs_per_run": 31,
+    "overflow_behavior": "HARD_STOP_DEFER",
+    "wip_hard": 200,
+    "wip_soft": 100,
+    "worker_concurrency": 1
+  },
+  "review": {
+    "all_scale_identities_distinct": true,
+    "bounded_page_default": 25,
+    "bounded_page_max": 100,
+    "capacity_at_10000": {
+      "enabled": true,
+      "intake_paused": false,
+      "limits": {
+        "jobs_per_run": 31,
+        "operator_guardrail_minutes": 75,
+        "operator_nominal_cases": 60,
+        "operator_nominal_minutes": 60,
+        "review_page_default": 25,
+        "review_page_max": 100,
+        "review_wip_hard": 200,
+        "review_wip_soft": 100,
+        "runs_per_24h": 3,
+        "semantic_parent_cap": 8,
+        "sources_per_run": 1,
+        "worker_concurrency": 1
+      },
+      "new_intake_allowed": false,
+      "pause_reason": "",
+      "pending_review_rows": 10000,
+      "policy_version": "phase43-stage1-bounded-operator-v1",
+      "runs_last_24h": 1,
+      "unprojected_review_packets": 0,
+      "wip_state": "HARD_STOP"
+    },
+    "detail": {
+      "iterations": 30,
+      "max_ms": 17.847,
+      "p50_ms": 15.038,
+      "p95_ms": 17.679,
+      "query_count": 6,
+      "total_duration_ms": 443.688
+    },
+    "query_plan": [
+      "SEARCH stage1_review_projection USING INDEX stage1_review_pending_page (artifact_id=? AND is_pending=?)"
+    ],
+    "review_rows": {
+      "100": {
+        "complete_traversal": {
+          "ordered_identity_sha256": "2a7b5ac269ba44b1d2284e7c6bb9c3be675cbc5cffbefdb1f141e541b3e35a04",
+          "pages": 1,
+          "peak_traced_bytes": 389568,
+          "rows": 100,
+          "total_duration_ms": 32.668
+        },
+        "domain_distribution": {
+          "ai_hardware": 25,
+          "commercial_space": 25,
+          "robotics": 25,
+          "semiconductor": 25
+        },
+        "first_page_rows": 25,
+        "list_page": {
+          "iterations": 30,
+          "max_ms": 20.104,
+          "p50_ms": 15.707,
+          "p95_ms": 18.448,
+          "query_count": 6,
+          "total_duration_ms": 467.114
+        },
+        "no_duplicate_or_missing": true,
+        "stable_identical_read": true
+      },
+      "1000": {
+        "complete_traversal": {
+          "ordered_identity_sha256": "f24000512b8e614d7dafe8ae9d8625bba4ea7cf5472d2cb238df8edefdf692e2",
+          "pages": 10,
+          "peak_traced_bytes": 668073,
+          "rows": 1000,
+          "total_duration_ms": 498.31
+        },
+        "domain_distribution": {
+          "ai_hardware": 250,
+          "commercial_space": 250,
+          "robotics": 250,
+          "semiconductor": 250
+        },
+        "first_page_rows": 25,
+        "list_page": {
+          "iterations": 30,
+          "max_ms": 19.268,
+          "p50_ms": 15.585,
+          "p95_ms": 18.991,
+          "query_count": 6,
+          "total_duration_ms": 463.678
+        },
+        "no_duplicate_or_missing": true,
+        "stable_identical_read": true
+      },
+      "10000": {
+        "complete_traversal": {
+          "ordered_identity_sha256": "c9d38ee04cb689226f9e12277933577662fdd74351d2da388251213481b357e6",
+          "pages": 100,
+          "peak_traced_bytes": 680811,
+          "rows": 10000,
+          "total_duration_ms": 4632.474
+        },
+        "domain_distribution": {
+          "ai_hardware": 2500,
+          "commercial_space": 2500,
+          "robotics": 2500,
+          "semiconductor": 2500
+        },
+        "first_page_rows": 25,
+        "list_page": {
+          "iterations": 30,
+          "max_ms": 35.1,
+          "p50_ms": 29.338,
+          "p95_ms": 32.181,
+          "query_count": 6,
+          "total_duration_ms": 876.203
+        },
+        "no_duplicate_or_missing": true,
+        "stable_identical_read": true
+      }
+    },
+    "thresholds_ms": {
+      "detail_p95": 750.0,
+      "list_p95": 500.0,
+      "ten_thousand_overview_p95": 1000.0
+    }
+  },
+  "semantic_batching": {
+    "1": {
+      "batch_count": 1,
+      "batch_sizes": [
+        1
+      ],
+      "exact_reconstruction": true,
+      "iterations": 30,
+      "max_ms": 0.044,
+      "max_parents_per_batch": 1,
+      "p50_ms": 0.028,
+      "p95_ms": 0.029,
+      "total_duration_ms": 0.84
+    },
+    "120": {
+      "batch_count": 15,
+      "batch_sizes": [
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "exact_reconstruction": true,
+      "iterations": 30,
+      "max_ms": 3.013,
+      "max_parents_per_batch": 8,
+      "p50_ms": 2.921,
+      "p95_ms": 2.958,
+      "total_duration_ms": 85.721
+    },
+    "40": {
+      "batch_count": 5,
+      "batch_sizes": [
+        8,
+        8,
+        8,
+        8,
+        8
+      ],
+      "exact_reconstruction": true,
+      "iterations": 30,
+      "max_ms": 1.095,
+      "max_parents_per_batch": 8,
+      "p50_ms": 0.931,
+      "p95_ms": 1.053,
+      "total_duration_ms": 24.961
+    },
+    "8": {
+      "batch_count": 1,
+      "batch_sizes": [
+        8
+      ],
+      "exact_reconstruction": true,
+      "iterations": 30,
+      "max_ms": 0.216,
+      "max_parents_per_batch": 8,
+      "p50_ms": 0.202,
+      "p95_ms": 0.213,
+      "total_duration_ms": 6.01
+    },
+    "9": {
+      "batch_count": 2,
+      "batch_sizes": [
+        8,
+        1
+      ],
+      "exact_reconstruction": true,
+      "iterations": 30,
+      "max_ms": 0.244,
+      "max_parents_per_batch": 8,
+      "p50_ms": 0.227,
+      "p95_ms": 0.234,
+      "total_duration_ms": 6.458
+    }
+  }
+}

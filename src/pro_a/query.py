@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import re
 import sqlite3
+import unicodedata
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
@@ -42,6 +45,11 @@ class ReadOnlyQuery:
             uri = f"{self.path.resolve().as_uri()}?mode=ro"
             conn = sqlite3.connect(uri, uri=True)
             conn.row_factory = sqlite3.Row
+            conn.create_function(
+                "nfkc_casefold", 1,
+                lambda value: unicodedata.normalize("NFKC", str(value or "")).casefold(),
+                deterministic=True,
+            )
             conn.execute("PRAGMA query_only=ON")
             yield conn
         except sqlite3.Error as exc:
@@ -225,44 +233,121 @@ class ReadOnlyQuery:
         primary_type: str | None = None,
         limit: int = 20,
     ) -> list[dict[str, Any]]:
+        return self.search_nodes_page(
+            query, primary_type=primary_type, limit=limit
+        )["items"]
+
+    def search_nodes_page(
+        self,
+        query: str,
+        *,
+        primary_type: str | None = None,
+        limit: int = 20,
+        cursor: str | None = None,
+    ) -> dict[str, Any]:
+        """Search a static catalog with exact-first, keyset continuation semantics."""
         self._validate_page(limit)
         query = query.strip()
         if not query:
             raise ValueError("query must not be empty")
-        pattern = self._like_pattern(query)
+        needle = unicodedata.normalize("NFKC", query).casefold()
+        cursor_key: tuple[Any, ...] | None = None
+        if cursor:
+            try:
+                padded = cursor + "=" * (-len(cursor) % 4)
+                value = json.loads(base64.urlsafe_b64decode(padded).decode("utf-8"))
+                if (value.get("query") != needle
+                        or value.get("primary_type") != primary_type
+                        or not isinstance(value.get("last"), list)
+                        or len(value["last"]) != 4):
+                    raise ValueError
+                cursor_key = tuple(value["last"])
+            except (ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError):
+                raise ValueError("invalid catalog cursor") from None
+        cursor_clause = ""
+        cursor_args: tuple[Any, ...] = ()
+        if cursor_key is not None:
+            cursor_clause = """AND (
+                match_order > ? OR
+                (match_order=? AND nfkc_casefold(canonical_name)>?) OR
+                (match_order=? AND nfkc_casefold(canonical_name)=? AND canonical_name>?) OR
+                (match_order=? AND nfkc_casefold(canonical_name)=? AND canonical_name=? AND node_id>?)
+            )"""
+            order, folded, canonical_name, node_id = cursor_key
+            cursor_args = (
+                order, order, folded, order, folded, canonical_name,
+                order, folded, canonical_name, node_id,
+            )
         with self.connect() as conn:
             rows = conn.execute(
-                """WITH matches AS (
+                f"""WITH matches AS (
                        SELECT n.node_id,n.canonical_name,n.primary_type,
                               'canonical_name' AS matched_by,
-                              n.canonical_name AS matched_text,0 AS match_order
+                              n.canonical_name AS matched_text,
+                              CASE WHEN nfkc_casefold(n.canonical_name)=? THEN 0 ELSE 2 END AS match_order
                        FROM nodes n
                        WHERE n.status='active'
-                         AND n.canonical_name LIKE ? ESCAPE '\\' COLLATE NOCASE
+                         AND instr(nfkc_casefold(n.canonical_name),?)>0
                          AND (? IS NULL OR n.primary_type=?)
                        UNION ALL
                        SELECT n.node_id,n.canonical_name,n.primary_type,
-                              'alias' AS matched_by,a.alias AS matched_text,1 AS match_order
+                              'alias' AS matched_by,a.alias AS matched_text,
+                              CASE WHEN nfkc_casefold(a.alias)=? THEN 1 ELSE 3 END AS match_order
                        FROM node_aliases a
                        JOIN nodes n ON n.node_id=a.node_id
                        WHERE n.status='active'
-                         AND a.alias LIKE ? ESCAPE '\\' COLLATE NOCASE
+                         AND instr(nfkc_casefold(a.alias),?)>0
                          AND (? IS NULL OR n.primary_type=?)
                    ), ranked AS (
                        SELECT *,ROW_NUMBER() OVER (
                            PARTITION BY node_id
-                           ORDER BY match_order,matched_text COLLATE NOCASE,matched_text
+                           ORDER BY match_order,nfkc_casefold(matched_text),matched_text
                        ) AS match_rank
                        FROM matches
                    )
-                   SELECT node_id,canonical_name,primary_type,matched_by,matched_text
+                   SELECT node_id,canonical_name,primary_type,matched_by,matched_text,match_order
                    FROM ranked
-                   WHERE match_rank=1
-                   ORDER BY match_order,canonical_name COLLATE NOCASE,canonical_name,node_id
+                   WHERE match_rank=1 {cursor_clause}
+                   ORDER BY match_order,nfkc_casefold(canonical_name),canonical_name,node_id
                    LIMIT ?""",
-                (pattern, primary_type, primary_type, pattern, primary_type, primary_type, limit),
+                (
+                    needle, needle, primary_type, primary_type,
+                    needle, needle, primary_type, primary_type,
+                    *cursor_args, limit + 1,
+                ),
             ).fetchall()
-            return [dict(row) for row in rows]
+        has_more = len(rows) > limit
+        rows = rows[:limit]
+        items = [
+            {key: row[key] for key in (
+                "node_id", "canonical_name", "primary_type", "matched_by", "matched_text"
+            )}
+            for row in rows
+        ]
+        next_cursor = None
+        if has_more and rows:
+            last = rows[-1]
+            value = {
+                "query": needle,
+                "primary_type": primary_type,
+                "last": [
+                    last["match_order"],
+                    unicodedata.normalize("NFKC", last["canonical_name"]).casefold(),
+                    last["canonical_name"],
+                    last["node_id"],
+                ],
+            }
+            next_cursor = base64.urlsafe_b64encode(
+                json.dumps(value, ensure_ascii=False, sort_keys=True,
+                           separators=(",", ":")).encode("utf-8")
+            ).decode("ascii").rstrip("=")
+        return {
+            "items": items,
+            "next_cursor": next_cursor,
+            "limit": limit,
+            "query_sha256": hashlib.sha256(needle.encode("utf-8")).hexdigest(),
+            "ordering": "exact_canonical,exact_alias,substring_canonical,substring_alias",
+        }
 
     def list_nodes(
         self,
