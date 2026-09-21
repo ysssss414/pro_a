@@ -1,0 +1,46 @@
+{
+  "document_type": "phase43_stage1_git_handoff_closure_receipt",
+  "schema_version": "1.0",
+  "recorded_date_utc": "2026-09-21",
+  "stage": "Phase 4.3 Stage 1",
+  "stage_name": "OPERATOR_SCALE_AND_BOUNDED_PIPELINE",
+  "repository": "ysssss414/pro_a",
+  "base_branch": "main",
+  "base_sha_at_pr_creation": "dbab4d737ddce016aec009c7cea1a9aa9e8a3eca",
+  "implementation_branch": "codex/phase43-stage1-operator-scale-bounded-pipeline",
+  "implementation_commit": "7834df36bfcd9af5280518271bb908ca0b97f97e",
+  "pull_request": 63,
+  "pull_request_state_at_receipt": {
+    "state": "open",
+    "draft": true,
+    "mergeable": true,
+    "mergeable_state": "clean",
+    "ahead_by": 1,
+    "behind_by": 0
+  },
+  "handoff": {
+    "implementation_commit_present_on_remote": true,
+    "branch_pushed": true,
+    "draft_pr_created": true,
+    "previous_local_git_write_blocker_is_historical": true,
+    "acceptance_artifacts_rewritten": false
+  },
+  "acceptance_evidence": {
+    "all_stage1_gates": "PASS",
+    "frozen_gold_regression": "120/120 PASS",
+    "backend_tests": "2162 passed, 93 skipped",
+    "frontend_tests": "124 passed",
+    "frontend_build": "PASS",
+    "compileall": "PASS"
+  },
+  "governance": {
+    "existing_acceptance_receipts_are_point_in_time_evidence": true,
+    "historical_fields_such_as_git_write_blocked_commit_sha_null_pushed_false_and_draft_pr_null_are_not_current_remote_state": true,
+    "production_write_performed": false,
+    "production_apply_executed": false,
+    "live_provider_calls": 0,
+    "stage2_started": false
+  },
+  "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "result": "PASS"
+}
