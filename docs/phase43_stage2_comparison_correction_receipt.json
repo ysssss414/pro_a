@@ -1,0 +1,27 @@
+{
+  "document_type": "comparison_implementation_correction_receipt",
+  "recorded_at": "2026-09-21T08:06:40.016239+00:00",
+  "comparison_version": "phase43-stage2-semantic-comparison.2",
+  "previous_diagnostic_sha256": "1958421982c59027f312c2d22132017fa6b6041aaf31c89b0f655cee4051e3be",
+  "previous_status": "INVALIDATED_OVERLY_LITERAL_COMPARATOR_NOT_HUMAN_QUALIFICATION",
+  "previous_mandatory_count": 274,
+  "previous_eligible_count": 0,
+  "previous_actual_sample_size": 0,
+  "previous_unused_seed_receipt_sha256": "ea2729f88d063016ff7276f9d741c31fd90f117e318302d3124297c3c949a3c7",
+  "corrections": [
+    "FALSE and justified NOT_APPLICABLE both clear a risk; TRUE/UNKNOWN are never cleared or collapsed together.",
+    "ACCEPT_WITH_REVIEW_NOTE and ACCEPT with otherwise identical operative decisions are substantive agreement.",
+    "Node, alias and baseline-view native objects have no scope field: AI free-text operation scope is an explanatory note, not an operative scope change. Claim and relation scopes remain compared.",
+    "Non-relation auxiliary R08 detail differences with both R08 clear do not alter outcomes. Relation ambiguity/materiality differences remain compared."
+  ],
+  "policy_semantics_changed": false,
+  "frozen_inputs_or_reviews_modified": false,
+  "human_answers_accessed": false,
+  "old_diagnostics_retained": true,
+  "new_sample_seed_policy": "First nonempty residual draw: generated once after corrected eligible manifest; no seed shopping or human outcomes available. Prior empty diagnostic selected no items.",
+  "regression_tests": "37 PASS including administrative-note equivalence and native relation-scope disagreement",
+  "review_record_hashes_verified": 548,
+  "new_reconciliation_sha256": "3631ead5334528a174a97683105fe5a1125b6e90fe9748f92c787be9c6b58b9b",
+  "new_eligible_sha256": "5b62b84b625e71929b623ab463ead250b20785cd2dd1179ac60dae7dfd82e19d",
+  "new_sample_sha256": "44051e472043f12bb416e7947d4f67a0f16d8785a4154d963e96726bbaed09a3"
+}

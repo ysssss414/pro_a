@@ -1,0 +1,1600 @@
+{
+  "authority_source_sha256": "3c69b1f9423f9072d42ae17748f40d4a558bccc201fa3f5b404dbbef3d08d41c",
+  "current_view_write_authorized": false,
+  "decisions": [
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0001",
+      "native_content_sha256": "d96a5cb5a1b59827eea68c4bfda106d2a1418d1aea99a4d41ed57af0ce9b6b16",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0002",
+      "native_content_sha256": "fa285cd61b153d7993b1f0b3ed20065212ea301bb694718126cc0eb34899c4b0",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0003",
+      "native_content_sha256": "6143fcb0cbe786f009cce9ec80c11f6d2ee2d016b7367ee755c5c790ee8815b2",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0004",
+      "native_content_sha256": "b5ea12d726d8047c82600a76821c15f93e8f38c032f1cf0f3dda8566c1407a68",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0005",
+      "native_content_sha256": "32cd02ebbddb42bcc5fdfa25158a68a431963b996ed90a821716d32638926808",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0006",
+      "native_content_sha256": "c8e96efae615fbc24c0f6447bb1cc7a4ad46839c1984c3ae65278293610cad3e",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0007",
+      "native_content_sha256": "5bf4022059d5a9fa210cd879a13441feb3f03cf1de9e6cbf0e90a4b6738bd11b",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "ACCEPT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_AS_BASELINE_CANDIDATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_AS_BASELINE_CANDIDATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-BV-0008",
+      "native_content_sha256": "c7a2b39f8a5f232432b114a7cec75b429b77af62c1064e41e18f2db01723aa5d",
+      "object_type": "baseline_views",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_AS_BASELINE_CANDIDATE"
+    },
+    {
+      "human_input": {
+        "decision": "KEEP_NEEDS_REVIEW",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_NEEDS_REVIEW. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_NEEDS_REVIEW",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CL-0017",
+      "native_content_sha256": "9d79956fe276a053f9cad06f3e72be4ebfd2a6850a0ce4e76246f3c0b52d9881",
+      "object_type": "claims",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_NEEDS_REVIEW"
+    },
+    {
+      "human_input": {
+        "decision": "KEEP_NEEDS_REVIEW",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_NEEDS_REVIEW. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_NEEDS_REVIEW",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CL-0018",
+      "native_content_sha256": "375f29d76a757e7144f63a36f4df22b3c3dcbfc90eea2545346df18bc2510e58",
+      "object_type": "claims",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "KEEP_NEEDS_REVIEW"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0004",
+      "native_content_sha256": "264771b43919ca4010d914b1d4a3ee1bcdc343b07bc1e3c753e6a60ee3d4f405",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0006",
+      "native_content_sha256": "86423b02c0b0c03df49fe2701f107dfae4612458fc9a2391902b938ead48d67d",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0009",
+      "native_content_sha256": "29cd894667ad66948cd9b38635a83afe322ac13b52d5fed519356eacd87632c5",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0014",
+      "native_content_sha256": "6940221323848a4cdfff19d60bf8dce9b833fd7a41d85fc2422828a8c9e5deb7",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0020",
+      "native_content_sha256": "1f19cdb07672bd774f925fc744bfac40ff0a0ba4e7f50dab91873b018920c9b0",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0021",
+      "native_content_sha256": "8d41fc7312a23f08e268ab039e2a64dff5a31114a6bccdc57aaa6b55c3f97be9",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0022",
+      "native_content_sha256": "ff4ef5782ade0228d874211c6197b06926ccc925234ce4ae4be1c84bf7ddeb27",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0025",
+      "native_content_sha256": "ed768054a39a82f4868d239b024fcd979b2aa5868879a00f940eadcedb2ae209",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0029",
+      "native_content_sha256": "2d50fa188e39d134f46be5571eb447b8cc97ebb215111eaded431dcc76933566",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0052",
+      "native_content_sha256": "925d4370443928decd8bcb01380828ef65457555ad48288bea6d152ce3d179e8",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0056",
+      "native_content_sha256": "eb961f0835e723e9ac9810e9498532faf6ebb8023f65ebe63dc0539b514bf7d6",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0060",
+      "native_content_sha256": "fd1803451a3eb5ff2c0b642acad0f58bd2bd356b3b5c6392cd8b24192879b20f",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0072",
+      "native_content_sha256": "c486554f38015bb3ab24eabd1cfdbdac1c0634094e36e63f5ab4d8bfa33bf391",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0094",
+      "native_content_sha256": "448f92b8af9b2cf26c010da2a5203f4aa056ff896162bee1e350b455a6f24a2f",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0100",
+      "native_content_sha256": "1b7ec17f08119387c295c2f54fd0880d0e29072c1cafe374275bc78dacb7c8b5",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0101",
+      "native_content_sha256": "c4304cd858092d7ad9f1ca7728e82fd8a731e22222f9742c59be47d9bcaa2054",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0107",
+      "native_content_sha256": "d963fc12b2921842a06a4de7163e0438ce254a74b60e88471ad5a25a08ead38a",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0112",
+      "native_content_sha256": "c1b72d268f109901a9ba20baa2ea6d58843a97e7063f0f2678dd2a8b1315693a",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0115",
+      "native_content_sha256": "4ea0eccfca93458ed5aa313933b3cf04a594a8f6f43bf27e77ea78c3544de958",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0123",
+      "native_content_sha256": "01cb7df641ad454dece57137532804f5424075f5664d41f8b3ed022b49d0347a",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0125",
+      "native_content_sha256": "91e6791b70e2d27d5bb4c20f552d47444b2298fb38484ce5fe9420b9d5f73825",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0001",
+      "native_content_sha256": "cceff9779684b6b670e184af4e9945c1f6c8825cb559cd161e17d9f6d0d9593e",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0009",
+      "native_content_sha256": "71586c11fc79b2e55c852f0629d47a5aa4e272aa60e6a9237ea8fb2b87dc5552",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0013",
+      "native_content_sha256": "b9dd373d8ee44a404ab8ddf52a4587d55aa07adea9089b5fc59cc2afd570c87c",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0021",
+      "native_content_sha256": "6d195fbc458aeb96709fd6bb73bf65501265c6fd7da58a0b0694f55e96f9e6b2",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0022",
+      "native_content_sha256": "b147562a8aac3aff184cf510ac15172d41c5b8aad95c2e7ec1b654fce602eb23",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0023",
+      "native_content_sha256": "feeb06262f2b246e0527195eed9b65446a5f64e5c9579e0357aa09946374b552",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0026",
+      "native_content_sha256": "2f0b92a596eade39f938495491f11c07216e9002768ff73ebe381447ea214616",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "KEEP_NEEDS_REVIEW",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP_NEEDS_REVIEW. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP_NEEDS_REVIEW",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CL-0019",
+      "native_content_sha256": "807615e5fecd1ecbb0dcd2164ad60227b7010c9495dcc4e1bae445c3dbbb196c",
+      "object_type": "claims",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "KEEP_NEEDS_REVIEW"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0007",
+      "native_content_sha256": "502fdbf77a621958f6d37fefdb8f664f6a320b8d5bafcca88ce2fddfecb48346",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0010",
+      "native_content_sha256": "dd05dbdbb6d8cb579275789a9e8aacb318d256b67f8267f89cd02cc9d92edfec",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0011",
+      "native_content_sha256": "195686e1d631154d450fb3f7574f885a1795760fc1999c26d80a33f0db408959",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0015",
+      "native_content_sha256": "9f94a0dc2bfb1924c6744e907b82650abe06e652dda1e37a91397d5cef937585",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0016",
+      "native_content_sha256": "d86164ccaa5da7630881ee7ce5aed0faca2ac5521cbaada2c66cca9241decfbb",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0017",
+      "native_content_sha256": "d5aec4fc1b29e17f40cf952f8774d572e8b10443bad522312ea88c220051445b",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0018",
+      "native_content_sha256": "f657f5de4298e168bc68dc83b52b046fd2cf6ad7ea2a6c9cb0e3d3a6ebf73702",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0019",
+      "native_content_sha256": "ebcee1868f9ccc4c0d77f709d4877cb2c4faabac60ecad73a782cecb1cd52b33",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "REJECT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: REJECT. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "REJECT",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0028",
+      "native_content_sha256": "1f72e24c0864acd650273660d76e8e5285a18ea9d21140d833860d9d59a88dd5",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "REJECT"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0037",
+      "native_content_sha256": "0d69e646342461a86a71d99c9ac0bf1c0d91bfe5f53a218ad2c1ee65a975c777",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0050",
+      "native_content_sha256": "fe854840ac52563785929121cc8d0f0bdc96bb2eaa34cbd28d304a8567d1b507",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0057",
+      "native_content_sha256": "c54d5b2c5f681b8e272d902af47844a78c14b312b18e19422ab4d05554b658dc",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0082",
+      "native_content_sha256": "739edea86b9338a391350e1275e1e84c10da19d5d110aa5f8ce925d9f22c11b2",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0083",
+      "native_content_sha256": "a6b26cc0c15e5ec798e1063d454dfd3213fca3f69564072beb29052541c09dc6",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0093",
+      "native_content_sha256": "3fd940ccaf769ca7372c347b3b1798174e42e646b308dc1e245e04f21eb5e75f",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0095",
+      "native_content_sha256": "a5a02e050e4063b734b359055a43e1bf677b5bf01ad21bf5a7ca151883a66ce8",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0096",
+      "native_content_sha256": "200970b806318fe047429d81fca534140388aab74e1c4c7032d71ce25e2c000e",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0108",
+      "native_content_sha256": "f4fab75595d1833e206b9593e5819dd0d637b57b9d85e62823616ae0b1d2f76f",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0120",
+      "native_content_sha256": "e57635b67ef32cf7fb466d59cf0a26f0941913bc335aee5b98f29aa645ebe90a",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0121",
+      "native_content_sha256": "347713e4633a08bf012252dd75ac02b0d0f8b0af75d892c44111db9c75a3a924",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "REJECT",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: REJECT. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "REJECT",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0122",
+      "native_content_sha256": "92f3b81e56702719c78933120d0e92bc24b5f259cda2b6ce982f45f9fddd5bce",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "REJECT"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0124",
+      "native_content_sha256": "70435f9d75d71c0e13ea14fc0044ead41770dcbda55ad3fa67f8a7ed5f9a6785",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0128",
+      "native_content_sha256": "3ecd93fcc4db98326f5ee8df935f1f6d2d4bee1d3b1c523f19cc69ddf4ccf8c5",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0131",
+      "native_content_sha256": "6293eca56c4f16a361c061113acf8feca67fa6ae8e37a9ccef195e0c6056213e",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0135",
+      "native_content_sha256": "15d70e26f931ed1228698fa27bd4b0711f053788b6b094144a8996abe9970919",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0143",
+      "native_content_sha256": "91db897b3ada46144353ff785470eb37e1db5a6b823a5129a7a9e016d13102e9",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0152",
+      "native_content_sha256": "73c2c028c1102719b0c1422c73d3a40757107982d3e7cbe37c98b7ced814245b",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0153",
+      "native_content_sha256": "6dff8fc424961b3dda68a5d30c151fc56f33bef87b85f5e1103ab1fddd3317f7",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0159",
+      "native_content_sha256": "814c7bf65a708bb68f004fea1cf6c703db9fd30064328d7505d4fa553d600f8c",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0163",
+      "native_content_sha256": "18252ff0e522603bd30485e9e60cfd64a03a672f9c9dca04db14a67951aa3470",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0008",
+      "native_content_sha256": "62544565e930c8d935b41e5ce2ba09c5407a92f9207ded56570bca5e4719aa77",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0028",
+      "native_content_sha256": "99539a731ba0988b745f04d8b75f3759ca1ba83fff1d6cb9498b97f78d849bb9",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0037",
+      "native_content_sha256": "ecaeb8860e7f5a5c9b6b260c3e575138f7ff36346e0bbd0ae9c42daeb22baaf4",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0051",
+      "native_content_sha256": "63bd0eee0c6ce2d5276c7ba1f1e7f538a3987ae552d0c049da2cfabe763e049d",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0052",
+      "native_content_sha256": "a98cfc3d24ec1879ceb2551348b9320697119bc4ee541d1a70f017e2f90b2596",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0053",
+      "native_content_sha256": "f7b07588649fdcda3bf95dc6c4911b4b883aa90be6b18c7a2b5e15461a991a89",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: DEFER. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0054",
+      "native_content_sha256": "f97531dade40b2253262f0510e4ff75505fa58994a3432d21930aa60a3c87d8b",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_input": {
+        "decision": "ATTACH",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: ACCEPT_OWNER SC-CN-0014. Qualification only; no Production apply or Current View activation.",
+        "target_id": "SC-CN-0014"
+      },
+      "human_user_decision": "ACCEPT_OWNER SC-CN-0014",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0002",
+      "native_content_sha256": "1e14d087355b54b082661d07c792439485a8c6825c357cc3cece5b3c61a93553",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "ACCEPT_OWNER SC-CN-0014"
+    },
+    {
+      "human_input": {
+        "decision": "ATTACH",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: ACCEPT_OWNER SC-CN-0047. Qualification only; no Production apply or Current View activation.",
+        "target_id": "SC-CN-0047"
+      },
+      "human_user_decision": "ACCEPT_OWNER SC-CN-0047",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0007",
+      "native_content_sha256": "0b5494c6b1f461692e14bdbfa1b7cbd410b30d80b0fcb2c253f4a33a2a7e6a76",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "ACCEPT_OWNER SC-CN-0047"
+    },
+    {
+      "human_input": {
+        "decision": "ATTACH",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: ACCEPT_OWNER SC-CN-0111. Qualification only; no Production apply or Current View activation.",
+        "target_id": "SC-CN-0111"
+      },
+      "human_user_decision": "ACCEPT_OWNER SC-CN-0111",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-AL-0020",
+      "native_content_sha256": "37dc49a6765ebea88cd1151e60ae98c1955d2a2e37a20871aee85c6ed0b23b7d",
+      "object_type": "aliases",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "ACCEPT_OWNER SC-CN-0111"
+    },
+    {
+      "human_input": {
+        "decision": "KEEP",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CL-0003",
+      "native_content_sha256": "b9f74c059ce62df5c6d08363947839e7f3955a3043215c327af79f3433694c45",
+      "object_type": "claims",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "KEEP"
+    },
+    {
+      "human_input": {
+        "decision": "KEEP",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: KEEP. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "KEEP",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CL-0014",
+      "native_content_sha256": "b3d775ef2eb6d62ad21a501e04914aed191256e5ebe8d68682ef1b4035e650fb",
+      "object_type": "claims",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "KEEP"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0013",
+      "native_content_sha256": "fd709e31e9071568e2499f25967f3776779631199d234c7703e77c1e158ebd55",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0023",
+      "native_content_sha256": "6a8d4a7bda8eb94bd999ac1aadbe62a0af02dee54c820089d3011fc9620e7d48",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0034",
+      "native_content_sha256": "2ab29eb5691dabc0456d26bcd36900f2ef704ac6c3d6a4f94466827b8f12a6b8",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0046",
+      "native_content_sha256": "cec9ea32d793d1f5d51a340e7f0cc21e1a9f4f0c769f1b752adda9ca702b4249",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0073",
+      "native_content_sha256": "948b273a14fe74892d19501be1648dc5d5388ce5b3e63e12a8f35d99f8f5daf8",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0074",
+      "native_content_sha256": "4f89b7a68cb00adf531eeef079e191ded85ffb379386982dc82838b2e790160e",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0085",
+      "native_content_sha256": "ce87fea1cf9884c7b1af024407b061ecc189eb4502116a39068bfa35a9fc6e27",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0086",
+      "native_content_sha256": "35a7c76139af6b5f37727f3380338f88dd84af834cd0244493496e7da7949bf9",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0088",
+      "native_content_sha256": "6af315cefe98c11b3c3044c81b175cd8f098fe25c4e69a012e66564351da9376",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0090",
+      "native_content_sha256": "4aa4d13d682a10525eda33d4e9327b57aa5cf0a3eaba2d4d6b5c50264adf787f",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0109",
+      "native_content_sha256": "810a58a41a2bcf5874dd82303e65dbab09749f92b362e1d6544785eb26010e04",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0116",
+      "native_content_sha256": "89a5e9fb067b51c0ab0ba0623a60cee20d79bad6951eef5a0a4d0bb37f1f5811",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0129",
+      "native_content_sha256": "6aec3aaa2603f3a9866100f52eee74acad66fb140c1ae72665a8513a7074c218",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "REUSE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: REUSE NODE_B7B4CB43F4C30F10. Qualification only; no Production apply or Current View activation.",
+        "target_id": "NODE_B7B4CB43F4C30F10"
+      },
+      "human_user_decision": "REUSE NODE_B7B4CB43F4C30F10",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0148",
+      "native_content_sha256": "2ecfcfe497ef81312de4ea012d9ac8a65bda59b02f5581bdbdaf18c0fb3a1cd0",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "REUSE NODE_B7B4CB43F4C30F10"
+    },
+    {
+      "human_input": {
+        "decision": "REUSE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: REUSE NODE_20260817_8006A0B4. Qualification only; no Production apply or Current View activation.",
+        "target_id": "NODE_20260817_8006A0B4"
+      },
+      "human_user_decision": "REUSE NODE_20260817_8006A0B4",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0154",
+      "native_content_sha256": "d61b00c5f73a52ec0647776a72f28c9c54a97cf91e8b2c2127f7ce80c9783594",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "REUSE NODE_20260817_8006A0B4"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0156",
+      "native_content_sha256": "6a13f6d095b5d7ce3db29daf54df887f762d242d40df369c875444ac1cae2c54",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-CN-0161",
+      "native_content_sha256": "78cd04b04cc61f03a579eac1e9ea5e9b5e5f46f355483972a9ef940fc1a433fb",
+      "object_type": "nodes",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0004",
+      "native_content_sha256": "8bf5effc55984f3865c499dfe3e4534210cd6fe7196bbb5e7e23e27f9ecd5c92",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0009",
+      "native_content_sha256": "28ee3cfe8f037cc73570acef170d213e899c98eaf4bd8add669e085159cc054c",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0013",
+      "native_content_sha256": "37ca6ee761fbe6c7e0e58372f38479ef83d4837fbb3812b62fc65a81be082b7c",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0022",
+      "native_content_sha256": "5e075dd0b0f094dab6c7306351218ea17cc28182313a1eabb6a02bd6c2104775",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0036",
+      "native_content_sha256": "65e6b92bb605cd97051a563beacbce920eec33a6dcf1fe83a1b6086266ba3f7a",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0043",
+      "native_content_sha256": "199bf49df3bbd99cf3aa7fa8010ba1d134b347e0f1c30e70bd6798ac9de41941",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    },
+    {
+      "human_input": {
+        "decision": "CREATE",
+        "reason": "HUMAN_USER explicitly adopted frozen SYSTEM_RECOMMENDED_DECISION: CREATE. Qualification only; no Production apply or Current View activation.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE",
+      "human_user_note": "Explicit user adoption without item-level overrides.",
+      "item_id": "SC-RL-0046",
+      "native_content_sha256": "9225b476f4098e236542d500a615fdb3dd2d846da92d0a532e79e88de136d6de",
+      "object_type": "relations",
+      "reviewer": "HUMAN_USER",
+      "section": "C",
+      "system_recommended_decision": "CREATE"
+    }
+  ],
+  "document_type": "phase43_stage2_exact_human_qualification_authorization",
+  "expanded_review_required": false,
+  "frozen_file_bindings": {
+    "human_qualification_packet.private.json": "ac721ae49241cade45224a4fad9020ea7d70407df00be1809a8663f2fa756bb3",
+    "portability_v2/HUMAN_QUALIFICATION_PACKET_SELF_CONTAINED.md": "fd82076c74a200a2ff96f3914eb00bb5d208f8c875a63b9739f88127856956a1",
+    "portability_v2/phase43_stage2_human_decision_template.json": "1c29d024f2b90fd48311c93c0ac9122eaf7b52e8ff2d92e0470d219a01b3c086",
+    "reconciliation.json": "3631ead5334528a174a97683105fe5a1125b6e90fe9748f92c787be9c6b58b9b",
+    "residual_sample.json": "44051e472043f12bb416e7947d4f67a0f16d8785a4154d963e96726bbaed09a3",
+    "review_A/review.json": "9e5735f73a039c58b598ba48d1d78d5bf434c22a8ce6c15e464f22c8aa5f9edf",
+    "review_B/review.json": "f32d03eaf14494486a7d0dc89e2f20ccbe9ad950a69b1d80d0b16fb37ebdb08f"
+  },
+  "official_view_activation_authorized": false,
+  "population_sha256": "b363748e9aa05be4d66d7ff5c3d0008e9a80df29a25741f72d60c7c32c983b51",
+  "production_apply_authorized": false,
+  "production_write_allowed": false,
+  "residual_error_report_authority": "HUMAN_USER",
+  "residual_substantive_errors": 0,
+  "reviewer": "HUMAN_USER",
+  "sample_seed": "b2c61c6d67fd29f4e1105905de7afc1fd2c63291573b189136f8d23b7d244642"
+}

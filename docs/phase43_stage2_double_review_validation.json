@@ -1,0 +1,116 @@
+{
+  "document_type": "phase43_stage2_qualification_validation",
+  "result": "PASS",
+  "focused_tests": 37,
+  "review_a_exact_population": 274,
+  "review_b_exact_population": 274,
+  "sealed_record_hashes_verified": 548,
+  "independence": "Actual fresh collaboration tasks and access manifests verified; shared filesystem, exact model/config UNKNOWN; no independent-model or OS-isolation claim.",
+  "per_record_manifest_binding_variants": {
+    "A": "frozen/population_manifest.json",
+    "B": "frozen/input_files.json"
+  },
+  "input_drift": false,
+  "formal_node_create_authority": "All original CREATE proposals retain explicit human authority before any formal mutation; no policy bypass by sampling.",
+  "original_classification_or_reason_flags_modified": false,
+  "initial_flag_routing": {
+    "ALIAS_OWNERSHIP_REVIEW": {
+      "input_items": 30,
+      "final_mandatory": 7
+    },
+    "AMBIGUOUS_IDENTITY": {
+      "input_items": 44,
+      "final_mandatory": 31
+    },
+    "EVIDENCE_WARNING": {
+      "input_items": 13,
+      "final_mandatory": 7
+    },
+    "LOW_OR_UNKNOWN_CONFIDENCE": {
+      "input_items": 54,
+      "final_mandatory": 7
+    },
+    "NEW_CANONICAL_NODE": {
+      "input_items": 98,
+      "final_mandatory": 20
+    },
+    "ONTOLOGY_PRESSURE": {
+      "input_items": 4,
+      "final_mandatory": 4
+    },
+    "PARENT_OR_CAUSAL_REVIEW": {
+      "input_items": 22,
+      "final_mandatory": 1
+    },
+    "RELATION_AMBIGUITY": {
+      "input_items": 14,
+      "final_mandatory": 7
+    },
+    "VIEW_ACTIVATION_REQUIRES_SEPARATE_GOVERNANCE": {
+      "input_items": 8,
+      "final_mandatory": 8
+    }
+  },
+  "mandatory_deduplication": "candidate_id",
+  "mandatory_unique": 76,
+  "all_disagreements_in_mandatory": true,
+  "all_policy_true_unknown_in_mandatory": true,
+  "view_governance_included": 8,
+  "residual_excludes_mandatory": true,
+  "sample_reproducible": true,
+  "core_size": 27,
+  "coverage_supplements": 2,
+  "detection_scenario_defects": 20,
+  "actual_core_detection_probability": 0.9547365067735983,
+  "sample_object_types": {
+    "relations": 7,
+    "nodes": 17,
+    "aliases": 3,
+    "claims": 2
+  },
+  "no_human_decisions": true,
+  "production_changed": false,
+  "official_view_activation": false,
+  "new_intake_guard": {
+    "capacity": {
+      "enabled": true,
+      "policy_version": "phase43-stage1-bounded-operator-v1",
+      "limits": {
+        "sources_per_run": 1,
+        "runs_per_24h": 3,
+        "review_page_default": 25,
+        "review_page_max": 100,
+        "review_wip_soft": 100,
+        "review_wip_hard": 200,
+        "semantic_parent_cap": 8,
+        "jobs_per_run": 31,
+        "worker_concurrency": 1,
+        "operator_nominal_cases": 60,
+        "operator_nominal_minutes": 60,
+        "operator_guardrail_minutes": 75
+      },
+      "pending_review_rows": 274,
+      "unprojected_review_packets": 0,
+      "wip_state": "HARD_STOP",
+      "runs_last_24h": 0,
+      "intake_paused": false,
+      "pause_reason": "",
+      "new_intake_allowed": false
+    },
+    "new_intake_guard": "STAGE1_REVIEW_WIP_HARD_LIMIT",
+    "state_before_sha256": "1c378cfdc4deb89af62fa3a0d5c0191665c8ab84d3e82d78c2c95b6659755248",
+    "state_after_sha256": "1c378cfdc4deb89af62fa3a0d5c0191665c8ab84d3e82d78c2c95b6659755248",
+    "connection_mode": "ro"
+  },
+  "ui_validation": {
+    "offline_script_execution": "PASS",
+    "page_size": 20,
+    "human_fields": "BLANK",
+    "markdown_pages": 6,
+    "visual_browser_verification": "UNAVAILABLE_MISSING_BROWSER_RUNTIME_MODULE",
+    "playwright_fallback": "NOT_CACHED_NO_INSTALL_PERFORMED"
+  },
+  "human_qualification": "PENDING",
+  "no_human_capacity_budget_inferred": true,
+  "stage3_started": false
+}
