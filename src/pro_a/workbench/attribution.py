@@ -36,7 +36,7 @@ class Attribution:
         review = self.reviews.read(handle)
         require(review.get('review', {}).get('status') == 'SEALED', 'NATIVE_REVIEW_NOT_SEALED')
         with self.store.connect() as connection:
-            require(schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9'), 'ATTRIBUTION_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10'), 'ATTRIBUTION_SCHEMA_REQUIRED')
             packet = json.loads(connection.execute("SELECT body FROM sealed_review_artifacts WHERE artifact_id=? AND kind='completed_packet'", (handle,)).fetchone()[0])
         blank, run, _ = self.reviews.artifacts.native(handle)
         bundle = json.loads(checked_path(run / 'evidence/evidence_bound_extraction_bundle.json').read_text(encoding='utf-8'))

@@ -77,7 +77,7 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
     } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
   }
   function choose(value: PrivateSource) {
-    setSelectedId(value.source_id); setSelected(value); setError("");
+    setSelectedId(value.source_id); setSelected(null); setError("");
     window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}`);
     void refresh(value.source_id);
   }

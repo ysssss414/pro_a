@@ -1,0 +1,86 @@
+{
+  "document_type": "phase43_stage1_acceptance_results",
+  "stage1_name": "OPERATOR_SCALE_AND_BOUNDED_PIPELINE",
+  "phase43_stage1_implementation_complete": true,
+  "baseline_sha": "dbab4d737ddce016aec009c7cea1a9aa9e8a3eca",
+  "current_head_before_implementation": "dbab4d737ddce016aec009c7cea1a9aa9e8a3eca",
+  "branch": "codex/phase43-stage1-operator-scale-bounded-pipeline",
+  "frozen_gold": {
+    "state": "HUMAN_AUTHORIZED_FROZEN_GOLD",
+    "manifest_sha256": "d833b8a6af622630c5113da3149af50fba6c4d46de59fa7ec0d178dde1a22385",
+    "manifest_hash_match": true,
+    "cases": 120,
+    "development": 90,
+    "holdout": 30,
+    "regression_passed": 120,
+    "hidden_truth_read": false,
+    "candidate_outcomes_modified": false
+  },
+  "gates": {
+    "GATE_A_STAGE0_CONTRACT_PRESERVED": "PASS",
+    "GATE_B_REVIEW_SCALE": "PASS",
+    "GATE_C_CATALOG_LOOKUP": "PASS",
+    "GATE_D_COMPANY_ENUM_ALIGNMENT": "PASS",
+    "GATE_E_DETERMINISTIC_BATCHING": "PASS",
+    "GATE_F_BOUNDED_BUDGET_AND_QUEUE": "PASS",
+    "GATE_G_MULTI_DOMAIN_IDENTITY": "PASS",
+    "GATE_H_PERFORMANCE_CAPACITY": "PASS",
+    "GATE_I_FROZEN_GOLD_120": "PASS",
+    "GATE_J_FULL_REGRESSION": "PASS"
+  },
+  "review_scale": {
+    "100": "PASS",
+    "1000": "PASS",
+    "10000": "PASS",
+    "deterministic_pagination": true,
+    "stable_snapshot_cursor": true,
+    "duplicate_items": 0,
+    "missing_items": 0
+  },
+  "catalog": {
+    "exact_match_no_truncation": true,
+    "gt500_test": "PASS",
+    "result_count": 602,
+    "unique_result_count": 602,
+    "first_two_ids": [
+      "NODE_EXACT",
+      "NODE_ALIAS"
+    ]
+  },
+  "semantic_batches": {
+    "1": "PASS",
+    "8": "PASS",
+    "9": "PASS",
+    "40": "PASS",
+    "120": "PASS",
+    "token_boundary_forced_split": "PASS",
+    "exact_merge_and_evidence_binding": "PASS"
+  },
+  "test_results": {
+    "focused_stage1": "14 passed",
+    "source_list_bounded_projection": "1 passed",
+    "prompt_historical_compatibility_and_stage1": "33 passed",
+    "full_pytest": "2162 passed, 93 skipped, 2 third-party deprecation warnings in 911.54s",
+    "frontend": "21 files passed, 124 tests passed",
+    "frontend_build": "PASS",
+    "compileall": "PASS"
+  },
+  "production": {
+    "sha256_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "changed": false,
+    "apply_executed": false
+  },
+  "protected_governance_artifacts_unchanged": true,
+  "stage1_implementation_started": true,
+  "stage2_started": false,
+  "model_provider_calls_live": 0,
+  "git_write_blocked": true,
+  "git_blocker": "Permission denied creating the linked-worktree index.lock during the authorized explicit stage attempt; no elevation or retry was performed.",
+  "commit_sha": null,
+  "pushed": false,
+  "draft_pr_number": null,
+  "merged": false,
+  "validation_result": "PASS",
+  "performance_report": "docs/stage1_performance_report.json"
+}

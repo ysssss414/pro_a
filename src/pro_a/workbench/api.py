@@ -10,7 +10,7 @@ import secrets
 import time
 from urllib.parse import unquote, urlsplit
 
-from fastapi import Request
+from fastapi import Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -289,8 +289,26 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10'): result['attribution_available'] = result['review']['status'] == 'SEALED'
         return result
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/projection')
+    def review_projection(
+        artifact_id: str,
+        cursor: str | None = None,
+        limit: int = Query(25, ge=1, le=100),
+        queue: str = '',
+        candidate_type: str = '',
+        domain_id: str = '',
+    ):
+        return reviews.page(
+            artifact_id, cursor=cursor, limit=limit, queue=queue,
+            candidate_type=candidate_type, domain_id=domain_id,
+        )
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/projection/{candidate_id}')
+    def review_projection_item(artifact_id: str, candidate_id: str):
+        return reviews.projected_item(artifact_id, candidate_id)
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):
@@ -520,6 +538,10 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def source_processing_events(processing_run_id: str, cursor: str | None = None,
                                  limit: int = 50):
         return source_service().events(processing_run_id, cursor=cursor, limit=limit)
+
+    @app.get(PREFIX + '/source-operations/{source_id}/runs')
+    def source_run_history(source_id: str, cursor: str | None = None, limit: int = 25):
+        return source_service().run_history(source_id, cursor=cursor, limit=limit)
 
     @app.get(PREFIX + '/source-operations/{source_id}')
     def source_operation_detail(source_id: str):

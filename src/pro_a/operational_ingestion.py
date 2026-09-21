@@ -310,30 +310,68 @@ class _ReadOnlyAnalyzerDatabase:
     """The subset of Database used by Analyzer, loaded through immutable SQLite."""
 
     def __init__(self, path: Path):
-        connection = connect_read_only(path)
-        try:
-            nodes = [dict(row) for row in connection.execute(
-                "SELECT * FROM nodes ORDER BY primary_type,canonical_name"
-            )]
-            aliases = [dict(row) for row in connection.execute(
-                "SELECT alias,node_id FROM node_aliases ORDER BY alias"
-            )]
-        finally:
-            connection.close()
-        aliases_by_node: dict[str, list[str]] = {}
-        for alias in aliases:
-            aliases_by_node.setdefault(alias["node_id"], []).append(alias["alias"])
-        for node in nodes:
-            node["aliases"] = aliases_by_node.get(node["node_id"], [])
-        self._nodes = nodes
-        self._by_id = {node["node_id"]: node for node in nodes}
+        self.path = Path(path)
 
     def list_nodes(self, limit: int = 1000) -> list[dict[str, Any]]:
-        return copy.deepcopy([node for node in self._nodes if node.get("status") == "active"][:limit])
+        result: list[dict[str, Any]] = []
+        for page in self.iter_node_catalog(page_size=min(limit, 1000)):
+            result.extend(page[:limit - len(result)])
+            if len(result) >= limit:
+                break
+        return result
+
+    def iter_node_catalog(self, page_size: int = 500):
+        if not 1 <= page_size <= 1000:
+            raise ValueError("node catalog page_size must be between 1 and 1000")
+        connection = connect_read_only(self.path)
+        last = None
+        try:
+            while True:
+                if last is None:
+                    rows = connection.execute(
+                        """SELECT node_id,canonical_name,primary_type FROM nodes
+                           WHERE status='active'
+                           ORDER BY primary_type,canonical_name,node_id LIMIT ?""",
+                        (page_size,),
+                    ).fetchall()
+                else:
+                    rows = connection.execute(
+                        """SELECT node_id,canonical_name,primary_type FROM nodes
+                           WHERE status='active' AND (
+                             primary_type>? OR (primary_type=? AND canonical_name>?) OR
+                             (primary_type=? AND canonical_name=? AND node_id>?)
+                           ) ORDER BY primary_type,canonical_name,node_id LIMIT ?""",
+                        (last[0], last[0], last[1], last[0], last[1], last[2], page_size),
+                    ).fetchall()
+                if not rows:
+                    return
+                ids = [row["node_id"] for row in rows]
+                marks = ",".join("?" for _ in ids)
+                aliases_by_node = {node_id: [] for node_id in ids}
+                for alias in connection.execute(
+                    f"SELECT alias,node_id FROM node_aliases WHERE node_id IN ({marks}) "
+                    "ORDER BY node_id,alias", ids,
+                ):
+                    aliases_by_node[alias["node_id"]].append(alias["alias"])
+                yield [{**dict(row), "aliases": aliases_by_node[row["node_id"]]} for row in rows]
+                tail = rows[-1]
+                last = (tail["primary_type"], tail["canonical_name"], tail["node_id"])
+        finally:
+            connection.close()
 
     def get_node(self, node_id: str) -> dict[str, Any] | None:
-        node = self._by_id.get(node_id)
-        return copy.deepcopy(node) if node is not None else None
+        connection = connect_read_only(self.path)
+        try:
+            row = connection.execute("SELECT * FROM nodes WHERE node_id=?", (node_id,)).fetchone()
+            if row is None:
+                return None
+            node = dict(row)
+            node["aliases"] = [item[0] for item in connection.execute(
+                "SELECT alias FROM node_aliases WHERE node_id=? ORDER BY alias", (node_id,)
+            )]
+            return node
+        finally:
+            connection.close()
 
 
 def _model_config_identity(cfg: AppConfig) -> dict[str, Any]:

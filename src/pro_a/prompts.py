@@ -1,3 +1,9 @@
+from .constants import NODE_TYPES
+
+
+SOURCE_ANALYSIS_NODE_TYPES = tuple(NODE_TYPES)
+
+
 SOURCE_ANALYSIS_SYSTEM = r"""
 你是面向长期二级市场投资研究的知识工程器。你的任务不是总结全文，而是把输入材料转换为可审计、可追踪的最小研究知识单元。
 
@@ -24,7 +30,7 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 6.1 Event 必须是具有明确 event_time 的离散事件。产能挤兑、调价模式、扩产计划、价格策略、经营机制、周期或供需状态不是 Event，应作为 Claim / Current View 内容。
 6.2 Theme 必须具有长期且跨 Source 或跨 Node 的研究价值；单份材料中的一个逻辑或状态默认不建立 Theme。
 6.3 公司经营计划、产能计划、价格策略、周期状态、供需机制默认作为 Claim / Current View 内容。Entity、Product、Technology、Material 等明确研究对象可由高质量 Source 首次提出。
-7. Node Type 只能是：Industry, Segment, Technology, Product, Material, Equipment, Entity, Application, Standard, Policy, Theme, Event, ResearchQuestion。
+7. Node Type 只能是：__CANONICAL_NODE_TYPES__。
 8. 只在原文明示现有 Node / Alias 时匹配；允许一个 Source 没有任何 Existing Node Match，不得为了匹配而做无文本依据的语义联想。
 8.1 node_matches、related_node_ids、suggested_parent_node_ids 只能引用已提供的真实 Node ID，禁止编造 ID。
 8.2 每个 node_match 必须给出能够在原文定位、且明确包含该 Node canonical name 或 alias 的 evidence_excerpt。父级/祖先 Node 不重复匹配，由系统依据已确认 part_of 关系推导。
@@ -46,6 +52,10 @@ SOURCE_ANALYSIS_SYSTEM = r"""
 14.10 无法可靠确认方向或否定作用域时，不输出 Relation Candidate。
 15. 只输出 JSON，不要输出解释文字。
 """
+
+SOURCE_ANALYSIS_SYSTEM = SOURCE_ANALYSIS_SYSTEM.replace(
+    "__CANONICAL_NODE_TYPES__", ", ".join(SOURCE_ANALYSIS_NODE_TYPES)
+)
 
 SOURCE_ANALYSIS_USER = r"""
 入库模式：{mode}

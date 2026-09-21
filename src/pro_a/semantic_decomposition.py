@@ -84,6 +84,7 @@ The array is the complete batch. Do not return any other parent_claim_id.
 """
 
 SEMANTIC_MAX_OUTPUT_TOKENS = 8_192
+SEMANTIC_MAX_PARENTS_PER_BATCH = 8
 
 MODEL_RESULT_FIELDS = {"parent_claim_id", "ir_status", "units"}
 MODEL_UNIT_FIELDS = {
@@ -101,6 +102,74 @@ _EVIDENCE_BOUNDARY = re.compile(r"\s*(?:[，,；;。！？!?]+)\s*")
 
 class SemanticDecompositionError(RuntimeError):
     pass
+
+
+def semantic_prompt_token_upper_bound(claims: Sequence[Mapping[str, Any]]) -> int:
+    """Return a deterministic, conservative token bound for one semantic call.
+
+    A model token cannot encode less than one input byte.  Counting the UTF-8
+    bytes of the exact prompt therefore avoids tokenizer/provider drift while
+    remaining a safe upper bound for dispatch preflight.
+    """
+    payload = [
+        {
+            "parent_claim_id": item["claim_id"],
+            "claim_text": item["claim_text"],
+            "evidence_units": item["evidence_units"],
+            "attribution": item.get("attribution") or "",
+            "scope": item.get("scope") or "",
+            "fact_time": item.get("fact_time") or "",
+            "assigned_nature": item.get("assigned_nature") or "",
+        }
+        for item in claims
+    ]
+    user = SEMANTIC_DECOMPOSITION_USER.format(
+        claims_json=json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    )
+    return len((SEMANTIC_DECOMPOSITION_SYSTEM + "\n" + user).encode("utf-8"))
+
+
+def partition_semantic_claims(
+    claims: Sequence[Mapping[str, Any]],
+    *,
+    max_parents: int = SEMANTIC_MAX_PARENTS_PER_BATCH,
+    max_input_tokens: int | None = None,
+) -> list[list[dict[str, Any]]]:
+    """Partition frozen parents in input order without changing any payload."""
+    if not 1 <= max_parents <= SEMANTIC_MAX_PARENTS_PER_BATCH:
+        raise ValueError("semantic max_parents must be between 1 and 8")
+    if max_input_tokens is not None and max_input_tokens < 1:
+        raise ValueError("semantic max_input_tokens must be positive")
+    frozen = [copy.deepcopy(dict(item)) for item in claims]
+    ids = [str(item.get("claim_id") or "") for item in frozen]
+    if not all(ids) or len(ids) != len(set(ids)):
+        raise SemanticDecompositionError("SEMANTIC_PARENT_IDS_MISSING_OR_DUPLICATE")
+    batches: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    for claim in frozen:
+        candidate = [*current, claim]
+        exceeds_parent_cap = len(candidate) > max_parents
+        exceeds_token_cap = (
+            max_input_tokens is not None
+            and semantic_prompt_token_upper_bound(candidate) > max_input_tokens
+        )
+        if current and (exceeds_parent_cap or exceeds_token_cap):
+            batches.append(current)
+            current = [claim]
+        else:
+            current = candidate
+        if (
+            max_input_tokens is not None
+            and semantic_prompt_token_upper_bound(current) > max_input_tokens
+        ):
+            raise SemanticDecompositionError(
+                f"SEMANTIC_PARENT_TOKEN_BUDGET_EXCEEDED:{claim['claim_id']}"
+            )
+    if current:
+        batches.append(current)
+    if [item["claim_id"] for batch in batches for item in batch] != ids:
+        raise SemanticDecompositionError("SEMANTIC_PARTITION_RECONSTRUCTION_FAILED")
+    return batches
 
 
 class SemanticBackend(Protocol):
@@ -365,10 +434,13 @@ class SemanticDecomposer:
     backend: SemanticBackend
     batch_size: int = 8
     max_split_depth: int = 4
+    max_input_tokens: int | None = None
 
     def __post_init__(self) -> None:
-        if not 1 <= self.batch_size <= 10:
-            raise ValueError("semantic batch_size must be between 1 and 10")
+        if not 1 <= self.batch_size <= SEMANTIC_MAX_PARENTS_PER_BATCH:
+            raise ValueError("semantic batch_size must be between 1 and 8")
+        if self.max_input_tokens is not None and self.max_input_tokens < 1:
+            raise ValueError("semantic max_input_tokens must be positive")
 
     def run(self, claims: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
         frozen_claims = [copy.deepcopy(dict(item)) for item in claims]
@@ -450,8 +522,13 @@ class SemanticDecomposer:
                     claim, row, inherited_issues=inherited
                 )
 
-        for start in range(0, len(frozen_claims), self.batch_size):
-            process_batch(frozen_claims[start : start + self.batch_size])
+        deterministic_batches = partition_semantic_claims(
+            frozen_claims,
+            max_parents=self.batch_size,
+            max_input_tokens=self.max_input_tokens,
+        )
+        for batch in deterministic_batches:
+            process_batch(batch)
 
         outputs = [result_by_id[claim_id] for claim_id in input_ids]
         output_ids = [item["parent_claim_id"] for item in outputs]
@@ -490,6 +567,9 @@ class SemanticDecomposer:
             },
             "backend": self.backend.backend_name,
             "batch_size": self.batch_size,
+            "batch_parent_cap": self.batch_size,
+            "batch_count": len(deterministic_batches),
+            "max_input_tokens": self.max_input_tokens,
             "input_parent_claim_ids": input_ids,
             "output_parent_claim_ids": output_ids,
             "parent_claims_before": len(input_ids),

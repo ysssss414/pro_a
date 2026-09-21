@@ -121,7 +121,7 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         "workbench_schema_version": workbench_schema_version,
         "provider_adapter_version": adapter_version,
     }
-    if workbench_schema_version == "9":
+    if workbench_schema_version in ("9", "10"):
         package = Path(__file__).parent.parent
         names = ('domain_packs.py', 'run_context.py', 'workbench/domains.py',
                  'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py')
@@ -136,7 +136,7 @@ def prepare_cloud_jobs(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version in ("7", "8", "9"):
+        if version in ("7", "8", "9", "10"):
             return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "6":
             raise BoundaryError("RESEARCH_SCHEMA_REQUIRED")
@@ -300,7 +300,7 @@ class CloudJobs:
             version = schema_version(connection)
             source_input = (connection.execute(
                 "SELECT * FROM source_cloud_inputs WHERE artifact_id=?", (artifact_id,)
-            ).fetchone() if version in ("8", "9") else None)
+            ).fetchone() if version in ("8", "9", "10") else None)
         if source_input is not None:
             try:
                 path = self.artifacts.resolve(source_input["artifact_relative"])
@@ -401,7 +401,7 @@ class CloudJobs:
         intent_sha = digest(intent)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
-            if schema_version(connection) not in ("7", "8", "9"):
+            if schema_version(connection) not in ("7", "8", "9", "10"):
                 raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
             prior = connection.execute(
                 "SELECT intent_sha256,job_id,response_json FROM cloud_job_submissions WHERE idempotency_key=?",
@@ -617,6 +617,13 @@ class CloudJobs:
     def _claim(self, worker_id: str, job_id: str | None, lease_seconds: int) -> tuple[str, int] | None:
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
+            claimed_at = now()
+            if schema_version(connection) == "10" and connection.execute(
+                """SELECT 1 FROM cloud_jobs
+                   WHERE state='RUNNING' AND lease_expires_at>? LIMIT 1""",
+                (claimed_at,),
+            ).fetchone():
+                return None
             if job_id:
                 row = connection.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (job_id,)).fetchone()
             else:
@@ -630,11 +637,11 @@ class CloudJobs:
             if row["state"] != "QUEUED":
                 return None
             fence = row["fence"] + 1
-            started = row["started_at"] or now()
+            started = row["started_at"] or claimed_at
             expiry = (datetime.now(timezone.utc) + timedelta(seconds=lease_seconds)).isoformat()
             connection.execute('''UPDATE cloud_jobs SET state='RUNNING',phase='CLAIMED',fence=?,
                 lease_owner=?,lease_expires_at=?,started_at=?,updated_at=? WHERE job_id=? AND state='QUEUED' ''',
-                               (fence, worker_id, expiry, started, now(), row["job_id"]))
+                               (fence, worker_id, expiry, started, claimed_at, row["job_id"]))
             if connection.total_changes == 0:
                 return None
             self._event(connection, row["job_id"], "LEASE_ACQUIRED",

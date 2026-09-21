@@ -22,6 +22,14 @@ def main():
     commands.add_parser('prepare-source-operations')
     commands.add_parser('prepare-domains')
     commands.add_parser('rollback-domains')
+    commands.add_parser('prepare-stage1-scale')
+    commands.add_parser('rollback-stage1-scale')
+    rebuild_projection = commands.add_parser('rebuild-review-projection')
+    rebuild_projection.add_argument('--artifact-id', required=True)
+    pause_stage1 = commands.add_parser('pause-stage1-intake')
+    pause_stage1.add_argument('--reason', required=True)
+    resume_stage1 = commands.add_parser('resume-stage1-intake')
+    resume_stage1.add_argument('--reason', required=True)
     register_domain = commands.add_parser('register-domain')
     register_domain.add_argument('--pack', type=Path, required=True)
     assign_domain = commands.add_parser('assign-domains')
@@ -100,6 +108,24 @@ def main():
                 result = Domains(config).register(args.pack)
             else:
                 result = Domains(config).assign(**read_json(args.assignment))
+            print(json.dumps(result))
+        elif args.command in ('prepare-stage1-scale', 'rollback-stage1-scale',
+                              'rebuild-review-projection', 'pause-stage1-intake',
+                              'resume-stage1-intake'):
+            from .stage1_scale import (
+                Stage1ReviewProjection, prepare_stage1_scale, rollback_stage1_scale,
+                set_stage1_intake,
+            )
+            if args.command == 'prepare-stage1-scale':
+                result = prepare_stage1_scale(config)
+            elif args.command == 'rollback-stage1-scale':
+                result = rollback_stage1_scale(config)
+            elif args.command in ('pause-stage1-intake', 'resume-stage1-intake'):
+                result = set_stage1_intake(
+                    config, paused=args.command == 'pause-stage1-intake', reason=args.reason,
+                )
+            else:
+                result = Stage1ReviewProjection(config).rebuild(args.artifact_id)
             print(json.dumps(result))
         elif args.command == 'reconcile-cloud-jobs':
             from .cloud_jobs import CloudJobs

@@ -276,6 +276,54 @@ class Database:
             n["aliases"] = [r["alias"] for r in self.all("SELECT alias FROM node_aliases WHERE node_id=? ORDER BY alias", (n["node_id"],))]
         return nodes
 
+    def iter_node_catalog(self, page_size: int = 500) -> Iterable[list[dict[str, Any]]]:
+        """Yield the complete active catalog in bounded, deterministic pages."""
+        if not 1 <= page_size <= 1000:
+            raise ValueError("node catalog page_size must be between 1 and 1000")
+        last: tuple[str, str, str] | None = None
+        with self.connect() as conn:
+            while True:
+                if last is None:
+                    rows = conn.execute(
+                        """SELECT node_id,canonical_name,primary_type
+                           FROM nodes WHERE status='active'
+                           ORDER BY primary_type,canonical_name,node_id LIMIT ?""",
+                        (page_size,),
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        """SELECT node_id,canonical_name,primary_type
+                           FROM nodes WHERE status='active' AND (
+                               primary_type>? OR
+                               (primary_type=? AND canonical_name>?) OR
+                               (primary_type=? AND canonical_name=? AND node_id>?)
+                           ) ORDER BY primary_type,canonical_name,node_id LIMIT ?""",
+                        (last[0], last[0], last[1], last[0], last[1], last[2], page_size),
+                    ).fetchall()
+                if not rows:
+                    return
+                ids = [row["node_id"] for row in rows]
+                aliases: dict[str, list[str]] = {node_id: [] for node_id in ids}
+                marks = ",".join("?" for _ in ids)
+                for alias in conn.execute(
+                    f"""SELECT node_id,alias FROM node_aliases
+                         WHERE node_id IN ({marks}) ORDER BY node_id,alias""",
+                    ids,
+                ):
+                    aliases[alias["node_id"]].append(alias["alias"])
+                page = [
+                    {
+                        "node_id": row["node_id"],
+                        "canonical_name": row["canonical_name"],
+                        "primary_type": row["primary_type"],
+                        "aliases": aliases[row["node_id"]],
+                    }
+                    for row in rows
+                ]
+                yield page
+                tail = rows[-1]
+                last = (tail["primary_type"], tail["canonical_name"], tail["node_id"])
+
     def get_node(self, node_id: str) -> dict[str, Any] | None:
         node = self.one("SELECT * FROM nodes WHERE node_id=?", (node_id,))
         if node:

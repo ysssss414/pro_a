@@ -79,6 +79,9 @@ class Artifacts:
         artifact_id = 'ART_' + uuid.uuid4().hex
         dto, inventory, _ = self.validate(packet_relative, run_relative, artifact_id)
         with self.store.connect(operator_write=True) as connection:
+            stage1 = connection.execute(
+                "SELECT value FROM workbench_meta WHERE key='schema_version'"
+            ).fetchone()[0] == '10'
             existing = connection.execute(
                 "SELECT * FROM registered_packets WHERE packet_id=? AND "
                 "(artifact_kind='REVIEW_PACKET' OR artifact_kind IS NULL)"
@@ -89,10 +92,15 @@ class Artifacts:
             if existing:
                 if existing['file_inventory'] != json.dumps(inventory, sort_keys=True) or existing['packet_relative'] != packet_relative or existing['run_relative'] != run_relative:
                     raise BoundaryError('PACKET_ALREADY_REGISTERED_DIFFERENTLY')
-                return {'artifact_id': existing['artifact_id'], 'packet_id': dto['packet_id']}
-            connection.execute('INSERT INTO registered_packets(artifact_id,packet_id,packet_relative,run_relative,packet_sha256,file_inventory) VALUES(?,?,?,?,?,?)',
-                               (artifact_id, dto['packet_id'], packet_relative, run_relative, dto['packet_file_sha256'], json.dumps(inventory, sort_keys=True)))
-        return {'artifact_id': artifact_id, 'packet_id': dto['packet_id']}
+                result = {'artifact_id': existing['artifact_id'], 'packet_id': dto['packet_id']}
+            else:
+                connection.execute('INSERT INTO registered_packets(artifact_id,packet_id,packet_relative,run_relative,packet_sha256,file_inventory) VALUES(?,?,?,?,?,?)',
+                                   (artifact_id, dto['packet_id'], packet_relative, run_relative, dto['packet_file_sha256'], json.dumps(inventory, sort_keys=True)))
+                result = {'artifact_id': artifact_id, 'packet_id': dto['packet_id']}
+        if stage1:
+            from .stage1_scale import Stage1ReviewProjection
+            Stage1ReviewProjection(self.config).rebuild(result['artifact_id'])
+        return result
 
     def native(self, artifact_id: str) -> tuple[dict, Path, dict]:
         """Validated native bytes/context for the internal completion service only."""
@@ -116,6 +124,20 @@ class Artifacts:
 
     def listing(self) -> list[dict]:
         with self.store.connect() as connection:
+            version = connection.execute(
+                "SELECT value FROM workbench_meta WHERE key='schema_version'"
+            ).fetchone()[0]
+            if version == '10':
+                rows = connection.execute('''SELECT m.header_json FROM stage1_review_projection_meta m
+                    JOIN registered_packets r ON r.artifact_id=m.artifact_id
+                    ORDER BY r.registered_at,r.artifact_id''').fetchall()
+                return [
+                    {key: value[key] for key in (
+                        'artifact_id', 'packet_id', 'run_id', 'source', 'summary',
+                        'validation_state', 'mode',
+                    )}
+                    for value in (json.loads(row['header_json']) for row in rows)
+                ]
             columns = {row[1] for row in connection.execute('PRAGMA table_info(registered_packets)')}
             where = " WHERE artifact_kind='REVIEW_PACKET'" if 'artifact_kind' in columns else ''
             handles = [row[0] for row in connection.execute(
