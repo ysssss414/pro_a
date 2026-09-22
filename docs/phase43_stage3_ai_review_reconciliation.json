@@ -1,0 +1,2397 @@
+{
+  "document_type": "phase43_stage3_ai_review_reconciliation",
+  "items": [
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0032",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "ontology"
+      ],
+      "disagreement_type": [
+        "NATIVE_OPERATION_CONFLICT",
+        "EVIDENCE_CONFLICT",
+        "TYPE_OR_SCOPE_CONFLICT"
+      ],
+      "evidence_conflict": true,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0033",
+      "kind": "identity",
+      "native_operation_conflict": true,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "ontology"
+      ],
+      "semantic_review_note": "A proposes a distinct Chiplet Product; B holds the product boundary for explicit admission.",
+      "status": "A_B_SUBSTANTIVE_DISAGREEMENT",
+      "system_recommendation_reason": "Material A/B interpretation or native-operation conflict requires HUMAN_USER adjudication.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": true
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0151",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_NEW_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0130",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_NEW_CANONICAL.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0043",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0146",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0149",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0148",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0147",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0143",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0010",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_NEW_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0077",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_NEW_CANONICAL.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0082",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0159",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0138",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0140",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0115",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0011",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0102",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0052",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0135",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0132",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0141",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0142",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "object_type",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0114",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0163",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0001",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0003",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0002",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "object_type",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: DEFER.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0113",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0136",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0150",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "object_type",
+        "ontology",
+        "scope"
+      ],
+      "disagreement_type": [
+        "NATIVE_OPERATION_CONFLICT",
+        "TARGET_CONFLICT",
+        "EVIDENCE_CONFLICT",
+        "TYPE_OR_SCOPE_CONFLICT"
+      ],
+      "evidence_conflict": true,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0051",
+      "kind": "identity",
+      "native_operation_conflict": true,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "object_type",
+        "ontology",
+        "scope"
+      ],
+      "semantic_review_note": "A proposes reuse of the existing SOI Wafer ID; B finds the bound excerpt insufficient to authorize the plural-name mapping.",
+      "status": "A_B_SUBSTANTIVE_DISAGREEMENT",
+      "system_recommendation_reason": "Material A/B interpretation or native-operation conflict requires HUMAN_USER adjudication.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": true,
+      "temporal_conflict": false,
+      "type_scope_conflict": true
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "object_type",
+        "ontology"
+      ],
+      "disagreement_type": [
+        "NATIVE_OPERATION_CONFLICT",
+        "EVIDENCE_CONFLICT",
+        "TYPE_OR_SCOPE_CONFLICT"
+      ],
+      "evidence_conflict": true,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0031",
+      "kind": "identity",
+      "native_operation_conflict": true,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "object_type",
+        "ontology"
+      ],
+      "semantic_review_note": "A proposes a new generic Package Substrate parent; B defers the broader-than-advanced boundary.",
+      "status": "A_B_SUBSTANTIVE_DISAGREEMENT",
+      "system_recommendation_reason": "Material A/B interpretation or native-operation conflict requires HUMAN_USER adjudication.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": true
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0154",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0152",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "object_type",
+        "ontology",
+        "quarantine",
+        "scope",
+        "temporal"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "object_type",
+        "ontology",
+        "quarantine",
+        "scope",
+        "temporal"
+      ],
+      "semantic_review_note": "Both reviewers preserve the same governed hold. Rubric labels distinguish source support for a concept from sufficiency for canonical admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_NEW_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0089",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_NEW_CANONICAL.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0139",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0144",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "REJECT",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0145",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers reject a versioned parallel node and retain version context as a claim or scope.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REJECT.",
+      "system_recommended_decision": "REJECT",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "object_type",
+        "ontology"
+      ],
+      "disagreement_type": [
+        "NATIVE_OPERATION_CONFLICT",
+        "EVIDENCE_CONFLICT",
+        "TYPE_OR_SCOPE_CONFLICT"
+      ],
+      "evidence_conflict": true,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0042",
+      "kind": "identity",
+      "native_operation_conflict": true,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "identity_boundary",
+        "object_type",
+        "ontology"
+      ],
+      "semantic_review_note": "A proposes a distinct starting-wafer polishing Process; B defers its boundary against fabrication CMP.",
+      "status": "A_B_SUBSTANTIVE_DISAGREEMENT",
+      "system_recommendation_reason": "Material A/B interpretation or native-operation conflict requires HUMAN_USER adjudication.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": true
+    },
+    {
+      "automated_outcome": "REUSE_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0081",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [],
+      "raw_interpretation_differences": [],
+      "semantic_review_note": "Same native operation, target, and material interpretation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: REUSE_CANONICAL.",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_NEW_CANONICAL",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-CN-0112",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers propose the same distinct candidate. Scope and granularity labels compare it with different reference objects, without changing the identity boundary.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_NEW_CANONICAL.",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "OBS_656B35D110452867",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "semantic_review_note": "Both reviewers defer an observation with no admitted candidate or evidence. Ontology and temporal labels are not actionable without admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "OBS_B13CBB8C551799BB",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "semantic_review_note": "Both reviewers defer an observation with no admitted candidate or evidence. Ontology and temporal labels are not actionable without admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "OBS_BEEF46D038465707",
+      "kind": "identity",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "raw_interpretation_differences": [
+        "ontology",
+        "temporal"
+      ],
+      "semantic_review_note": "Both reviewers defer an observation with no admitted candidate or evidence. Ontology and temporal labels are not actionable without admission.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0001",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0002",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0003",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0004",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0005",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0006",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0007",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0008",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0009",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0010",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0011",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0012",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0013",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0014",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0015",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0016",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0017",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0018",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0019",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "ontology",
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "ontology",
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0020",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "ontology",
+        "scope"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "identity_boundary",
+        "ontology",
+        "scope"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0021",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0022",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0023",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0024",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0025",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0026",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0027",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0028",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0029",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0030",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0031",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0032",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0033",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0034",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0035",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0036",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0037",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0038",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0039",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0040",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0041",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0042",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0043",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0044",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0045",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0046",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0047",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0048",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0049",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "ontology"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "CREATE_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0050",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity"
+      ],
+      "semantic_review_note": "Both reviewers support the same frozen endpoints, relation type, source scope, and evidence. Granularity labels refer to parent-child levels versus the proposed edge; bounded evidence comments do not change the edge.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "A/B substantive consensus; frozen automated outcome: CREATE_RELATION.",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0051",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0052",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "evidence_sufficiency",
+        "granularity",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0053",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "granularity",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    },
+    {
+      "automated_outcome": "DEFER_RELATION",
+      "changed_interpretations": [],
+      "disagreement_type": [],
+      "evidence_conflict": false,
+      "human_user_decision": null,
+      "item_id": "SC-RL-0054",
+      "kind": "relation",
+      "native_operation_conflict": false,
+      "nonmaterial_interpretation_differences": [
+        "granularity",
+        "quarantine"
+      ],
+      "raw_interpretation_differences": [
+        "granularity",
+        "quarantine"
+      ],
+      "semantic_review_note": "Both reviewers hold the same endpoint, temporal, or ontology exception. Rubric labels compare concept support with authority for the relation.",
+      "status": "A_B_SUBSTANTIVE_AGREEMENT",
+      "system_recommendation_reason": "Frozen structural, Stage 2 decision, evidence, or temporal exception remains unresolved.",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_conflict": false,
+      "temporal_conflict": false,
+      "type_scope_conflict": false
+    }
+  ],
+  "population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb"
+}
