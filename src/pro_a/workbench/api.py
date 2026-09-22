@@ -20,6 +20,7 @@ from pro_a.direct_impact import DirectImpact, ImpactError
 from pro_a.research_explorer import ResearchError, ResearchExplorer
 from pro_a.research_navigation import ResearchNavigation
 from pro_a.research_structure_map import ResearchStructureMap
+from pro_a.qualified_overlay import QualifiedResearchOverlay
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .cloud_jobs import CloudJobs, CloudProfile, JobError
@@ -173,6 +174,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     research = ResearchExplorer(config)
     navigation = ResearchNavigation(config)
     structure_map = ResearchStructureMap(config, navigation=navigation)
+    qualified_overlay = QualifiedResearchOverlay(config, structure_map=structure_map)
     jobs = CloudJobs(config, cloud_profile)
     sources = SourceOperations(config, source_profile, cloud_profile) if source_profile else None
     host = urlsplit(config.origin).netloc
@@ -435,6 +437,37 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def research_domain_structure_map(domain_id: str, mode: str | None = None,
                                       node_id: str | None = None, depth: int | None = None):
         return structure_map.structure_map(domain_id, mode=mode, node_id=node_id, depth=depth)
+
+    @app.get(PREFIX + '/research/qualified-overlay')
+    def research_qualified_overlay():
+        return qualified_overlay.summary()
+
+    @app.get(PREFIX + '/research/qualified-overlay/governance')
+    def research_qualified_governance():
+        return qualified_overlay.governance()
+
+    @app.get(PREFIX + '/research/qualified-overlay/search')
+    def research_qualified_search(q: str):
+        return qualified_overlay.search(q)
+
+    @app.get(PREFIX + '/research/qualified-overlay/nodes/{candidate_id}')
+    def research_qualified_node(candidate_id: str):
+        return qualified_overlay.node(candidate_id)
+
+    @app.get(PREFIX + '/research/qualified-overlay/relations/{candidate_id}')
+    def research_qualified_relation(candidate_id: str):
+        return qualified_overlay.relation(candidate_id)
+
+    @app.get(PREFIX + '/research/qualified-overlay/canonical/{node_id}')
+    def research_qualified_canonical_provenance(node_id: str):
+        return qualified_overlay.canonical_provenance(node_id)
+
+    @app.get(PREFIX + '/research/domains/{domain_id}/qualified-structure-map')
+    def research_qualified_structure_map(domain_id: str, mode: str | None = None,
+                                         node_id: str | None = None, qualified_id: str | None = None,
+                                         depth: int | None = None):
+        return qualified_overlay.structure_map(domain_id, mode=mode, node_id=node_id,
+                                               qualified_id=qualified_id, depth=depth)
 
     @app.get(PREFIX + '/research/nodes/{node_id}/domain-context')
     def research_node_domain_context(node_id: str):

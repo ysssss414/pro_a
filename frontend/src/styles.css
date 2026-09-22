@@ -2315,6 +2315,28 @@ blockquote {
 .industry-map-edge-detail { display: grid; gap: 4px; padding: 9px 16px; border-top: 1px solid #dce7ef; background: #f5f9fc; color: #50677c; font-size: 10px; }.industry-map-edge-detail strong { color: #245b80; }.industry-map-edge-detail button { justify-self: start; }
 .industry-map-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; padding: 9px 16px; border-top: 1px solid #e6ecf1; color: #627789; font-size: 9px; }
 .industry-map-legend { display: flex; width: 100%; flex-wrap: wrap; gap: 4px 10px; }.industry-map-legend span::before { display: inline-block; width: 11px; margin-right: 4px; border-top: 2px solid #7e9cb4; content: ""; vertical-align: middle; }.industry-map-legend .map-legend-supply_flow::before, .industry-map-legend .map-legend-general_association::before { border-top-style: dashed; }.industry-map-legend .map-legend-competition::before { border-top-style: dotted; border-top-color: #ad786a; }.industry-map-legend .map-legend-dependency::before { border-top-color: #8372a4; }
+.industry-layer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; font-size: 10px; }
+.industry-layer button, .industry-governance button, .qualified-inspector button { padding: 5px 8px; border: 1px solid #c4d2df; border-radius: 4px; background: #fff; color: #345a78; cursor: pointer; font: inherit; font-size: 10px; }
+.industry-layer button[aria-pressed="true"] { border-color: #5b88a9; background: #e4f1fa; font-weight: 700; }
+.industry-governance { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 9px; padding: 7px 10px; border: 1px solid #e4d8bf; border-radius: 5px; background: #fffaf0; color: #665438; font-size: 10px; }
+.industry-governance-detail { width: 100%; max-height: 220px; overflow: auto; }
+.industry-governance-detail h2 { margin: 5px 0; font-size: 13px; }
+.industry-governance-detail li { margin: 3px 0; overflow-wrap: anywhere; }
+.qualified-inspector { font-size: 11px; overflow-wrap: anywhere; }
+.qualified-inspector h2 { margin: 10px 0 4px; font: 600 23px Georgia, serif; }
+.qualified-inspector dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 11px; }
+.qualified-inspector dt { color: #536b7e; font-weight: 700; }
+.qualified-inspector dd { min-width: 0; margin: 0; }
+.qualified-inspector section { margin-top: 14px; padding-top: 10px; border-top: 1px solid #e4e9ed; }
+.qualified-inspector li { margin: 8px 0; }
+.qualified-inspector li button { margin: 3px; }
+.qualified-provenance { margin-top: 10px; overflow-wrap: anywhere; }
+.qualified-provenance summary { cursor: pointer; }
+.qualified-provenance span { display: block; }
+.qualified-badge { display: inline-block; padding: 4px 7px; border: 2px dashed #9a6e31; border-radius: 4px; background: #fff8e9; color: #6e4f23; font-weight: 800; }
+.qualified-boundary, .industry-qualification-card { padding: 10px; border: 1px solid #e6d7b9; border-radius: 5px; background: #fffaf0; }
+.industry-qualification-card { margin-top: 12px; font-size: 10px; overflow-wrap: anywhere; }
+.industry-qualification-card h2 { margin: 0 0 6px; font-size: 14px; }
 @media (max-width: 900px) {
   .industry-workspace { overflow-y: auto; padding: 16px 12px; }.industry-layout { grid-template-columns: 1fr; }
   .industry-map { min-height: 520px; }

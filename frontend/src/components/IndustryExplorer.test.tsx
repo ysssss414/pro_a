@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   getNodeDomainContext, getResearchDomains, getResearchDomainTree, getResearchNode, getResearchStructureMap, searchResearch,
+  getQualifiedStructureMap, getQualifiedOverlaySummary, getQualifiedGovernance, getQualifiedNode,
+  getQualifiedCanonicalProvenance, searchQualified,
   type NavigationNode, type NavigationTree,
 } from "../api/research";
 import { getSession } from "../api/workbench";
@@ -11,6 +13,8 @@ import { DomainHierarchyPanel, IndustryExplorer } from "./IndustryExplorer";
 vi.mock("../api/research", () => ({
   getNodeDomainContext: vi.fn(), getResearchDomains: vi.fn(), getResearchDomainTree: vi.fn(),
   getResearchNode: vi.fn(), getResearchStructureMap: vi.fn(), searchResearch: vi.fn(),
+  getQualifiedStructureMap: vi.fn(), getQualifiedOverlaySummary: vi.fn(), getQualifiedGovernance: vi.fn(),
+  getQualifiedNode: vi.fn(), getQualifiedCanonicalProvenance: vi.fn(), searchQualified: vi.fn(),
 }));
 vi.mock("./SemanticStructureMap", () => ({ SemanticStructureMap: ({ mode, map, onMode, onDepth, onNode }:
   { mode: string; map: { selected_node_id: string | null } | null;
@@ -18,6 +22,11 @@ vi.mock("./SemanticStructureMap", () => ({ SemanticStructureMap: ({ mode, map, o
   <section aria-label="Semantic Structure Map"><span>Map mode: {mode}</span><span>Map Node: {map?.selected_node_id ?? "none"}</span>
     <button onClick={() => onMode("focus")}>Focus mode</button><button onClick={() => onDepth(3)}>Depth 3</button>
     <button onClick={() => onNode("B")}>Map select B</button></section> }));
+vi.mock("./QualifiedStructureMap", () => ({ QualifiedStructureMap: ({ mode, onQualified, onCanonical }:
+  { mode: string; onQualified: (id: string) => void; onCanonical: (id: string) => void }) =>
+  <section aria-label="Qualified Semantic Structure Map"><span>Qualified map mode: {mode}</span>
+    <button onClick={() => onQualified("SC-CN-0033")}>Select Chiplet</button>
+    <button onClick={() => onCanonical("B")}>Select canonical B</button></section> }));
 vi.mock("../api/workbench", async (original) => {
   const actual = await original<typeof import("../api/workbench")>();
   return { ...actual, getSession: vi.fn() };
@@ -70,6 +79,25 @@ describe("Industry Explorer", () => {
         path_from_root: id === "B" ? ["B"] : ["A", "A1"], depth: id === "B" ? 0 : 1 }],
       operational_domain_assignments: [] }));
     vi.mocked(searchResearch).mockResolvedValue({ query: "", results: [] });
+    vi.mocked(getQualifiedStructureMap).mockResolvedValue({ domain_id: "semiconductor", display_name: "Semiconductor",
+      mode: "relationship", selected_visual_id: null, selected_node_id: null, selected_qualified_id: null,
+      depth: 1, nodes: [], edges: [], truncated: false, truncation_reasons: [],
+      omitted_reference_hierarchy_relations: 0,
+      stats: { canonical_nodes: 0, qualified_nodes: 0, endpoint_references: 0,
+        canonical_relations: 0, qualified_relations: 0 } });
+    vi.mocked(getQualifiedOverlaySummary).mockResolvedValue({ visible_qualified_nodes: 29, visible_qualified_relations: 38 });
+    vi.mocked(getQualifiedGovernance).mockResolvedValue({ deferred_identities: [{ candidate_id: "D", display_name: "Deferred" }],
+      deferred_relations: [], rejected_identities: [{ candidate_id: "R", display_name: "Rejected" }],
+      endpoint_references: [{ candidate_ref: "SC-CN-0024", display_name: "Reference" }] });
+    vi.mocked(getQualifiedNode).mockImplementation(async (id) => ({ candidate_id: id,
+      visual_id: "qualified-stage3:" + id, display_name: "Chiplet", primary_type: "Product",
+      qualification_stage: "Stage 3", human_decision: "CREATE_NEW_CANONICAL", human_reason: "Bound decision",
+      authorization_basis: "HUMAN_USER", reviewer: "HUMAN_USER", evidence: [], relations: [],
+      production_applied: false }));
+    vi.mocked(getQualifiedCanonicalProvenance).mockImplementation(async (id) => ({
+      node_id: id, qualified_reuse_candidates: [{ candidate_id: "SC-CN-0032", display_name: "Reuse" }],
+      qualified_relations: [] }));
+    vi.mocked(searchQualified).mockResolvedValue({ results: [] });
   });
 
   it("selects a deterministic default, expands and collapses, then reuses Node research", async () => {
@@ -116,6 +144,8 @@ describe("Industry Explorer", () => {
   it("keeps map mode, depth and canonical selection in URL navigation", async () => {
     render(<IndustryExplorer />);
     expect(await screen.findByText("Map mode: hierarchy")).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toContain("domain=ai_hardware"));
+    await screen.findByRole("treeitem", { name: /Root A/ });
     fireEvent.click(await screen.findByRole("treeitem", { name: /Alpha/ }));
     expect(await screen.findByText("Map mode: relationship")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
@@ -143,6 +173,45 @@ describe("Industry Explorer", () => {
     expect(screen.getByText("Loading Research Inspector…")).toHaveAttribute("role", "status");
     await act(async () => { resolveB(researchNode("B")); await slowB; });
     expect(await screen.findByRole("heading", { name: "Root B" })).toBeInTheDocument();
+  });
+
+  it("keeps canonical default and separates qualified deep links, search, provenance and governance", async () => {
+    render(<IndustryExplorer />);
+    expect(await screen.findByText("Map mode: hierarchy")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Canonical" })).toHaveAttribute("aria-pressed", "true");
+    expect(getQualifiedStructureMap).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Canonical + Qualified" }));
+    expect(await screen.findByText("Qualified map mode: hierarchy")).toBeInTheDocument();
+    expect(window.location.search).toContain("overlay=qualified");
+    fireEvent.click(screen.getByRole("button", { name: /Qualification Governance/ }));
+    expect(await screen.findByText(/SC-CN-0024/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Select Chiplet" }));
+    expect(await screen.findByRole("heading", { name: "Chiplet" })).toBeInTheDocument();
+    expect(window.location.search).toContain("qualified=SC-CN-0033");
+    expect(window.location.search).not.toContain("node=");
+    expect(screen.getByText("No Official Current View — object is not in Production.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Select canonical B" }));
+    expect(await screen.findByRole("heading", { name: "Root B" })).toBeInTheDocument();
+    expect(await screen.findByText("Qualification Provenance")).toBeInTheDocument();
+    expect(window.location.search).not.toContain("qualified=");
+    act(() => { window.history.replaceState(null, "", "/industry?domain=semiconductor&overlay=qualified&qualified=SC-CN-0033");
+      window.dispatchEvent(new PopStateEvent("popstate")); });
+    expect(await screen.findByRole("heading", { name: "Chiplet" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Canonical" }));
+    expect(await screen.findByText("Map mode: hierarchy")).toBeInTheDocument();
+    expect(window.location.search).not.toContain("overlay=");
+  });
+
+  it("searches only qualified identities in overlay mode", async () => {
+    vi.mocked(searchQualified).mockResolvedValue({ results: [{ candidate_id: "SC-CN-0033",
+      display_name: "Chiplet", primary_type: "Product", qualification_stage: "Stage 3" }] });
+    render(<IndustryExplorer />);
+    await screen.findByRole("treeitem", { name: /Root A/ });
+    fireEvent.click(screen.getByRole("button", { name: "Canonical + Qualified" }));
+    fireEvent.change(screen.getByLabelText("Find a canonical or Qualified identity"), { target: { value: "Chiplet" } });
+    fireEvent.click(await screen.findByRole("button", { name: /Chiplet.*Qualified/ }));
+    expect(await screen.findByRole("heading", { name: "Chiplet" })).toBeInTheDocument();
+    expect(window.location.search).toContain("qualified=SC-CN-0033");
   });
 });
 
