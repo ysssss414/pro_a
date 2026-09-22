@@ -33,13 +33,21 @@ def test_authenticated_navigation_endpoints_are_read_only_and_safe(tmp_path, mon
         assert [row['domain_id'] for row in listing.json()['domains']] == ['ai_hardware', 'semiconductor']
         tree = client.get(PREFIX + '/research/domains/ai_hardware/tree')
         assert tree.status_code == 200 and tree.json()['roots'][0]['node_id'] == COMPANY
+        hierarchy_map = client.get(PREFIX + '/research/domains/ai_hardware/structure-map?mode=hierarchy')
+        assert hierarchy_map.status_code == 200
+        assert hierarchy_map.json()['mode'] == 'hierarchy'
+        relation_map = client.get(PREFIX + f'/research/domains/ai_hardware/structure-map?mode=relationship&node_id={COMPANY}')
+        assert relation_map.status_code == 200
+        assert relation_map.json()['selected_node_id'] == COMPANY
+        assert client.get(PREFIX + '/research/domains/ai_hardware/structure-map?mode=unknown').status_code == 422
+        assert client.get(PREFIX + '/research/domains/ai_hardware/structure-map?mode=focus').status_code == 422
         context = client.get(PREFIX + f'/research/nodes/{COMPANY}/domain-context')
         assert context.status_code == 200
         assert context.json()['navigation_contexts'][0]['domain_id'] == 'ai_hardware'
         assert context.json()['operational_domain_assignments'] == []
         assert client.get(PREFIX + '/research/domains/unknown/tree').status_code == 404
         assert client.get(PREFIX + '/research/domains/ai_hardware/tree?max_depth=13').status_code == 422
-        for response in (listing, tree, context):
+        for response in (listing, tree, hierarchy_map, relation_map, context):
             assert str(tmp_path) not in response.text
             assert str(case['config'].artifact_root) not in response.text
     assert hashlib.sha256(case['config'].knowledge_db.read_bytes()).hexdigest() == before

@@ -38,6 +38,23 @@ export type NodeDomainContext = {
     path_from_root: string[]; depth: number }[];
   operational_domain_assignments: { primary_domain: string; revision: number }[];
 };
+export type StructureMapMode = "hierarchy" | "relationship" | "focus";
+export type StructureMapNode = {
+  node_id: string; canonical_name: string; primary_type: string; status: string;
+  distance: number; selected: boolean; in_navigation_context: boolean; navigation_depth: number | null;
+  on_selected_path?: boolean;
+};
+export type StructureMapEdge = {
+  relation_id: string; from_node_id: string; to_node_id: string; relation_type: string;
+  semantic_group: string; scope: string; status: string; confidence: number | null;
+  on_selected_path?: boolean;
+};
+export type StructureMapResult = {
+  domain_id: string; display_name: string; mode: StructureMapMode; selected_node_id: string | null;
+  depth: number; nodes: StructureMapNode[]; edges: StructureMapEdge[];
+  stats: { node_count: number; edge_count: number }; available_relation_types: string[];
+  truncated: boolean; truncation_reasons: string[]; snapshot_id: string;
+};
 
 function params(values: Record<string, string | number | boolean | null | undefined>) {
   const search = new URLSearchParams();
@@ -57,6 +74,9 @@ export const getResearchDomains = (signal: AbortSignal) =>
   request<{ domains: NavigationDomain[] }>("/research/domains", signal);
 export const getResearchDomainTree = (domainId: string, signal: AbortSignal) =>
   request<NavigationTree>("/research/domains/" + encodeURIComponent(domainId) + "/tree", signal);
+export const getResearchStructureMap = (domainId: string, mode: StructureMapMode, nodeId: string,
+  depth: number, signal: AbortSignal) => request<StructureMapResult>("/research/domains/" +
+  encodeURIComponent(domainId) + "/structure-map" + params({ mode, node_id: nodeId, depth: mode === "focus" ? depth : null }), signal);
 export const getNodeDomainContext = (nodeId: string, signal: AbortSignal) =>
   request<NodeDomainContext>("/research/nodes/" + encodeURIComponent(nodeId) + "/domain-context", signal);
 export const getResearchClaim = (id: string, signal: AbortSignal) =>

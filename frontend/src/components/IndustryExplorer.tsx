@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
-  getNodeDomainContext, getResearchDomains, getResearchDomainTree, getResearchNode,
+  getNodeDomainContext, getResearchDomains, getResearchDomainTree, getResearchNode, getResearchStructureMap,
   searchResearch, type NavigationDomain, type NavigationNode, type NavigationTree,
-  type NodeDomainContext, type ResearchRouteKind, type SearchResult,
+  type NodeDomainContext, type ResearchRouteKind, type SearchResult, type StructureMapMode, type StructureMapResult,
 } from "../api/research";
 import { getSession, WorkbenchError } from "../api/workbench";
 import { ResearchLogin, ResearchNodeInspector, type Session } from "./ResearchExplorer";
+import { SemanticStructureMap } from "./SemanticStructureMap";
 
 function readLocation() {
   const params = new URLSearchParams(window.location.search);
-  return { domain: params.get("domain") ?? "", node: params.get("node") ?? "" };
+  return { domain: params.get("domain") ?? "", node: params.get("node") ?? "",
+    map: params.get("map") ?? "", depth: params.get("depth") ?? "" };
 }
 
 function ancestorPath(roots: NavigationNode[], nodeId: string): string[] {
@@ -79,6 +81,9 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
   const [tree, setTree] = useState<NavigationTree | null>(null);
   const [treeLoading, setTreeLoading] = useState(false);
   const [treeError, setTreeError] = useState("");
+  const [mapData, setMapData] = useState<StructureMapResult | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState("");
   const [nodeData, setNodeData] = useState<Record<string, any> | null>(null);
   const [context, setContext] = useState<NodeDomainContext | null>(null);
   const [nodeLoading, setNodeLoading] = useState(false);
@@ -86,13 +91,25 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
 
-  const navigate = useCallback((domain: string, node: string, replace = false) => {
+  const navigate = useCallback((domain: string, node: string, map = "", depth = "", replace = false) => {
     const url = new URL("/industry", window.location.origin);
     if (domain) url.searchParams.set("domain", domain);
     if (node) url.searchParams.set("node", node);
+    if (map) url.searchParams.set("map", map);
+    if (map === "focus" && depth) url.searchParams.set("depth", depth);
     window.history[replace ? "replaceState" : "pushState"](null, "", url);
-    setLocation({ domain, node });
+    setLocation({ domain, node, map, depth: map === "focus" ? depth : "" });
   }, []);
+  const selectMapNode = useCallback((id: string) => navigate(location.domain, id, location.map, location.depth),
+    [location.domain, location.map, location.depth, navigate]);
+  const openRelation = useCallback((id: string) => {
+    window.history.pushState(null, "", `/relation/${encodeURIComponent(id)}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, []);
+
+  const mode = (location.map || (location.node ? "relationship" : "hierarchy")) as StructureMapMode;
+  const focusDepth = location.depth ? Number(location.depth) : 2;
+  const modeValid = ["hierarchy", "relationship", "focus"].includes(mode);
 
   useEffect(() => {
     const pop = () => setLocation(readLocation());
@@ -124,9 +141,9 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
     if (domains.length && !location.domain) {
       navigate(domains.find((domain) => domain.domain_id === "ai_hardware")?.domain_id
         ?? domains.find((domain) => domain.domain_id === "semiconductor")?.domain_id
-        ?? domains[0].domain_id, location.node, true);
+        ?? domains[0].domain_id, location.node, location.map, location.depth, true);
     }
-  }, [domains, location.domain, location.node, navigate]);
+  }, [domains, location, navigate]);
 
   useEffect(() => {
     setTree(null); setTreeError("");
@@ -140,6 +157,22 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
       .finally(() => { if (!controller.signal.aborted) setTreeLoading(false); });
     return () => controller.abort();
   }, [session, location.domain, domains]);
+
+  useEffect(() => {
+    setMapData(null); setMapError(""); setMapLoading(false);
+    if (!session || !location.domain || !domains.length) return;
+    if (!domains.some((domain) => domain.domain_id === location.domain)) return;
+    if (!modeValid || (mode !== "hierarchy" && !location.node) ||
+        (mode === "focus" && (!Number.isInteger(focusDepth) || focusDepth < 1 || focusDepth > 3))) {
+      setMapError("Invalid map mode, depth, or missing selected Node."); return;
+    }
+    const controller = new AbortController(); setMapLoading(true);
+    getResearchStructureMap(location.domain, mode, location.node, focusDepth, controller.signal).then((value) => {
+      if (!controller.signal.aborted) setMapData(value);
+    }).catch((reason) => { if ((reason as Error).name !== "AbortError") setMapError((reason as Error).message); })
+      .finally(() => { if (!controller.signal.aborted) setMapLoading(false); });
+    return () => controller.abort();
+  }, [session, location.domain, location.node, mode, focusDepth, domains, modeValid]);
 
   useEffect(() => {
     setNodeData(null); setContext(null); setNodeError("");
@@ -162,7 +195,7 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
   }, [query, session]);
 
   function inspectorNavigate(route: { kind: ResearchRouteKind; id?: string }, values?: Record<string, string>) {
-    if (route.kind === "node" && route.id) { navigate(location.domain, route.id); return; }
+    if (route.kind === "node" && route.id) { navigate(location.domain, route.id, location.map, location.depth); return; }
     const path = route.kind === "home" ? "/research" : route.kind === "coverage" ? "/coverage"
       : route.kind === "claims" || route.kind === "sources" ? `/research/${route.kind}`
         : `/${route.kind}/${encodeURIComponent(route.id ?? "")}`;
@@ -182,13 +215,17 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
       <div className="industry-search"><label htmlFor="industry-search">Find a canonical Node</label>
         <input id="industry-search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Nodes…" />
         {!!results.length && <div className="industry-search-results">{results.map((item) => <button key={item.object_id}
-          onClick={() => { navigate(location.domain, item.object_id); setQuery(""); setResults([]); }}>
+          onClick={() => { selectMapNode(item.object_id); setQuery(""); setResults([]); }}>
           {item.label}<small>{item.subtitle}</small></button>)}</div>}</div></header>
     {domainsError && <p role="alert" className="research-error">Unable to load domains: {domainsError}</p>}
     <div className="industry-layout">
       <DomainHierarchyPanel domains={domains} domainId={location.domain} tree={tree} loading={treeLoading || domainsLoading}
         error={treeError || domainsError} selectedNodeId={location.node} onDomain={(id) => navigate(id, "")}
-        onNode={(id) => navigate(location.domain, id)} />
+        onNode={selectMapNode} />
+      <SemanticStructureMap map={mapData} loading={mapLoading} error={mapError} mode={mode} depth={focusDepth}
+        selectedNodeId={location.node} onMode={(next) => navigate(location.domain, location.node, next, location.depth)}
+        onDepth={(next) => navigate(location.domain, location.node, "focus", String(next))}
+        onNode={selectMapNode} onRelation={openRelation} />
       <section className="industry-inspector" aria-label="Research Inspector">
         {!location.node && <p className="industry-prompt">Select a node to inspect research.</p>}
         {nodeLoading && <p role="status">Loading Research Inspector…</p>}
@@ -199,7 +236,7 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
             <strong>Operational domain assignment</strong>
             <span>{context?.operational_domain_assignments.map((item) => item.primary_domain).join(", ") || "None recorded"}</span>
             {!!otherContexts.length && <div>{otherContexts.map((item) => <button key={`${item.domain_id}:${item.root_node_id}`}
-              onClick={() => navigate(item.domain_id, location.node)}>Open in {item.display_name}</button>)}</div>}
+              onClick={() => navigate(item.domain_id, location.node, location.map, location.depth)}>Open in {item.display_name}</button>)}</div>}
           </div>
           <ResearchNodeInspector data={nodeData} csrf={session.csrf_token ?? ""} navigate={inspectorNavigate} />
         </>}
