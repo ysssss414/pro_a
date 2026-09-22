@@ -1,0 +1,25 @@
+{
+  "ai_agreement_waives_human": false,
+  "document_type": "phase43_stage3_review_policy_binding",
+  "mandatory_human": 100,
+  "mandatory_risk_classes": [
+    "LOW_OR_REQUIRED_UNKNOWN",
+    "IDENTITY_AMBIGUITY",
+    "TYPE_MISMATCH",
+    "CROSS_DOMAIN_CONFLICT",
+    "NEW_CANONICAL_STRUCTURAL_OBJECT",
+    "RELATION_AMBIGUITY",
+    "ONTOLOGY_PRESSURE",
+    "HISTORICAL_QUARANTINE",
+    "VIEW_IMPLICATION"
+  ],
+  "original_stage1_stage2_policy_modified": false,
+  "population": 100,
+  "population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb",
+  "residual_eligible": 0,
+  "residual_sample_required": false,
+  "residual_sample_size": 0,
+  "scope": "Reuse Stage 1/2 risk governance where semantically applicable; adapt Stage 3 object fields only.",
+  "stage2_review_contract_sha256": "13c657131fca06b87619c42400bcc36bc5c969ce403769d0f722aca38d4d1ab1",
+  "stage2_review_validation_sha256": "e46ad7584c414d27259f9c31af166a03d9e443054241665b45eee8fe95caa4d7"
+}

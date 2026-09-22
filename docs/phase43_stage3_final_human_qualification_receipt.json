@@ -1,0 +1,94 @@
+{
+  "ab_reconciliation_git_blob_sha256": "78d46a200a202a4a1ce5d5ccb2a684577d5ca0d4c0ab227833301dd3578d76d4",
+  "ai_hardware_input_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "ai_review_a_git_blob_sha256": "900ca5e8201fbb3f226e0feb794e99e8b69ed1c1b62e9a85ef9aba4821a08a88",
+  "ai_review_b_git_blob_sha256": "17eb1858137471393e3289e7a54b42e3ed12c7065a2d064cd43a73ba1b83852b",
+  "authority_source_sha256": "38c2a8c0d0390708378f9211baaa6f17551219d16b7aee33ff4d300d44e1ff89",
+  "automated_resolution_file_sha256": "4ee619c8d597f6ffcacb357efd7eddce750b1a2bc6fe3a21c7a9a78f182f4065",
+  "baseline": "690fc4f26e02607fb54a48053cf8faf6775621c3",
+  "binding_result": "PASS",
+  "blank_template_git_blob_sha256": "3d39f049ce90a9cb5123c1ca5e8bb95b62af6d9173febcef95bd0730d52b9f7f",
+  "completed_decision_file_sha256": "34f91757f881e26f87502e1ae096ec24b8e207d85ba218d5be8179867940ef52",
+  "document_type": "phase43_stage3_final_human_qualification_receipt",
+  "explicit_adjudication": {
+    "SC-CN-0031": {
+      "decision": "CREATE_NEW_CANONICAL",
+      "reason": "Package Substrate is a generic package-foundation Product spanning organic laminate, ceramic and glass, broader than Advanced Package Substrate.",
+      "target": null
+    },
+    "SC-CN-0033": {
+      "decision": "CREATE_NEW_CANONICAL",
+      "reason": "Chiplet is a physical companion/small die Product, distinct from Chiplet Architecture / Technology. The bound Intel evidence establishes a durable independent concept.",
+      "target": null
+    },
+    "SC-CN-0042": {
+      "decision": "CREATE_NEW_CANONICAL",
+      "reason": "Silicon Wafer Polishing is a starting-wafer mirror-polishing Technology, distinct from Advanced Packaging CMP Equipment and fabrication CMP in stage, type and scope; SUMCO evidence supports it.",
+      "target": null
+    },
+    "SC-CN-0051": {
+      "decision": "REUSE_CANONICAL",
+      "reason": "Silicon-On-Insulator Wafers is the plural expression of the existing Silicon-on-Insulator Wafer Material. The source section and construction support the same material; no second canonical Node.",
+      "target": "NODE_20260817_7A9AE357"
+    }
+  },
+  "human_decisions": {
+    "applied": 100,
+    "expected": 100,
+    "extra": 0,
+    "missing": 0,
+    "residual_sample_size": 0,
+    "section_a": 96,
+    "section_b": 4
+  },
+  "identity_decisions": {
+    "CREATE_NEW_CANONICAL": 12,
+    "DEFER": 14,
+    "KEEP_DOMAIN_SPECIFIC": 0,
+    "REJECT": 1,
+    "REUSE_CANONICAL": 19
+  },
+  "native_completed_file_sha256": "657a6ca23b4a55a99dfcfac5d86a5ed6cd101d8a3854c757ab137c5b744c2d23",
+  "population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb",
+  "pr": 65,
+  "pr_head_before_human_qualification": "1c9c6efc65d136325d9f315b9635582d1535d5ee",
+  "production": {
+    "apply_executed": false,
+    "relation_writes": 0,
+    "sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "source_writes": 0,
+    "write_count": 0
+  },
+  "qualification": {
+    "final_human": "PASS",
+    "mandatory_human": "PASS",
+    "residual_sample_required": false
+  },
+  "relation_decisions": {
+    "CREATE_RELATION": 38,
+    "DEFER_RELATION": 16,
+    "KEEP_DOMAIN_SPECIFIC_RELATION": 0,
+    "REJECT_RELATION": 0,
+    "REUSE_RELATION": 0
+  },
+  "result": "PASS",
+  "review_population_file_sha256": "2ec173f05215e9d62323ff1cde07108fbcf5eab1afcaf6a020ee438875f04a92",
+  "self_contained_packet_git_blob_sha256": "163cb649d5c76a9a76e767fb3f065048f57d2fbd2e2c9ac9c48f7ef395cc9234",
+  "semiconductor_input_sha256": "131421d3bbe3b968a1c72ee6e3767cfad6141a0cdaea1850ba30cccbd3932918",
+  "stage2_human_authorization_sha256": "23fa6c94d55caf7ef8cfc3291528d3d41a06948460b852d7418c68f572bf014f",
+  "stage2_immutable_packet_sha256": "06006a1c98247f1803dac9cdcd0f10ade5d84beddc56a12e3768e5a9e5bfc66c",
+  "stage4_started": false,
+  "views": {
+    "current_view_writes": 0,
+    "official_view_activations": 0
+  },
+  "wip": {
+    "new_intake_allowed": false,
+    "operational_review_complete": false,
+    "pending_review_rows": 274,
+    "source": "frozen Stage 2 final human qualification receipt",
+    "state": "HARD_STOP",
+    "workbench_mutated": false
+  }
+}

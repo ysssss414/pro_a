@@ -1,0 +1,1814 @@
+{
+  "authority_source_sha256": "38c2a8c0d0390708378f9211baaa6f17551219d16b7aee33ff4d300d44e1ff89",
+  "baseline": "690fc4f26e02607fb54a48053cf8faf6775621c3",
+  "blank_template_git_blob_sha256": "3d39f049ce90a9cb5123c1ca5e8bb95b62af6d9173febcef95bd0730d52b9f7f",
+  "decisions": [
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "c21f8182230b317e18233609f6e07851a7e6e3b7b567295f1947520b03ff1316",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_4452D283"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0032",
+      "object_type": "identity",
+      "parent_item_sha256": "08833d9a2900e616b28b5065b01438df0b098d698c7d1b4ec7e05f989a578680",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_4452D283"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_B_ADJUDICATION",
+      "candidate_content_sha256": "344d53445ebe49ee8b0af16889d593107d62a1c5f7a4db5756d35516ecb54c43",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "Chiplet is a physical companion/small die Product, distinct from Chiplet Architecture / Technology. The bound Intel evidence establishes a durable independent concept.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "Chiplet is a physical companion/small die Product, distinct from Chiplet Architecture / Technology. The bound Intel evidence establishes a durable independent concept.",
+      "item_id": "SC-CN-0033",
+      "object_type": "identity",
+      "parent_item_sha256": "83df50c7393264d81a4311b2a462bb7de1179b160003fd5ac5cbee58a7a11c51",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "a3ad5aefe221f4236a2f162ac975729db17e8242447475d212094b8a734e618e",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_CB56C000"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0151",
+      "object_type": "identity",
+      "parent_item_sha256": "95d4c70762d6fbdb443bd2dcf7a2d06d55b85da95fd2c9adb2fc9acdcf4dddd9",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_CB56C000"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "73ca4a1e902e0468958df7bf19b0167c68a9e4f39af7e9aa1667abf6a1dac98b",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0130",
+      "object_type": "identity",
+      "parent_item_sha256": "b6e0573784dea30483b6e626638d2201d6a0f1f496512b2d11a3485c499d0f61",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "0f1c1ac235614fcfd8c63b76991efc9524d397ff952ccc17b0c8ab3ce6f0d9bc",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0043",
+      "object_type": "identity",
+      "parent_item_sha256": "90bbe6c5ca91ce12dd27d7d442bc81a89e4e4db041829850af08e262b7771d4f",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "932db1700190aa57732cc7c32eaab9374d184fdf620605e20443306bb264e59c",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260814_9B66BB15"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0146",
+      "object_type": "identity",
+      "parent_item_sha256": "171f0301b7ef7dfca6d526684f1b79369fd7814d213963c891cf979839b7d873",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260814_9B66BB15"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "7da934ecc960cd4894a730e1a40775df3920b55f8e1da9a0e940af9c2bd7c5b4",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_1A7F2D5816F5B7EE"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0149",
+      "object_type": "identity",
+      "parent_item_sha256": "fedab554c9283a9c9ce94dc477897467ac0cb290bd1d160b0c990676d058e2f0",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_1A7F2D5816F5B7EE"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "2ecfcfe497ef81312de4ea012d9ac8a65bda59b02f5581bdbdaf18c0fb3a1cd0",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_B7B4CB43F4C30F10"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0148",
+      "object_type": "identity",
+      "parent_item_sha256": "bf1814bac4daae6f16535db9a6ef89b50174bef752b9ae125e428a43486de617",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_B7B4CB43F4C30F10"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "6fd4e52121172ea3dadb9d79de2fcef4239af33da70cefab2a82deccf74c111e",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_3E0E5604C3F64891"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0147",
+      "object_type": "identity",
+      "parent_item_sha256": "42894919f76fb5ab52f435ebe5fb832eac115d6bbbe6519a61c43b276ad6f7e4",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_3E0E5604C3F64891"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "91db897b3ada46144353ff785470eb37e1db5a6b823a5129a7a9e016d13102e9",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0143",
+      "object_type": "identity",
+      "parent_item_sha256": "252077a3c73255c60d63bf4e2e6adf06fcf195310679386186cb8ed8b74aa12a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "dd05dbdbb6d8cb579275789a9e8aacb318d256b67f8267f89cd02cc9d92edfec",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0010",
+      "object_type": "identity",
+      "parent_item_sha256": "dd4b8b3927b80cc2d8ffe40be1d22e29f14e866b30ffcd20906766e249c0f360",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ca452aaf71a5ed233fd524296009b0b8eb3be6bac132771cbf827d341ff6f80a",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0077",
+      "object_type": "identity",
+      "parent_item_sha256": "9e6be97b318ec6f744c2a579a5e94f16ec5d7499d23e9231ada2efbc0f2c5d71",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "739edea86b9338a391350e1275e1e84c10da19d5d110aa5f8ce925d9f22c11b2",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0082",
+      "object_type": "identity",
+      "parent_item_sha256": "a6d9e61a1abff1db319c96d7e082a43449f02c6a7e0c16983b7f62ef650e39d2",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "814c7bf65a708bb68f004fea1cf6c703db9fd30064328d7505d4fa553d600f8c",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0159",
+      "object_type": "identity",
+      "parent_item_sha256": "305bc244ddbf9016da2f4abacd64ab0bbf306ecd58c9d48131a53519404d580a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "fa22fe37805550e58611cfaf3aa12f933f137e578537a45bae1072de432bd7aa",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_6A9A657D"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0138",
+      "object_type": "identity",
+      "parent_item_sha256": "089870b996ee9d0aed97608ac574948fdd97a15710a3b5969ff9bb5b0c60d16a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_6A9A657D"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "b0a461bfffb418d328f7a54ff3689a0ffc74876c96027d9513b05b85921fe920",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_6ABA49BC"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0140",
+      "object_type": "identity",
+      "parent_item_sha256": "4283aa6693058a65a6a6313e6d1d15c79121c354dcaf12b41589c61d79203c81",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_6ABA49BC"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "4ea0eccfca93458ed5aa313933b3cf04a594a8f6f43bf27e77ea78c3544de958",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0115",
+      "object_type": "identity",
+      "parent_item_sha256": "6bd63a0c9d2ab4cbd75b25cc52d942bcc0188760581b6c914652ced9f677d1ac",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "195686e1d631154d450fb3f7574f885a1795760fc1999c26d80a33f0db408959",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0011",
+      "object_type": "identity",
+      "parent_item_sha256": "0b90aa5d8f47ee3ecd58cd9ef331c78d3807b5794291707a7cd0d0676f571740",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "bfe6169c589aee59700b8f4cd27b3167495afb3e5665369fe0b36aa7c3309bee",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_15BC05D614287450"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0102",
+      "object_type": "identity",
+      "parent_item_sha256": "3f7ac11e447e20d15a33e8339537c4d5b5b617cc58e16139982b3c760c4a029b",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_15BC05D614287450"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "925d4370443928decd8bcb01380828ef65457555ad48288bea6d152ce3d179e8",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0052",
+      "object_type": "identity",
+      "parent_item_sha256": "655d620cb306bc4b84de46c54ed47e8cf6f91f577f608f7c82d204dd0ab76d10",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "15d70e26f931ed1228698fa27bd4b0711f053788b6b094144a8996abe9970919",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0135",
+      "object_type": "identity",
+      "parent_item_sha256": "5c747e91b8c3c77fb470c8673fd2c53e65bbd5d5cc40f5f3fdd7aabdc6d8f759",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "73239f55b5f4ad9490c737dd1b231eb7334455d709be2e2abb69b7c33f0f9984",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0132",
+      "object_type": "identity",
+      "parent_item_sha256": "80ecbf2038f17932b0d113387e37e0936d266c247ebe2da2be2d9ac4db3e2461",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "353886df6ff3ece3ee748cfbee3513588cfe4f6ea1a3180a18328e6175d6c8b5",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_F039433D"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0141",
+      "object_type": "identity",
+      "parent_item_sha256": "aedd0139916158262010a4e1d29693b584bd9dd27cc745231c1dcebb8aaec76a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_F039433D"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "3b3dd35b5d92efb00d0b349ca7af27bbf4e1304b2e6a42ad4a3af3cf267908f8",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0142",
+      "object_type": "identity",
+      "parent_item_sha256": "2114776b82cb2d9a21d8416e3511f30cbdb20efe308368e79f199080e5bdb392",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "150ab0fe5bfd0f053215c6788b620380d7c2d3f17011e33a3f439b19a2e0feca",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_4AA22685"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0114",
+      "object_type": "identity",
+      "parent_item_sha256": "244f2090f88fc2c92f70c07b0b69c6f2960b2912f091f761a6d9491d16239113",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_4AA22685"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "18252ff0e522603bd30485e9e60cfd64a03a672f9c9dca04db14a67951aa3470",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0163",
+      "object_type": "identity",
+      "parent_item_sha256": "84fb67e410a5da988dd3991a9205f762e09fbc9772f6e1324af7cf0b789423ed",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "346b38d7c1c4c0279d98988772501a42bc32a8f6d83ab28a975b92a07fbdf335",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0001",
+      "object_type": "identity",
+      "parent_item_sha256": "c6cf41d6b609f7637173ade106ac44810732cd96382571688e87952a18c9da79",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "3d8fa9f34c1dc0f00d6d0531e7cc6a46467daa3928d51b099271964cabbbaf42",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0003",
+      "object_type": "identity",
+      "parent_item_sha256": "44ef69a8e42939b8ecaaa1e459b7289aa6eadcddc84a980b84a9ac7c0659e9de",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "844df0c83c645e4ba612b0d8a729785389305a4b3ced4423ea4568a245c0e08f",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0002",
+      "object_type": "identity",
+      "parent_item_sha256": "c5b6200725912e90190efb36948a2fdf86ea18a9ef77ca010e7dfa6f134d6faa",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "456e14c46ad9ba89782cebee99cd82bcebd44e673448e683e7bb6c393a7fc3f3",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_3A173B33"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0113",
+      "object_type": "identity",
+      "parent_item_sha256": "95b817a766e3d4a445d2eb82c7dfb761a70ca564dae678402eb6164fbcd22bee",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_3A173B33"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "0656f3fe1c93098bd72acaf26bde98c2e2726ebd71005f8db443fc0c0c7c113e",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260814_A1DA7680"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0136",
+      "object_type": "identity",
+      "parent_item_sha256": "5c1eb40231ac49f5634946f918e865dcd6f6c2de0143aad03a348b843a661209",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260814_A1DA7680"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "2a5640fc467d7d9b695b9c66d3424da3904f2ec5d3f873d4ba736a5d97240622",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_44D6561B5D639E9A"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0150",
+      "object_type": "identity",
+      "parent_item_sha256": "9f1387b272a6a01d35bf5cb17c69ab86d152c5cc4fd186ac3e154b590bb6904d",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_44D6561B5D639E9A"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_B_ADJUDICATION",
+      "candidate_content_sha256": "7535499558531fbed31ddffee8f82255b4b481cbcb981db9631bb197e24ba072",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "Silicon-On-Insulator Wafers is the plural expression of the existing Silicon-on-Insulator Wafer Material. The source section and construction support the same material; no second canonical Node.",
+        "target_id": "NODE_20260817_7A9AE357"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "Silicon-On-Insulator Wafers is the plural expression of the existing Silicon-on-Insulator Wafer Material. The source section and construction support the same material; no second canonical Node.",
+      "item_id": "SC-CN-0051",
+      "object_type": "identity",
+      "parent_item_sha256": "c04b8bdf11c0caa22fc7a3084126b4c5c0aca26b1066316a734221a6f5633721",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER",
+      "target_id": "NODE_20260817_7A9AE357"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_B_ADJUDICATION",
+      "candidate_content_sha256": "9272a62fee20c432439246a48652a1a3fc4609944682a100dda880846a80e3a7",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "Package Substrate is a generic package-foundation Product spanning organic laminate, ceramic and glass, broader than Advanced Package Substrate.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "Package Substrate is a generic package-foundation Product spanning organic laminate, ceramic and glass, broader than Advanced Package Substrate.",
+      "item_id": "SC-CN-0031",
+      "object_type": "identity",
+      "parent_item_sha256": "3f3e9c06ea7eb6d1f81b33e56139b822009866931b9d2238300fb78789eebf31",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "d61b00c5f73a52ec0647776a72f28c9c54a97cf91e8b2c2127f7ce80c9783594",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_8006A0B4"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0154",
+      "object_type": "identity",
+      "parent_item_sha256": "cd0ce14652ac9d5da9d73ec95e98080f93f1f527ad2310d27b83f41e7bf5cd59",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_8006A0B4"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "73c2c028c1102719b0c1422c73d3a40757107982d3e7cbe37c98b7ced814245b",
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0152",
+      "object_type": "identity",
+      "parent_item_sha256": "092388d69f959a287f0cfd3b8b04aca7d89965c5fb7c7e569169cbd0f5afbbd8",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "aa2ced136cee9e7168885f2ebfd74917abc056f85a1cf671f263f689deb7e116",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0089",
+      "object_type": "identity",
+      "parent_item_sha256": "10aba833f08a2b00d561430ac8dfb26b8ecb833df6a00247ea7130bd81610900",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "1a4b3b2977a1aff9ed557c4656f8c73775a522acb8fbade1ee7b6bcb8c7e4d1e",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_6EA7B10F"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0139",
+      "object_type": "identity",
+      "parent_item_sha256": "5fd994a51a36c6758fc5166732670467ca9c028747f907d76fe965e828527091",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_6EA7B10F"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ca951ed5b3581a937661241a07b610bbc4d5a9596a5df88b77e6ae2222f95659",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_2E3D3BE2"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0144",
+      "object_type": "identity",
+      "parent_item_sha256": "5b7f7364ccc028a49ce4d6f2015cd9ec86b3f7a2554dfc1d38872899c7e1c771",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_2E3D3BE2"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "157e5e823f91af2ffa0e5503393c8b1e33d1ac299efa713fb6fe34291a2d25b6",
+      "human_input": {
+        "decision": "REJECT",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "REJECT",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0145",
+      "object_type": "identity",
+      "parent_item_sha256": "c78962f3cdb5fa5148f21dd566178b4219a22c55c44d6a2a4c1e8b2f80b2d1e3",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REJECT",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_B_ADJUDICATION",
+      "candidate_content_sha256": "2d0a8c3fab6aea4a21afb94f0ec5841cbe415560a8dbe69ec9221883356b2036",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "Silicon Wafer Polishing is a starting-wafer mirror-polishing Technology, distinct from Advanced Packaging CMP Equipment and fabrication CMP in stage, type and scope; SUMCO evidence supports it.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "Silicon Wafer Polishing is a starting-wafer mirror-polishing Technology, distinct from Advanced Packaging CMP Equipment and fabrication CMP in stage, type and scope; SUMCO evidence supports it.",
+      "item_id": "SC-CN-0042",
+      "object_type": "identity",
+      "parent_item_sha256": "4f0b44b96745edba2a9e75bb41792eae1cc70b63be2bfa5f530a7c49c2b01441",
+      "reviewer": "HUMAN_USER",
+      "section": "B",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "4b96ad9458e3cd80bcfc1b57253d49c4bb532ee44095720e7188b86e35093900",
+      "human_input": {
+        "decision": "REUSE_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": "NODE_20260817_397D3280"
+      },
+      "human_user_decision": "REUSE_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0081",
+      "object_type": "identity",
+      "parent_item_sha256": "c4eb35eee0fbfb51ca99faea1095a07f157992c5f0050efc0f201e1bfd284fe6",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "REUSE_CANONICAL",
+      "target_id": "NODE_20260817_397D3280"
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "c1b72d268f109901a9ba20baa2ea6d58843a97e7063f0f2678dd2a8b1315693a",
+      "human_input": {
+        "decision": "CREATE_NEW_CANONICAL",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_NEW_CANONICAL",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-CN-0112",
+      "object_type": "identity",
+      "parent_item_sha256": "5ea1daddbc3fa2e669b033ff4284d184002058568e500edb68fe742d1e6b389d",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": null,
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "OBS_656B35D110452867",
+      "object_type": "identity",
+      "parent_item_sha256": "c03602db86615f02898148c030d78a531f3750e29ea0b9d5609c21902c918d19",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": null,
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "OBS_B13CBB8C551799BB",
+      "object_type": "identity",
+      "parent_item_sha256": "ff6840972bf970ec3d24c1ed6b35827f1baa0102d527ce2185119ce16094d7f5",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": null,
+      "human_input": {
+        "decision": "DEFER",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "OBS_BEEF46D038465707",
+      "object_type": "identity",
+      "parent_item_sha256": "a1115968dfbfac3d0cefc8f8fe0b179fac95333d0964f481faf1de00dd7db1ce",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "2e52f43493f8e9e85feeb7f85e48cdb276edf5f5be998ac84aefe10ed392f031",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0001",
+      "object_type": "relation",
+      "parent_item_sha256": "f36481229c533215e4318793088fb182ec7eba8f394a1f44428b2e648cb7c3b3",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ff422a0adce346582c936d44ddec05f1093b39ada7dce54ba4c7983e2895f71c",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0002",
+      "object_type": "relation",
+      "parent_item_sha256": "e92e05cf8d4de96655239a0ea0992fb0c4c12058f58a4bc35bfc8edaf7cc5481",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "5e0a809253d7ec4b95137850073d2ba47228f28641fc975e7e6ea5f649851f5d",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0003",
+      "object_type": "relation",
+      "parent_item_sha256": "298af1f0b10cc69ba2815a7b0fe9d0de93bf6016e912a2b77d92932b266af9ea",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "8bf5effc55984f3865c499dfe3e4534210cd6fe7196bbb5e7e23e27f9ecd5c92",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0004",
+      "object_type": "relation",
+      "parent_item_sha256": "ce7257f136fde8f52408b8b0404ededd2220964c320a2a4b4f47bf8ec881b7a6",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "c706e00bde01daf4aeca7b2f578a144c035ca90fc95fb57a06f4b88f4a4f39fe",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0005",
+      "object_type": "relation",
+      "parent_item_sha256": "19323bcd6e7b822cd781513173811a0b47724ec5322d2e9c5ebee1ce7e56a25c",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "b576cf3f6110548910edddaa4702d3bf13fd60ab6ec164123d4fdf7d0e0ac930",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0006",
+      "object_type": "relation",
+      "parent_item_sha256": "6218699e773cee5b0ea9b4d2b033b7210da2d706563f3742796d5b315e11c2c4",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "0964f1452cc3748dadf1c88997a75804c1f7a217eee98c6e1989f7a8ed9b510e",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0007",
+      "object_type": "relation",
+      "parent_item_sha256": "cf4c95bee66650beec738d3c870dc4b447669c972b241040c9b6bdcd222140ab",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "62544565e930c8d935b41e5ce2ba09c5407a92f9207ded56570bca5e4719aa77",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0008",
+      "object_type": "relation",
+      "parent_item_sha256": "6f3b021cc2d1a4c2079d6903a6ede419a85c0646dff726ea445a1c95c81c520f",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "28ee3cfe8f037cc73570acef170d213e899c98eaf4bd8add669e085159cc054c",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0009",
+      "object_type": "relation",
+      "parent_item_sha256": "703178db1b58831e7f2a6933acb379d3228e5d1587776bce05c8fafab6e52ab1",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "2313242c5c1a87f870ee1f88fe03da8847ab72481b93046a7af84c437c0709b7",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0010",
+      "object_type": "relation",
+      "parent_item_sha256": "d59a76cbc3a92abfe54f2b291c7252e53e68b1f561bbf2e3a48cbde8f2125066",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "5d4aa7fb1cb453d26e18a438ae3fd2160d9356bdd5b57d43c93533b29b22c2f0",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0011",
+      "object_type": "relation",
+      "parent_item_sha256": "7ddb6047d22e9ab1de663b66f19ea9aee3bb13f1def2aef790de29b680331ac7",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "eaa1577ef6cf281e7c1c6f9af6b9243e8ed17f7edda0fdab7457150f3ee26e88",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0012",
+      "object_type": "relation",
+      "parent_item_sha256": "12cc26d1ce03f8ad1c8d0094afef2b52b50fb6ef93c0c6d906e8cc20a65f8dd1",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "37ca6ee761fbe6c7e0e58372f38479ef83d4837fbb3812b62fc65a81be082b7c",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0013",
+      "object_type": "relation",
+      "parent_item_sha256": "b3aa26550fa141b0fafd3657a0dd244d05ad6b0e410ed4fdde87dfaf73df1562",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "5e170eadec355baf37f1dcd2fc73279b792f6fd59ccabeb3f13fb969a06f729f",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0014",
+      "object_type": "relation",
+      "parent_item_sha256": "41ad6b3c2c7ef25ac0c550155ae84af17495258f8c2d2b3a569fb4051dfafee5",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "98ddc6eebbe931a42aeaf6801ff4805c11b2249bcc8b22a4bb8dc89424ddcf92",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0015",
+      "object_type": "relation",
+      "parent_item_sha256": "f220de3422834806683e5637b6dd0d0c79232cc9acc4da0329137834bec4fbe3",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ecb4e6e77e4b623560c95cba3ec9816e33b9e1f051150f38fc24a7574e0c0e19",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0016",
+      "object_type": "relation",
+      "parent_item_sha256": "d77f21d10af2c427185b3551f5979c90f1cc101a8525a3e6a4834dabb2c8a951",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "328e04202e48973cf6cacd46c9f75803dbd2c332546da891ed721f732c5c3f67",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0017",
+      "object_type": "relation",
+      "parent_item_sha256": "14f1f0e8c8b59d9b2d29e74f077ce404425878af8c626a7c68ba0911d4ea9060",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "56252a874b5f5eb8dd9372d7da8bddfe7bd8b90c2f70aba40a765e22e9216307",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0018",
+      "object_type": "relation",
+      "parent_item_sha256": "86a29850b7088dee706307118d31da1f73fd9f22015ab38caf9b3c6bf13ac73a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "05630b6c00f00d463d482135f632e016512485b622f0d5944f14d6c5e1f93a49",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0019",
+      "object_type": "relation",
+      "parent_item_sha256": "468ef551f244660327bb26060e76be1964e14272f9e4992e24464d62314dc923",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "499e174dd3060f2718624071f3eaf26fe5cb1473d90733e923c5e013256de8e3",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0020",
+      "object_type": "relation",
+      "parent_item_sha256": "d0ad230413f0f7a9e68ca26d506843319591b2ed4b17994d85c8845ca2567f95",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "74d78259388030aab9c35fa81a7b59c338cbcbca8d1a7e5abccb1a5501232cd1",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0021",
+      "object_type": "relation",
+      "parent_item_sha256": "d7e4032d8b95a5b06d3bca6f7ae1bebe042736bf2245c050abaa9f00038a5f71",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "5e075dd0b0f094dab6c7306351218ea17cc28182313a1eabb6a02bd6c2104775",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0022",
+      "object_type": "relation",
+      "parent_item_sha256": "696d2a872be05da8f8c284592a67fa71d6c77f220946687cc40442e76a970362",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "cbd7fcb7d3e7fe009b7608c2026d11a436748b22455a25ae29805c1eec519cf3",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0023",
+      "object_type": "relation",
+      "parent_item_sha256": "f47282b54bf4eddc44aab09fd228992c8faa35de45a9eda3a630399481fb662c",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "663e74844642026167b31968ae02eb44cf41f87976ecfcd2cf15c687797baa5f",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0024",
+      "object_type": "relation",
+      "parent_item_sha256": "ae4716b886adf185306c5af434f437095c6853e9aead02912c0cc50dbd503f9a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "6d451c6d5b720b5bc53d4ebdcf8d43401fd5a9d547b24ec5c78a16ab1b6524af",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0025",
+      "object_type": "relation",
+      "parent_item_sha256": "e9a4af48d0afd51d1234daf9afeb4f9a11c34957a1c5859026ccb3ba8af5c0ec",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "8dc20a84db4dafa1ac061f8a06766b535a9654c2cf2d69fa719abce1035df589",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0026",
+      "object_type": "relation",
+      "parent_item_sha256": "29cb607f07c1d715e6dfaf2e306171d25b78d040ff93cf1648612b0d9fc88bb5",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "060ce1fd02f4909bddd9420ad29b73285a63563a222601620741a0d9f5f0836e",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0027",
+      "object_type": "relation",
+      "parent_item_sha256": "0a4521837fb2a6b5dbccf476597edac5dfc056efd4cb6ae78f8fc478d0ece8cb",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "99539a731ba0988b745f04d8b75f3759ca1ba83fff1d6cb9498b97f78d849bb9",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0028",
+      "object_type": "relation",
+      "parent_item_sha256": "0cfa1bc4a5ef716c89af47976f2d2c7cb4ce818fc7ceac990624faec88321b0b",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "1711fdcfdd42f3c1108cce90bfe5b8d5c6c142f8334e9d872bda091d3b7d0d53",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0029",
+      "object_type": "relation",
+      "parent_item_sha256": "238db4e2de9a6c0b72c44fc520aba7b7d2ce0d716b4f2068bb57e29695f4549c",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ac79968c4213b4fb103d9bdae0bc335b6e5f80b9371ce6ecea13cebead05cf38",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0030",
+      "object_type": "relation",
+      "parent_item_sha256": "186cb72a48f54d1ed7120c8ad1f09d54aa14c372edd8542c87e9a4ca79a08cdc",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "87ab382a93c362409bfb6ee2692cb77a113c680f0bdd5b304e281d0c3737506f",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0031",
+      "object_type": "relation",
+      "parent_item_sha256": "6b24ea86bf8b0a8e70b9c8ec34d583e47988743e4f079accb6d42d25ea0a336e",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "70b29569da6aa875ec8f8bc5f7e34bff332d4473d5fa9cef84020d7d097bd21c",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0032",
+      "object_type": "relation",
+      "parent_item_sha256": "e1f5e32979c3509aed95b54bb8fc52849ddb65c6376c1dcfecdf5ced69596a14",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ce22fc4240f33af0a66f19b63704b9bc744510c361dc77ff0443c5782d99b445",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0033",
+      "object_type": "relation",
+      "parent_item_sha256": "2569dd189a3bc6b4d69b278841c45d2e9ad49b40a2cc679b7ad0ccfdf5c63835",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "5cb898ba4412a8dc6003a8780756657285af7d5fd2e4fb84762f848070ef4005",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0034",
+      "object_type": "relation",
+      "parent_item_sha256": "322f36b66a2db02221d3dda6ec57c557f0001a19161b98ccedec684d56fd4417",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "9f6bcde613b767a6455778493ca58303b4c0f77f8e2be7d0e3d4eb555682e868",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0035",
+      "object_type": "relation",
+      "parent_item_sha256": "611e75dd3925b8b9ad42e683131350f025213cbefee85f67f4bddc95c9a93385",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "65e6b92bb605cd97051a563beacbce920eec33a6dcf1fe83a1b6086266ba3f7a",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0036",
+      "object_type": "relation",
+      "parent_item_sha256": "927ee79c90e1453d86969a62ca47ae067496165695381d7f19fc54831f07f8e0",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ecaeb8860e7f5a5c9b6b260c3e575138f7ff36346e0bbd0ae9c42daeb22baaf4",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0037",
+      "object_type": "relation",
+      "parent_item_sha256": "a1fec0f12450ff7805c85abfaeca8b4f13b78c6194ef20cb3187597e41a72068",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "31fe3dcb711dc342e707ac5d389b0c0c58d4b9a1c0afb205be8954363911c016",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0038",
+      "object_type": "relation",
+      "parent_item_sha256": "bab9bbeb74a3b9db2f6edbacf38f87f70c474ca3d7b16ba3c6614ce9608a193e",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "09b82d150831093351b19c34570f1ed8c0e4119242cb9398858c2ed0185134d8",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0039",
+      "object_type": "relation",
+      "parent_item_sha256": "4febda9dd9fe7aee88b7b11ddb49081c83c945fcbc1763399d69da0793398650",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "b3ccde4d31a7a88118c1319e9e6fd8729300b8c27fd4186a10777785e6852ab2",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0040",
+      "object_type": "relation",
+      "parent_item_sha256": "6b41f9800d6f5b674ac733d4571ef2fdccd5590df680d2c7839bb5a1dc3ceb50",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "77cb5566eef4739481d262976c4bd86c942c5118241a7929b0b568fdb5ce5a66",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0041",
+      "object_type": "relation",
+      "parent_item_sha256": "40586ed4533938fe3a62a71729ff5370ccd99ac94c2f5144b9021e59e35e93ae",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ef801694a2355538070b4a192b7fbff2c1218e59e04bde0bafbb41c4869e94d2",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0042",
+      "object_type": "relation",
+      "parent_item_sha256": "2a529043236ec3c11cbe6aacc328d185fa4da9b3d86d6e966e3d8c019823f9db",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "199bf49df3bbd99cf3aa7fa8010ba1d134b347e0f1c30e70bd6798ac9de41941",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0043",
+      "object_type": "relation",
+      "parent_item_sha256": "be49d2d1377bae004ffa826d79444f307be3d84875d3d91a8344ec1e2ef2dfef",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "c59abfa7f1da0d1bfbad60dffd21c634c42cf0cf24a1ad38419b5019ba0ba47d",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0044",
+      "object_type": "relation",
+      "parent_item_sha256": "4f18d7afee04f328217df72231771a450acedef9eb44be5a58de5a40144c08ba",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "e3cbee348c32358a27da069eaa5dd665d03523abb2499ffce0927d45d7bccbc7",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0045",
+      "object_type": "relation",
+      "parent_item_sha256": "c4b949e70e369410d24e216eff762ddfc72c7304b1583b480ae8d04e1f997d27",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "9225b476f4098e236542d500a615fdb3dd2d846da92d0a532e79e88de136d6de",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0046",
+      "object_type": "relation",
+      "parent_item_sha256": "5c5c390e6d2963e61371e252f6f5cc7150c517f447954296c9de67649c10e9b1",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "507bf708d2c21bfe3c0df2c855003b9872ecd6a0066ed9a9103519846fff5526",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0047",
+      "object_type": "relation",
+      "parent_item_sha256": "1813089ee7324aff383c531be3dc462e72bb373b515095a1cb473fa532a8347a",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "21c400716fa61a7d9dc31af0f4fea6569d07fa75e9469f87e48226f4f7288e53",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0048",
+      "object_type": "relation",
+      "parent_item_sha256": "864bb67474fc10d24589fa04764c90104cfb0cfff6347897149ebae427938ebf",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "1c2dc5839d90a3e23c9a61446c33e2d3a159c27e1ded6c3a2ca7e4281319df2a",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0049",
+      "object_type": "relation",
+      "parent_item_sha256": "29bee9f96f0ce96f716c30970994fafd59c7fde746681b4e49ae806099a2b6a5",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "ae374d291f2198e2282cd22debbf27b2dadc8e25d904431b5eb2b799cf03c187",
+      "human_input": {
+        "decision": "CREATE_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "CREATE_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0050",
+      "object_type": "relation",
+      "parent_item_sha256": "28e5dc748244c7d7bba5acc727af32a4743a6342a6a9acc82123c778d3e66515",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "CREATE_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "63bd0eee0c6ce2d5276c7ba1f1e7f538a3987ae552d0c049da2cfabe763e049d",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0051",
+      "object_type": "relation",
+      "parent_item_sha256": "80cfd7e8973ed2f0bc45955c6c731fc12d9f733527c71a6e48872167e5e1393d",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "a98cfc3d24ec1879ceb2551348b9320697119bc4ee541d1a70f017e2f90b2596",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0052",
+      "object_type": "relation",
+      "parent_item_sha256": "e408a248d664205139bbd69d35dcc2f86f68c47d40b27ee428208a7a9dd92401",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "f7b07588649fdcda3bf95dc6c4911b4b883aa90be6b18c7a2b5e15461a991a89",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0053",
+      "object_type": "relation",
+      "parent_item_sha256": "404c7c4861615ab42ed18a4c9c434362bec2787a5f19ebd82817e1e12a388ccc",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    },
+    {
+      "authorization_basis": "EXPLICIT_SECTION_A_ADOPTION",
+      "candidate_content_sha256": "f97531dade40b2253262f0510e4ff75505fa58994a3432d21930aa60a3c87d8b",
+      "human_input": {
+        "decision": "DEFER_RELATION",
+        "reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+        "target_id": ""
+      },
+      "human_user_decision": "DEFER_RELATION",
+      "human_user_reason": "HUMAN_USER explicitly adopted the frozen SYSTEM_RECOMMENDED_DECISION; no independent item-level rationale was supplied.",
+      "item_id": "SC-RL-0054",
+      "object_type": "relation",
+      "parent_item_sha256": "278ad5048f52c64717db0263b25c170471a2287616aee08ed8a8e6a859ebf7ca",
+      "reviewer": "HUMAN_USER",
+      "section": "A",
+      "system_recommended_decision": "DEFER_RELATION",
+      "target_id": null
+    }
+  ],
+  "document_type": "phase43_stage3_completed_human_decisions",
+  "official_view_activation_authorized": false,
+  "parent_review_file_sha256": "2ec173f05215e9d62323ff1cde07108fbcf5eab1afcaf6a020ee438875f04a92",
+  "population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb",
+  "production_apply_authorized": false,
+  "reviewer": "HUMAN_USER",
+  "self_contained_packet_git_blob_sha256": "163cb649d5c76a9a76e767fb3f065048f57d2fbd2e2c9ac9c48f7ef395cc9234"
+}

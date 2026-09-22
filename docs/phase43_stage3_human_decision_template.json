@@ -1,0 +1,506 @@
+{
+  "document_type": "phase43_stage3_human_decision_template",
+  "items": [
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0032",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0033",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0151",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0130",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0043",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0146",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0149",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0148",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0147",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0143",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0010",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0077",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0082",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0159",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0138",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0140",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0115",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0011",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0102",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0052",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0135",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0132",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0141",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0142",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0114",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0163",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0001",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0003",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0002",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0113",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0136",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0150",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0051",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0031",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0154",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0152",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0089",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0139",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0144",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0145",
+      "system_recommended_decision": "REJECT"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0042",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0081",
+      "system_recommended_decision": "REUSE_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-CN-0112",
+      "system_recommended_decision": "CREATE_NEW_CANONICAL"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "OBS_656B35D110452867",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "OBS_B13CBB8C551799BB",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "OBS_BEEF46D038465707",
+      "system_recommended_decision": "DEFER"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0001",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0002",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0003",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0004",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0005",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0006",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0007",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0008",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0009",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0010",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0011",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0012",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0013",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0014",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0015",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0016",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0017",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0018",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0019",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0020",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0021",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0022",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0023",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0024",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0025",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0026",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0027",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0028",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0029",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0030",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0031",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0032",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0033",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0034",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0035",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0036",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0037",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0038",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0039",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0040",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0041",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0042",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0043",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0044",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0045",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0046",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0047",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0048",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0049",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0050",
+      "system_recommended_decision": "CREATE_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0051",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0052",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0053",
+      "system_recommended_decision": "DEFER_RELATION"
+    },
+    {
+      "human_user_decision": null,
+      "item_id": "SC-RL-0054",
+      "system_recommended_decision": "DEFER_RELATION"
+    }
+  ],
+  "population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb"
+}
