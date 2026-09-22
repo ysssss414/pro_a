@@ -21,6 +21,11 @@ src/pro_a/table_claim_safety.py -text
 # Public historical prompt fixture binds the unchanged public Git blob.
 src/pro_a/prompts.py text eol=lf
 
+# Keep frozen Phase 4.3 Stage 2 human-review presentation hashes on Windows.
+docs/HUMAN_QUALIFICATION_PACKET_SELF_CONTAINED.md text eol=lf whitespace=-blank-at-eof
+docs/phase43_stage2_human_decision_template.json text eol=lf
+docs/phase43_stage2_human_authorization.json text eol=lf
+
 # Domain pack inventories bind exact file bytes on every checkout platform.
 # Treat preserved CRLF as line endings while retaining normal whitespace checks.
 domains/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
