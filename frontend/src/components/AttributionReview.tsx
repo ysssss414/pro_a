@@ -49,7 +49,7 @@ function AttributionEditor({ handle, csrf, state, claim, refresh }: Props & { st
         {state.nodes.map(node => {
           const selected = links.find(link => link.node_id === node.node_id);
           return <div key={node.node_id}>
-            <label><input type="checkbox" checked={Boolean(selected)} onChange={e => setLinks(e.target.checked ? [...links, { node_id: node.node_id, role: "" }] : links.filter(link => link.node_id !== node.node_id))} />{node.node_id} · {node.decision} · {String(node.content.proposed_name ?? "")}</label>
+            <label><input type="checkbox" checked={Boolean(selected)} onChange={e => setLinks(e.target.checked ? [...links, { node_id: node.node_id, role: "" }] : links.filter(link => link.node_id !== node.node_id))} />{node.node_id} · {node.decision} · {String(node.content.proposed_name ?? "")}{node.provenance?.includes("company_material_intent") ? " · Company Material operator target (not automatically attributed)" : ""}</label>
             {selected && <label>Role for {node.node_id} <select value={selected.role} onChange={e => setLinks(links.map(link => link.node_id === node.node_id ? { ...link, role: e.target.value } : link))}>
               <option value="">Choose role explicitly</option>{Object.keys(state.roles).map(role => <option key={role}>{role}</option>)}
             </select></label>}

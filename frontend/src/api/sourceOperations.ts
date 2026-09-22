@@ -1,8 +1,19 @@
 import { request } from "./workbench";
 import type { CloudJob } from "./cloudJobs";
 
+export type CompanyMaterialIntent = {
+  target_company_node_id: string; material_kind: string; source_channel: string;
+  material_date: string | null; operator_title: string | null;
+};
+export type BoundCompanyMaterialIntent = CompanyMaterialIntent & {
+  target_company_name: string; material_trust_policy: string;
+  material_date_basis: string | null; intent_sha256: string;
+};
+
 export type SourceRun = {
   processing_run_id: string;
+  company_material_intent?: BoundCompanyMaterialIntent | null;
+  company_material_intent_sha256?: string | null;
   source_id: string;
   source_sha256: string;
   state: string;

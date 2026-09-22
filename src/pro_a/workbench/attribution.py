@@ -38,6 +38,15 @@ class Attribution:
         with self.store.connect() as connection:
             require(schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10'), 'ATTRIBUTION_SCHEMA_REQUIRED')
             packet = json.loads(connection.execute("SELECT body FROM sealed_review_artifacts WHERE artifact_id=? AND kind='completed_packet'", (handle,)).fetchone()[0])
+            source_run = connection.execute(
+                "SELECT processing_run_id FROM source_processing_runs WHERE packet_artifact_id=?",
+                (handle,),
+            ).fetchone() if schema_version(connection) in ('8', '9', '10') else None
+            if source_run:
+                from pro_a.company_material_intent import read_bound
+                intent = read_bound(connection, source_run[0])
+            else:
+                intent = None
         blank, run, _ = self.reviews.artifacts.native(handle)
         bundle = json.loads(checked_path(run / 'evidence/evidence_bound_extraction_bundle.json').read_text(encoding='utf-8'))
         bundle_claims = {c['claim_id']: c for c in bundle['claims']}
@@ -50,10 +59,32 @@ class Attribution:
             node_id = content['prospective_node_id'] if human['decision'] == 'CREATE' else human['target_node_id']
             require(node_id not in nodes, 'AMBIGUOUS_NODE_IDENTITY')
             nodes[node_id] = {'node_id': node_id, 'candidate_id': row['candidate_id'], 'decision': human['decision'], 'content': content}
+        if intent:
+            from pro_a.company_material_intent import CompanyMaterialError, company
+            target_id = intent['target_company_node_id']
+            try:
+                target = company(self.config, target_id)
+            except CompanyMaterialError:
+                raise CompanyMaterialError('COMPANY_MATERIAL_TARGET_DRIFT') from None
+            if target['canonical_name'] != intent['target_company_name']:
+                raise CompanyMaterialError('COMPANY_MATERIAL_TARGET_DRIFT')
+            if target_id in nodes:
+                nodes[target_id]['provenance'] = ['review_packet', 'company_material_intent']
+            else:
+                nodes[target_id] = {
+                    'node_id': target_id, 'candidate_id': None, 'decision': 'REUSE',
+                    'content': {'proposed_name': target['canonical_name'],
+                                'target_node_id': target_id},
+                    'authority': 'COMPANY_MATERIAL_OPERATOR_TARGET',
+                    'provenance': ['company_material_intent'],
+                    'operator_routing_only': True,
+                }
         binding = {'artifact_id': handle, 'packet_id': packet['packet_id'], 'review_id': review['review']['review_id'],
                    'sealed_objects': review['review']['sealed']['objects'], 'source': review['source'],
                    'claims': sorted(claims), 'nodes': sorted(nodes), 'schema_version': packet['production_baseline']['schema_version'],
                    'runtime_identity': runtime_identity()}
+        if intent:
+            binding['company_material_intent_sha256'] = intent['intent_sha256']
         return {'binding': binding, 'basis_id': canonical_sha256(binding), 'packet': packet, 'blank': blank, 'run': run,
                 'bundle': bundle, 'claims': claims, 'nodes': nodes, 'review': review}
 

@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  createNote, getNodeDomainContext, getResearchClaim, getResearchClaims, getResearchCoverage, getResearchHome,
+  createNote, getCompanyMaterials, getNodeDomainContext, getResearchClaim, getResearchClaims, getResearchCoverage, getResearchHome,
   getResearchNode, getResearchRelation, getResearchSource, getResearchSources, searchResearch,
   updateNote,
 } from "../api/research";
@@ -10,7 +10,7 @@ import { getSession, loginWorkbench } from "../api/workbench";
 import { ResearchExplorer } from "./ResearchExplorer";
 
 vi.mock("../api/research", () => ({
-  createNote: vi.fn(), getNodeDomainContext: vi.fn(), getResearchClaim: vi.fn(), getResearchClaims: vi.fn(),
+  createNote: vi.fn(), getCompanyMaterials: vi.fn(), getNodeDomainContext: vi.fn(), getResearchClaim: vi.fn(), getResearchClaims: vi.fn(),
   getResearchCoverage: vi.fn(), getResearchHome: vi.fn(), getResearchNode: vi.fn(),
   getResearchRelation: vi.fn(), getResearchSource: vi.fn(), getResearchSources: vi.fn(),
   searchResearch: vi.fn(), updateNote: vi.fn(),
@@ -48,6 +48,11 @@ describe("Research Explorer routing and race control", () => {
     vi.mocked(getSession).mockResolvedValue({ actor: "operator", mode: "DEMO", csrf_token: "csrf" });
     vi.mocked(loginWorkbench).mockResolvedValue({});
     vi.mocked(getResearchHome).mockResolvedValue(home);
+    vi.mocked(getCompanyMaterials).mockImplementation(async (id) => ({
+      company: { node_id: id, canonical_name: "Synthetic Company", primary_type: "Company", status: "active" },
+      materials: [], counts: { total: 0, private: 0, canonical: 0 },
+      snapshot_id: "synthetic", next_cursor: null,
+    }));
     vi.mocked(getResearchClaims).mockResolvedValue({ items: [], total: 0, limit: 25, offset: 0, next_cursor: null, previous_cursor: null });
     vi.mocked(getResearchSources).mockResolvedValue({ items: [], total: 0, limit: 25, offset: 0, next_cursor: null, previous_cursor: null });
     vi.mocked(getResearchCoverage).mockResolvedValue({ summary: { node_coverage: {} }, node_coverage: { items: [], total: 0, limit: 25 }, unlinked_claims: { items: [], total: 0, limit: 25 }, knowledge_gaps: [] });
