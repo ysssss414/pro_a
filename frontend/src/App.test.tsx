@@ -63,6 +63,10 @@ vi.mock("./components/CloudJobsWorkbench", () => ({
   CloudJobsWorkbench: () => <div>Durable Jobs route</div>,
 }));
 
+vi.mock("./components/IndustryExplorer", () => ({
+  IndustryExplorer: () => <main>Industry Explorer route</main>,
+}));
+
 describe("App error boundary", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/");
@@ -87,6 +91,14 @@ describe("App error boundary", () => {
     expect(screen.getByText("Start the local pro_a API and retry.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
     expect(screen.getByText("Search for a node to start exploring.")).toBeInTheDocument();
+  });
+
+  it("opens Industry Explorer without replacing Research Home or classic Explorer", () => {
+    window.history.replaceState(null, "", "/industry?domain=ai_hardware&node=NODE_A");
+    render(<App />);
+    expect(screen.getByText("Industry Explorer route")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Research Home" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Explorer$/ })).toBeInTheDocument();
   });
 
   it("opens the durable Jobs surface from its stable route", () => {

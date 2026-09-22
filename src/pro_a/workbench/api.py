@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pro_a.api import create_app as create_explorer_app
 from pro_a.direct_impact import DirectImpact, ImpactError
 from pro_a.research_explorer import ResearchError, ResearchExplorer
+from pro_a.research_navigation import ResearchNavigation
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .cloud_jobs import CloudJobs, CloudProfile, JobError
@@ -169,6 +170,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     reviews = ReviewWorkbench(config)
     impacts = DirectImpact(config)
     research = ResearchExplorer(config)
+    navigation = ResearchNavigation(config)
     jobs = CloudJobs(config, cloud_profile)
     sources = SourceOperations(config, source_profile, cloud_profile) if source_profile else None
     host = urlsplit(config.origin).netloc
@@ -418,6 +420,18 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.get(PREFIX + '/research/search')
     def research_search(q: str, object_type: str = '', limit: int = 30):
         return research.search(q, object_type=object_type, limit=limit)
+
+    @app.get(PREFIX + '/research/domains')
+    def research_domains():
+        return navigation.list_domains()
+
+    @app.get(PREFIX + '/research/domains/{domain_id}/tree')
+    def research_domain_tree(domain_id: str, max_depth: int | None = None):
+        return navigation.domain_tree(domain_id, max_depth=max_depth)
+
+    @app.get(PREFIX + '/research/nodes/{node_id}/domain-context')
+    def research_node_domain_context(node_id: str):
+        return navigation.node_domain_context(node_id)
 
     @app.get(PREFIX + '/research/nodes/{node_id}')
     def research_node(node_id: str):
