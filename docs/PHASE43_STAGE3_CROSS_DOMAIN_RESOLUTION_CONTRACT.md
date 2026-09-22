@@ -2,7 +2,7 @@
 
 ## Authority and baseline
 
-This document records the HUMAN_USER Stage 3 execution instruction of 2026-09-22. The canonical development and local-data workspace is `D:\ej\材料\codex\get_knowledge\pro_a_v0_1`, which must be a normal root clone (`git-dir` and `git-common-dir` both `.git`). The separate `pro_a_codex` clone is retained as a clean/recovery clone and is not a Stage 3 implementation target. Historical linked worktrees may remain.
+This document records the HUMAN_USER Stage 3 execution instruction of 2026-09-22. The canonical development and local-data workspace is `<CANONICAL_PRO_A_WORKSPACE>`, which must be a normal root clone (`git-dir` and `git-common-dir` both `.git`). The separate `pro_a_codex` clone is retained as a clean/recovery clone and is not a Stage 3 implementation target. Historical linked worktrees may remain.
 
 The frozen Git entry baseline is `origin/main = main = 690fc4f26e02607fb54a48053cf8faf6775621c3`. Stage 3 uses branch `codex/phase43-stage3-cross-domain-resolution` from that exact commit. Stage 2's qualified structured Foundation package, human qualification decisions, and public receipts remain frozen inputs. The Stage 2 qualification covered 105 of 274 candidate objects; 169 were not given HUMAN_USER attribution. Its native qualification did not complete operational review or authorize Production handoff. Stage 2's canonical input and runtime assets may remain private, ignored, or untracked.
 
@@ -195,7 +195,7 @@ git push
 Canonical development/data workspace for the resumed task is:
 
 ```text
-D:\ej\材料\codex\get_knowledge\pro_a_v0_1
+<CANONICAL_PRO_A_WORKSPACE>
 ```
 
 Git operations that require `.git` metadata/network access may request environment approval and must then be executed by Codex itself.
