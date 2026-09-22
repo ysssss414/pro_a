@@ -6,7 +6,9 @@ import {
   updateNote, type Note, type ResearchRouteKind, type SearchResult,
 } from "../api/research";
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
-import { CurrentViewWorkbench } from "./CurrentViewWorkbench";
+import { UnifiedResearchInspector } from "./UnifiedResearchInspector";
+import type { InspectorData } from "./inspectorSelection";
+import type { NodeDomainContext } from "../api/research";
 
 type Route = { kind: ResearchRouteKind; id?: string };
 type Data = Record<string, any>;
@@ -108,7 +110,7 @@ function FollowupNotes({ objectType, objectId, notes: initialNotes, csrf }:
   }
 
   return <section className="research-section notes-section">
-    <div className="research-section-heading"><h2>Follow-up notes</h2><span>private · noncanonical</span></div>
+    <div className="research-section-heading"><h2>Follow-up notes</h2><span>private · noncanonical · {notes.filter((note) => note.status === "OPEN").length} open</span></div>
     <form onSubmit={add} className="note-compose"><textarea aria-label="Follow-up note" value={text} onChange={(e) => setText(e.target.value)} placeholder="Record a concrete follow-up…" />
       <select aria-label="Note status" value={status} onChange={(e) => setStatus(e.target.value as Note["status"])}><option>OPEN</option><option>DEFERRED</option><option>DONE</option></select>
       <button disabled={saving || !text.trim()}>{saving ? "Saving…" : "Add note"}</button></form>
@@ -258,20 +260,7 @@ function ResearchPage({ route, data, csrf, navigate, setCursor }:
     <PageNav page={data} onCursor={setCursor} /></div>;
 
   if (route.kind === "node") {
-    const node = data.node;
-    return <div className="research-content"><Identity label={node.canonical_name} id={node.node_id} meta={`${node.primary_type} · ${node.status}`} />
-      {!!node.aliases.length && <p className="research-aliases">Also known as {node.aliases.join(" · ")}</p>}
-      <section className="research-section current-view-integration"><div className="research-section-heading"><h2>Official Current View</h2><span>{data.current_view?.version ?? "No official View"}</span></div>
-        <CurrentViewWorkbench nodeId={node.node_id} onOpenSource={(id) => navigate({ kind: "source", id }, { from_node: node.node_id })} onOpenClaim={(id) => navigate({ kind: "claim", id }, { from_node: node.node_id })} /></section>
-      <DirectImpact impact={data.impact} navigate={(r) => navigate(r, { from_node: node.node_id })} />
-      <section className="research-section"><div className="research-section-heading"><h2>Explicit Claims</h2><button onClick={() => navigate({ kind: "claims" }, { node_id: node.node_id })}>Filter all</button></div><ClaimList page={data.claims} navigate={(r) => navigate(r, { from_node: node.node_id })} /></section>
-      <div className="research-columns"><section className="research-section"><div className="research-section-heading"><h2>Sources</h2><span>{data.coverage.sources}</span></div>{data.sources.map((source: Data) => <button className="research-row" key={source.source_id} onClick={() => navigate({ kind: "source", id: source.source_id }, { from_node: node.node_id })}><strong>{source.title}</strong><small>{source.source_type} · {source.publication_time || source.ingested_at}</small></button>)}</section>
-      <section className="research-section"><div className="research-section-heading"><h2>Relations</h2><span>status kept explicit</span></div>{data.relations.map((relation: Data) => <button className="research-row" key={relation.relation_id} onClick={() => navigate({ kind: "relation", id: relation.relation_id }, { from_node: node.node_id })}><strong>{relation.from_name} → {relation.relation_type} → {relation.to_name}</strong><small>{relation.status} · {relation.evidence_count} evidence links</small></button>)}</section></div>
-      <section className="research-section"><div className="research-section-heading"><h2>Research question &amp; gaps</h2><button onClick={() => go("coverage")}>Coverage</button></div>
-        {data.research_question ? <article className="research-card"><strong>{data.research_question.question}</strong><p>{data.research_question.current_answer}</p><small>{data.research_question.status} · confidence {data.research_question.confidence ?? "unknown"}</small></article> : <Empty>No Research Question.</Empty>}
-        {data.knowledge_gaps.map((gap: Data) => <article className="research-card" key={gap.gap_id}><strong>{gap.title}</strong><p>{gap.description}</p><small>{gap.status} · freshness due {gap.freshness_due || "not set"}</small></article>)}</section>
-      <FollowupNotes objectType="NODE" objectId={node.node_id} notes={data.notes} csrf={csrf} />
-    </div>;
+    return <div className="research-content"><ResearchNodeInspector data={data as InspectorData} csrf={csrf} navigate={navigate} /></div>;
   }
 
   if (route.kind === "claim") {
@@ -316,10 +305,11 @@ function ResearchPage({ route, data, csrf, navigate, setCursor }:
   </div>;
 }
 
-export function ResearchNodeInspector({ data, csrf, navigate }:
-  { data: Data; csrf: string; navigate: (route: Route, values?: Record<string, string>) => void }) {
-  return <ResearchPage route={{ kind: "node", id: data.node.node_id }} data={data}
-    csrf={csrf} navigate={navigate} setCursor={() => undefined} />;
+export function ResearchNodeInspector({ data, csrf, navigate, domainContext }:
+  { data: InspectorData; csrf: string; navigate: (route: Route, values?: Record<string, string>) => void;
+    domainContext?: NodeDomainContext | null }) {
+  return <UnifiedResearchInspector key={data.node.node_id} data={data} domainContext={domainContext}
+    navigate={navigate} notesSection={<FollowupNotes objectType="NODE" objectId={data.node.node_id} notes={data.notes} csrf={csrf} />} />;
 }
 
 function ClaimList({ page, navigate }: { page: Data; navigate: (route: Route) => void }) {

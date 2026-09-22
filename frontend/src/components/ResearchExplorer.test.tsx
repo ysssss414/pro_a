@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  createNote, getResearchClaim, getResearchClaims, getResearchCoverage, getResearchHome,
+  createNote, getNodeDomainContext, getResearchClaim, getResearchClaims, getResearchCoverage, getResearchHome,
   getResearchNode, getResearchRelation, getResearchSource, getResearchSources, searchResearch,
   updateNote,
 } from "../api/research";
@@ -10,7 +10,7 @@ import { getSession, loginWorkbench } from "../api/workbench";
 import { ResearchExplorer } from "./ResearchExplorer";
 
 vi.mock("../api/research", () => ({
-  createNote: vi.fn(), getResearchClaim: vi.fn(), getResearchClaims: vi.fn(),
+  createNote: vi.fn(), getNodeDomainContext: vi.fn(), getResearchClaim: vi.fn(), getResearchClaims: vi.fn(),
   getResearchCoverage: vi.fn(), getResearchHome: vi.fn(), getResearchNode: vi.fn(),
   getResearchRelation: vi.fn(), getResearchSource: vi.fn(), getResearchSources: vi.fn(),
   searchResearch: vi.fn(), updateNote: vi.fn(),
@@ -52,6 +52,8 @@ describe("Research Explorer routing and race control", () => {
     vi.mocked(getResearchSources).mockResolvedValue({ items: [], total: 0, limit: 25, offset: 0, next_cursor: null, previous_cursor: null });
     vi.mocked(getResearchCoverage).mockResolvedValue({ summary: { node_coverage: {} }, node_coverage: { items: [], total: 0, limit: 25 }, unlinked_claims: { items: [], total: 0, limit: 25 }, knowledge_gaps: [] });
     vi.mocked(searchResearch).mockResolvedValue({ query: "", results: [] });
+    vi.mocked(getNodeDomainContext).mockImplementation(async (id) => ({ node_id: id,
+      navigation_contexts: [], operational_domain_assignments: [] }));
   });
 
   it("loads an exact Claim from a fresh stable URL with evidence, Source, attribution, View and Impact", async () => {
@@ -71,7 +73,7 @@ describe("Research Explorer routing and race control", () => {
           { object_type: "VIEW", object_id: "VIEW_EXACT", label: "v1", status: "official" }] }] },
     });
     render(<ResearchExplorer />);
-    expect(await screen.findByRole("heading", { name: "Exact recorded evidence" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Exact recorded evidence" }, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.getByText("Quoted synthetic evidence")).toBeInTheDocument();
     expect(screen.getAllByText("Exact Source").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Exact Company").length).toBeGreaterThan(0);

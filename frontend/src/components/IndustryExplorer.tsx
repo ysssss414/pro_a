@@ -7,6 +7,7 @@ import {
 } from "../api/research";
 import { getSession, WorkbenchError } from "../api/workbench";
 import { ResearchLogin, ResearchNodeInspector, type Session } from "./ResearchExplorer";
+import type { InspectorData } from "./inspectorSelection";
 import { SemanticStructureMap } from "./SemanticStructureMap";
 
 function readLocation() {
@@ -84,7 +85,7 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
   const [mapData, setMapData] = useState<StructureMapResult | null>(null);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState("");
-  const [nodeData, setNodeData] = useState<Record<string, any> | null>(null);
+  const [nodeData, setNodeData] = useState<InspectorData | null>(null);
   const [context, setContext] = useState<NodeDomainContext | null>(null);
   const [nodeLoading, setNodeLoading] = useState(false);
   const [nodeError, setNodeError] = useState("");
@@ -208,7 +209,9 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
   if (session === null) return <ResearchLogin onLogin={setSession} title="Industry Explorer" />;
 
   const inTree = !!tree && !!ancestorPath(tree.roots, location.node).length;
-  const otherContexts = context?.navigation_contexts.filter((item) => item.domain_id !== location.domain) ?? [];
+  const currentNodeData = nodeData?.node.node_id === location.node ? nodeData : null;
+  const currentContext = context?.node_id === location.node ? context : null;
+  const otherContexts = currentContext?.navigation_contexts.filter((item) => item.domain_id !== location.domain) ?? [];
   return <main className="industry-workspace">
     <header className="industry-header"><div><span className="eyebrow">Canonical research navigation</span><h1>Industry Explorer</h1>
       <p>Explore existing Production hierarchy. Navigation context and operational assignments are separate.</p></div>
@@ -228,17 +231,13 @@ export function IndustryExplorer({ onAuthenticated = () => undefined }: { onAuth
         onNode={selectMapNode} onRelation={openRelation} />
       <section className="industry-inspector" aria-label="Research Inspector">
         {!location.node && <p className="industry-prompt">Select a node to inspect research.</p>}
-        {nodeLoading && <p role="status">Loading Research Inspector…</p>}
+        {(nodeLoading || (location.node && !currentNodeData && !nodeError)) && <p role="status">Loading Research Inspector…</p>}
         {nodeError && <p role="alert" className="research-error">Unable to load Node research: {nodeError}</p>}
-        {nodeData && <>
-          <div className="industry-context"><strong>Navigation context</strong>
-            <span>{inTree ? tree?.display_name : "Node is outside the selected navigation tree."}</span>
-            <strong>Operational domain assignment</strong>
-            <span>{context?.operational_domain_assignments.map((item) => item.primary_domain).join(", ") || "None recorded"}</span>
-            {!!otherContexts.length && <div>{otherContexts.map((item) => <button key={`${item.domain_id}:${item.root_node_id}`}
-              onClick={() => navigate(item.domain_id, location.node, location.map, location.depth)}>Open in {item.display_name}</button>)}</div>}
-          </div>
-          <ResearchNodeInspector data={nodeData} csrf={session.csrf_token ?? ""} navigate={inspectorNavigate} />
+        {currentNodeData && currentContext && <>
+          {!inTree && <p className="industry-outside-tree">Node is outside the selected navigation tree.</p>}
+          {!!otherContexts.length && <div className="industry-other-contexts">{otherContexts.map((item) => <button key={`${item.domain_id}:${item.root_node_id}`}
+            onClick={() => navigate(item.domain_id, location.node, location.map, location.depth)}>Open in {item.display_name}</button>)}</div>}
+          <ResearchNodeInspector data={currentNodeData} domainContext={currentContext} csrf={session.csrf_token ?? ""} navigate={inspectorNavigate} />
         </>}
       </section>
     </div>

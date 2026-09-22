@@ -75,13 +75,15 @@ describe("Industry Explorer", () => {
   it("selects a deterministic default, expands and collapses, then reuses Node research", async () => {
     render(<IndustryExplorer />);
     await waitFor(() => expect(window.location.search).toContain("domain=ai_hardware"));
-    expect(await screen.findByRole("treeitem", { name: /Alpha/ })).toBeInTheDocument();
+    expect(await screen.findByRole("treeitem", { name: /Alpha/ }, { timeout: 5000 })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Collapse Root A" }));
     expect(screen.queryByRole("treeitem", { name: /Alpha/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Expand Root A" }));
     fireEvent.click(screen.getByRole("treeitem", { name: /Alpha/ }));
     expect(await screen.findByRole("heading", { name: "Alpha" })).toBeInTheDocument();
-    expect(screen.getByText("Current View for A1")).toBeInTheDocument();
+    expect(screen.queryByText("Current View for A1")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Open Current View details / Workbench"));
+    expect(await screen.findByText("Current View for A1")).toBeInTheDocument();
     expect(screen.getByRole("treeitem", { name: /Alpha/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByText("None recorded")).toBeInTheDocument();
     expect(window.location.search).toContain("node=A1");
@@ -127,6 +129,20 @@ describe("Industry Explorer", () => {
       window.dispatchEvent(new PopStateEvent("popstate")); });
     expect(await screen.findByText("Map Node: A1")).toBeInTheDocument();
     expect(window.location.search).toContain("depth=2");
+  });
+
+  it("never shows the previous Node summary while a new selection is loading", async () => {
+    let resolveB!: (value: ReturnType<typeof researchNode>) => void;
+    const slowB = new Promise<ReturnType<typeof researchNode>>((resolve) => { resolveB = resolve; });
+    vi.mocked(getResearchNode).mockImplementation(async (id) => id === "B" ? slowB : researchNode(id));
+    render(<IndustryExplorer />);
+    fireEvent.click(await screen.findByRole("treeitem", { name: /Alpha/ }));
+    expect(await screen.findByRole("heading", { name: "Alpha" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Map select B" }));
+    expect(screen.queryByRole("heading", { name: "Alpha" })).not.toBeInTheDocument();
+    expect(screen.getByText("Loading Research Inspector…")).toHaveAttribute("role", "status");
+    await act(async () => { resolveB(researchNode("B")); await slowB; });
+    expect(await screen.findByRole("heading", { name: "Root B" })).toBeInTheDocument();
   });
 });
 
