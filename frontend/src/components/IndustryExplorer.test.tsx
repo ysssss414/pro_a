@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  getNodeDomainContext, getResearchDomains, getResearchDomainTree, getResearchNode, searchResearch,
+  getNodeDomainContext, getResearchDomains, getResearchDomainTree, getResearchNode, getResearchStructureMap, searchResearch,
   type NavigationNode, type NavigationTree,
 } from "../api/research";
 import { getSession } from "../api/workbench";
@@ -10,8 +10,14 @@ import { DomainHierarchyPanel, IndustryExplorer } from "./IndustryExplorer";
 
 vi.mock("../api/research", () => ({
   getNodeDomainContext: vi.fn(), getResearchDomains: vi.fn(), getResearchDomainTree: vi.fn(),
-  getResearchNode: vi.fn(), searchResearch: vi.fn(),
+  getResearchNode: vi.fn(), getResearchStructureMap: vi.fn(), searchResearch: vi.fn(),
 }));
+vi.mock("./SemanticStructureMap", () => ({ SemanticStructureMap: ({ mode, map, onMode, onDepth, onNode }:
+  { mode: string; map: { selected_node_id: string | null } | null;
+    onMode: (value: "focus") => void; onDepth: (value: number) => void; onNode: (id: string) => void }) =>
+  <section aria-label="Semantic Structure Map"><span>Map mode: {mode}</span><span>Map Node: {map?.selected_node_id ?? "none"}</span>
+    <button onClick={() => onMode("focus")}>Focus mode</button><button onClick={() => onDepth(3)}>Depth 3</button>
+    <button onClick={() => onNode("B")}>Map select B</button></section> }));
 vi.mock("../api/workbench", async (original) => {
   const actual = await original<typeof import("../api/workbench")>();
   return { ...actual, getSession: vi.fn() };
@@ -52,6 +58,11 @@ describe("Industry Explorer", () => {
     vi.mocked(getSession).mockResolvedValue({ actor: "operator", mode: "DEMO", csrf_token: "csrf" });
     vi.mocked(getResearchDomains).mockResolvedValue({ domains });
     vi.mocked(getResearchDomainTree).mockImplementation(async (id) => trees[id]);
+    vi.mocked(getResearchStructureMap).mockImplementation(async (id, mode, nodeId, depth) => ({
+      domain_id: id, display_name: id, mode, selected_node_id: nodeId || null, depth,
+      nodes: [], edges: [], stats: { node_count: 0, edge_count: 0 }, available_relation_types: [],
+      truncated: false, truncation_reasons: [], snapshot_id: "map",
+    }));
     vi.mocked(getResearchNode).mockImplementation(async (id) => researchNode(id));
     vi.mocked(getNodeDomainContext).mockImplementation(async (id) => ({ node_id: id,
       navigation_contexts: [{ domain_id: id === "B" ? "semiconductor" : "ai_hardware",
@@ -98,6 +109,24 @@ describe("Industry Explorer", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Outside/ }));
     expect(await screen.findByText("Node is outside the selected navigation tree.")).toBeInTheDocument();
     expect(screen.queryByRole("treeitem", { name: /Outside/ })).not.toBeInTheDocument();
+  });
+
+  it("keeps map mode, depth and canonical selection in URL navigation", async () => {
+    render(<IndustryExplorer />);
+    expect(await screen.findByText("Map mode: hierarchy")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("treeitem", { name: /Alpha/ }));
+    expect(await screen.findByText("Map mode: relationship")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
+    expect(window.location.search).toContain("map=focus");
+    fireEvent.click(screen.getByRole("button", { name: "Depth 3" }));
+    expect(window.location.search).toContain("depth=3");
+    fireEvent.click(screen.getByRole("button", { name: "Map select B" }));
+    expect(window.location.search).toContain("node=B");
+    expect(await screen.findByText("Node is outside the selected navigation tree.")).toBeInTheDocument();
+    act(() => { window.history.replaceState(null, "", "/industry?domain=ai_hardware&node=A1&map=focus&depth=2");
+      window.dispatchEvent(new PopStateEvent("popstate")); });
+    expect(await screen.findByText("Map Node: A1")).toBeInTheDocument();
+    expect(window.location.search).toContain("depth=2");
   });
 });
 

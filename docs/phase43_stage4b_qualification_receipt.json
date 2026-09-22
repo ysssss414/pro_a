@@ -1,0 +1,163 @@
+{
+  "receipt_version": "phase43-stage4b-qualification-v1",
+  "result": "PASS",
+  "git": {
+    "expected_baseline_sha": "d602addbb3c24d3889025b1219bbe6d746a3299b",
+    "local_main_sha": "d602addbb3c24d3889025b1219bbe6d746a3299b",
+    "remote_main_sha": "d602addbb3c24d3889025b1219bbe6d746a3299b",
+    "branch": "codex/phase43-stage4b-semantic-structure-map",
+    "branch_parent_sha": "d602addbb3c24d3889025b1219bbe6d746a3299b",
+    "qualified_implementation_sha": "8dfdf9da230435d4913527c54a525e0921998b75",
+    "tracked_changes_before": 0,
+    "staged_changes_before": 0,
+    "preexisting_untracked_preserved": true,
+    "preexisting_untracked_recursively_scanned": false
+  },
+  "production": {
+    "sha256_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "active_nodes": 327,
+    "current_relations": 174,
+    "current_relation_types": ["part_of"],
+    "write_count": 0,
+    "apply_executed": false,
+    "official_view_activations": 0,
+    "current_view_writes": 0
+  },
+  "workbench": {
+    "schema_version": "8",
+    "sha256_before": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "sha256_after": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "mutation_count": 0,
+    "wip_state_from_frozen_stage3_receipt": "HARD_STOP",
+    "pending_review_rows_from_frozen_stage3_receipt": 274
+  },
+  "navigation_specs": {
+    "ai_hardware": {
+      "path": "research_navigation/ai_hardware.json",
+      "sha256": "5c63310e2bf2775a7c0d8222f91ec921f0e1056023181ccbd305ff7aacfcfe9e",
+      "root_node_ids": ["NODE_20260814_164548FF"]
+    },
+    "semiconductor": {
+      "path": "research_navigation/semiconductor.json",
+      "sha256": "2322cd60e5522782c3f9d1e2aafd7c2a87dd0967f4d2b5661aa086c212af0263",
+      "root_node_ids": ["NODE_20260814_2CF1006E"]
+    }
+  },
+  "structure_map": {
+    "endpoint": "/api/workbench/v1/research/domains/{domain_id}/structure-map",
+    "modes": ["hierarchy", "relationship", "focus"],
+    "semantic_groups_sha256": "95ce62199e1643f25fe771280fd037a923954fdb0aa6179413887b5cca5bcebd",
+    "max_map_nodes": 80,
+    "max_map_edges": 160,
+    "default_focus_depth": 2,
+    "max_focus_depth": 3,
+    "deterministic": true,
+    "cycle_safe": true,
+    "snapshot_deterministic": true,
+    "current_active_only": true,
+    "stored_relation_direction_preserved": true,
+    "navigation_context_is_operational_assignment": false
+  },
+  "representative_maps": {
+    "ai_hardware": {
+      "node_id": "NODE_20260814_164548FF",
+      "node_name": "算力",
+      "hierarchy": {
+        "nodes": 4,
+        "edges": 3,
+        "truncated": false,
+        "snapshot_id": "6eb95a2a70f9118dfd69facd82ef550c95a8ca49a186e681d829e6f25142dbe4"
+      },
+      "relationship": {
+        "nodes": 4,
+        "edges": 3,
+        "truncated": false,
+        "snapshot_id": "014dc37566ff81466d28e424b2d5d1b76753b7bf8ebcd1536162b0f00bbb17b1"
+      },
+      "focus_depth_2": {
+        "nodes": 4,
+        "edges": 3,
+        "truncated": false,
+        "snapshot_id": "eaf2f06281848af4df1410f196cdd892f5521898cc8b5c77cc1b55b4e08f7c2c"
+      }
+    },
+    "semiconductor": {
+      "node_id": "NODE_20260814_2CF1006E",
+      "node_name": "半导体",
+      "hierarchy": {
+        "nodes": 5,
+        "edges": 4,
+        "truncated": false,
+        "snapshot_id": "5b27e057477e18b54a8f4dc5d4a94717facdec2c302e4a810fd56b6e59ca9302"
+      },
+      "relationship": {
+        "nodes": 4,
+        "edges": 3,
+        "truncated": false,
+        "snapshot_id": "1d50ab0ae0cbb7cb0a93dc70ee07c2be8f8caf91c420dbd3c3bbe754809ad806"
+      },
+      "focus_depth_2": {
+        "nodes": 5,
+        "edges": 4,
+        "truncated": false,
+        "snapshot_id": "008ea25da89517c537b3d11fe8bc2d4c0c16780d5e7c91770dc5c620ee2e8315"
+      }
+    }
+  },
+  "tests": {
+    "backend_focused": "4 passed within combined suite",
+    "backend_relevant_combined": "215 passed",
+    "stage3_auxiliary": "43 passed; 1 previous-branch-pinned test deselected",
+    "frontend_full": "133 passed in 23 files",
+    "typescript": "PASS",
+    "frontend_build": "PASS",
+    "python_compileall": "PASS",
+    "staged_diff_check": "PASS"
+  },
+  "browser_acceptance": {
+    "viewport_1920x1080": "PASS",
+    "pane_widths_1920": [406, 867, 572],
+    "viewport_1366x768": "PASS",
+    "pane_widths_1366": [284, 606, 400],
+    "domain_switch_and_tree": "PASS",
+    "hierarchy_relationship_focus": "PASS",
+    "focus_depth_and_filters": "PASS",
+    "cytoscape_node_and_edge_click": "PASS",
+    "relation_route": "PASS",
+    "fit_and_reset": "PASS",
+    "outside_tree_search_and_inspector": "PASS",
+    "deep_link_refresh_back_forward": "PASS",
+    "inspector_scroll": "PASS",
+    "long_tree_scroll": "PASS_SYNTHETIC_DOM_ONLY_STRESS",
+    "classic_explorer": "PASS",
+    "research_home": "PASS",
+    "document_horizontal_overflow": false,
+    "post_sign_in_console_errors": 0
+  },
+  "safety": {
+    "provider_calls": 0,
+    "source_ingestion_calls": 0,
+    "raw_pdf_calls": 0,
+    "cloud_job_execution": 0,
+    "real_local_path_leakage": 0,
+    "private_source_path_leakage": 0,
+    "qualified_stage3_overlay_exposed": false
+  },
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS",
+    "F": "PASS",
+    "G": "PASS",
+    "H": "PASS",
+    "I": "PASS_APPLICABLE_TESTS",
+    "J": "PASS",
+    "K": "PASS",
+    "L": "PASS"
+  },
+  "stage4c_started": false,
+  "stage4d_started": false
+}
