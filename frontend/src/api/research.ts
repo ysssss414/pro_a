@@ -55,6 +55,36 @@ export type StructureMapResult = {
   stats: { node_count: number; edge_count: number }; available_relation_types: string[];
   truncated: boolean; truncation_reasons: string[]; snapshot_id: string;
 };
+export type QualifiedMapNode = {
+  visual_id: string; knowledge_state: "canonical" | "qualified_identity" | "relation_endpoint_reference";
+  canonical_node_id: string | null; qualified_candidate_id: string | null; endpoint_reference_id: string | null;
+  display_name: string; primary_type: string; distance: number; selected: boolean;
+  in_navigation_context: boolean; qualification_stage?: string; qualified_reuse_candidate_ids?: string[];
+};
+export type QualifiedMapEdge = {
+  visual_id: string; knowledge_state: "canonical" | "qualified_relation";
+  canonical_relation_id: string | null; qualified_relation_id: string | null;
+  from_visual_id: string; to_visual_id: string; relation_type: string; semantic_group: string;
+  scope: string; from_endpoint_authority: string; to_endpoint_authority: string;
+  candidate_content_sha256?: string; qualification_population_sha256?: string;
+  qualification_decision_sha256?: string;
+};
+export type QualifiedMapResult = {
+  domain_id: string; display_name: string; mode: StructureMapMode; selected_visual_id: string | null;
+  selected_node_id: string | null; selected_qualified_id: string | null; depth: number;
+  nodes: QualifiedMapNode[]; edges: QualifiedMapEdge[]; truncated: boolean; truncation_reasons: string[];
+  omitted_reference_hierarchy_relations: number;
+  stats: { canonical_nodes: number; qualified_nodes: number; endpoint_references: number;
+    canonical_relations: number; qualified_relations: number };
+};
+export type QualifiedIdentity = {
+  candidate_id: string; visual_id: string; display_name: string; primary_type: string;
+  qualification_stage: string; human_decision: string; human_reason: string;
+  authorization_basis: string; reviewer: string; evidence: Array<Record<string, unknown>>;
+  relations: Array<Record<string, unknown>>; production_applied: false;
+  candidate_content_sha256?: string; qualification_population_sha256?: string;
+  qualification_decision_sha256?: string;
+};
 
 function params(values: Record<string, string | number | boolean | null | undefined>) {
   const search = new URLSearchParams();
@@ -77,6 +107,21 @@ export const getResearchDomainTree = (domainId: string, signal: AbortSignal) =>
 export const getResearchStructureMap = (domainId: string, mode: StructureMapMode, nodeId: string,
   depth: number, signal: AbortSignal) => request<StructureMapResult>("/research/domains/" +
   encodeURIComponent(domainId) + "/structure-map" + params({ mode, node_id: nodeId, depth: mode === "focus" ? depth : null }), signal);
+export const getQualifiedStructureMap = (domainId: string, mode: StructureMapMode, nodeId: string,
+  qualifiedId: string, depth: number, signal: AbortSignal) => request<QualifiedMapResult>("/research/domains/" +
+  encodeURIComponent(domainId) + "/qualified-structure-map" +
+  params({ mode, node_id: nodeId, qualified_id: qualifiedId, depth: mode === "focus" ? depth : null }), signal);
+export const getQualifiedOverlaySummary = (signal: AbortSignal) => request<any>("/research/qualified-overlay", signal);
+export const getQualifiedGovernance = (signal: AbortSignal) => request<any>("/research/qualified-overlay/governance", signal);
+export const searchQualified = (q: string, signal: AbortSignal) =>
+  request<{ results: Array<{ candidate_id: string; display_name: string; primary_type: string;
+    qualification_stage: string }> }>("/research/qualified-overlay/search" + params({ q }), signal);
+export const getQualifiedNode = (id: string, signal: AbortSignal) =>
+  request<QualifiedIdentity>("/research/qualified-overlay/nodes/" + encodeURIComponent(id), signal);
+export const getQualifiedRelation = (id: string, signal: AbortSignal) =>
+  request<any>("/research/qualified-overlay/relations/" + encodeURIComponent(id), signal);
+export const getQualifiedCanonicalProvenance = (id: string, signal: AbortSignal) =>
+  request<any>("/research/qualified-overlay/canonical/" + encodeURIComponent(id), signal);
 export const getNodeDomainContext = (nodeId: string, signal: AbortSignal) =>
   request<NodeDomainContext>("/research/nodes/" + encodeURIComponent(nodeId) + "/domain-context", signal);
 export const getResearchClaim = (id: string, signal: AbortSignal) =>
