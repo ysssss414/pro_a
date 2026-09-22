@@ -1,0 +1,12 @@
+{
+  "contract_version": "research-navigation-v1",
+  "domain_id": "semiconductor",
+  "display_name": "Semiconductor",
+  "root_node_ids": ["NODE_20260814_2CF1006E"],
+  "hierarchy_relation": "part_of",
+  "default_max_depth": 6,
+  "domain_pack": {
+    "version": "1.0.0",
+    "sha256": "d7e3b2a81353aa51d150b7858b931546cde1358c7fbcf559e4ef08d094c849c4"
+  }
+}

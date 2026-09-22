@@ -1,0 +1,125 @@
+{
+  "receipt_version": "phase43-stage4a-qualification-v1",
+  "result": "PASS",
+  "git": {
+    "expected_baseline_sha": "3e1f063135c90c031875762d1e77e3e72cf1a212",
+    "local_main_before_sha": "690fc4f26e02607fb54a48053cf8faf6775621c3",
+    "local_main_after_sha": "3e1f063135c90c031875762d1e77e3e72cf1a212",
+    "remote_main_sha": "3e1f063135c90c031875762d1e77e3e72cf1a212",
+    "branch": "codex/phase43-stage4a-domain-hierarchy-navigation",
+    "branch_parent_sha": "3e1f063135c90c031875762d1e77e3e72cf1a212",
+    "qualified_implementation_head_sha": "a6b0127fa056c571744055ebdee900f4ecab252b",
+    "tracked_user_changes_before": 0,
+    "staged_user_changes_before": 0,
+    "untracked_files_preserved_in_place": true,
+    "untracked_files_recursively_scanned": false
+  },
+  "workbench_schema_version": "8",
+  "navigation_specs": {
+    "ai_hardware": {
+      "path": "research_navigation/ai_hardware.json",
+      "sha256": "5c63310e2bf2775a7c0d8222f91ec921f0e1056023181ccbd305ff7aacfcfe9e",
+      "root_node_ids": ["NODE_20260814_164548FF"],
+      "root_names": ["算力"],
+      "domain_pack": {
+        "domain_id": "ai_hardware",
+        "version": "1.0.0",
+        "sha256": "2b287b6e7e0e95585b1f466c8481053544e3bbc92e5d8a17e180c5cdd4a5ade2",
+        "lifecycle": "PROPOSED",
+        "registered_in_local_workbench": false
+      },
+      "visible_node_count": 4,
+      "max_tree_depth": 1,
+      "truncated": false,
+      "tree_snapshot_id": "c27071d6661d25b2d5d3aa8bf24fc84069a08e95a3e966129513ca89bb541835"
+    },
+    "semiconductor": {
+      "path": "research_navigation/semiconductor.json",
+      "sha256": "2322cd60e5522782c3f9d1e2aafd7c2a87dd0967f4d2b5661aa086c212af0263",
+      "root_node_ids": ["NODE_20260814_2CF1006E"],
+      "root_names": ["半导体"],
+      "domain_pack": {
+        "domain_id": "semiconductor",
+        "version": "1.0.0",
+        "sha256": "d7e3b2a81353aa51d150b7858b931546cde1358c7fbcf559e4ef08d094c849c4",
+        "lifecycle": "PROPOSED",
+        "registered_in_local_workbench": false
+      },
+      "visible_node_count": 5,
+      "max_tree_depth": 2,
+      "truncated": false,
+      "tree_snapshot_id": "3ff4bcfacddcd52d84dae174fe533014008164549f94d1f21586fcb5b464cf83"
+    }
+  },
+  "domain_count": 2,
+  "projection": {
+    "domain_list_endpoint": "/api/workbench/v1/research/domains",
+    "domain_tree_endpoint": "/api/workbench/v1/research/domains/{domain_id}/tree",
+    "node_context_endpoint": "/api/workbench/v1/research/nodes/{node_id}/domain-context",
+    "relation": "part_of",
+    "deterministic": true,
+    "cycle_safe": true,
+    "default_max_depth": 6,
+    "max_requested_depth": 12,
+    "max_tree_nodes": 1000,
+    "navigation_is_operational_assignment": false
+  },
+  "tests": {
+    "backend_focused": "8 passed",
+    "research_workbench_api_regression": "212 passed including Stage 4A focused tests",
+    "stage3_auxiliary": "51 passed; 1 branch-pinned test not applicable to Stage 4A branch",
+    "frontend_full": "129 passed in 22 files",
+    "typescript": "PASS",
+    "frontend_build": "PASS",
+    "compileall": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "browser_acceptance": {
+    "viewport_1920x1080": "PASS",
+    "viewport_1366x768": "PASS",
+    "domain_switch": "PASS",
+    "expand_collapse": "PASS",
+    "node_selection_and_inspector": "PASS",
+    "deep_link_refresh": "PASS",
+    "back_forward": "PASS",
+    "inspector_scroll": "PASS",
+    "long_tree_scroll": "PASS_SYNTHETIC_DOM_ONLY_STRESS",
+    "document_horizontal_overflow": false,
+    "classic_explorer": "PASS",
+    "existing_node_route": "PASS"
+  },
+  "safety": {
+    "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_write_count": 0,
+    "workbench_sha_before": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "workbench_sha_after": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "workbench_mutation_count": 0,
+    "wip_state_from_frozen_stage3_receipt": "HARD_STOP",
+    "pending_review_rows_from_frozen_stage3_receipt": 274,
+    "apply_executed": false,
+    "official_view_activations": 0,
+    "current_view_writes": 0,
+    "provider_calls": 0,
+    "source_ingestion_calls": 0,
+    "cloud_job_execution": 0,
+    "local_path_leakage": false
+  },
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS",
+    "F": "PASS",
+    "G": "PASS",
+    "H": "PASS_APPLICABLE_TESTS",
+    "I": "PASS",
+    "J": "PASS",
+    "K": "PASS",
+    "L": "PASS"
+  },
+  "stage4b_started": false,
+  "stage4c_started": false,
+  "stage4d_started": false
+}

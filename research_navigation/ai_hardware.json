@@ -1,0 +1,12 @@
+{
+  "contract_version": "research-navigation-v1",
+  "domain_id": "ai_hardware",
+  "display_name": "AI Hardware",
+  "root_node_ids": ["NODE_20260814_164548FF"],
+  "hierarchy_relation": "part_of",
+  "default_max_depth": 6,
+  "domain_pack": {
+    "version": "1.0.0",
+    "sha256": "2b287b6e7e0e95585b1f466c8481053544e3bbc92e5d8a17e180c5cdd4a5ade2"
+  }
+}

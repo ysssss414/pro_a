@@ -29,3 +29,6 @@ docs/phase43_stage2_human_authorization.json text eol=lf
 # Domain pack inventories bind exact file bytes on every checkout platform.
 # Treat preserved CRLF as line endings while retaining normal whitespace checks.
 domains/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+
+# Research navigation specs expose their exact UTF-8 file SHA256 through the API.
+research_navigation/*.json text eol=lf

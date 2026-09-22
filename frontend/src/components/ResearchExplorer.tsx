@@ -10,7 +10,7 @@ import { CurrentViewWorkbench } from "./CurrentViewWorkbench";
 
 type Route = { kind: ResearchRouteKind; id?: string };
 type Data = Record<string, any>;
-type Session = { actor: string; mode: string; csrf_token?: string };
+export type Session = { actor: string; mode: string; csrf_token?: string };
 
 function parseRoute(): Route {
   const path = window.location.pathname;
@@ -129,14 +129,14 @@ function Breadcrumbs({ route, navigate }: { route: Route; navigate: (route: Rout
   </nav>;
 }
 
-function Login({ onLogin }: { onLogin: (session: Session) => void }) {
+export function ResearchLogin({ onLogin, title = "Research Explorer" }: { onLogin: (session: Session) => void; title?: string }) {
   const [token, setToken] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent) {
     event.preventDefault(); const controller = new AbortController(); setBusy(true); setError("");
     try { await loginWorkbench(token, controller.signal); onLogin(await getSession(controller.signal)); }
     catch (reason) { setError((reason as Error).message); setBusy(false); }
   }
-  return <main className="research-login"><form onSubmit={submit}><span className="eyebrow">Research Explorer</span><h1>Sign in to investigate evidence</h1>
+  return <main className="research-login"><form onSubmit={submit}><span className="eyebrow">{title}</span><h1>Sign in to investigate evidence</h1>
     <p>Uses the existing private Workbench session. Research reads are bounded and canonical data remains read-only.</p>
     <label>Workbench token<input type="password" value={token} onChange={(e) => setToken(e.target.value)} autoFocus /></label>
     {error && <p role="alert" className="research-error">{error}</p>}<button disabled={busy || token.length < 32}>{busy ? "Signing in…" : "Sign in"}</button></form></main>;
@@ -212,7 +212,7 @@ export function ResearchExplorer({ onAuthenticated = () => undefined }: { onAuth
   }, [query, searchType, session]);
 
   if (session === undefined) return <main className="research-loading">Opening Research Explorer…</main>;
-  if (session === null) return <Login onLogin={setSession} />;
+  if (session === null) return <ResearchLogin onLogin={setSession} />;
 
   const go = (next: Route) => { setResults([]); setQuery(""); navigate(next); };
   const setCursor = (cursor: string) => navigate(route, { ...Object.fromEntries(new URLSearchParams(window.location.search)), cursor });
@@ -314,6 +314,12 @@ function ResearchPage({ route, data, csrf, navigate, setCursor }:
     <section className="research-section"><div className="research-section-heading"><h2>Unlinked Claims</h2><span>{data.unlinked_claims.total}</span></div>{data.unlinked_claims.items.map((claim: Data) => <button className="research-row" key={claim.claim_id} onClick={() => go("claim", claim.claim_id)}><strong>{claim.statement}</strong><small>{claim.audit_bucket} · no canonical link created</small></button>)}</section>
     <section className="research-section"><div className="research-section-heading"><h2>Known gaps</h2><span>{data.knowledge_gaps.length}</span></div>{data.knowledge_gaps.map((gap: Data) => <article className="research-card" key={gap.gap_id}><strong>{gap.title}</strong><p>{gap.description}</p><div className="card-actions"><button onClick={() => go("node", gap.node_id)}>Open {gap.canonical_name}</button></div><FollowupNotes objectType="GAP" objectId={gap.gap_id} notes={gap.notes ?? []} csrf={csrf} /></article>)}</section>
   </div>;
+}
+
+export function ResearchNodeInspector({ data, csrf, navigate }:
+  { data: Data; csrf: string; navigate: (route: Route, values?: Record<string, string>) => void }) {
+  return <ResearchPage route={{ kind: "node", id: data.node.node_id }} data={data}
+    csrf={csrf} navigate={navigate} setCursor={() => undefined} />;
 }
 
 function ClaimList({ page, navigate }: { page: Data; navigate: (route: Route) => void }) {
