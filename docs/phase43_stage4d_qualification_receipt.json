@@ -1,0 +1,170 @@
+{
+  "receipt_version": "phase43-stage4d-qualified-overlay-v1",
+  "result": "PASS",
+  "git": {
+    "expected_baseline_sha": "a86a4005835dd50f55b076914fa4fe202508a458",
+    "local_main_sha_at_start": "a86a4005835dd50f55b076914fa4fe202508a458",
+    "remote_main_sha_at_start": "a86a4005835dd50f55b076914fa4fe202508a458",
+    "branch": "codex/phase43-stage4d-qualified-overlay",
+    "branch_parent_sha": "a86a4005835dd50f55b076914fa4fe202508a458",
+    "qualified_implementation_sha": "1ae40d3bacfae2f77b1c79feedf9490e207b4cca",
+    "tracked_changes_at_start": 0,
+    "preexisting_untracked_preserved": true
+  },
+  "frozen_authority": {
+    "stage2_human_authorization_sha256": "23fa6c94d55caf7ef8cfc3291528d3d41a06948460b852d7418c68f572bf014f",
+    "stage2_semiconductor_package_sha256": "131421d3bbe3b968a1c72ee6e3767cfad6141a0cdaea1850ba30cccbd3932918",
+    "stage3_population_sha256": "207f4f57f78f0fe0034a3bb17edd38cc911a21cd322ea753ac02edc41a70babb",
+    "stage3_completed_decisions_sha256": "34f91757f881e26f87502e1ae096ec24b8e207d85ba218d5be8179867940ef52",
+    "stage3_review_population_sha256": "2ec173f05215e9d62323ff1cde07108fbcf5eab1afcaf6a020ee438875f04a92",
+    "stage3_automated_resolution_sha256": "4ee619c8d597f6ffcacb357efd7eddce750b1a2bc6fe3a21c7a9a78f182f4065",
+    "stage3_final_receipt_sha256": "4a68d3ff7dcd5ac2c2f3b77664d12ede295adf1885c30c2bd14397c797a9cde5",
+    "human_decision_count": 100,
+    "candidate_and_parent_binding": "PASS"
+  },
+  "overlay": {
+    "overlay_id": "phase43-stage3-cross-domain-qualified-v1",
+    "overlay_sha256": "aa917e07895d7912e5bfe9c41763af3fbd705127a6fd797e858f1bef2816bfb5",
+    "overlay_file_sha256": "d3ebb8662c0259e911ea7946d527fed249bc6ca44c2445c4a912d45b93ba722d",
+    "endpoint_authority_file_sha256": "a6e654aadcab231c5a367f3305336312ce6fe3dfc7f7d63c8177033c50f3a7db",
+    "source_manifest_file_sha256": "4f7e1e2aa5c20ae5645b455665b390bae5b3b5f130974052ac8b20c9e747a856",
+    "two_independent_builds_byte_identical": true,
+    "idempotent_replay": true,
+    "map_snapshot_deterministic": true
+  },
+  "identities": {
+    "stage3_source_total": 46,
+    "reuse_canonical": 19,
+    "unique_active_reuse_targets": 19,
+    "stage3_create_new_canonical": 12,
+    "stage2_endpoint_support_create": 17,
+    "visible_qualified_identity_nodes": 29,
+    "deferred": 14,
+    "rejected": 1,
+    "deferred_graph_nodes": 0,
+    "rejected_graph_nodes": 0,
+    "duplicate_qualified_identities": 0
+  },
+  "relations": {
+    "stage3_source_total": 54,
+    "create_relation": 38,
+    "defer_relation": 16,
+    "qualified_relation_edges": 38,
+    "full_identity_authority_relations": 17,
+    "reference_backed_relations": 21,
+    "renderable_relations": 38,
+    "relation_endpoint_occurrences": 76,
+    "production_canonical_endpoint_occurrences": 15,
+    "stage3_human_identity_endpoint_occurrences": 4,
+    "stage2_human_identity_endpoint_occurrences": 28,
+    "relation_scoped_reference_endpoint_occurrences": 29,
+    "unique_relation_scoped_references": 26,
+    "unresolved_endpoint_occurrences": 0,
+    "ambiguous_endpoint_occurrences": 0,
+    "deferred_graph_edges": 0
+  },
+  "representative_records": {
+    "reuse": {
+      "candidate_id": "SC-CN-0032",
+      "canonical_target": "NODE_20260817_4452D283",
+      "duplicate_node_created": false
+    },
+    "create": {
+      "candidate_id": "SC-CN-0033",
+      "display_name": "Chiplet",
+      "knowledge_state": "qualified_identity",
+      "production_node_id": null
+    },
+    "relation": {
+      "candidate_id": "SC-RL-0027",
+      "from_visual_id": "qualified-stage2:SC-CN-0034",
+      "to_visual_id": "endpoint-ref:SC-CN-0024",
+      "relation_type": "uses",
+      "from_endpoint_authority": "stage2_human_identity",
+      "to_endpoint_authority": "relation_scoped_reference",
+      "knowledge_state": "qualified_relation"
+    },
+    "defer": {
+      "candidate_id": "OBS_656B35D110452867",
+      "map_visible": false,
+      "governance_visible": true
+    }
+  },
+  "api": {
+    "overlay_summary": "PASS",
+    "qualified_node_detail": "PASS",
+    "canonical_reuse_provenance": "PASS",
+    "governance": "PASS",
+    "qualified_relation_detail": "PASS",
+    "qualified_structure_map_hierarchy_relationship_focus": "PASS",
+    "binding_drift_fails_closed": "PASS"
+  },
+  "frontend": {
+    "knowledge_layer_control": "PASS",
+    "canonical_default": "PASS",
+    "qualified_mode_and_legend": "PASS",
+    "qualified_search_and_reuse_deduplication": "PASS",
+    "qualified_inspector_and_canonical_provenance": "PASS",
+    "governance_panel": "PASS",
+    "qualified_relation_and_endpoint_reference_detail": "PASS",
+    "url_selection_refresh_back_forward": "PASS"
+  },
+  "tests": {
+    "stage4d_focused": "4 passed",
+    "backend_relevant": "79 passed, 3 deselected",
+    "frontend_full": "145 passed in 26 files with maxWorkers=2",
+    "stage4a_stage4b_stage4c_research_explorer_regressions": "PASS within frontend full and backend relevant suites",
+    "stage3_integrity": "PASS for applicable tests; 2 old branch-pinned tests deselected",
+    "typescript": "PASS",
+    "frontend_production_build": "PASS",
+    "python_compileall": "PASS",
+    "staged_diff_check": "PASS"
+  },
+  "browser": {
+    "viewport_1920x1080": "PASS",
+    "viewport_1366x768": "PASS",
+    "document_horizontal_overflow": false,
+    "canonical_default_and_qualified_toggle": "PASS",
+    "qualified_and_canonical_inspectors": "PASS",
+    "qualified_relation_and_endpoint_reference_click": "PASS",
+    "governance_and_qualified_search": "PASS",
+    "hierarchy_relationship_focus_depth_3": "PASS",
+    "domain_switch_deep_link_refresh_back_forward": "PASS",
+    "independent_inspector_scroll": "PASS"
+  },
+  "safety": {
+    "production_sha256_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_write_count": 0,
+    "apply_executed": false,
+    "official_view_activations": 0,
+    "current_view_writes": 0,
+    "workbench_sha256_before": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "workbench_sha256_after": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "real_workbench_mutations": 0,
+    "wip_state_from_frozen_stage3_receipt": "HARD_STOP",
+    "pending_review_rows_from_frozen_stage3_receipt": 274,
+    "new_intake_allowed": false,
+    "provider_calls": 0,
+    "source_ingestion_calls": 0,
+    "raw_pdf_calls": 0,
+    "cloud_job_executions": 0,
+    "web_research_calls": 0,
+    "public_json_local_path_or_payload_matches": 0,
+    "stage5_started": false
+  },
+  "gates": {
+    "A_baseline": "PASS",
+    "B_stage3_authority": "PASS",
+    "C_identity_overlay": "PASS",
+    "D_relation_overlay": "PASS",
+    "E_endpoint_authority_safety": "PASS",
+    "F_map_integration": "PASS",
+    "G_inspector": "PASS",
+    "H_governance": "PASS",
+    "I_determinism": "PASS",
+    "J_regression": "PASS",
+    "K_privacy_production": "PASS",
+    "L_scope": "PASS"
+  }
+}
