@@ -1,0 +1,816 @@
+{
+  "document_type": "phase43_stage7_full_suite_exception_audit",
+  "repository_baseline": "c93da477e739a2357403dd536b22e4b8ff8da2dc",
+  "stage6_reference": {
+    "passed": 2373,
+    "skipped": 6,
+    "failed": 4,
+    "errors": 29
+  },
+  "stage7_diagnostic": {
+    "passed": 2377,
+    "skipped": 6,
+    "failed": 4,
+    "errors": 29
+  },
+  "baseline_control": {
+    "mechanism": "git archive of exact pre-Stage7 commit; no worktree or checkout changes",
+    "same_python_dependencies": true,
+    "same_existing_local_inputs": true,
+    "private_inputs_copied": false,
+    "nodeids_compared": 33,
+    "exact_nodeid_status_message_fingerprint_matches": 33,
+    "limitation": "Test files and unchanged scripts ran from the current checkout; pro_a Python modules loaded from the archived source. Stage 7 changed no failing test or traced runtime file."
+  },
+  "stage7_changed_files": [
+    "docs/PHASE43_STAGE7_KNOWLEDGE_COMMUNITY_ADAPTER_CONTRACT.md",
+    "docs/PHASE43_STAGE7_QUALIFICATION.md",
+    "docs/phase43_stage7_full_suite_exception_audit.json",
+    "docs/phase43_stage7_qualification_receipt.json",
+    "docs/pro_a_community_export_contract_v1.json",
+    "frontend/src/api/sourceOperations.ts",
+    "frontend/src/components/CompanyMaterialsPanel.tsx",
+    "frontend/src/components/SourceOperationsWorkbench.tsx",
+    "pyproject.toml",
+    "src/pro_a/community_material.py",
+    "src/pro_a/workbench/api.py",
+    "src/pro_a/workbench/source_operations.py",
+    "tests/test_phase43_stage7_community.py"
+  ],
+  "stage7_changed_runtime_python_modules": [
+    "src/pro_a/community_material.py",
+    "src/pro_a/workbench/api.py",
+    "src/pro_a/workbench/source_operations.py"
+  ],
+  "summary": {
+    "diagnostic_item_audit": "33/33",
+    "category_counts": {
+      "HISTORICAL_BRANCH_SENTINEL": 1,
+      "HISTORICAL_INGESTION_FIXTURE": 1,
+      "HISTORICAL_PRODUCTION_BINDING": 21,
+      "PRIVATE_FOUNDATION_PREREQUISITE": 10
+    },
+    "pre_existing_non_gating": 33,
+    "stage7_changed_test_overlap": 0,
+    "stage7_changed_runtime_traceback_overlap": 0,
+    "unexplained_overlap": 0,
+    "new_stage7_regressions": 0,
+    "unresolved": 0,
+    "result": "PASS_WITH_PRE_EXISTING_NON_GATING_FAILURES"
+  },
+  "items": [
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_full_old_baseline_preflight_releases_handle_without_gc",
+      "status": "FAILED",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:0bd40ce0de6498cf211a01b1984c029c27b9efebbaa0217cc8055cc5b116443b",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "test_full_old_baseline_preflight_releases_handle_without_gc",
+      "direct_fixture_file": null,
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_all_native_rows_requalify_without_db_writes",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_all_native_rows_requalify_without_db_writes",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_claim_identity_and_temporal_exception_stay_separate",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_claim_identity_and_temporal_exception_stay_separate",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_native_roles_and_cpo_scope_not_content_authority",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_native_roles_and_cpo_scope_not_content_authority",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_comparison_explains_all_rows_without_accepting_content",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_comparison_explains_all_rows_without_accepting_content",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_foundation_requalification.py::test_manifest_cannot_expand_native_authority",
+      "status": "ERROR",
+      "error_class": "pytest.fail",
+      "error_message_fingerprint": "sha256:c87c77d6749685b7dc80c00ed097192c25a1ab3512ed0a01e7065629b323d9b0",
+      "test_file": "tests/test_foundation_requalification.py",
+      "test_function_or_fixture": "inputs fixture for test_manifest_cannot_expand_native_authority",
+      "direct_fixture_file": "tests/test_foundation_requalification.py",
+      "traceback_modules": [
+        "tests/test_foundation_requalification.py"
+      ],
+      "category": "PRIVATE_FOUNDATION_PREREQUISITE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_foundation_requalification.py: require_private_foundation_baseline requires the historical private migration instruction before test execution.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+      "status": "FAILED",
+      "error_class": "PilotError",
+      "error_message_fingerprint": "sha256:b707a95a23c7fc737aa5540ff4abe55b5d2de714e72d23a44cde2dbdd540f117",
+      "test_file": "tests/test_operational_ingestion.py",
+      "test_function_or_fixture": "test_known_fixture_end_to_end_semantic_equivalence",
+      "direct_fixture_file": null,
+      "traceback_modules": [
+        "src/pro_a/corpus_pilot.py",
+        "src/pro_a/operational_ingestion.py",
+        "tests/test_operational_ingestion.py"
+      ],
+      "category": "HISTORICAL_INGESTION_FIXTURE",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_operational_ingestion.py: KNOWN_REPLAY_AVAILABLE binds frozen Phase 3C/3D artifacts; unchanged corpus_pilot.py rejects a normalized local context span. The exact single test also reproduced against the pre-Stage7 archive source.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_handoff_requalification.py::test_exact_seven_item_handoff_and_phase3d_validation",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_handoff_requalification.py",
+      "test_function_or_fixture": "artifacts fixture for test_exact_seven_item_handoff_and_phase3d_validation",
+      "direct_fixture_file": "tests/test_phase3f_handoff_requalification.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_handoff_requalification.py",
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_handoff_requalification.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_handoff_requalification.py: artifacts fixture builds a frozen Phase 3F handoff against its historical exact Production SHA.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_handoff_requalification.py::test_qualification_only_boundary_cannot_be_widened",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_handoff_requalification.py",
+      "test_function_or_fixture": "artifacts fixture for test_qualification_only_boundary_cannot_be_widened",
+      "direct_fixture_file": "tests/test_phase3f_handoff_requalification.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_handoff_requalification.py",
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_handoff_requalification.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_handoff_requalification.py: artifacts fixture builds a frozen Phase 3F handoff against its historical exact Production SHA.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_handoff_requalification.py::test_parent_placement_requires_executable_create_child",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_handoff_requalification.py",
+      "test_function_or_fixture": "artifacts fixture for test_parent_placement_requires_executable_create_child",
+      "direct_fixture_file": "tests/test_phase3f_handoff_requalification.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_handoff_requalification.py",
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_handoff_requalification.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_handoff_requalification.py: artifacts fixture builds a frozen Phase 3F handoff against its historical exact Production SHA.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_handoff_requalification.py::test_requalification_build_is_deterministic",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_handoff_requalification.py",
+      "test_function_or_fixture": "artifacts fixture for test_requalification_build_is_deterministic",
+      "direct_fixture_file": "tests/test_phase3f_handoff_requalification.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_handoff_requalification.py",
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_handoff_requalification.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_handoff_requalification.py: artifacts fixture builds a frozen Phase 3F handoff against its historical exact Production SHA.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_selected_records_exactly_match_the_full_packet",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_selected_records_exactly_match_the_full_packet",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_parent_and_reuse_display_context_is_exact",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_parent_and_reuse_display_context_is_exact",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_generated_manifest_binds_packet_view_and_source",
+      "status": "FAILED",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:27955bb4e4d3184ed71de700673f0f4d73b6a47b7400e691523075ca1a57b135",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "test_generated_manifest_binds_packet_view_and_source",
+      "direct_fixture_file": null,
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_clearly_synthetic_seven_decision_completion_validates",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_clearly_synthetic_seven_decision_completion_validates",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_source_packet_immutable_identity_is_verified",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_source_packet_immutable_identity_is_verified",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_source_binding_and_candidate_content_tamper_fail",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_source_binding_and_candidate_content_tamper_fail",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_missing_and_unknown_selected_decisions_fail_closed",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_missing_and_unknown_selected_decisions_fail_closed",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_reuse_requires_the_exact_target",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_reuse_requires_the_exact_target",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_relation_create_requires_explicit_child_node_create",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_relation_create_requires_explicit_child_node_create",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[production_authorization]",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_qualification_packet_cannot_masquerade[production_authorization]",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_no_unselected_candidate_can_enter_the_slice",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_no_unselected_candidate_can_enter_the_slice",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_explicit_packet_bound_human_authorization_validates",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_explicit_packet_bound_human_authorization_validates",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_authorization_wrong_packet_or_extra_candidate_fails",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_authorization_wrong_packet_or_extra_candidate_fails",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase3f_qualification_review.py::test_persisted_completed_packet_and_receipt_match_authorization",
+      "status": "ERROR",
+      "error_class": "QualificationReviewError",
+      "error_message_fingerprint": "sha256:cd760beaad6ab6da5fa082ac4ec0916fe9527a81957e6f319688f8cbde80c693",
+      "test_file": "tests/test_phase3f_qualification_review.py",
+      "test_function_or_fixture": "blank_packet fixture for test_persisted_completed_packet_and_receipt_match_authorization",
+      "direct_fixture_file": "tests/test_phase3f_qualification_review.py",
+      "traceback_modules": [
+        "src/pro_a/phase3f_qualification_review.py",
+        "tests/test_phase3f_qualification_review.py"
+      ],
+      "category": "HISTORICAL_PRODUCTION_BINDING",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "tests/test_phase3f_qualification_review.py: EXPECTED_PRODUCTION_SHA256 binds the frozen Phase 3F packet; the current canonical Production SHA differs.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    },
+    {
+      "nodeid": "tests/test_phase43_stage3_double_review.py::test_production_immutable_during_read_only_binding_when_available",
+      "status": "FAILED",
+      "error_class": "ValueError",
+      "error_message_fingerprint": "sha256:4cd661bd4c4428623904de0685b934212fb300d8ca7be5674c74fe04206ecb23",
+      "test_file": "tests/test_phase43_stage3_double_review.py",
+      "test_function_or_fixture": "test_production_immutable_during_read_only_binding_when_available",
+      "direct_fixture_file": null,
+      "traceback_modules": [
+        "tests/test_phase43_stage3_double_review.py"
+      ],
+      "category": "HISTORICAL_BRANCH_SENTINEL",
+      "stage7_changed_test_file": false,
+      "stage7_changed_runtime_module_on_traceback": false,
+      "failure_occurs_before_stage7_changed_code": true,
+      "historical_evidence": [
+        "scripts/build_phase43_stage3_double_review.py: check_binding requires the historical codex/phase43-stage3-cross-domain-resolution branch; the Stage 6 receipt explicitly records this sentinel.",
+        "docs/phase43_stage6_qualification_receipt.json records the pre-Stage7 4-failure/29-error historical/environment baseline.",
+        "Exact c93da477 Git-archive source control reproduced this nodeid, status, and message fingerprint with the same dependencies and existing local inputs."
+      ],
+      "classification": "PRE_EXISTING_NON_GATING"
+    }
+  ]
+}

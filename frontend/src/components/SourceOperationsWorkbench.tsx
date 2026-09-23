@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
-import { getOperationalCapacity, getSourceOperation, listSourceOperations, startSourceProcessing, uploadSource, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
+import { getCommunityDomains, getOperationalCapacity, getSourceOperation, importCommunity, listSourceOperations, previewCommunity, startSourceProcessing, uploadSource, type CommunityPreview, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
 import { getResearchCompany, searchResearchCompanies, type CompanyMaterialsPage } from "../api/research";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
@@ -23,6 +23,11 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const contextId = new URLSearchParams(window.location.search).get("company") ?? "";
+  const communityMode = new URLSearchParams(window.location.search).get("community") === "1";
+  const [communityFile, setCommunityFile] = useState<File | null>(null);
+  const [communityPreview, setCommunityPreview] = useState<CommunityPreview | null>(null);
+  const [communityDomains, setCommunityDomains] = useState<Array<{ domain_id: string; version: string }>>([]);
+  const [communityDomain, setCommunityDomain] = useState("");
   const [companyTarget, setCompanyTarget] = useState<CompanyMaterialsPage["company"] | null>(null);
   const [companyError, setCompanyError] = useState("");
   const [companyQuery, setCompanyQuery] = useState("");
@@ -56,6 +61,13 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
     return () => current.abort();
   }, [onAuthenticated]);
   useEffect(() => { if (session) void refresh(); }, [session, refresh]);
+  useEffect(() => {
+    if (!session || !communityMode) return;
+    const current = new AbortController();
+    getCommunityDomains(current.signal).then(value => { if (!current.signal.aborted) setCommunityDomains(value.items); })
+      .catch(reason => { if (!current.signal.aborted) setError((reason as Error).message); });
+    return () => current.abort();
+  }, [session, communityMode]);
   useEffect(() => {
     if (!session || !contextId) return;
     const current = new AbortController();
@@ -127,6 +139,23 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
     try { setCompanyResults((await searchResearchCompanies(companyQuery.trim(), current.signal)).items); }
     catch (reason) { setCompanyError((reason as Error).message); }
   }
+  async function inspectCommunity(event: FormEvent) {
+    event.preventDefault(); if (!communityFile || !companyTarget || !session?.csrf_token) return;
+    const current = new AbortController(); setBusy(true); setError(""); setCommunityPreview(null);
+    try { setCommunityPreview(await previewCommunity(communityFile, companyTarget.node_id, session.csrf_token, current.signal)); }
+    catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
+  }
+  async function sendCommunity() {
+    if (!communityFile || !communityPreview || !companyTarget || !communityDomain || !session?.csrf_token) return;
+    const current = new AbortController(); setBusy(true); setError(""); setMessage("");
+    try {
+      const value = await importCommunity(communityFile, companyTarget.node_id, communityDomain, session.csrf_token, current.signal);
+      setSelectedId(value.source.source_id);
+      window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source.source_id)}?company=${encodeURIComponent(companyTarget.node_id)}&community=1`);
+      setMessage(value.duplicate ? "Existing Community processing run returned." : "Community material queued for private Source processing.");
+      await refresh(value.source.source_id);
+    } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
+  }
   const stages = ["Validated", "Parsed", "Semantic Processing", "Packet Ready", "Human Review", "Attribution", "Qualified"];
   return <main className="jobs-workspace source-operations"><header className="jobs-hero"><div><span className="eyebrow">Private clean PDF · Golden Path</span>
     <h1>Source Operations</h1><p>Upload → durable processing → native review → attribution → staged result.</p></div><button onClick={() => void refresh()}>Refresh</button></header>
@@ -141,14 +170,14 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
       {companyError && <p role="alert" className="jobs-error">{companyError}</p>}
       {companyTarget ? <><p>Research target: <strong>{companyTarget.canonical_name}</strong> · {companyTarget.node_id}</p>
         <p>Operator routing context only. Human Review and Attribution decide Claim links.</p>
-        <div className="source-material-fields"><label>Material Kind<select value={materialKind} onChange={event => setMaterialKind(event.target.value)}>
+        {communityMode ? <p>Community import binds community_material · knowledge_community · LOW_TRUST_CLUE_ONLY. Material date and title remain unset.</p> : <><div className="source-material-fields"><label>Material Kind<select value={materialKind} onChange={event => setMaterialKind(event.target.value)}>
           <option value="">Select material kind</option>{materialKinds.map(kind => <option key={kind} value={kind}>{kind.replaceAll("_", " ")}</option>)}</select></label>
           <label>Source Channel<select value={sourceChannel} onChange={event => setSourceChannel(event.target.value)}>
             <option value="">Select source channel</option>{sourceChannels.map(channel => <option key={channel} value={channel}>{channel.replaceAll("_", " ")}</option>)}</select></label>
           <label>Material Date<input type="date" value={materialDate} onChange={event => setMaterialDate(event.target.value)} /></label>
           <label>Operator Title<input maxLength={240} value={operatorTitle} onChange={event => setOperatorTitle(event.target.value)} /></label></div>
         <p>Material date is operator supplied. Channel trust is for workflow display and does not set Source Rank.</p>
-        {sourceChannel === "knowledge_community" && <p>Low-trust clue source. Independent corroboration may be required before thesis use.</p>}
+        {sourceChannel === "knowledge_community" && <p>Low-trust clue source. Independent corroboration may be required before thesis use.</p>}</>}
         <a href={`/node/${encodeURIComponent(companyTarget.node_id)}`}>Back to Company Research</a></>
         : !contextId && <form onSubmit={searchCompany}><label>Find canonical Company<input value={companyQuery} onChange={event => setCompanyQuery(event.target.value)} /></label>
           <button type="submit">Search Companies</button>
@@ -157,11 +186,23 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
             setCompanyTarget(target); setCompanyResults([]);
           }}>{target.canonical_name} · {target.node_id}</button>)}</form>}
     </section>
-    <section className="jobs-submit"><h2>Upload one clean PDF</h2><form onSubmit={sendUpload}>
+    {communityMode && <section className="jobs-submit"><h2>Import Knowledge Community</h2>
+      <p>Clue source only. Check the target and topic count before import; processing still requires Human Review and Attribution.</p>
+      <form onSubmit={inspectCommunity}><label>ZSXQ export ZIP<input aria-label="ZSXQ export ZIP" type="file" accept="application/zip,.zip" onChange={event => { setCommunityFile(event.target.files?.[0] ?? null); setCommunityPreview(null); }} /></label>
+        <button disabled={busy || !communityFile || !companyTarget}>{busy ? "Checking…" : "Preview bundle"}</button></form>
+      {communityPreview && <div role="status"><p>Target: <strong>{communityPreview.target_company.canonical_name}</strong> · {communityPreview.target_company.node_id}</p>
+        <p>ZSXQ input: {communityPreview.company_input} · Group: {communityPreview.group_label} ({communityPreview.group_id})</p>
+        <p>{communityPreview.topic_count} topics · {communityPreview.date_min ?? "Unknown"} to {communityPreview.date_max ?? "Unknown"}</p>
+        <p>{communityPreview.trust_policy} · Bundle <code>{communityPreview.bundle_sha256}</code></p>
+        <label>Processing domain<select value={communityDomain} onChange={event => setCommunityDomain(event.target.value)}>
+          <option value="">Select registered domain</option>{communityDomains.map(item => <option key={`${item.domain_id}:${item.version}`} value={item.domain_id}>{item.domain_id} · {item.version}</option>)}</select></label>
+        <button type="button" disabled={busy || !communityDomain} onClick={() => void sendCommunity()}>Import and start processing</button></div>}</section>}
+    {!communityMode && <section className="jobs-submit"><h2>Upload one clean PDF</h2><form onSubmit={sendUpload}>
       <label>Private PDF<input aria-label="Private PDF" type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
       <label>Boundary<input value={`${maxPdfBytes === null ? "Configured" : `${(maxPdfBytes / 1024 / 1024).toLocaleString()} MiB`} maximum · OCR unsupported`} readOnly /></label>
       <button disabled={busy || !file}>{busy ? "Validating…" : "Upload and validate"}</button></form>
-      {message && <p role="status" className="jobs-message">{message}</p>}{error && <p role="alert" className="jobs-error">{error}</p>}</section>
+      {message && <p role="status" className="jobs-message">{message}</p>}</section>}
+    {message && communityMode && <p role="status" className="jobs-message">{message}</p>}{error && <p role="alert" className="jobs-error">{error}</p>}
     <div className="jobs-layout"><section className="jobs-list"><div className="jobs-heading"><h2>Private Sources</h2><span>{sources.length}</span></div>
       {sources.map((source) => <button key={source.source_id} className={source.source_id === selectedId ? "selected" : ""} onClick={() => choose(source)}>
         <span className={`job-state state-${(source.latest_run?.state ?? "registered").toLowerCase()}`}>{source.latest_run?.state ?? "REGISTERED"}</span>
@@ -173,6 +214,10 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
           <div><dt>Material Kind</dt><dd>{run.company_material_intent.material_kind}</dd></div><div><dt>Source Channel / Trust Policy</dt><dd>{run.company_material_intent.source_channel} · {run.company_material_intent.material_trust_policy}</dd></div>
           <div><dt>Material Date</dt><dd>{run.company_material_intent.material_date ?? "Unknown"} {run.company_material_intent.material_date_basis ?? ""}</dd></div>
           <div><dt>Intent SHA</dt><dd><code>{run.company_material_intent_sha256}</code></dd></div></dl>}
+        {run?.community_provenance && <dl className="job-facts"><div><dt>Community bundle</dt><dd><code>{run.community_provenance.bundle_id}</code><br/><code>{run.community_provenance.bundle_sha256}</code></dd></div>
+          <div><dt>Provenance</dt><dd>Provider = zsxq · ZSXQ model routing metadata is private operational metadata.</dd></div>
+          <div><dt>Trust</dt><dd>{run.community_provenance.trust_policy} · {run.community_provenance.topic_count} topics</dd></div>
+          <div><dt>Group / dates</dt><dd>{run.community_provenance.group_id} · {run.community_provenance.date_min ?? "Unknown"} to {run.community_provenance.date_max ?? "Unknown"}</dd></div></dl>}
         {run?.error && <div className="recovery-banner" role="alert"><strong>{run.error.code}</strong><p>Failed at {run.error.stage}. Retry safe: {String(run.error.retry_safe)}.</p><p>{run.error.operator_action}</p></div>}
         <ol className="source-stage-list">{stages.map((stage) => <li key={stage}>{stage}</li>)}</ol>
         <dl className="job-facts"><div><dt>Source / processing run</dt><dd><code>{selected.source_id}</code><br/><code>{run?.processing_run_id ?? "Not started"}</code></dd></div>
