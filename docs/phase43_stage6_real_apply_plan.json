@@ -1,0 +1,80 @@
+{
+  "READY_FOR_REAL_APPLY": true,
+  "REAL_STAGE6_APPLY_EXECUTED": false,
+  "authoritative_real_baseline": {
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "stage4d_overlay_sha256": "aa917e07895d7912e5bfe9c41763af3fbd705127a6fd797e858f1bef2816bfb5",
+    "stage5_frozen_commit": "9807589fe423d911a070d80cc4b66c46b78440d7",
+    "workbench_schema_before": "8",
+    "workbench_sha256": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3"
+  },
+  "branch": "codex/phase43-stage6-operational-wip-closure",
+  "closure": {
+    "ai_policy_qualification": 169,
+    "capacity_policy_version": "phase43-stage6-lifecycle-capacity-v1",
+    "closure_file_sha256": "27d35bef0aad703b98336f8d53508b5ba9c60c5930bc43e034fdd6760ccbadfd",
+    "closure_id": "phase43-stage2-foundation-v1",
+    "closure_sha256": "2516386da0e629102b60362553a0c63420df69f45fdd02e888757cd87ccf4feb",
+    "contract_version": "phase43-stage6-lifecycle-closure-v1",
+    "human_user_qualification": 105,
+    "population": 274,
+    "production_authorized": false
+  },
+  "copy_acceptance": {
+    "active_work_drain_guard": "PASS",
+    "actual_copy_post_apply_sha256": "2076f8a264aa2359ba272d1e1866c2e5df78758f34400a65b9e63959d399065b",
+    "artifact_id": null,
+    "domain_migration_9": "PASS",
+    "exact_backup_sha256": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "foreign_key_check": 0,
+    "historical_packet_present": false,
+    "idempotent_reapply": "ALREADY_APPLIED",
+    "initial_sha256": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "intake_guard": "PASS",
+    "intake_paused": false,
+    "integrity_check": "ok",
+    "lifecycle_apply": "PASS",
+    "lifecycle_resolved_rows": 274,
+    "native_pending_review_rows": 0,
+    "new_intake_allowed": true,
+    "operational_pending_review_rows": 0,
+    "runs_last_24h": 0,
+    "schema_after": "11",
+    "schema_before": "8",
+    "stage1_migration_10": "PASS",
+    "stage6_migration_11": "PASS",
+    "unprojected_review_packets": 0,
+    "wip_state": "OPEN"
+  },
+  "document_type": "phase43_stage6_real_apply_plan",
+  "expected_semantic_state_after_real_apply": {
+    "ai_policy_closed": 169,
+    "followup_governance": 40,
+    "historical_closed_population": 274,
+    "historical_packet_binding": "ABSENT_WITH_NULL_ARTIFACT_ID",
+    "human_user_qualified": 105,
+    "production_write_count": 0,
+    "schema_version": "11"
+  },
+  "future_real_workbench_sha256_after": null,
+  "future_real_workbench_sha_note": "Captured from the real database only after an authorized apply; timestamped migrations prevent an exact byte prediction.",
+  "implementation_commit": "08d025a94747dbd03c987feb57d962479fd0992b",
+  "migration_chain": [
+    "8",
+    "9",
+    "10",
+    "11"
+  ],
+  "next_action": "After PR and release closure, obtain explicit HUMAN_USER authorization and execute the exact operator apply plan.",
+  "preconditions": {
+    "active_source_processing_runs_required": 0,
+    "conflicting_backup_fails_closed": true,
+    "exact_backup_before_first_migration_required": true,
+    "exact_production_sha_required": true,
+    "exact_workbench_baseline_required": true,
+    "offline_required": true,
+    "queued_or_running_cloud_jobs_required": 0,
+    "wal_shm_journal_absent_required": true
+  },
+  "result": "PASS"
+}
