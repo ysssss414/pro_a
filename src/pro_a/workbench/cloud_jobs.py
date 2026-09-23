@@ -608,10 +608,15 @@ class CloudJobs:
                 or provider.adapter_version != row["provider_adapter_version"]):
             raise JobError("PROVIDER_CONTRACT_MISMATCH")
         checkpoint = json.loads(row["native_checkpoint_json"])
-        if checkpoint.get("domain_context") is not None:
+        context = checkpoint.get("domain_context")
+        if context is not None:
             from pro_a.cloud_contract import DeterministicFakeProvider
-            if type(provider) is not DeterministicFakeProvider:
+            if not isinstance(context, dict):
+                raise JobError("INPUT_DOMAIN_CONTEXT_MISMATCH")
+            if context.get("contract_version") == "run-domain-context-v1" and type(provider) is not DeterministicFakeProvider:
                 raise JobError("DOMAIN_ACTIVATION_REQUIRED")
+            if context.get("contract_version") not in ("run-domain-context-v1", "run-processing-context-v2"):
+                raise JobError("INPUT_DOMAIN_CONTEXT_MISMATCH")
         return self._input_payload(row)
 
     def _claim(self, worker_id: str, job_id: str | None, lease_seconds: int) -> tuple[str, int] | None:

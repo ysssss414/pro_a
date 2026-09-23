@@ -23,6 +23,9 @@ export type CompanyMaterial = {
   source_channel: string | null; material_trust_policy: string | null;
   material_date: string | null; material_date_basis: string | null;
   lifecycle: string; state: string; private: boolean; canonical: boolean;
+  processing_scope?: "SHARED_CORE" | "DOMAIN_ASSIGNED" | null;
+  domain_assignment_status?: "PENDING" | "ASSIGNED" | null;
+  primary_domain?: string | null;
   association_basis: string; review_status: string | null;
   attribution_status: string | null; qualification_status: string | null;
   canonical_source_id: string | null; claim_count: number | null;

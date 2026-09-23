@@ -314,7 +314,8 @@ def preview(config: Any, data: bytes, company_id: str) -> dict[str, Any]:
             "topic_count": len(rows), "date_min": min(dates) if dates else None,
             "date_max": max(dates) if dates else None,
             "bundle_id": manifest["bundle_id"], "bundle_sha256": manifest["bundle_sha256"],
-            "trust_policy": "LOW_TRUST_CLUE_ONLY"}
+            "trust_policy": "LOW_TRUST_CLUE_ONLY",
+            "processing_scope": {"mode": "SHARED_CORE_PENDING", "domain_assignment_status": "PENDING"}}
 
 
 def available_domains(service: Any) -> list[dict[str, str]]:
@@ -327,10 +328,11 @@ def available_domains(service: Any) -> list[dict[str, str]]:
 
 
 async def import_bundle(service: Any, data: bytes, company_id: str,
-                        primary_domain: str, actor: str) -> dict[str, Any]:
+                        primary_domain: str | None, actor: str) -> dict[str, Any]:
     summary = preview(service.config, data, company_id)
-    identities = [item for item in available_domains(service) if item["domain_id"] == primary_domain]
-    if len(identities) != 1:
+    identities = ([item for item in available_domains(service) if item["domain_id"] == primary_domain]
+                  if primary_domain else [])
+    if primary_domain and len(identities) != 1:
         _fail("COMMUNITY_PROCESSING_DOMAIN_INVALID")
     bundle = parse_bundle(data)
     pdf, ranges = render_pdf(bundle)
@@ -342,14 +344,21 @@ async def import_bundle(service: Any, data: bytes, company_id: str,
                                   mime_type="application/pdf")
     with service.store.connect() as connection:
         prior_domain = Domains(service.config).assignment(connection, "Source", source["source_id"])
+        prior_run = connection.execute("SELECT processing_run_id FROM source_processing_runs WHERE source_id=? LIMIT 1",
+                                       (source["source_id"],)).fetchone()
+    if not primary_domain and prior_domain:
+        _fail("COMMUNITY_PROCESSING_DOMAIN_CONFLICT", 409)
     if prior_domain and (prior_domain["primary_domain"] != primary_domain or
                          json.loads(prior_domain["packs_json"]) != identities):
         _fail("COMMUNITY_PROCESSING_DOMAIN_CONFLICT", 409)
-    Domains(service.config).assign(
-        "Source", source["source_id"], primary_domain=primary_domain, packs=identities,
-        actor=actor, reason="Operator selected Community processing domain",
-        expected_revision=prior_domain["revision"] if prior_domain else 0,
-    )
+    if primary_domain and prior_run and not prior_domain:
+        _fail("EXPLICIT_RUNTIME_REPROCESS_REASON_REQUIRED", 422)
+    if primary_domain:
+        Domains(service.config).assign(
+            "Source", source["source_id"], primary_domain=primary_domain, packs=identities,
+            actor=actor, reason="Operator selected Community processing domain",
+            expected_revision=prior_domain["revision"] if prior_domain else 0,
+        )
     sidecar = provenance(bundle, pdf, ranges)
     sidecar["target_company_node_id"] = company_id
     sidecar["source_id"] = source["source_id"]
@@ -375,7 +384,8 @@ async def import_bundle(service: Any, data: bytes, company_id: str,
              "date_min": summary["date_min"], "date_max": summary["date_max"],
              "provenance_sha256": _sha(content), "pdf_sha256": _sha(pdf),
              "trust_policy": "LOW_TRUST_CLUE_ONLY"}
-    key = "community-" + _sha((summary["bundle_sha256"] + ":" + company_id).encode("utf-8"))
+    scope_key = summary["bundle_sha256"] + ":" + company_id + (":SHARED_CORE_PENDING" if not primary_domain else "")
+    key = "community-" + _sha(scope_key.encode("utf-8"))
     started = service.start(
         source["source_id"], idempotency_key=key,
         company_material_intent={"target_company_node_id": company_id,

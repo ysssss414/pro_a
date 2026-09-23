@@ -118,4 +118,27 @@ describe("Source Operations product surface", () => {
     expect(await screen.findByRole("link", { name: "Inspect activated Source in Research" }))
       .toHaveAttribute("href", "/source/SRC_STAGE7");
   });
+
+  it("shows pending processing scope in Source detail", async () => {
+    const pending = { ...source, latest_run: {
+      processing_run_id: "SOURCE_RUN_PENDING", source_id: source.source_id,
+      source_sha256: source.source_sha256, state: "HUMAN_REVIEW_REQUIRED", stage: "HUMAN_REVIEW",
+      processing_scope_mode: "SHARED_CORE" as const, domain_assignment_status: "PENDING" as const,
+      primary_domain: null, runtime_identity: { runtime_sha256: "b".repeat(64) },
+      native_execution_id: "EXEC_PENDING", native_checkpoint: { available: true, completed_stage: "HUMAN_REVIEW" },
+      packet_artifact_id: "ART_PENDING", packet_id: "PACKET_PENDING", error: null, jobs: [],
+      usage: { status: "UNKNOWN" as const, input_tokens: null, output_tokens: null, total_tokens: null, attempts: 0 },
+      review: null, attribution: null, qualification: null, activation_receipt: null,
+      lineage: [{ kind: "SOURCE", id: source.source_id }], created_at: "2026-09-23", updated_at: "2026-09-23",
+    } };
+    window.history.replaceState(null, "", "/source-operations/SRC_STAGE7");
+    vi.mocked(listSourceOperations).mockResolvedValue({ items: [pending], total: 1, next_cursor: null,
+      capabilities: { source_class: "PRIVATE_CLEAN_PDF", mime_types: ["application/pdf"],
+        max_pdf_bytes: 20 * 1024 * 1024, single_file: true, ocr_supported: false } });
+    vi.mocked(getSourceOperation).mockResolvedValue(pending);
+    render(<SourceOperationsWorkbench />);
+    expect(await screen.findByText("Industry routing is intentionally deferred until the extracted evidence is reviewed.")).toBeInTheDocument();
+    expect(screen.getByText("Shared Core")).toBeInTheDocument();
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+  });
 });

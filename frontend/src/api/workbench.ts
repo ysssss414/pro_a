@@ -18,6 +18,9 @@ export type PacketSummary = {
 };
 
 export type ReviewPacket = PacketSummary & {
+  processing_scope_mode?: "SHARED_CORE" | "DOMAIN_ASSIGNED";
+  domain_assignment_status?: "PENDING" | "ASSIGNED";
+  primary_domain?: string | null;
   packet_file_sha256: string;
   immutable_packet_sha256: string;
   packet_status: string;

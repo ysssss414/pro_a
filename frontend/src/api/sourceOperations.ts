@@ -19,6 +19,9 @@ export type SourceRun = {
   source_sha256: string;
   state: string;
   stage: string;
+  processing_scope_mode?: "SHARED_CORE" | "DOMAIN_ASSIGNED" | null;
+  domain_assignment_status?: "PENDING" | "ASSIGNED" | null;
+  primary_domain?: string | null;
   runtime_identity: Record<string, unknown>;
   native_execution_id: string | null;
   native_checkpoint: { available: boolean; completed_stage: string };
@@ -108,6 +111,7 @@ export type CommunityPreview = {
   company_input: string; group_id: string; group_label: string;
   topic_count: number; date_min: string | null; date_max: string | null;
   bundle_id: string; bundle_sha256: string; trust_policy: string;
+  processing_scope: { mode: "SHARED_CORE_PENDING"; domain_assignment_status: "PENDING" };
 };
 export const previewCommunity = (file: File, companyId: string, csrf: string, signal: AbortSignal) =>
   request<CommunityPreview>("/source-operations/community-preview", signal, {
@@ -115,8 +119,8 @@ export const previewCommunity = (file: File, companyId: string, csrf: string, si
   });
 export const getCommunityDomains = (signal: AbortSignal) =>
   request<{ items: Array<{ domain_id: string; version: string; sha256: string }> }>("/source-operations/community-domains", signal);
-export const importCommunity = (file: File, companyId: string, domainId: string, csrf: string, signal: AbortSignal) =>
+export const importCommunity = (file: File, companyId: string, domainId: string | null, csrf: string, signal: AbortSignal) =>
   request<{ preview: CommunityPreview; source: PrivateSource; run: SourceRun; duplicate: boolean }>("/source-operations/community-import", signal, {
     method: "POST", headers: { "Content-Type": "application/zip", "X-Company-Node-ID": companyId,
-      "X-Primary-Domain": domainId, "X-CSRF-Token": csrf }, body: file,
+      ...(domainId ? { "X-Primary-Domain": domainId } : {}), "X-CSRF-Token": csrf }, body: file,
   });

@@ -104,3 +104,11 @@ it("labels historical lifecycle closure without claiming Workbench review", asyn
   expect(banner).toHaveTextContent("274 historical items closed");
   expect(banner).toHaveTextContent("Workbench review completion is not inferred from this total");
 });
+
+it("shows pending Shared Core scope without blocking native review", async () => {
+  vi.mocked(getPacket).mockResolvedValue({ ...packet, processing_scope_mode: "SHARED_CORE",
+    domain_assignment_status: "PENDING", primary_domain: null });
+  render(<ReviewRoute onAuthenticated={vi.fn()} />);
+  expect(await screen.findByText("Shared Core processing · Domain assignment pending")).toBeVisible();
+  expect(screen.getByText("Native items (2)")).toBeVisible();
+});

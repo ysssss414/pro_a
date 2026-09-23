@@ -171,6 +171,10 @@ class ReviewWorkbench:
             connection.execute('BEGIN')
             if schema_version(connection) == '1':
                 return {**dto, 'review': {'enabled': False}}
+            source_run = (connection.execute(
+                'SELECT processing_run_id FROM source_processing_runs WHERE packet_artifact_id=?',
+                (handle,),
+            ).fetchone() if schema_version(connection) in ('8', '9', '10', '11') else None)
             draft, states, audit = self._state(connection, handle, basis)
             native = [row for group in GROUPS for row in blank[group]]
             if set(states) - {row['candidate_id'] for row in native}:
@@ -210,6 +214,15 @@ class ReviewWorkbench:
             'revision': draft['revision'] if draft else 0, 'reviewer': draft['reviewer'] if draft else '',
             'status': draft['status'] if draft else 'DRAFT', 'progress': progress, 'rows': rows, 'audit': audit, 'sealed': sealed},
             'capabilities': {**dto['capabilities'], 'read_only': bool(sealed), 'decision_save_available': not bool(sealed)}}
+        if source_run:
+            from .domains import Domains
+            context = Domains(self.config).read(source_run['processing_run_id'])
+            if context and context['contract_version'] == 'run-processing-context-v2':
+                result.update(processing_scope_mode='SHARED_CORE', domain_assignment_status='PENDING',
+                              primary_domain=None)
+            elif context:
+                result.update(processing_scope_mode='DOMAIN_ASSIGNED', domain_assignment_status='ASSIGNED',
+                              primary_domain=context['basis']['composition']['primary_domain'])
         require_safe_projection(result)
         return result
 

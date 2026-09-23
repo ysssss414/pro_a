@@ -11,6 +11,7 @@ from pathlib import Path
 from pro_a.cloud_contract import operation_contract
 from pro_a.config import load_config
 from pro_a.domain_packs import canonical, compose, digest, fields, load_pack, read_json, require, text
+from pro_a import processing_context
 from pro_a.run_context import freeze_context, guard_resume, validate_context
 from .config import checked_path
 from .review_store import schema_version
@@ -182,7 +183,9 @@ class Domains:
 
     def basis(self, connection, source, runtime, profile, cloud_profile, *, revision=None):
         assignment = self.assignment(connection, 'Source', source['source_id'], revision)
-        require(assignment is not None, 'DOMAIN_ASSIGNMENT_REQUIRED')
+        if assignment is None:
+            require(revision is None, 'DOMAIN_ASSIGNMENT_REQUIRED')
+            return self.pending_basis(source, runtime, profile, cloud_profile)
         combined = compose(self.packs(connection, json.loads(assignment['packs_json'])), assignment['primary_domain'])
         require(combined['disposition'] == 'READY', 'DOMAIN_COMPOSITION_REQUIRES_REVIEW')
         limits = {'max_pdf_bytes': profile.max_pdf_bytes, 'max_extraction_pieces': profile.max_extraction_pieces}
@@ -195,10 +198,30 @@ class Domains:
                 'config_sha256': config_digest(profile.phase4_config_path, limits),
                 'model_configuration': cloud_profile.public_identity(), 'execution_policy': 'OFFLINE_REPLAY_ONLY'}
 
+    @staticmethod
+    def pending_basis(source, runtime, profile, cloud_profile):
+        limits = {'max_pdf_bytes': profile.max_pdf_bytes, 'max_extraction_pieces': profile.max_extraction_pieces}
+        return {'source_id': source['source_id'], 'source_sha256': source['source_sha256'],
+                'input_artifact_id': source['storage_artifact_id'],
+                'scope_sha256': digest({'validation': json.loads(source['validation_json']), 'source_limits': limits}),
+                'processing_scope': {'mode': 'SHARED_CORE_PENDING', 'domain_assignment_status': 'PENDING',
+                                     'primary_domain': None, 'packs': [],
+                                     'shared_core_contract': processing_context.SHARED_CORE_CONTRACT,
+                                     'shared_core_sha256': processing_context.shared_core_sha256()},
+                'runtime': runtime, 'prompt_sha256': prompt_digest(),
+                'config_sha256': config_digest(profile.phase4_config_path, limits),
+                'model_configuration': cloud_profile.public_identity(),
+                'execution_policy': processing_context.POLICY}
+
     def bind_run(self, connection, run_id, basis, profile, created_at, reason):
-        assignment = self.assignment(connection, 'Source', basis['source_id'], basis['assignment_revision'])
-        context = freeze_context(basis, run_id=run_id, created_at=created_at, actor=assignment['actor'],
-                                 reason=reason or assignment['reason'])
+        if 'processing_scope' in basis:
+            context = processing_context.freeze_context(
+                basis, run_id=run_id, created_at=created_at, actor='system',
+                reason=reason or 'Shared Core processing; Domain assignment pending')
+        else:
+            assignment = self.assignment(connection, 'Source', basis['source_id'], basis['assignment_revision'])
+            context = freeze_context(basis, run_id=run_id, created_at=created_at, actor=assignment['actor'],
+                                     reason=reason or assignment['reason'])
         relative = 'domain-contexts/' + digest(run_id)[:24] + '.json'
         content = canonical(context).encode('utf-8')
         _write(self.config.artifact_root / relative, content)
@@ -226,7 +249,9 @@ class Domains:
         from .artifacts import Artifacts
         path = Artifacts(self.config).resolve(row['artifact_relative'])
         require(hashlib.sha256(path.read_bytes()).hexdigest() == row['file_sha256'], 'FROZEN_CONTEXT_CORRUPT')
-        value = validate_context(read_json(path))
+        value = read_json(path)
+        value = (processing_context.validate_context(value)
+                 if value.get('contract_version') == processing_context.VERSION else validate_context(value))
         require(value['context_sha256'] == row['context_sha256'] and value['resume_sha256'] == row['resume_sha256']
                 and value['run_id'] == run_id and value['basis']['source_id'] == run['source_id'], 'FROZEN_CONTEXT_BINDING_MISMATCH')
         return value
@@ -244,10 +269,14 @@ class Domains:
                 value = json.loads(binding['config_path'])
                 profile = SourceProfile(Path(value['path']), value['max_pdf_bytes'], value['max_extraction_pieces'])
             # Later assignment events do not relabel or invalidate the old frozen run.
-            current = self.basis(connection, source, jobs.current_runtime(), profile, jobs.profile,
-                                 revision=frozen['basis']['assignment_revision'])
-            guard_resume(frozen, current)
-            return {'contract_version': 'run-domain-context-v1', 'context_sha256': frozen['context_sha256'],
+            if frozen['contract_version'] == processing_context.VERSION:
+                current = self.pending_basis(source, jobs.current_runtime(), profile, jobs.profile)
+                processing_context.guard_resume(frozen, current)
+            else:
+                current = self.basis(connection, source, jobs.current_runtime(), profile, jobs.profile,
+                                     revision=frozen['basis']['assignment_revision'])
+                guard_resume(frozen, current)
+            return {'contract_version': frozen['contract_version'], 'context_sha256': frozen['context_sha256'],
                     'artifact_relative': binding['artifact_relative']}
 
     def bind_packet(self, run_id, artifact_id):

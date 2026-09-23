@@ -9,6 +9,7 @@ from pro_a.company_material_intent import CompanyMaterialError, company, read_bo
 from pro_a.production_promotion import canonical_sha256
 from pro_a.query import ReadOnlyQuery
 from pro_a.research_explorer import ResearchExplorer
+from pro_a.workbench.domains import Domains
 from pro_a.workbench.store import Store
 
 
@@ -88,6 +89,7 @@ class CompanyMaterials:
                 intent = read_bound(connection, row["processing_run_id"])
                 if intent is None:
                     continue
+                context = Domains(self.config).read(row["processing_run_id"], connection=connection)
                 state = ("ACTIVATED" if row["activation_artifact_id"] else
                          "QUALIFIED" if row["qualification_artifact_id"] else
                          "ATTRIBUTION_COMPLETE" if row["attribution_artifact_id"] else
@@ -104,6 +106,12 @@ class CompanyMaterials:
                     "material_date_basis": intent["material_date_basis"],
                     "lifecycle": _lifecycle(state), "state": state,
                     "private": True, "canonical": False,
+                    "processing_scope": ("SHARED_CORE" if context and context["contract_version"] == "run-processing-context-v2"
+                                         else "DOMAIN_ASSIGNED" if context else None),
+                    "domain_assignment_status": ("PENDING" if context and context["contract_version"] == "run-processing-context-v2"
+                                                 else "ASSIGNED" if context else None),
+                    "primary_domain": (context["basis"]["composition"]["primary_domain"]
+                                       if context and context["contract_version"] == "run-domain-context-v1" else None),
                     "association_basis": "company_material_intent",
                     "review_status": row["review_status"],
                     "attribution_status": "SEALED" if row["attribution_artifact_id"] else

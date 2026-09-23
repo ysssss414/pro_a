@@ -452,6 +452,8 @@ class SourceOperations:
                 frozen = domains.read(row["processing_run_id"], connection=connection)
                 return ((frozen is None and basis is None) or
                         (frozen is not None and basis is not None and
+                         frozen["contract_version"] == ("run-processing-context-v2" if "processing_scope" in basis
+                                                        else "run-domain-context-v1") and
                          frozen["resume_sha256"] == canonical_sha256(basis)))
 
             prior_key = connection.execute(
@@ -1091,8 +1093,7 @@ class SourceOperations:
             return self.get_run(run_id)
         return self.get_run(run_id)
 
-    @staticmethod
-    def _project_run(connection: sqlite3.Connection, run_id: str) -> dict[str, Any]:
+    def _project_run(self, connection: sqlite3.Connection, run_id: str) -> dict[str, Any]:
         row = connection.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?",
                                  (run_id,)).fetchone()
         if row is None:
@@ -1106,7 +1107,7 @@ class SourceOperations:
         from pro_a.company_material_intent import read_bound
         intent = read_bound(connection, run_id)
         community = SourceOperations._community_bound(connection, run_id)
-        return {
+        result = {
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
             "company_material_intent": intent,
             "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
@@ -1127,6 +1128,19 @@ class SourceOperations:
             "jobs": jobs, "created_at": row["created_at"], "updated_at": row["updated_at"],
             "ended_at": row["ended_at"],
         }
+        context = Domains(self.config).read(run_id, connection=connection)
+        result["domain_context"] = context
+        if context and context["contract_version"] == "run-processing-context-v2":
+            result.update(domain_context_status="SHARED_CORE_PENDING", processing_scope_mode="SHARED_CORE",
+                          domain_assignment_status="PENDING", primary_domain=None)
+        elif context:
+            result.update(domain_context_status="DOMAIN_ASSIGNED_FROZEN", processing_scope_mode="DOMAIN_ASSIGNED",
+                          domain_assignment_status="ASSIGNED",
+                          primary_domain=context["basis"]["composition"]["primary_domain"])
+        else:
+            result.update(domain_context_status="LEGACY_NO_DOMAIN_CONTEXT", processing_scope_mode=None,
+                          domain_assignment_status=None, primary_domain=None)
+        return result
 
     def _post_processing(self, result: dict[str, Any]) -> dict[str, Any]:
         result["review"] = None
@@ -1176,9 +1190,6 @@ class SourceOperations:
     def get_run(self, run_id: str) -> dict[str, Any]:
         with self.store.connect() as connection:
             result = self._project_run(connection, run_id)
-        context = Domains(self.config).read(run_id)
-        result["domain_context"] = context
-        result["domain_context_status"] = "FROZEN" if context else "LEGACY_NO_DOMAIN_CONTEXT"
         detailed_jobs = [self.jobs.get(item["job_id"]) for item in result.pop("jobs")]
         result["jobs"] = detailed_jobs
         usage_status = ("KNOWN" if detailed_jobs and

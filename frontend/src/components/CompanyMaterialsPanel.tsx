@@ -22,6 +22,7 @@ function Material({ item, companyId, navigate }: { item: CompanyMaterial; compan
     <small>{item.title_basis === "operator_title" ? "Operator title" : item.title_basis === "canonical_source" ? "Canonical Source" : "Private filename"} · {item.material_date ?? item.publication_time ?? item.ingested_at ?? item.uploaded_at ?? "Date unknown"}</small>
     <small>{[item.material_kind, item.source_channel ? trust[item.source_channel] : null, labels[item.lifecycle] ?? item.state].filter(Boolean).join(" · ")}</small>
     <small>Association: {item.association_basis.replaceAll("_", " ")}</small>
+    {item.processing_scope === "SHARED_CORE" && <small>Processing Scope: Shared Core · Domain Assignment: Pending</small>}
     {item.source_channel === "knowledge_community" && <p className="research-empty">Clue source — verify against primary/official evidence before thesis use. Independent corroboration may be required.</p>}
     {item.canonical ? <>
       <small>{item.claim_count} Claims · {item.linked_node_count} linked Nodes · Potential Current View impact: {item.current_view_impact_candidate_count ?? "unavailable"}</small>
