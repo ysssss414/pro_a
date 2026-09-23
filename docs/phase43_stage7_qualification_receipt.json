@@ -104,5 +104,9 @@
   "real_community_imports": 0,
   "real_workbench_mutations": 0,
   "production_apply": false,
-  "draft_pr_created": false
+  "draft_pr_created": true,
+  "draft_pr_number": 73,
+  "draft_pr_url": "https://github.com/ysssss414/pro_a/pull/73",
+  "draft_pr_open": true,
+  "merged": false
 }
