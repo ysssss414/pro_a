@@ -154,6 +154,14 @@
       "passed": 224,
       "result": "PASS"
     },
+    "stage3_stage4_continuity": {
+      "current_stage6_behavior": "REJECTED_BRANCH_DRIFT_AS_DESIGNED",
+      "historical_branch_sentinel_rejections": 1,
+      "passed": 58,
+      "production_sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+      "result": "PASS_WITH_EXPECTED_HISTORICAL_BRANCH_SENTINEL",
+      "sentinel_required_branch": "codex/phase43-stage3-cross-domain-resolution"
+    },
     "stage6_focused": {
       "passed": 4,
       "result": "PASS"

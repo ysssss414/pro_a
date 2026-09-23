@@ -61,6 +61,7 @@ The copy's actual post-apply SHA was `2076f8a264aa2359ba272d1e1866c2e5df78758f34
 - Full frontend: 28 files and 153 tests passed with two workers.
 - TypeScript, Vite build, Python compileall, and `git diff --check`: PASS.
 - Browser acceptance: Source Operations and Research loaded at schema 11; 1920×1080 and 1366×768 had no horizontal overflow.
+- Stage 3 and Stage 4A–4D continuity: 58 checks passed. One historical Stage 3 branch-identity sentinel rejected the Stage 6 branch as designed because that frozen script requires `codex/phase43-stage3-cross-domain-resolution`; Production remained byte-identical.
 
 A separate full-repository run reached 2,373 passed and 6 skipped, with 4 failures and 29 setup errors in pre-existing private-input and historical-baseline audits. Those audits require unavailable or different frozen inputs. They are recorded for transparency and are outside the relevant Stage 6 gate; the complete Stage 6 regression set passed independently.
 
