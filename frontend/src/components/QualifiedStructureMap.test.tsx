@@ -48,9 +48,10 @@ describe("Qualified Structure Map", () => {
       source_title: "Source", section: "Section", pdf_page: 1 }] });
     const onCanonical = vi.fn();
     const onQualified = vi.fn();
-    render(<QualifiedStructureMap map={map} loading={false} error="" mode="relationship" depth={2}
+    const { container } = render(<QualifiedStructureMap map={map} loading={false} error="" mode="relationship" depth={2}
       hasSelection onMode={vi.fn()} onDepth={vi.fn()} onCanonical={onCanonical}
       onQualified={onQualified} onCanonicalRelation={vi.fn()} />);
+    expect(container.querySelector(".industry-map-footer")).toBeInTheDocument();
     expect(screen.getByLabelText("Knowledge state legend")).toHaveTextContent("Endpoint Reference");
     expect(screen.getByLabelText("Knowledge state legend")).toHaveTextContent("Qualified Identity");
     await act(async () => cy.callbacks["tap:node"]({ target: { id: () => "endpoint-ref:SC-CN-0024" } }));

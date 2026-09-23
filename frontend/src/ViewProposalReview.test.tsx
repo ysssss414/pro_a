@@ -62,8 +62,10 @@ describe("read-only Human View Proposal review", () => {
     vi.mocked(getViewProposals).mockResolvedValue([row]);
     vi.mocked(getViewProposal).mockResolvedValue(row);
     const openSource = vi.fn();
-    render(<ViewProposalReview onOpenSource={openSource} />);
+    const { container } = render(<ViewProposalReview onOpenSource={openSource} />);
     fireEvent.click(await screen.findByRole("button", { name: new RegExp(`MLCC · ${decision.toUpperCase()}`) }));
+    expect(container.querySelector(".proposal-workspace > .proposal-list-panel")).toBeInTheDocument();
+    expect(container.querySelector(".proposal-workspace > .proposal-review-detail")).toBeInTheDocument();
     expect(await screen.findByText("PENDING — NOT OFFICIAL CURRENT VIEW")).toBeInTheDocument();
     const detail = screen.getByRole("region", { name: "Human View Proposal detail" });
     expect(within(detail).getByText("Explicit human review reason")).toBeInTheDocument();

@@ -128,7 +128,7 @@ export function CloudJobsWorkbench({ onAuthenticated = noopAuthenticated }: { on
   if (session === undefined) return <main className="jobs-loading">Opening durable Jobs…</main>;
   if (session === null) return <Login onLogin={setSession} />;
 
-  return <main className="jobs-workspace"><header className="jobs-hero"><div><span className="eyebrow">Cloud contract · offline-capable operations</span>
+  return <main className="jobs-workspace durable-jobs-workspace"><header className="jobs-hero"><div><span className="eyebrow">Cloud contract · offline-capable operations</span>
     <h1>Durable Jobs</h1><p>Enqueue registered immutable inputs and inspect the single-worker audit trail.</p></div>
     <button onClick={() => void refresh()} disabled={busy}>Refresh</button></header>
     <section className="jobs-submit"><h2>Submit registered input</h2><form onSubmit={submit}>

@@ -86,8 +86,11 @@ describe("Changes & Impact Workbench", () => {
 
   it("presents one coherent non-graph surface with exact direct paths", async () => {
     const onOpen = vi.fn();
-    render(<ChangesImpactWorkbench onOpenOfficialView={onOpen} />);
+    const { container } = render(<ChangesImpactWorkbench onOpenOfficialView={onOpen} />);
     expect(await screen.findByRole("heading", { name: "Changes & Impact" })).toBeInTheDocument();
+    expect(container.querySelector(".impact-workbench > .impact-workbench-header")).toBeInTheDocument();
+    expect(container.querySelector(".impact-layout > .impact-change-list")).toBeInTheDocument();
+    expect(container.querySelector(".impact-layout > .impact-detail-column")).toBeInTheDocument();
     for (const heading of ["Changes", "Directly Affected", "Official Views", "Staged View Work", "Evidence Paths", "Contradictions / Temporal", "Attention State"])
       expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
     expect(screen.getAllByText("Attribution: subject").length).toBeGreaterThan(0);

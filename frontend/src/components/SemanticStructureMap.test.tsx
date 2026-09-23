@@ -49,8 +49,10 @@ describe("Semantic Structure Map", () => {
 
   it("switches modes and depth, filters, opens canonical nodes and relations, fits and resets", () => {
     const input = props();
-    render(<SemanticStructureMap {...input} />);
+    const { container } = render(<SemanticStructureMap {...input} />);
     expect(screen.getByRole("heading", { name: "Semantic Structure Map" })).toBeInTheDocument();
+    expect(container.querySelector(".industry-map-index")).toBeInTheDocument();
+    expect(container.querySelector(".industry-map-footer")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "关系视图" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "聚焦视图" }));
     expect(input.onMode).toHaveBeenCalledWith("focus");
