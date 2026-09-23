@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
-import { getSourceOperation, listSourceOperations, startSourceProcessing, uploadSource, type PrivateSource } from "../api/sourceOperations";
+import { getOperationalCapacity, getSourceOperation, listSourceOperations, startSourceProcessing, uploadSource, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
 import { getResearchCompany, searchResearchCompanies, type CompanyMaterialsPage } from "../api/research";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
@@ -15,6 +15,7 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
   const [token, setToken] = useState("");
   const [sources, setSources] = useState<PrivateSource[]>([]);
   const [maxPdfBytes, setMaxPdfBytes] = useState<number | null>(null);
+  const [capacity, setCapacity] = useState<OperationalCapacity | null>(null);
   const [selectedId, setSelectedId] = useState(() => window.location.pathname.split("/")[2] ?? "");
   const [selected, setSelected] = useState<PrivateSource | null>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -35,10 +36,13 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
   const refresh = useCallback(async (sourceId = selectedId) => {
     controller.current?.abort(); const current = new AbortController(); controller.current = current;
     try {
-      const page = await listSourceOperations(current.signal);
+      const [page, currentCapacity] = await Promise.all([
+        listSourceOperations(current.signal), getOperationalCapacity(current.signal),
+      ]);
       if (current.signal.aborted) return;
       setSources(page.items);
       setMaxPdfBytes(page.capabilities.max_pdf_bytes);
+      setCapacity(currentCapacity);
       if (sourceId) setSelected(await getSourceOperation(sourceId, current.signal));
     } catch (reason) { if (!current.signal.aborted) setError((reason as Error).message); }
   }, [selectedId]);
@@ -126,6 +130,12 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
   const stages = ["Validated", "Parsed", "Semantic Processing", "Packet Ready", "Human Review", "Attribution", "Qualified"];
   return <main className="jobs-workspace source-operations"><header className="jobs-hero"><div><span className="eyebrow">Private clean PDF · Golden Path</span>
     <h1>Source Operations</h1><p>Upload → durable processing → native review → attribution → staged result.</p></div><button onClick={() => void refresh()}>Refresh</button></header>
+    {capacity?.capacity_policy_version && <section className="jobs-submit" aria-label="Operational WIP capacity">
+      <h2>Operational WIP · {capacity.wip_state}</h2>
+      <p><strong>{capacity.operational_pending_rows}</strong> operational pending · {capacity.native_pending_rows} native pending</p>
+      <p>{capacity.historical_lifecycle_closed} historical lifecycle closures: {capacity.human_user_qualified} HUMAN_USER qualified · {capacity.ai_policy_closed} AI policy closed.</p>
+      <p>{capacity.followup_governance} follow-up governance items · new intake {capacity.new_intake_allowed ? "allowed" : "blocked"}.</p>
+    </section>}
     <section className="jobs-submit" aria-label="Company Material Intent"><h2>Company Material Intent</h2>
       {contextId && !companyTarget && !companyError && <p role="status">Validating canonical Company…</p>}
       {companyError && <p role="alert" className="jobs-error">{companyError}</p>}

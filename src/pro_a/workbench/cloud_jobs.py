@@ -121,7 +121,7 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         "workbench_schema_version": workbench_schema_version,
         "provider_adapter_version": adapter_version,
     }
-    if workbench_schema_version in ("9", "10"):
+    if workbench_schema_version in ("9", "10", "11"):
         package = Path(__file__).parent.parent
         names = ('domain_packs.py', 'run_context.py', 'workbench/domains.py',
                  'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py')
@@ -136,7 +136,7 @@ def prepare_cloud_jobs(config):
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version in ("7", "8", "9", "10"):
+        if version in ("7", "8", "9", "10", "11"):
             return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "6":
             raise BoundaryError("RESEARCH_SCHEMA_REQUIRED")
@@ -300,7 +300,7 @@ class CloudJobs:
             version = schema_version(connection)
             source_input = (connection.execute(
                 "SELECT * FROM source_cloud_inputs WHERE artifact_id=?", (artifact_id,)
-            ).fetchone() if version in ("8", "9", "10") else None)
+            ).fetchone() if version in ("8", "9", "10", "11") else None)
         if source_input is not None:
             try:
                 path = self.artifacts.resolve(source_input["artifact_relative"])
@@ -401,7 +401,7 @@ class CloudJobs:
         intent_sha = digest(intent)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
-            if schema_version(connection) not in ("7", "8", "9", "10"):
+            if schema_version(connection) not in ("7", "8", "9", "10", "11"):
                 raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
             prior = connection.execute(
                 "SELECT intent_sha256,job_id,response_json FROM cloud_job_submissions WHERE idempotency_key=?",
@@ -618,7 +618,7 @@ class CloudJobs:
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
             claimed_at = now()
-            if schema_version(connection) == "10" and connection.execute(
+            if schema_version(connection) in ("10", "11") and connection.execute(
                 """SELECT 1 FROM cloud_jobs
                    WHERE state='RUNNING' AND lease_expires_at>? LIMIT 1""",
                 (claimed_at,),

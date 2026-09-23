@@ -60,7 +60,7 @@ def prepare_domains(config):
     for suffix in ('-wal', '-shm', '-journal'):
         require(not path.with_name(path.name + suffix).exists(), 'DOMAIN_MIGRATION_REQUIRES_OFFLINE')
     with Store(config).connect(operator_write=True) as connection:
-        if schema_version(connection) in ('9', '10'):
+        if schema_version(connection) in ('9', '10', '11'):
             return {'status': 'ALREADY_PREPARED', 'schema_version': schema_version(connection)}
         require(schema_version(connection) == '8', 'SOURCE_OPERATIONS_SCHEMA_REQUIRED')
         connection.execute('BEGIN EXCLUSIVE')
@@ -121,7 +121,7 @@ class Domains:
     def register(self, root):
         pack = load_pack(root)
         with self.store.connect(operator_write=True) as connection:
-            require(schema_version(connection) in ('9', '10'), 'DOMAIN_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('9', '10', '11'), 'DOMAIN_SCHEMA_REQUIRED')
             connection.execute('BEGIN IMMEDIATE')
             identity = pack.identity
             prior = connection.execute('SELECT * FROM domain_pack_registry WHERE domain_id=? AND version=?',
@@ -153,7 +153,7 @@ class Domains:
         text(reason)
         require(type(expected_revision) is int and expected_revision >= 0)
         with self.store.connect(operator_write=True) as connection:
-            require(schema_version(connection) in ('9', '10'), 'DOMAIN_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('9', '10', '11'), 'DOMAIN_SCHEMA_REQUIRED')
             connection.execute('BEGIN IMMEDIATE')
             combined = compose(self.packs(connection, packs), primary_domain)
             require(combined['disposition'] == 'READY', 'DOMAIN_COMPOSITION_REQUIRES_REVIEW')
@@ -214,7 +214,7 @@ class Domains:
         if connection is None:
             with self.store.connect() as current:
                 return self.read(run_id, connection=current)
-        if schema_version(connection) not in ('9', '10'):
+        if schema_version(connection) not in ('9', '10', '11'):
             return None
         run = connection.execute('SELECT * FROM source_processing_runs WHERE processing_run_id=?', (run_id,)).fetchone()
         require(run is not None, 'PROCESSING_RUN_NOT_FOUND')
@@ -268,7 +268,7 @@ class Domains:
 
     def validate_packet(self, artifact_id):
         with self.store.connect() as connection:
-            if schema_version(connection) not in ('9', '10'):
+            if schema_version(connection) not in ('9', '10', '11'):
                 return
             run = connection.execute('SELECT * FROM source_processing_runs WHERE packet_artifact_id=?', (artifact_id,)).fetchone()
             binding = connection.execute('SELECT * FROM domain_packet_bindings WHERE artifact_id=?', (artifact_id,)).fetchone()

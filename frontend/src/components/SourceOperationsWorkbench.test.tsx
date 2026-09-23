@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSession } from "../api/workbench";
-import { getSourceOperation, listSourceOperations } from "../api/sourceOperations";
+import { getOperationalCapacity, getSourceOperation, listSourceOperations } from "../api/sourceOperations";
 import { SourceOperationsWorkbench } from "./SourceOperationsWorkbench";
 
 vi.mock("../api/workbench", async () => {
@@ -11,7 +11,7 @@ vi.mock("../api/workbench", async () => {
 });
 vi.mock("../api/sourceOperations", () => ({
   listSourceOperations: vi.fn(), getSourceOperation: vi.fn(), uploadSource: vi.fn(),
-  startSourceProcessing: vi.fn(),
+  startSourceProcessing: vi.fn(), getOperationalCapacity: vi.fn(),
 }));
 
 const source = {
@@ -30,6 +30,15 @@ describe("Source Operations product surface", () => {
       capabilities: { source_class: "PRIVATE_CLEAN_PDF", mime_types: ["application/pdf"], max_pdf_bytes: 20 * 1024 * 1024,
         single_file: true, ocr_supported: false } });
     vi.mocked(getSourceOperation).mockResolvedValue(source);
+    vi.mocked(getOperationalCapacity).mockResolvedValue({
+      enabled: true, policy_version: "phase43-stage1-bounded-operator-v1",
+      capacity_policy_version: "phase43-stage6-lifecycle-capacity-v1",
+      operational_pending_rows: 0, native_pending_rows: 0,
+      historical_lifecycle_closed: 274, human_user_qualified: 105,
+      ai_policy_closed: 169, followup_governance: 40,
+      wip_state: "OPEN", new_intake_allowed: true,
+      pending_semantics: "OPERATIONAL_PENDING",
+    });
   });
 
   it("presents the bounded private clean-PDF upload and separate processing action", async () => {
@@ -38,6 +47,29 @@ describe("Source Operations product surface", () => {
     expect(screen.getByLabelText("Private PDF")).toHaveAttribute("accept", "application/pdf,.pdf");
     expect(await screen.findByText("synthetic-private.pdf")).toBeInTheDocument();
     expect(screen.getByDisplayValue("20 MiB maximum · OCR unsupported")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Operational WIP capacity" })).toHaveTextContent(
+      "274 historical lifecycle closures"
+    );
+  });
+
+  it.each([
+    ["SOFT_WARNING", 101, true],
+    ["HARD_STOP", 201, false],
+  ] as const)("renders %s from operational WIP", async (state, pending, allowed) => {
+    vi.mocked(getOperationalCapacity).mockResolvedValue({
+      enabled: true, policy_version: "phase43-stage1-bounded-operator-v1",
+      capacity_policy_version: "phase43-stage6-lifecycle-capacity-v1",
+      operational_pending_rows: pending, native_pending_rows: 274,
+      historical_lifecycle_closed: 274, human_user_qualified: 105,
+      ai_policy_closed: 169, followup_governance: 40,
+      wip_state: state, new_intake_allowed: allowed,
+      pending_semantics: "OPERATIONAL_PENDING",
+    });
+    render(<SourceOperationsWorkbench />);
+    const banner = await screen.findByRole("region", { name: "Operational WIP capacity" });
+    expect(banner).toHaveTextContent(`Operational WIP · ${state}`);
+    expect(banner).toHaveTextContent(`${pending} operational pending · 274 native pending`);
+    expect(banner).toHaveTextContent(`new intake ${allowed ? "allowed" : "blocked"}`);
   });
 
   it("shows manual recovery and never offers a browser Apply action", async () => {

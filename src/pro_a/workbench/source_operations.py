@@ -128,7 +128,7 @@ def prepare_source_operations(config: WorkbenchConfig) -> dict[str, Any]:
     config.validate()
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version in ("8", "9", "10"):
+        if version in ("8", "9", "10", "11"):
             return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "7":
             raise BoundaryError("CLOUD_JOBS_SCHEMA_REQUIRED")
@@ -259,7 +259,7 @@ class SourceOperations:
         self.artifacts = Artifacts(config)
         self.jobs = CloudJobs(config, cloud_profile)
         with self.store.connect() as connection:
-            if schema_version(connection) not in ("8", "9", "10"):
+            if schema_version(connection) not in ("8", "9", "10", "11"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
 
     def _record_upload(self, *, source_id: str | None, outcome: str, filename: str,
@@ -437,7 +437,7 @@ class SourceOperations:
             except CompanyMaterialError as error:
                 raise SourceOperationError(str(error), error.status) from None
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
-                     if schema_version(connection) in ("9", "10") else None)
+                     if schema_version(connection) in ("9", "10", "11") else None)
 
             def equivalent(row):
                 if row["runtime_sha256"] != runtime_sha:
@@ -481,7 +481,7 @@ class SourceOperations:
                             "duplicate": True}
             if rows and same_runtime is None and not reprocess_reason:
                 raise SourceOperationError("EXPLICIT_RUNTIME_REPROCESS_REASON_REQUIRED", 422)
-            if schema_version(connection) == "10":
+            if schema_version(connection) in ("10", "11"):
                 from .stage1_scale import require_stage1_intake
                 try:
                     require_stage1_intake(connection)
@@ -670,7 +670,7 @@ class SourceOperations:
                           worker_id: str) -> list[dict[str, Any]]:
         if provider is not None:
             with self.store.connect() as connection:
-                if schema_version(connection) == "10":
+                if schema_version(connection) in ("10", "11"):
                     from .stage1_scale import stage1_capacity
                     capacity = stage1_capacity(connection)
                     if (capacity["wip_state"] == "HARD_STOP"

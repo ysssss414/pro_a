@@ -1,0 +1,171 @@
+{
+  "READY_FOR_REAL_APPLY": true,
+  "REAL_STAGE6_APPLY_EXECUTED": false,
+  "branch": "codex/phase43-stage6-operational-wip-closure",
+  "copy_acceptance": {
+    "active_work_drain_guard": "PASS",
+    "actual_copy_post_apply_sha256": "2076f8a264aa2359ba272d1e1866c2e5df78758f34400a65b9e63959d399065b",
+    "artifact_id": null,
+    "domain_migration_9": "PASS",
+    "exact_backup_sha256": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "foreign_key_check": 0,
+    "historical_packet_present": false,
+    "idempotent_reapply": "ALREADY_APPLIED",
+    "initial_sha256": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "intake_guard": "PASS",
+    "intake_paused": false,
+    "integrity_check": "ok",
+    "lifecycle_apply": "PASS",
+    "lifecycle_resolved_rows": 274,
+    "native_pending_review_rows": 0,
+    "new_intake_allowed": true,
+    "operational_pending_review_rows": 0,
+    "runs_last_24h": 0,
+    "schema_after": "11",
+    "schema_before": "8",
+    "stage1_migration_10": "PASS",
+    "stage6_migration_11": "PASS",
+    "unprojected_review_packets": 0,
+    "wip_state": "OPEN"
+  },
+  "document_type": "phase43_stage6_qualification_receipt",
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS",
+    "F": "PASS",
+    "G": "PASS",
+    "H": "PASS",
+    "I": "PASS",
+    "J": "PASS",
+    "K": "PASS",
+    "L": "PASS"
+  },
+  "implementation_commit": "08d025a94747dbd03c987feb57d962479fd0992b",
+  "lifecycle_closure": {
+    "ai_policy_eligible": "169/169",
+    "ai_policy_qualification": 169,
+    "build_a_file_sha256": "27d35bef0aad703b98336f8d53508b5ba9c60c5930bc43e034fdd6760ccbadfd",
+    "build_b_file_sha256": "27d35bef0aad703b98336f8d53508b5ba9c60c5930bc43e034fdd6760ccbadfd",
+    "capacity_policy_version": "phase43-stage6-lifecycle-capacity-v1",
+    "closure_file_sha256": "27d35bef0aad703b98336f8d53508b5ba9c60c5930bc43e034fdd6760ccbadfd",
+    "closure_id": "phase43-stage2-foundation-v1",
+    "closure_sha256": "2516386da0e629102b60362553a0c63420df69f45fdd02e888757cd87ccf4feb",
+    "contract_version": "phase43-stage6-lifecycle-closure-v1",
+    "deterministic": true,
+    "fabricated_human_attributions": 0,
+    "followup_governance": 40,
+    "human_user_qualification": 105,
+    "idempotent": true,
+    "mandatory_human": 76,
+    "production_authorized": false,
+    "residual_human_sample": 29,
+    "total": 274,
+    "unresolved_ab_disagreements": 0,
+    "unresolved_rows": 0
+  },
+  "privacy": {
+    "private_artifact_path_leakage": 0,
+    "private_source_path_leakage": 0,
+    "provider_payload_leakage": 0,
+    "real_local_path_leakage": 0
+  },
+  "real_baselines": {
+    "production_sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha256_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "real_workbench_schema": "8",
+    "real_workbench_sha256_after": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "real_workbench_sha256_before": "c28dd60c94deeb8c897c6180b9fec2366ffaef7b671a6c9b0ddf7af9047279f3",
+    "stage4d_overlay_sha256_after": "aa917e07895d7912e5bfe9c41763af3fbd705127a6fd797e858f1bef2816bfb5",
+    "stage4d_overlay_sha256_before": "aa917e07895d7912e5bfe9c41763af3fbd705127a6fd797e858f1bef2816bfb5"
+  },
+  "real_read_preflight": {
+    "active_source_processing_runs": 0,
+    "cloud_jobs": 0,
+    "journal_present": false,
+    "queued_or_running_cloud_jobs": 0,
+    "registered_packets": 0,
+    "review_audit_rows": 0,
+    "schema_version": "8",
+    "shm_present": false,
+    "source_processing_runs": 0,
+    "source_uploads": 0,
+    "wal_present": false
+  },
+  "result": "PASS",
+  "safety": {
+    "current_view_writes": 0,
+    "official_view_activations": 0,
+    "original_packet_mutated": false,
+    "production_write_count": 0,
+    "real_lifecycle_applies": 0,
+    "real_processing_runs": 0,
+    "real_provider_calls": 0,
+    "real_source_uploads": 0,
+    "real_stage6_migrations": 0,
+    "real_workbench_mutations": 0,
+    "review_audit_mutated": false,
+    "stage4d_overlay_mutated": false
+  },
+  "stage2_authority": {
+    "expanded_review_required": false,
+    "final_human_qualification_receipt_sha256": "e98296b31afec8e754aa9e620dceb346e66000ec251c1524864b126ceea68d38",
+    "human_authorization_sha256": "23fa6c94d55caf7ef8cfc3291528d3d41a06948460b852d7418c68f572bf014f",
+    "original_packet_immutable_sha256": "06006a1c98247f1803dac9cdcd0f10ade5d84beddc56a12e3768e5a9e5bfc66c",
+    "population": 274,
+    "population_sha256": "b363748e9aa05be4d66d7ff5c3d0008e9a80df29a25741f72d60c7c32c983b51",
+    "reconciliation_sha256": "3631ead5334528a174a97683105fe5a1125b6e90fe9748f92c787be9c6b58b9b",
+    "residual_sample_sha256": "44051e472043f12bb416e7947d4f67a0f16d8785a4154d963e96726bbaed09a3",
+    "residual_sample_size": 29,
+    "review_a_sha256": "9e5735f73a039c58b598ba48d1d78d5bf434c22a8ce6c15e464f22c8aa5f9edf",
+    "review_b_sha256": "f32d03eaf14494486a7d0dc89e2f20ccbe9ad950a69b1d80d0b16fb37ebdb08f",
+    "substantive_errors": 0
+  },
+  "stage5_frozen_baseline": "9807589fe423d911a070d80cc4b66c46b78440d7",
+  "tests": {
+    "broader_repository_context": {
+      "errors": 29,
+      "failed": 4,
+      "passed": 2373,
+      "reason": "Pre-existing private-input and historical-baseline audits require unavailable or different frozen inputs; every relevant Stage 6 regression gate passed independently.",
+      "result": "NON_GATING_ENVIRONMENT_BASELINE_FAILURES",
+      "skipped": 6
+    },
+    "browser": {
+      "horizontal_overflow": false,
+      "result": "PASS",
+      "viewports": [
+        "1920x1080",
+        "1366x768"
+      ]
+    },
+    "frontend_build": "PASS",
+    "frontend_full": {
+      "files": 28,
+      "max_workers": 2,
+      "passed": 153,
+      "result": "PASS"
+    },
+    "git_diff_check": "PASS",
+    "python_compileall": "PASS",
+    "relevant_backend_regression": {
+      "passed": 224,
+      "result": "PASS"
+    },
+    "stage3_stage4_continuity": {
+      "current_stage6_behavior": "REJECTED_BRANCH_DRIFT_AS_DESIGNED",
+      "historical_branch_sentinel_rejections": 1,
+      "passed": 58,
+      "production_sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+      "result": "PASS_WITH_EXPECTED_HISTORICAL_BRANCH_SENTINEL",
+      "sentinel_required_branch": "codex/phase43-stage3-cross-domain-resolution"
+    },
+    "stage6_focused": {
+      "passed": 4,
+      "result": "PASS"
+    },
+    "typescript": "PASS"
+  }
+}

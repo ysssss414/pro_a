@@ -26,6 +26,16 @@ export type ReviewPacket = PacketSummary & {
   capabilities: { read_only: boolean; decision_save_available: boolean; native_decisions_are_metadata_only: boolean };
   review?: { enabled: false } | PersistentReview;
   attribution_available?: boolean;
+  lifecycle_closure?: {
+    closure_id: string;
+    closure_sha256: string;
+    lifecycle_closed: number;
+    human_user_qualified: number;
+    ai_policy_closed: number;
+    followup_governance: number;
+    message: string;
+    production_authorized: false;
+  } | null;
 };
 
 export type DecisionState = { decision: string; reason: string; target_node_id: string; reviewer: string; actor: string; session_id: string; revision: number; updated_at: string };

@@ -299,11 +299,21 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def packet(artifact_id: str):
         return artifacts.read(artifact_id)
 
+    @app.get(PREFIX + '/operations/capacity')
+    def operational_capacity():
+        from .stage1_scale import stage1_capacity
+        with Store(config).connect() as connection:
+            return stage1_capacity(connection)
+
     @app.get(PREFIX + '/reviews/{artifact_id}')
     def review(artifact_id: str):
         result = reviews.read(artifact_id)
         with Store(config).connect() as connection:
-            if schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10'): result['attribution_available'] = result['review']['status'] == 'SEALED'
+            if schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10', '11'):
+                result['attribution_available'] = result['review'].get('status') == 'SEALED'
+            if schema_version(connection) == '11':
+                from .lifecycle_closure import closure_for_artifact
+                result['lifecycle_closure'] = closure_for_artifact(connection, artifact_id)
         return result
 
     @app.get(PREFIX + '/reviews/{artifact_id}/projection')

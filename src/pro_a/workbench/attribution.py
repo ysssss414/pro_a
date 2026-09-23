@@ -36,12 +36,12 @@ class Attribution:
         review = self.reviews.read(handle)
         require(review.get('review', {}).get('status') == 'SEALED', 'NATIVE_REVIEW_NOT_SEALED')
         with self.store.connect() as connection:
-            require(schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10'), 'ATTRIBUTION_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('3', '4', '5', '6', '7', '8', '9', '10', '11'), 'ATTRIBUTION_SCHEMA_REQUIRED')
             packet = json.loads(connection.execute("SELECT body FROM sealed_review_artifacts WHERE artifact_id=? AND kind='completed_packet'", (handle,)).fetchone()[0])
             source_run = connection.execute(
                 "SELECT processing_run_id FROM source_processing_runs WHERE packet_artifact_id=?",
                 (handle,),
-            ).fetchone() if schema_version(connection) in ('8', '9', '10') else None
+            ).fetchone() if schema_version(connection) in ('8', '9', '10', '11') else None
             if source_run:
                 from pro_a.company_material_intent import read_bound
                 intent = read_bound(connection, source_run[0])

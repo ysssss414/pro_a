@@ -67,8 +67,28 @@ export type SourcePage = {
   capabilities: SourceCapabilities;
 };
 
+export type OperationalCapacity = {
+  enabled: boolean;
+  policy_version: string | null;
+  capacity_policy_version?: string;
+  operational_pending_rows?: number;
+  operational_pending_review_rows?: number;
+  native_pending_rows?: number;
+  native_pending_review_rows?: number;
+  historical_lifecycle_closed?: number;
+  lifecycle_resolved_rows?: number;
+  human_user_qualified?: number;
+  ai_policy_closed?: number;
+  followup_governance?: number;
+  wip_state?: "OPEN" | "SOFT_WARNING" | "HARD_STOP";
+  new_intake_allowed?: boolean;
+  pending_semantics?: "OPERATIONAL_PENDING";
+};
+
 export const listSourceOperations = (signal: AbortSignal) =>
   request<SourcePage>("/source-operations?limit=25", signal);
+export const getOperationalCapacity = (signal: AbortSignal) =>
+  request<OperationalCapacity>("/operations/capacity", signal);
 export const getSourceOperation = (id: string, signal: AbortSignal) =>
   request<PrivateSource>("/source-operations/" + encodeURIComponent(id), signal);
 export const uploadSource = (file: File, csrf: string, signal: AbortSignal) =>

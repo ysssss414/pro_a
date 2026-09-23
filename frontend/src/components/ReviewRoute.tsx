@@ -92,6 +92,12 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
       <label>Registered packet <select value={packet.artifact_id} onChange={(event) => void load(undefined, event.target.value)}>
         {packets.map((entry) => <option key={entry.artifact_id} value={entry.artifact_id}>{entry.packet_id}</option>)}
       </select></label>
+      {packet.lifecycle_closure && <section aria-label="Lifecycle closure status">
+        <h2>Lifecycle closure</h2>
+        <p><strong>{packet.lifecycle_closure.lifecycle_closed}</strong> historical items closed: {packet.lifecycle_closure.human_user_qualified} HUMAN_USER qualified · {packet.lifecycle_closure.ai_policy_closed} AI policy closed.</p>
+        <p>{packet.lifecycle_closure.followup_governance} follow-up governance items.</p>
+        <p>{packet.lifecycle_closure.message}</p>
+      </section>}
       <section aria-label="Packet identity">
         <h2>Packet and Source</h2>
         <dl><dt>Packet</dt><dd>{packet.packet_id}</dd><dt>Run</dt><dd>{packet.run_id}</dd>
