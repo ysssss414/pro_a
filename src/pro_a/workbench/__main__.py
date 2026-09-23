@@ -24,6 +24,13 @@ def main():
     commands.add_parser('rollback-domains')
     commands.add_parser('prepare-stage1-scale')
     commands.add_parser('rollback-stage1-scale')
+    commands.add_parser('prepare-stage6-lifecycle')
+    apply_stage6 = commands.add_parser('apply-stage6-lifecycle')
+    apply_stage6.add_argument('--closure', type=Path, required=True)
+    apply_stage6.add_argument('--expected-workbench-sha256', required=True)
+    apply_stage6.add_argument('--expected-production-sha256', required=True)
+    apply_stage6.add_argument('--receipt', type=Path, required=True)
+    commands.add_parser('stage6-lifecycle-status')
     rebuild_projection = commands.add_parser('rebuild-review-projection')
     rebuild_projection.add_argument('--artifact-id', required=True)
     pause_stage1 = commands.add_parser('pause-stage1-intake')
@@ -126,6 +133,23 @@ def main():
                 )
             else:
                 result = Stage1ReviewProjection(config).rebuild(args.artifact_id)
+            print(json.dumps(result))
+        elif args.command in ('prepare-stage6-lifecycle', 'apply-stage6-lifecycle',
+                              'stage6-lifecycle-status'):
+            from .lifecycle_closure import (
+                apply_stage6_plan, lifecycle_status, prepare_stage6_lifecycle,
+            )
+            if args.command == 'prepare-stage6-lifecycle':
+                result = prepare_stage6_lifecycle(config)
+            elif args.command == 'apply-stage6-lifecycle':
+                result = apply_stage6_plan(
+                    config, args.closure,
+                    expected_workbench_sha256=args.expected_workbench_sha256,
+                    expected_production_sha256=args.expected_production_sha256,
+                    receipt_path=args.receipt,
+                )
+            else:
+                result = lifecycle_status(config)
             print(json.dumps(result))
         elif args.command == 'reconcile-cloud-jobs':
             from .cloud_jobs import CloudJobs

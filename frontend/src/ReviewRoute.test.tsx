@@ -89,3 +89,18 @@ it("renders source text as text, including HTML-like content", async () => {
   await screen.findByText('<img src=x onerror="alert(1)">');
   expect(view.container.querySelector("img")).toBeNull();
 });
+
+
+it("labels historical lifecycle closure without claiming Workbench review", async () => {
+  vi.mocked(getPacket).mockResolvedValue({ ...packet, lifecycle_closure: {
+    closure_id: "phase43-stage2-foundation-v1", closure_sha256: "f".repeat(64),
+    lifecycle_closed: 274, human_user_qualified: 105, ai_policy_closed: 169,
+    followup_governance: 40,
+    message: "Historical lifecycle closure is registered; Workbench review completion is not inferred from this total.",
+    production_authorized: false,
+  }});
+  render(<ReviewRoute onAuthenticated={vi.fn()} />);
+  const banner = await screen.findByRole("region", { name: "Lifecycle closure status" });
+  expect(banner).toHaveTextContent("274 historical items closed");
+  expect(banner).toHaveTextContent("Workbench review completion is not inferred from this total");
+});

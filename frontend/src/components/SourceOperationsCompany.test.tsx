@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSession } from "../api/workbench";
 import { getResearchCompany } from "../api/research";
-import { getSourceOperation, listSourceOperations, startSourceProcessing } from "../api/sourceOperations";
+import { getOperationalCapacity, getSourceOperation, listSourceOperations, startSourceProcessing } from "../api/sourceOperations";
 import { SourceOperationsWorkbench } from "./SourceOperationsWorkbench";
 
 vi.mock("../api/workbench", async () => {
@@ -13,7 +13,7 @@ vi.mock("../api/workbench", async () => {
 vi.mock("../api/research", () => ({ getResearchCompany: vi.fn(), searchResearchCompanies: vi.fn() }));
 vi.mock("../api/sourceOperations", () => ({
   listSourceOperations: vi.fn(), getSourceOperation: vi.fn(), uploadSource: vi.fn(),
-  startSourceProcessing: vi.fn(),
+  startSourceProcessing: vi.fn(), getOperationalCapacity: vi.fn(),
 }));
 
 const source = {
@@ -34,6 +34,7 @@ describe("Source Operations Company Material mode", () => {
       capabilities: { source_class: "PRIVATE_CLEAN_PDF", mime_types: ["application/pdf"], max_pdf_bytes: 20 * 1024 * 1024,
         single_file: true, ocr_supported: false } });
     vi.mocked(getSourceOperation).mockResolvedValue(source);
+    vi.mocked(getOperationalCapacity).mockResolvedValue({ enabled: false, policy_version: null });
     vi.mocked(startSourceProcessing).mockResolvedValue({ run: {} as never, duplicate: false });
   });
 

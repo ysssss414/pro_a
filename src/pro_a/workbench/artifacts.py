@@ -90,7 +90,7 @@ class Artifacts:
         with self.store.connect(operator_write=True) as connection:
             stage1 = connection.execute(
                 "SELECT value FROM workbench_meta WHERE key='schema_version'"
-            ).fetchone()[0] == '10'
+            ).fetchone()[0] in ('10', '11')
             existing = connection.execute(
                 "SELECT * FROM registered_packets WHERE packet_id=? AND "
                 "(artifact_kind='REVIEW_PACKET' OR artifact_kind IS NULL)"
@@ -136,7 +136,7 @@ class Artifacts:
             version = connection.execute(
                 "SELECT value FROM workbench_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            if version == '10':
+            if version in ('10', '11'):
                 rows = connection.execute('''SELECT m.header_json FROM stage1_review_projection_meta m
                     JOIN registered_packets r ON r.artifact_id=m.artifact_id
                     ORDER BY r.registered_at,r.artifact_id''').fetchall()

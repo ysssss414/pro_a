@@ -12,6 +12,7 @@ import sqlite3
 from typing import Any, Mapping
 
 from pro_a.production_promotion import canonical_sha256
+from pro_a.stage6_lifecycle import CAPACITY_POLICY_VERSION
 from .config import BoundaryError, checked_path
 from .review_store import schema_version
 from .store import Store
@@ -69,8 +70,8 @@ def prepare_stage1_scale(config) -> dict[str, Any]:
             raise BoundaryError("STAGE1_MIGRATION_REQUIRES_OFFLINE")
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == "10":
-            return {"status": "ALREADY_PREPARED", "schema_version": "10"}
+        if version in ("10", "11"):
+            return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "9":
             raise BoundaryError("DOMAIN_SCHEMA_REQUIRED")
         active = connection.execute(
@@ -310,7 +311,7 @@ class Stage1ReviewProjection:
         with self.store.connect(operator_write=True) as connection:
             connection.execute("PRAGMA foreign_keys=ON")
             connection.execute("BEGIN IMMEDIATE")
-            if schema_version(connection) != "10":
+            if schema_version(connection) not in ("10", "11"):
                 raise BoundaryError("STAGE1_SCHEMA_REQUIRED")
             draft, states, _audit = workbench._state(connection, artifact_id, basis)
             registered = connection.execute(
@@ -400,12 +401,20 @@ class Stage1ReviewProjection:
         if queue and queue not in {
             "needs_review", "human_required", "completed", "recently_decided",
             "entity_resolution", "parent_placement", "deferred", "high_attention",
+            "operational_pending", "lifecycle_closed", "human_qualified",
+            "ai_policy_closed", "followup_governance", "native_pending",
         }:
             raise BoundaryError("INVALID_REVIEW_QUEUE")
         cursor_value = self._decode_cursor(cursor) if cursor else None
         with self.store.connect() as connection:
-            if schema_version(connection) != "10":
+            version = schema_version(connection)
+            if version not in ("10", "11"):
                 raise BoundaryError("STAGE1_SCHEMA_REQUIRED")
+            if version == "10" and queue in {
+                "operational_pending", "lifecycle_closed", "human_qualified",
+                "ai_policy_closed", "followup_governance", "native_pending",
+            }:
+                raise BoundaryError("INVALID_REVIEW_QUEUE")
             meta = connection.execute(
                 "SELECT * FROM stage1_review_projection_meta WHERE artifact_id=?", (artifact_id,)
             ).fetchone()
@@ -423,10 +432,33 @@ class Stage1ReviewProjection:
             if cursor_value:
                 clauses.append("p.priority_key>?")
                 args.append(cursor_value["priority_key"])
-            if queue in {"needs_review", "human_required"}:
+            lifecycle_join = (
+                " LEFT JOIN lifecycle_resolutions lr ON lr.artifact_id=p.artifact_id "
+                "AND lr.candidate_id=p.candidate_id" if version == "11" else ""
+            )
+            lifecycle_columns = (
+                ",lr.closure_id AS lifecycle_closure_id,lr.resolution_source,"
+                "lr.native_decision AS lifecycle_decision,lr.followup_required,lr.closure_reason"
+                if version == "11" else
+                ",NULL AS lifecycle_closure_id,NULL AS resolution_source,"
+                "NULL AS lifecycle_decision,NULL AS followup_required,NULL AS closure_reason"
+            )
+            if queue in {"needs_review", "human_required", "operational_pending"}:
                 clauses.append("p.is_pending=1")
+                if version == "11":
+                    clauses.append("lr.candidate_id IS NULL")
             elif queue in {"completed", "recently_decided"}:
                 clauses.append("p.is_pending=0")
+            elif queue == "native_pending":
+                clauses.append("p.is_pending=1")
+            elif queue == "lifecycle_closed":
+                clauses.append("lr.candidate_id IS NOT NULL")
+            elif queue == "human_qualified":
+                clauses.append("lr.resolution_source='HUMAN_USER_QUALIFICATION'")
+            elif queue == "ai_policy_closed":
+                clauses.append("lr.resolution_source='AI_POLICY_QUALIFICATION'")
+            elif queue == "followup_governance":
+                clauses.append("lr.followup_required=1")
             elif queue:
                 clauses.append("EXISTS(SELECT 1 FROM json_each(p.queues_json) WHERE value=?)")
                 args.append(queue)
@@ -440,69 +472,149 @@ class Stage1ReviewProjection:
                 args.append(domain_id)
             where = " AND ".join(clauses)
             rows = connection.execute(
-                f"""SELECT p.* FROM stage1_review_projection p WHERE {where}
+                f"""SELECT p.*{lifecycle_columns}
+                    FROM stage1_review_projection p{lifecycle_join} WHERE {where}
                     ORDER BY p.priority_key LIMIT ?""", (*args, limit + 1),
             ).fetchall()
             total = int(connection.execute(
-                f"SELECT COUNT(*) FROM stage1_review_projection p WHERE {where}", args
+                f"SELECT COUNT(*) FROM stage1_review_projection p{lifecycle_join} WHERE {where}", args
             ).fetchone()[0])
+            operational_pending = int(connection.execute(
+                """SELECT COUNT(*) FROM stage1_review_projection p
+                   LEFT JOIN lifecycle_resolutions lr ON lr.artifact_id=p.artifact_id
+                        AND lr.candidate_id=p.candidate_id
+                   WHERE p.artifact_id=? AND p.is_pending=1 AND lr.candidate_id IS NULL""",
+                (artifact_id,),
+            ).fetchone()[0]) if version == "11" else int(meta["pending_rows"])
         has_more = len(rows) > limit
         rows = rows[:limit]
         items = []
         for row in rows:
             native = json.loads(row["native_json"])
-            items.append({
+            queues = json.loads(row["queues_json"])
+            if version == "11":
+                if row["is_pending"]:
+                    queues.append("native_pending")
+                if row["resolution_source"]:
+                    queues.append("lifecycle_closed")
+                    queues.append("human_qualified" if row["resolution_source"] == "HUMAN_USER_QUALIFICATION"
+                                  else "ai_policy_closed")
+                    if row["followup_required"]:
+                        queues.append("followup_governance")
+                elif row["is_pending"]:
+                    queues.append("operational_pending")
+            projected = {
                 "candidate_id": row["candidate_id"],
                 "candidate_type": row["candidate_type"],
                 "native_order": row["native_order"],
                 "state": json.loads(row["state_json"]) if row["state_json"] else None,
-                "queues": json.loads(row["queues_json"]),
+                "queues": queues,
                 "domains": json.loads(row["domains_json"]),
                 "attention": json.loads(row["attention_json"]),
                 "content": native.get("content"),
                 "allowed_decisions": native.get("allowed_decisions"),
                 "projection_authority": False,
-            })
+            }
+            if version == "11":
+                projected.update({
+                    "native_review_pending": bool(row["is_pending"]),
+                    "operational_pending": bool(row["is_pending"] and not row["resolution_source"]),
+                    "lifecycle_resolution_source": row["resolution_source"],
+                    "lifecycle_decision": row["lifecycle_decision"],
+                    "followup_required": bool(row["followup_required"]),
+                    "closure_id": row["lifecycle_closure_id"],
+                    "lifecycle_resolution": ({
+                    "source": row["resolution_source"],
+                    "native_decision": row["lifecycle_decision"],
+                    "followup_required": bool(row["followup_required"]),
+                    "closure_reason": row["closure_reason"],
+                    } if row["resolution_source"] else None),
+                })
+            items.append(projected)
         next_cursor = (
             self._encode_cursor(meta["snapshot_id"], rows[-1]["priority_key"])
             if has_more and rows else None
         )
-        return {
+        result = {
             "artifact_id": artifact_id, "basis_id": meta["basis_id"],
             "snapshot_id": meta["snapshot_id"], "revision": meta["revision"],
             "status": meta["status"], "policy_version": meta["policy_version"],
             "packet": json.loads(meta["header_json"]),
-            "total_native_rows": meta["total_rows"], "pending_rows": meta["pending_rows"],
+            "total_native_rows": meta["total_rows"], "pending_rows": operational_pending,
             "filtered_total": total, "limit": limit, "items": items,
             "next_cursor": next_cursor, "projection_authority": False,
         }
+        if version == "11":
+            result["native_pending_rows"] = meta["pending_rows"]
+        return result
 
     def item(self, artifact_id: str, candidate_id: str) -> dict[str, Any]:
         """Bounded on-demand detail; save/seal still revalidate native authority."""
         from .review_workbench import available_actions
 
         with self.store.connect() as connection:
-            if schema_version(connection) != "10":
+            version = schema_version(connection)
+            if version not in ("10", "11"):
                 raise BoundaryError("STAGE1_SCHEMA_REQUIRED")
             meta = connection.execute(
                 "SELECT * FROM stage1_review_projection_meta WHERE artifact_id=?", (artifact_id,)
             ).fetchone()
+            lifecycle_join = (
+                " LEFT JOIN lifecycle_resolutions lr ON lr.artifact_id=p.artifact_id "
+                "AND lr.candidate_id=p.candidate_id" if version == "11" else ""
+            )
+            lifecycle_columns = (
+                ",lr.closure_id AS lifecycle_closure_id,lr.resolution_source,"
+                "lr.native_decision AS lifecycle_decision,lr.followup_required,lr.closure_reason"
+                if version == "11" else
+                ",NULL AS lifecycle_closure_id,NULL AS resolution_source,"
+                "NULL AS lifecycle_decision,NULL AS followup_required,NULL AS closure_reason"
+            )
             row = connection.execute(
-                """SELECT * FROM stage1_review_projection
-                   WHERE artifact_id=? AND candidate_id=?""", (artifact_id, candidate_id),
+                f"""SELECT p.*{lifecycle_columns} FROM stage1_review_projection p{lifecycle_join}
+                   WHERE p.artifact_id=? AND p.candidate_id=?""", (artifact_id, candidate_id),
             ).fetchone()
             if meta is None or row is None:
                 raise BoundaryError("NOT_REVIEWABLE")
             native = json.loads(row["native_json"])
             state = json.loads(row["state_json"]) if row["state_json"] else None
             states = {candidate_id: state} if state else {}
+            queues = json.loads(row["queues_json"])
+            lifecycle_fields: dict[str, Any] = {}
+            if version == "11":
+                if row["is_pending"]:
+                    queues.append("native_pending")
+                if row["resolution_source"]:
+                    queues.extend((
+                        "lifecycle_closed",
+                        "human_qualified" if row["resolution_source"] == "HUMAN_USER_QUALIFICATION"
+                        else "ai_policy_closed",
+                    ))
+                    if row["followup_required"]:
+                        queues.append("followup_governance")
+                elif row["is_pending"]:
+                    queues.append("operational_pending")
+                lifecycle_fields = {
+                    "native_review_pending": bool(row["is_pending"]),
+                    "operational_pending": bool(row["is_pending"] and not row["resolution_source"]),
+                    "lifecycle_resolution_source": row["resolution_source"],
+                    "lifecycle_decision": row["lifecycle_decision"],
+                    "followup_required": bool(row["followup_required"]),
+                    "closure_id": row["lifecycle_closure_id"],
+                    "lifecycle_resolution": ({
+                        "source": row["resolution_source"],
+                        "native_decision": row["lifecycle_decision"],
+                        "followup_required": bool(row["followup_required"]),
+                        "closure_reason": row["closure_reason"],
+                    } if row["resolution_source"] else None),
+                }
             if native.get("structured_import"):
                 return {
                     "artifact_id": artifact_id, "candidate_id": candidate_id,
                     "basis_id": meta["basis_id"], "snapshot_id": meta["snapshot_id"],
                     "revision": meta["revision"], "status": meta["status"],
                     "native": native, "state": state,
-                    "queues": json.loads(row["queues_json"]),
+                    "queues": queues,
                     "domains": json.loads(row["domains_json"]),
                     "attention": json.loads(row["attention_json"]),
                     "available_decisions": [],
@@ -510,6 +622,7 @@ class Stage1ReviewProjection:
                     "reuse_target": native["content"].get("resolved_node_id"),
                     "decision_effect": None, "nonpromotable": True,
                     "undo_event_id": None, "projection_authority": False,
+                    **lifecycle_fields,
                 }
             blank = {
                 "human_completion": {"reviewer": ""},
@@ -543,7 +656,7 @@ class Stage1ReviewProjection:
             "basis_id": meta["basis_id"], "snapshot_id": meta["snapshot_id"],
             "revision": meta["revision"], "status": meta["status"],
             "native": native, "state": state,
-            "queues": json.loads(row["queues_json"]),
+            "queues": queues,
             "domains": json.loads(row["domains_json"]),
             "attention": json.loads(row["attention_json"]),
             **capability,
@@ -554,6 +667,7 @@ class Stage1ReviewProjection:
                 and meta["status"] != "SEALED" else None
             ),
             "projection_authority": False,
+            **lifecycle_fields,
         }
 
     @staticmethod
@@ -607,12 +721,31 @@ class Stage1ReviewProjection:
 
 
 def stage1_capacity(connection: sqlite3.Connection, *, now: datetime | None = None) -> dict[str, Any]:
-    if schema_version(connection) != "10":
+    version = schema_version(connection)
+    if version not in ("10", "11"):
         return {"enabled": False, "policy_version": None}
     current = now or datetime.now(timezone.utc)
-    pending = int(connection.execute(
+    native_pending = int(connection.execute(
         "SELECT COUNT(*) FROM stage1_review_projection WHERE is_pending=1"
     ).fetchone()[0])
+    pending = native_pending
+    lifecycle_closed = human_qualified = ai_policy_closed = followup = 0
+    if version == "11":
+        pending = int(connection.execute(
+            """SELECT COUNT(*) FROM stage1_review_projection p
+               LEFT JOIN lifecycle_resolutions lr ON lr.artifact_id=p.artifact_id
+                    AND lr.candidate_id=p.candidate_id
+               WHERE p.is_pending=1 AND lr.candidate_id IS NULL"""
+        ).fetchone()[0])
+        grouped = dict(connection.execute(
+            "SELECT resolution_source,COUNT(*) FROM lifecycle_resolutions GROUP BY resolution_source"
+        ))
+        human_qualified = grouped.get("HUMAN_USER_QUALIFICATION", 0)
+        ai_policy_closed = grouped.get("AI_POLICY_QUALIFICATION", 0)
+        lifecycle_closed = human_qualified + ai_policy_closed
+        followup = int(connection.execute(
+            "SELECT COUNT(*) FROM lifecycle_resolutions WHERE followup_required=1"
+        ).fetchone()[0])
     packets = int(connection.execute(
         """SELECT COUNT(*) FROM registered_packets r
            WHERE COALESCE(r.artifact_kind,'REVIEW_PACKET')='REVIEW_PACKET'
@@ -626,7 +759,7 @@ def stage1_capacity(connection: sqlite3.Connection, *, now: datetime | None = No
     control = connection.execute("SELECT * FROM stage1_operator_control WHERE singleton=1").fetchone()
     hard = pending > LIMITS.review_wip_hard
     soft = pending > LIMITS.review_wip_soft
-    return {
+    result = {
         "enabled": True, "policy_version": STAGE1_POLICY_VERSION,
         "limits": asdict(LIMITS), "pending_review_rows": pending,
         "unprojected_review_packets": packets,
@@ -637,6 +770,21 @@ def stage1_capacity(connection: sqlite3.Connection, *, now: datetime | None = No
         "new_intake_allowed": not (hard or packets or control["intake_paused"]
                                     or runs >= LIMITS.runs_per_24h),
     }
+    if version == "11":
+        result.update({
+            "capacity_policy_version": CAPACITY_POLICY_VERSION,
+            "operational_pending_rows": pending,
+            "operational_pending_review_rows": pending,
+            "native_pending_rows": native_pending,
+            "native_pending_review_rows": native_pending,
+            "historical_lifecycle_closed": lifecycle_closed,
+            "lifecycle_resolved_rows": lifecycle_closed,
+            "human_user_qualified": human_qualified,
+            "ai_policy_closed": ai_policy_closed,
+            "followup_governance": followup,
+            "pending_semantics": "OPERATIONAL_PENDING",
+        })
+    return result
 
 
 def require_stage1_intake(connection: sqlite3.Connection) -> None:
