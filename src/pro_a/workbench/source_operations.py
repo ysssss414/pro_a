@@ -415,7 +415,8 @@ class SourceOperations:
 
     def start(self, source_id: str, *, idempotency_key: str,
               reprocess_reason: str = "",
-              company_material_intent: Mapping[str, Any] | None = None) -> dict[str, Any]:
+              company_material_intent: Mapping[str, Any] | None = None,
+              community_event: Mapping[str, Any] | None = None) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
             raise SourceOperationError("INVALID_IDEMPOTENCY_KEY", 422)
         if len(reprocess_reason) > 1000 or reprocess_reason != reprocess_reason.strip():
@@ -441,6 +442,9 @@ class SourceOperations:
 
             def equivalent(row):
                 if row["runtime_sha256"] != runtime_sha:
+                    return False
+                bound_community = self._community_bound(connection, row["processing_run_id"])
+                if bound_community != (dict(community_event) if community_event else None):
                     return False
                 frozen_intent = read_bound(connection, row["processing_run_id"])
                 if (frozen_intent or {}).get("intent_sha256") != (intent or {}).get("intent_sha256"):
@@ -472,6 +476,9 @@ class SourceOperations:
                         raise SourceOperationError("COMPANY_MATERIAL_TARGET_CONFLICT")
                     if frozen_intent["intent_sha256"] != intent["intent_sha256"]:
                         raise SourceOperationError("COMPANY_MATERIAL_INTENT_CONFLICT")
+                frozen_community = self._community_bound(connection, row["processing_run_id"])
+                if frozen_community and community_event and frozen_community != dict(community_event):
+                    raise SourceOperationError("COMMUNITY_SOURCE_CONFLICT")
             if any(row["state"] == "RECOVERY_REQUIRED" for row in rows):
                 raise SourceOperationError("RECOVERY_REQUIRED_REQUIRES_RECONCILIATION")
             same_runtime = next((row for row in rows if equivalent(row)), None)
@@ -499,11 +506,23 @@ class SourceOperations:
             )
             if basis is not None:
                 domains.bind_run(connection, run_id, basis, self.profile, created, reprocess_reason)
+            if community_event is not None:
+                self._event(connection, run_id, "KNOWLEDGE_COMMUNITY_BUNDLE_BOUND", community_event)
             if intent is not None:
                 self._event(connection, run_id, "COMPANY_MATERIAL_INTENT_BOUND", intent)
             self._event(connection, run_id, "PROCESSING_QUEUED",
                         {"runtime_sha256": runtime_sha, "source_id": source_id})
             return {"run": self._project_run(connection, run_id), "duplicate": False}
+
+    @staticmethod
+    def _community_bound(connection: sqlite3.Connection, run_id: str) -> dict[str, Any] | None:
+        rows = list(connection.execute(
+            "SELECT event_json FROM source_processing_events WHERE processing_run_id=? "
+            "AND event_type='KNOWLEDGE_COMMUNITY_BUNDLE_BOUND' ORDER BY sequence", (run_id,),
+        ))
+        if len(rows) > 1:
+            raise SourceOperationError("COMMUNITY_SOURCE_DRIFT")
+        return json.loads(rows[0][0]) if rows else None
 
     def _event(self, connection: sqlite3.Connection, run_id: str, event_type: str,
                payload: Mapping[str, Any] | None = None) -> None:
@@ -559,6 +578,8 @@ class SourceOperations:
     def _register_input(self, run: Mapping[str, Any], operation: str, ordinal: int,
                         payload: Mapping[str, Any], checkpoint: Mapping[str, Any]) -> str:
         checkpoint = dict(checkpoint)
+        if run.get("community_provenance"):
+            checkpoint["community_bundle_sha256"] = run["community_provenance"]["bundle_sha256"]
         if run.get("company_material_intent"):
             checkpoint["company_material_intent_sha256"] = run["company_material_intent_sha256"]
             checkpoint["company_material_intent"] = run["company_material_intent"]
@@ -896,10 +917,13 @@ class SourceOperations:
                                         (row["source_id"],)).fetchone()
             from pro_a.company_material_intent import read_bound
             intent = read_bound(connection, run_id)
+            community = self._community_bound(connection, run_id)
             for input_row in connection.execute(
                 "SELECT checkpoint_json FROM source_cloud_inputs WHERE processing_run_id=?", (run_id,),
             ):
                 checkpoint = json.loads(input_row[0])
+                if checkpoint.get("community_bundle_sha256") != (community or {}).get("bundle_sha256"):
+                    raise SourceOperationError("COMMUNITY_SOURCE_DRIFT")
                 if (checkpoint.get("company_material_intent_sha256") != (intent or {}).get("intent_sha256")
                         or checkpoint.get("company_material_intent") != intent):
                     raise SourceOperationError("COMPANY_MATERIAL_INTENT_DRIFT")
@@ -1081,10 +1105,12 @@ class SourceOperations:
         )]
         from pro_a.company_material_intent import read_bound
         intent = read_bound(connection, run_id)
+        community = SourceOperations._community_bound(connection, run_id)
         return {
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
             "company_material_intent": intent,
             "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
+            "community_provenance": community,
             "source_sha256": source["source_sha256"], "state": row["state"],
             "stage": row["stage"], "runtime_identity": json.loads(row["runtime_json"]),
             "native_execution_id": row["native_execution_id"],
@@ -1170,6 +1196,8 @@ class SourceOperations:
         }
         result["lineage"] = [
             {"kind": "SOURCE", "id": result["source_id"]},
+            *([{"kind": "KNOWLEDGE_COMMUNITY_BUNDLE", "id": result["community_provenance"]["bundle_sha256"]}]
+              if result["community_provenance"] else []),
             *([{"kind": "COMPANY_MATERIAL_INTENT", "id": result["company_material_intent_sha256"]}]
               if result["company_material_intent_sha256"] else []),
             {"kind": "PROCESSING_RUN", "id": result["processing_run_id"]},

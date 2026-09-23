@@ -23,6 +23,7 @@ from pro_a.research_structure_map import ResearchStructureMap
 from pro_a.qualified_overlay import QualifiedResearchOverlay
 from pro_a.company_material_intent import CompanyMaterialError, company
 from pro_a.company_materials import CompanyMaterials
+from pro_a.community_material import MAX_BUNDLE_BYTES, available_domains, import_bundle, preview
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .cloud_jobs import CloudJobs, CloudProfile, JobError
@@ -594,6 +595,37 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
         if sources is None:
             raise SourceOperationError('SOURCE_OPERATIONS_UNAVAILABLE', 503)
         return sources
+
+    async def community_request(request: Request) -> tuple[bytes, str]:
+        if request.headers.get('content-type', '').split(';')[0].strip().lower() != 'application/zip':
+            raise SourceOperationError('COMMUNITY_BUNDLE_CONTENT_TYPE_INVALID', 415)
+        company_id = request.headers.get('x-company-node-id', '')
+        if not company_id or company_id != company_id.strip():
+            raise SourceOperationError('COMPANY_MATERIAL_TARGET_INVALID', 422)
+        chunks = []
+        size = 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > MAX_BUNDLE_BYTES:
+                raise SourceOperationError('COMMUNITY_BUNDLE_TOO_LARGE', 413)
+            chunks.append(chunk)
+        return b''.join(chunks), company_id
+
+    @app.post(PREFIX + '/source-operations/community-preview')
+    async def preview_community(request: Request):
+        data, company_id = await community_request(request)
+        return preview(source_service().config, data, company_id)
+
+    @app.get(PREFIX + '/source-operations/community-domains')
+    def community_domains():
+        return {'items': available_domains(source_service())}
+
+    @app.post(PREFIX + '/source-operations/community-import')
+    async def import_community(request: Request):
+        data, company_id = await community_request(request)
+        return await import_bundle(source_service(), data, company_id,
+                                   request.headers.get('x-primary-domain', ''),
+                                   request.state.identity['actor'])
 
     @app.post(PREFIX + '/source-operations/upload')
     async def upload_source(request: Request):

@@ -62,6 +62,7 @@ export function CompanyMaterialsPanel({ companyId, navigate }: { companyId: stri
   return <section className="research-section unified-section" aria-label="Latest Materials">
     <div className="research-section-heading"><h2>Latest Materials</h2><span>{page?.counts.total ?? "…"}</span></div>
     <p><a href={`/source-operations?company=${encodeURIComponent(companyId)}`}>Add latest material</a></p>
+    <p><a href={`/source-operations?company=${encodeURIComponent(companyId)}&community=1`}>Import Knowledge Community</a></p>
     {error ? <p role="alert" className="research-error">{error}</p> : !page ? <p role="status" className="research-empty">Loading company materials…</p>
       : !items.length ? <p className="research-empty">No company materials recorded.</p>
         : (expanded ? items : items.slice(0, 5)).map(item => <Material key={item.material_id} item={item} companyId={companyId} navigate={navigate} />)}

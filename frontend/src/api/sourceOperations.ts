@@ -14,6 +14,7 @@ export type SourceRun = {
   processing_run_id: string;
   company_material_intent?: BoundCompanyMaterialIntent | null;
   company_material_intent_sha256?: string | null;
+  community_provenance?: { bundle_id: string; bundle_sha256: string; topic_count: number; group_id: string; date_min: string | null; date_max: string | null; pdf_sha256: string; trust_policy: string } | null;
   source_id: string;
   source_sha256: string;
   state: string;
@@ -100,4 +101,22 @@ export const uploadSource = (file: File, csrf: string, signal: AbortSignal) =>
 export const startSourceProcessing = (sourceId: string, body: object, csrf: string, signal: AbortSignal) =>
   request<{ run: SourceRun; duplicate: boolean }>("/source-operations/" + encodeURIComponent(sourceId) + "/process", signal, {
     method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body),
+  });
+
+export type CommunityPreview = {
+  target_company: { node_id: string; canonical_name: string };
+  company_input: string; group_id: string; group_label: string;
+  topic_count: number; date_min: string | null; date_max: string | null;
+  bundle_id: string; bundle_sha256: string; trust_policy: string;
+};
+export const previewCommunity = (file: File, companyId: string, csrf: string, signal: AbortSignal) =>
+  request<CommunityPreview>("/source-operations/community-preview", signal, {
+    method: "POST", headers: { "Content-Type": "application/zip", "X-Company-Node-ID": companyId, "X-CSRF-Token": csrf }, body: file,
+  });
+export const getCommunityDomains = (signal: AbortSignal) =>
+  request<{ items: Array<{ domain_id: string; version: string; sha256: string }> }>("/source-operations/community-domains", signal);
+export const importCommunity = (file: File, companyId: string, domainId: string, csrf: string, signal: AbortSignal) =>
+  request<{ preview: CommunityPreview; source: PrivateSource; run: SourceRun; duplicate: boolean }>("/source-operations/community-import", signal, {
+    method: "POST", headers: { "Content-Type": "application/zip", "X-Company-Node-ID": companyId,
+      "X-Primary-Domain": domainId, "X-CSRF-Token": csrf }, body: file,
   });

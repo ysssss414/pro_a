@@ -1,0 +1,108 @@
+{
+  "document_type": "phase43_stage7_qualification_receipt",
+  "status": "PASS",
+  "blocker": null,
+  "repository_baseline": "c93da477e739a2357403dd536b22e4b8ff8da2dc",
+  "contract_version": "zsxq-pro-a-community-export-v1",
+  "contract_sha256": "6a3e2dc77287d426b8afda46df9fed24b6188e27df16946a8e88b59d91d66d48",
+  "synthetic_export": {
+    "topic_count": 2,
+    "bundle_sha256": "4b83f78292314df321b93667283271b41591e1bbfa753c22673daaf86f8b1ce8",
+    "zip_sha256": "3ce2d324b8ce7a7ef271283f6058556b78b71298dc775fed891c570f4055391b",
+    "pdf_sha256": "6a5ce7b8d6052c25c0b3a482d5ff32b1a16ef631f1ae3f9d435ab5cfbf92a53b",
+    "zip_byte_deterministic": true,
+    "pdf_byte_deterministic": true,
+    "chinese_text_extractable": true
+  },
+  "disposable_schema11": {
+    "preview_without_source_write": true,
+    "private_source_registered": true,
+    "duplicate_source_and_run_safe": true,
+    "different_company_conflict": true,
+    "ordered_events": ["KNOWLEDGE_COMMUNITY_BUNDLE_BOUND", "COMPANY_MATERIAL_INTENT_BOUND", "PROCESSING_QUEUED"],
+    "checkpoint_bundle_sha256_bound": true,
+    "fake_provider_calls": 2,
+    "review_completed": true,
+    "human_subject_attribution_completed": true,
+    "qualified_unapplied": true,
+    "canonical_production_changed": false,
+    "ai_routing_in_provider_payload": false
+  },
+  "tests": {
+    "stage7_passed": 3,
+    "stage5_source_operations_passed": 21,
+    "frontend_passed": 155,
+    "frontend_build": "PASS",
+    "typescript": "PASS",
+    "python_compileall": "PASS",
+    "relevant_backend_passed": 238,
+    "relevant_backend_failed": 0,
+    "full_python_passed": 2377,
+    "full_python_failed": 4,
+    "full_python_errors": 29,
+    "full_python_skipped": 6,
+    "full_python_status": "DIAGNOSTIC_NON_GREEN"
+  },
+  "full_repository_diagnostic": {
+    "result": "PASS_WITH_PRE_EXISTING_NON_GATING_FAILURES",
+    "stage6_reference": {"passed": 2373, "skipped": 6, "failed": 4, "errors": 29},
+    "stage7": {"passed": 2377, "skipped": 6, "failed": 4, "errors": 29},
+    "audited_exceptions": 33,
+    "pre_existing_non_gating": 33,
+    "baseline_control_exact_nodeid_status_fingerprint_matches": 33,
+    "category_counts": {
+      "PRIVATE_FOUNDATION_PREREQUISITE": 10,
+      "HISTORICAL_PRODUCTION_BINDING": 21,
+      "HISTORICAL_INGESTION_FIXTURE": 1,
+      "HISTORICAL_BRANCH_SENTINEL": 1,
+      "OTHER": 0
+    },
+    "stage7_changed_test_overlap": 0,
+    "stage7_changed_runtime_traceback_overlap": 0,
+    "new_stage7_regressions": 0,
+    "unresolved": 0,
+    "exception_audit_file": "docs/phase43_stage7_full_suite_exception_audit.json"
+  },
+  "changed_runtime_module_coverage": {
+    "result": "PASS",
+    "covered": 3,
+    "total": 3,
+    "modules": [
+      {"module": "src/pro_a/community_material.py", "tests": "tests/test_phase43_stage7_community.py", "result": "PASS"},
+      {"module": "src/pro_a/workbench/api.py", "tests": "tests/test_phase43_stage7_community.py and existing Workbench API tests", "result": "PASS"},
+      {"module": "src/pro_a/workbench/source_operations.py", "tests": "tests/test_phase43_stage7_community.py and Stage 5/6 Source Operations tests", "result": "PASS"}
+    ]
+  },
+  "gates": {
+    "A": "PASS", "B": "PASS", "C": "PASS", "D": "PASS",
+    "E": "PASS", "F": "PASS", "G": "PASS", "H": "PASS",
+    "I": "PASS", "J": "PASS", "K": "PASS", "L": "PASS"
+  },
+  "browser": {
+    "synthetic_company_import_flow": "PASS",
+    "company_timeline": "PASS",
+    "viewport_1920_no_horizontal_overflow": true,
+    "viewport_1366_no_horizontal_overflow": true,
+    "changes_impact_independent_scroll": true,
+    "human_proposals_independent_scroll": true,
+    "durable_jobs_independent_scroll": true,
+    "industry_footer_visible": true
+  },
+  "real_state": {
+    "production_sha256_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha256_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "workbench_schema": "11",
+    "workbench_sha256_before": "f8cf49f5a4d0ed54ffb4f57bea051f0481a44d35adcd4d8f84eadeecb07b46e9",
+    "workbench_sha256_after": "f8cf49f5a4d0ed54ffb4f57bea051f0481a44d35adcd4d8f84eadeecb07b46e9",
+    "wip_state": "OPEN",
+    "new_intake_allowed": true,
+    "operational_pending_rows": 0,
+    "historical_lifecycle_closed": 274,
+    "stage4d_overlay_sha256": "aa917e07895d7912e5bfe9c41763af3fbd705127a6fd797e858f1bef2816bfb5"
+  },
+  "live_calls": {"zsxq": 0, "deepseek": 0, "pro_a_provider": 0},
+  "real_community_imports": 0,
+  "real_workbench_mutations": 0,
+  "production_apply": false,
+  "draft_pr_created": false
+}
