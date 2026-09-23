@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { getNodeDomainContext, type NodeDomainContext, type ResearchRouteKind } from "../api/research";
 import { CurrentViewWorkbench } from "./CurrentViewWorkbench";
+import { CompanyMaterialsPanel } from "./CompanyMaterialsPanel";
 import {
   currentViewSummary, relationSummary, selectInspectorClaims, selectLatestEvidence,
   selectOpenGaps, selectRelatedSources, type InspectorData,
@@ -85,6 +86,9 @@ export function UnifiedResearchInspector({ data, domainContext, navigate, notesS
         <small>{[data.current_view.change_level, data.current_view.revision_date || data.current_view.confirmed_at].filter(Boolean).join(" · ")}</small>
       </> : <p className="research-empty">No official Current View.</p>}
     </Section>
+
+    {data.node.primary_type === "Company" && data.node.status === "active" &&
+      <CompanyMaterialsPanel companyId={nodeId} navigate={navigate} />}
 
     <Section title="Key Claims" meta={`${visible(claims, "claims").length} visible of ${data.claims.total} linked`}>
       {!claims.length ? <p className="research-empty">No explicit Claims linked.</p> : visible(claims, "claims").map(({ claim, label }) =>

@@ -21,6 +21,8 @@ from pro_a.research_explorer import ResearchError, ResearchExplorer
 from pro_a.research_navigation import ResearchNavigation
 from pro_a.research_structure_map import ResearchStructureMap
 from pro_a.qualified_overlay import QualifiedResearchOverlay
+from pro_a.company_material_intent import CompanyMaterialError, company
+from pro_a.company_materials import CompanyMaterials
 from pro_a.operational_contract import WEB_REQUEST
 from .artifacts import Artifacts
 from .cloud_jobs import CloudJobs, CloudProfile, JobError
@@ -153,6 +155,7 @@ class SourceProcessRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
     reprocess_reason: str = Field(default='', max_length=1000)
+    company_material_intent: dict[str, object] | None = None
 
 
 def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudProfile | None = None,
@@ -175,6 +178,7 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     navigation = ResearchNavigation(config)
     structure_map = ResearchStructureMap(config, navigation=navigation)
     qualified_overlay = QualifiedResearchOverlay(config, structure_map=structure_map)
+    company_materials = CompanyMaterials(config)
     jobs = CloudJobs(config, cloud_profile)
     sources = SourceOperations(config, source_profile, cloud_profile) if source_profile else None
     host = urlsplit(config.origin).netloc
@@ -257,6 +261,10 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
 
     @app.exception_handler(SourceOperationError)
     async def source_operation_error(_request, error):
+        return JSONResponse({'detail': str(error)}, status_code=error.status)
+
+    @app.exception_handler(CompanyMaterialError)
+    async def company_material_error(_request, error):
         return JSONResponse({'detail': str(error)}, status_code=error.status)
 
     @app.exception_handler(RequestValidationError)
@@ -472,6 +480,19 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.get(PREFIX + '/research/nodes/{node_id}/domain-context')
     def research_node_domain_context(node_id: str):
         return navigation.node_domain_context(node_id)
+
+    @app.get(PREFIX + '/research/companies/search')
+    def research_company_search(q: str, limit: int = 20):
+        return company_materials.search(q, limit=limit)
+
+    @app.get(PREFIX + '/research/companies/{company_node_id}')
+    def research_company(company_node_id: str):
+        return company(config, company_node_id)
+
+    @app.get(PREFIX + '/research/companies/{company_node_id}/materials')
+    def research_company_materials(company_node_id: str, limit: int = 20,
+                                   cursor: str | None = None):
+        return company_materials.timeline(company_node_id, limit=limit, cursor=cursor)
 
     @app.get(PREFIX + '/research/nodes/{node_id}')
     def research_node(node_id: str):

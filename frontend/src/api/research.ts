@@ -17,6 +17,27 @@ export type Note = {
   created_at: string; updated_at: string;
   route_kind?: ResearchRouteKind; route_id?: string;
 };
+export type CompanyMaterial = {
+  material_id: string; source_id: string; processing_run_id: string | null;
+  title: string; title_basis: string; material_kind: string | null;
+  source_channel: string | null; material_trust_policy: string | null;
+  material_date: string | null; material_date_basis: string | null;
+  lifecycle: string; state: string; private: boolean; canonical: boolean;
+  association_basis: string; review_status: string | null;
+  attribution_status: string | null; qualification_status: string | null;
+  canonical_source_id: string | null; claim_count: number | null;
+  linked_node_count: number | null;
+  linked_nodes: Array<{ node_id: string; canonical_name: string; primary_type: string; roles: string }> | null;
+  current_view_impact_candidate_count: number | null;
+  uploaded_at: string | null; publication_time: string | null;
+  ingested_at: string | null; updated_at: string | null;
+  packet_artifact_id: string | null; company_material_intent_sha256: string | null;
+};
+export type CompanyMaterialsPage = {
+  company: { node_id: string; canonical_name: string; primary_type: "Company"; status: "active" };
+  materials: CompanyMaterial[]; counts: { total: number; private: number; canonical: number };
+  snapshot_id: string; next_cursor: string | null;
+};
 export type NavigationNode = {
   node_id: string; canonical_name: string; primary_type: string; status: string;
   depth: number; child_count: number; has_children: boolean; children: NavigationNode[];
@@ -100,6 +121,12 @@ export const searchResearch = (q: string, objectType: string, signal: AbortSigna
   request<{ query: string; results: SearchResult[] }>("/research/search" + params({ q, object_type: objectType, limit: 30 }), signal);
 export const getResearchNode = (id: string, signal: AbortSignal) =>
   request<any>("/research/nodes/" + encodeURIComponent(id), signal);
+export const getResearchCompany = (id: string, signal: AbortSignal) =>
+  request<CompanyMaterialsPage["company"]>("/research/companies/" + encodeURIComponent(id), signal);
+export const searchResearchCompanies = (q: string, signal: AbortSignal) =>
+  request<{ items: CompanyMaterialsPage["company"][] }>("/research/companies/search" + params({ q }), signal);
+export const getCompanyMaterials = (id: string, cursor: string | null, signal: AbortSignal) =>
+  request<CompanyMaterialsPage>("/research/companies/" + encodeURIComponent(id) + "/materials" + params({ limit: 20, cursor }), signal);
 export const getResearchDomains = (signal: AbortSignal) =>
   request<{ domains: NavigationDomain[] }>("/research/domains", signal);
 export const getResearchDomainTree = (domainId: string, signal: AbortSignal) =>

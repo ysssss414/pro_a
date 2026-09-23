@@ -67,6 +67,7 @@ describe("Durable Jobs operator surface", () => {
     vi.mocked(getCloudJobEvents).mockResolvedValue({ items: [{ sequence: 1, event_type: "JOB_CREATED", event: {}, event_sha256: "c".repeat(64), created_at: "now" }] });
     vi.mocked(getCloudJobArtifacts).mockResolvedValue({ items: [{ result_artifact_id: "RESULT_1", sha256: "d".repeat(64), validation_status: "PASS", created_at: "now" }], raw_output_exposed: false });
     render(<CloudJobsWorkbench />);
+    await waitFor(() => expect(listCloudJobs).toHaveBeenCalled());
     expect(await screen.findByRole("heading", { name: "SEMANTIC_DECOMPOSITION" })).toBeInTheDocument();
     expect(screen.getByText("100 input · 20 output · 120 total")).toBeInTheDocument();
     expect(screen.getByText(/DETERMINISTIC_FAKE \/ fake-semantic-v1/)).toBeInTheDocument();

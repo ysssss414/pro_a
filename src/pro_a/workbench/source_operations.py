@@ -414,7 +414,8 @@ class SourceOperations:
         }
 
     def start(self, source_id: str, *, idempotency_key: str,
-              reprocess_reason: str = "") -> dict[str, Any]:
+              reprocess_reason: str = "",
+              company_material_intent: Mapping[str, Any] | None = None) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
             raise SourceOperationError("INVALID_IDEMPOTENCY_KEY", 422)
         if len(reprocess_reason) > 1000 or reprocess_reason != reprocess_reason.strip():
@@ -430,11 +431,19 @@ class SourceOperations:
                 raise SourceOperationError("SOURCE_NOT_FOUND", 404)
             if source["canonical_source_id"]:
                 raise SourceOperationError("SOURCE_ALREADY_EXISTS_IN_PRODUCTION")
+            from pro_a.company_material_intent import CompanyMaterialError, read_bound, validate
+            try:
+                intent = validate(self.config, company_material_intent) if company_material_intent is not None else None
+            except CompanyMaterialError as error:
+                raise SourceOperationError(str(error), error.status) from None
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
                      if schema_version(connection) in ("9", "10") else None)
 
             def equivalent(row):
                 if row["runtime_sha256"] != runtime_sha:
+                    return False
+                frozen_intent = read_bound(connection, row["processing_run_id"])
+                if (frozen_intent or {}).get("intent_sha256") != (intent or {}).get("intent_sha256"):
                     return False
                 frozen = domains.read(row["processing_run_id"], connection=connection)
                 return ((frozen is None and basis is None) or
@@ -456,6 +465,13 @@ class SourceOperations:
                 "SELECT * FROM source_processing_runs WHERE source_id=? ORDER BY created_at DESC",
                 (source_id,),
             ))
+            for row in rows:
+                frozen_intent = read_bound(connection, row["processing_run_id"])
+                if frozen_intent and intent:
+                    if frozen_intent["target_company_node_id"] != intent["target_company_node_id"]:
+                        raise SourceOperationError("COMPANY_MATERIAL_TARGET_CONFLICT")
+                    if frozen_intent["intent_sha256"] != intent["intent_sha256"]:
+                        raise SourceOperationError("COMPANY_MATERIAL_INTENT_CONFLICT")
             if any(row["state"] == "RECOVERY_REQUIRED" for row in rows):
                 raise SourceOperationError("RECOVERY_REQUIRED_REQUIRES_RECONCILIATION")
             same_runtime = next((row for row in rows if equivalent(row)), None)
@@ -483,6 +499,8 @@ class SourceOperations:
             )
             if basis is not None:
                 domains.bind_run(connection, run_id, basis, self.profile, created, reprocess_reason)
+            if intent is not None:
+                self._event(connection, run_id, "COMPANY_MATERIAL_INTENT_BOUND", intent)
             self._event(connection, run_id, "PROCESSING_QUEUED",
                         {"runtime_sha256": runtime_sha, "source_id": source_id})
             return {"run": self._project_run(connection, run_id), "duplicate": False}
@@ -541,6 +559,9 @@ class SourceOperations:
     def _register_input(self, run: Mapping[str, Any], operation: str, ordinal: int,
                         payload: Mapping[str, Any], checkpoint: Mapping[str, Any]) -> str:
         checkpoint = dict(checkpoint)
+        if run.get("company_material_intent"):
+            checkpoint["company_material_intent_sha256"] = run["company_material_intent_sha256"]
+            checkpoint["company_material_intent"] = run["company_material_intent"]
         reference = Domains(self.config).guard(run["processing_run_id"], self.jobs, self.profile)
         if reference is not None:
             checkpoint["domain_context"] = reference
@@ -873,6 +894,15 @@ class SourceOperations:
                                      (run_id,)).fetchone()
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
                                         (row["source_id"],)).fetchone()
+            from pro_a.company_material_intent import read_bound
+            intent = read_bound(connection, run_id)
+            for input_row in connection.execute(
+                "SELECT checkpoint_json FROM source_cloud_inputs WHERE processing_run_id=?", (run_id,),
+            ):
+                checkpoint = json.loads(input_row[0])
+                if (checkpoint.get("company_material_intent_sha256") != (intent or {}).get("intent_sha256")
+                        or checkpoint.get("company_material_intent") != intent):
+                    raise SourceOperationError("COMPANY_MATERIAL_INTENT_DRIFT")
         try:
             Domains(self.config).guard(run_id, self.jobs, self.profile)
         except BoundaryError as error:
@@ -1049,8 +1079,12 @@ class SourceOperations:
             "SELECT operation_kind,ordinal,job_id,cloud_input_artifact_id FROM source_processing_jobs "
             "WHERE processing_run_id=? ORDER BY operation_kind,ordinal", (run_id,),
         )]
+        from pro_a.company_material_intent import read_bound
+        intent = read_bound(connection, run_id)
         return {
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
+            "company_material_intent": intent,
+            "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
             "source_sha256": source["source_sha256"], "state": row["state"],
             "stage": row["stage"], "runtime_identity": json.loads(row["runtime_json"]),
             "native_execution_id": row["native_execution_id"],
@@ -1136,6 +1170,8 @@ class SourceOperations:
         }
         result["lineage"] = [
             {"kind": "SOURCE", "id": result["source_id"]},
+            *([{"kind": "COMPANY_MATERIAL_INTENT", "id": result["company_material_intent_sha256"]}]
+              if result["company_material_intent_sha256"] else []),
             {"kind": "PROCESSING_RUN", "id": result["processing_run_id"]},
             *({"kind": "CLOUD_JOB", "id": job["job_id"],
                "operation_kind": job["operation_kind"]} for job in detailed_jobs),
@@ -1148,12 +1184,15 @@ class SourceOperations:
 
     @staticmethod
     def _run_overview(row: sqlite3.Row, source_sha256: str, effective_state: str,
-                      usage: Mapping[str, Any] | None) -> dict[str, Any]:
+                      usage: Mapping[str, Any] | None,
+                      intent: Mapping[str, Any] | None = None) -> dict[str, Any]:
         """Bounded list projection; full job/review context stays on the detail endpoint."""
         usage = dict(usage or {})
         known = usage.get("usage_status") == "KNOWN"
         result = {
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
+            "company_material_intent": intent,
+            "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
             "source_sha256": source_sha256, "state": effective_state,
             "stage": row["stage"], "runtime_identity": json.loads(row["runtime_json"]),
             "native_execution_id": row["native_execution_id"],
@@ -1179,6 +1218,8 @@ class SourceOperations:
             "activation_receipt": None,
             "lineage": [
                 {"kind": "SOURCE", "id": row["source_id"]},
+                *([{"kind": "COMPANY_MATERIAL_INTENT", "id": intent["intent_sha256"]}]
+                  if intent else []),
                 {"kind": "PROCESSING_RUN", "id": row["processing_run_id"]},
             ],
             "created_at": row["created_at"], "updated_at": row["updated_at"],
@@ -1206,6 +1247,7 @@ class SourceOperations:
             value = self._source_projection(source)
         value["processing_runs"] = [self.get_run(run_id) for run_id in ids]
         value["latest_run"] = value["processing_runs"][0] if ids else None
+        value["company_material_intent"] = (value["latest_run"] or {}).get("company_material_intent")
         value["run_history"] = {
             "total": run_total, "limit": 25,
             "next_cursor": "25" if run_total > 25 else None,
@@ -1287,12 +1329,15 @@ class SourceOperations:
                           if row["latest_processing_run_id"]]
             run_by_id: dict[str, sqlite3.Row] = {}
             usage_by_id: dict[str, dict[str, Any]] = {}
+            intent_by_id: dict[str, dict[str, Any] | None] = {}
             if latest_ids:
                 placeholders = ",".join("?" for _ in latest_ids)
                 run_by_id = {row["processing_run_id"]: row for row in connection.execute(
                     f"SELECT * FROM source_processing_runs WHERE processing_run_id IN ({placeholders})",
                     latest_ids,
                 )}
+                from pro_a.company_material_intent import read_bound
+                intent_by_id = {run_id: read_bound(connection, run_id) for run_id in latest_ids}
                 usage_by_id = {row["processing_run_id"]: dict(row) for row in connection.execute(
                     f'''SELECT spj.processing_run_id,COUNT(*) AS job_count,
                         COALESCE(SUM(j.attempt_count),0) AS attempts,
@@ -1311,9 +1356,11 @@ class SourceOperations:
             overview = (self._run_overview(
                 run_by_id[latest_id], value["source_sha256"],
                 source["latest_effective_state"], usage_by_id.get(latest_id),
+                intent_by_id.get(latest_id),
             ) if latest_id else None)
             value["processing_runs"] = [overview] if overview else []
             value["latest_run"] = value["processing_runs"][0] if value["processing_runs"] else None
+            value["company_material_intent"] = (overview or {}).get("company_material_intent")
             items.append(value)
         return {
             "items": items, "total": total, "limit": limit, "offset": offset,

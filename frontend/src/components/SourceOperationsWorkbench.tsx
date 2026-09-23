@@ -2,11 +2,15 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
 import { getSourceOperation, listSourceOperations, startSourceProcessing, uploadSource, type PrivateSource } from "../api/sourceOperations";
+import { getResearchCompany, searchResearchCompanies, type CompanyMaterialsPage } from "../api/research";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
 const operationId = () => crypto.randomUUID ? `source-${crypto.randomUUID()}` : `source-${Date.now()}-00000000`;
+const noopAuthenticated = () => undefined;
+const materialKinds = ["earnings_report", "exchange_filing", "company_announcement", "investor_presentation", "investor_qa", "research_report", "community_material", "other"];
+const sourceChannels = ["company_official", "exchange_official", "broker_research", "media", "knowledge_community", "user_upload", "other"];
 
-export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }: { onAuthenticated?: () => void }) {
+export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated }: { onAuthenticated?: () => void }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [token, setToken] = useState("");
   const [sources, setSources] = useState<PrivateSource[]>([]);
@@ -17,6 +21,15 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const contextId = new URLSearchParams(window.location.search).get("company") ?? "";
+  const [companyTarget, setCompanyTarget] = useState<CompanyMaterialsPage["company"] | null>(null);
+  const [companyError, setCompanyError] = useState("");
+  const [companyQuery, setCompanyQuery] = useState("");
+  const [companyResults, setCompanyResults] = useState<CompanyMaterialsPage["company"][]>([]);
+  const [materialKind, setMaterialKind] = useState("");
+  const [sourceChannel, setSourceChannel] = useState("");
+  const [materialDate, setMaterialDate] = useState("");
+  const [operatorTitle, setOperatorTitle] = useState("");
   const controller = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async (sourceId = selectedId) => {
@@ -27,17 +40,25 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
       setSources(page.items);
       setMaxPdfBytes(page.capabilities.max_pdf_bytes);
       if (sourceId) setSelected(await getSourceOperation(sourceId, current.signal));
-    } catch (reason) { if ((reason as Error).name !== "AbortError") setError((reason as Error).message); }
+    } catch (reason) { if (!current.signal.aborted) setError((reason as Error).message); }
   }, [selectedId]);
 
   useEffect(() => {
     const current = new AbortController();
-    getSession(current.signal).then((value) => { setSession(value); onAuthenticated(); }).catch((reason) => {
+    getSession(current.signal).then((value) => { if (!current.signal.aborted) { setSession(value); onAuthenticated(); } }).catch((reason) => {
+      if (current.signal.aborted) return;
       if ((reason as WorkbenchError).status === 401) setSession(null); else setError((reason as Error).message);
     });
     return () => current.abort();
   }, [onAuthenticated]);
   useEffect(() => { if (session) void refresh(); }, [session, refresh]);
+  useEffect(() => {
+    if (!session || !contextId) return;
+    const current = new AbortController();
+    getResearchCompany(contextId, current.signal).then(target => { if (!current.signal.aborted) { setCompanyTarget(target); setCompanyError(""); } })
+      .catch(reason => { if (!current.signal.aborted) { setCompanyTarget(null); setCompanyError((reason as Error).message); } });
+    return () => current.abort();
+  }, [session, contextId]);
   useEffect(() => {
     if (!selected?.latest_run || !["QUEUED", "PARSING", "EXTRACTION_PROCESSING", "SEMANTIC_PROCESSING", "PACKET_PREPARATION"].includes(selected.latest_run.state)) return;
     let stopped = false;
@@ -62,7 +83,7 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
     try {
       const value = await uploadSource(file, session.csrf_token, current.signal);
       setSelectedId(value.source_id); setSelected(value);
-      window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}`);
+      window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}${contextId ? `?company=${encodeURIComponent(contextId)}` : ""}`);
       setMessage(value.duplicate ? "Exact Source already registered. No bytes or processing job were duplicated." : "Clean PDF validated and stored as an immutable private Source.");
       await refresh(value.source_id);
     } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
@@ -71,14 +92,21 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
     if (!selected || !session?.csrf_token) return;
     const current = new AbortController(); setBusy(true); setError(""); setMessage("");
     try {
-      const response = await startSourceProcessing(selected.source_id, { idempotency_key: operationId(), reprocess_reason: "" }, session.csrf_token, current.signal);
+      const company_material_intent = companyTarget ? {
+        target_company_node_id: companyTarget.node_id, material_kind: materialKind,
+        source_channel: sourceChannel, material_date: materialDate || null,
+        operator_title: operatorTitle.trim() || null,
+      } : undefined;
+      const response = await startSourceProcessing(selected.source_id,
+        { idempotency_key: operationId(), reprocess_reason: "", ...(company_material_intent ? { company_material_intent } : {}) },
+        session.csrf_token, current.signal);
       setMessage(response.duplicate ? "Existing processing run returned; no cloud job was duplicated." : "Processing intent queued. A separate worker owns all provider calls.");
       await refresh(selected.source_id);
     } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
   }
   function choose(value: PrivateSource) {
     setSelectedId(value.source_id); setSelected(null); setError("");
-    window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}`);
+    window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}${contextId ? `?company=${encodeURIComponent(contextId)}` : ""}`);
     void refresh(value.source_id);
   }
 
@@ -89,9 +117,36 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
     {error && <p role="alert" className="jobs-error">{error}</p>}<button disabled={busy || token.length < 32}>Sign in</button></form></main>;
 
   const run = selected?.latest_run;
+  async function searchCompany(event: FormEvent) {
+    event.preventDefault(); if (!companyQuery.trim()) return;
+    const current = new AbortController(); setCompanyError("");
+    try { setCompanyResults((await searchResearchCompanies(companyQuery.trim(), current.signal)).items); }
+    catch (reason) { setCompanyError((reason as Error).message); }
+  }
   const stages = ["Validated", "Parsed", "Semantic Processing", "Packet Ready", "Human Review", "Attribution", "Qualified"];
   return <main className="jobs-workspace source-operations"><header className="jobs-hero"><div><span className="eyebrow">Private clean PDF · Golden Path</span>
     <h1>Source Operations</h1><p>Upload → durable processing → native review → attribution → staged result.</p></div><button onClick={() => void refresh()}>Refresh</button></header>
+    <section className="jobs-submit" aria-label="Company Material Intent"><h2>Company Material Intent</h2>
+      {contextId && !companyTarget && !companyError && <p role="status">Validating canonical Company…</p>}
+      {companyError && <p role="alert" className="jobs-error">{companyError}</p>}
+      {companyTarget ? <><p>Research target: <strong>{companyTarget.canonical_name}</strong> · {companyTarget.node_id}</p>
+        <p>Operator routing context only. Human Review and Attribution decide Claim links.</p>
+        <div className="source-material-fields"><label>Material Kind<select value={materialKind} onChange={event => setMaterialKind(event.target.value)}>
+          <option value="">Select material kind</option>{materialKinds.map(kind => <option key={kind} value={kind}>{kind.replaceAll("_", " ")}</option>)}</select></label>
+          <label>Source Channel<select value={sourceChannel} onChange={event => setSourceChannel(event.target.value)}>
+            <option value="">Select source channel</option>{sourceChannels.map(channel => <option key={channel} value={channel}>{channel.replaceAll("_", " ")}</option>)}</select></label>
+          <label>Material Date<input type="date" value={materialDate} onChange={event => setMaterialDate(event.target.value)} /></label>
+          <label>Operator Title<input maxLength={240} value={operatorTitle} onChange={event => setOperatorTitle(event.target.value)} /></label></div>
+        <p>Material date is operator supplied. Channel trust is for workflow display and does not set Source Rank.</p>
+        {sourceChannel === "knowledge_community" && <p>Low-trust clue source. Independent corroboration may be required before thesis use.</p>}
+        <a href={`/node/${encodeURIComponent(companyTarget.node_id)}`}>Back to Company Research</a></>
+        : !contextId && <form onSubmit={searchCompany}><label>Find canonical Company<input value={companyQuery} onChange={event => setCompanyQuery(event.target.value)} /></label>
+          <button type="submit">Search Companies</button>
+          {companyResults.map(target => <button key={target.node_id} type="button" onClick={() => {
+            window.history.replaceState(null, "", `${window.location.pathname}?company=${encodeURIComponent(target.node_id)}`);
+            setCompanyTarget(target); setCompanyResults([]);
+          }}>{target.canonical_name} · {target.node_id}</button>)}</form>}
+    </section>
     <section className="jobs-submit"><h2>Upload one clean PDF</h2><form onSubmit={sendUpload}>
       <label>Private PDF<input aria-label="Private PDF" type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
       <label>Boundary<input value={`${maxPdfBytes === null ? "Configured" : `${(maxPdfBytes / 1024 / 1024).toLocaleString()} MiB`} maximum · OCR unsupported`} readOnly /></label>
@@ -103,7 +158,11 @@ export function SourceOperationsWorkbench({ onAuthenticated = () => undefined }:
         <strong>{source.safe_filename}</strong><code>{source.source_id}</code><small>{source.size_bytes.toLocaleString()} bytes · {source.validation.gate}</small></button>)}</section>
       <section className="job-detail">{!selected ? <p>Select a Source to inspect its product lineage.</p> : <>
         <div className="jobs-heading"><div><span className={`job-state state-${(run?.state ?? "registered").toLowerCase()}`}>{run?.state ?? "REGISTERED"}</span><h2>{selected.safe_filename}</h2></div><code>{selected.source_id}</code></div>
-        {!run && <button disabled={busy || Boolean(selected.known_canonical_source_id)} onClick={() => void startProcessing()}>Start Processing</button>}
+        {!run && <button disabled={busy || Boolean(selected.known_canonical_source_id) || Boolean(contextId && !companyTarget) || Boolean(companyTarget && (!materialKind || !sourceChannel))} onClick={() => void startProcessing()}>Start Processing</button>}
+        {run?.company_material_intent && <dl className="job-facts"><div><dt>Target Company</dt><dd>{run.company_material_intent.target_company_name} · {run.company_material_intent.target_company_node_id}</dd></div>
+          <div><dt>Material Kind</dt><dd>{run.company_material_intent.material_kind}</dd></div><div><dt>Source Channel / Trust Policy</dt><dd>{run.company_material_intent.source_channel} · {run.company_material_intent.material_trust_policy}</dd></div>
+          <div><dt>Material Date</dt><dd>{run.company_material_intent.material_date ?? "Unknown"} {run.company_material_intent.material_date_basis ?? ""}</dd></div>
+          <div><dt>Intent SHA</dt><dd><code>{run.company_material_intent_sha256}</code></dd></div></dl>}
         {run?.error && <div className="recovery-banner" role="alert"><strong>{run.error.code}</strong><p>Failed at {run.error.stage}. Retry safe: {String(run.error.retry_safe)}.</p><p>{run.error.operator_action}</p></div>}
         <ol className="source-stage-list">{stages.map((stage) => <li key={stage}>{stage}</li>)}</ol>
         <dl className="job-facts"><div><dt>Source / processing run</dt><dd><code>{selected.source_id}</code><br/><code>{run?.processing_run_id ?? "Not started"}</code></dd></div>

@@ -4,7 +4,8 @@ export type AttributionDecision = { outcome: string; links: { node_id: string; r
 export type AttributionState = {
   basis_id: string; revision: number; reviewer: string; status: "DRAFT" | "SEALED"; required: number; completed: number;
   claims: { candidate_id: string; content: Record<string, unknown>; scope: string }[];
-  nodes: { node_id: string; candidate_id: string; decision: string; content: Record<string, unknown> }[];
+  nodes: { node_id: string; candidate_id: string | null; decision: string; content: Record<string, unknown>;
+    authority?: string; provenance?: string[]; operator_routing_only?: boolean }[];
   decisions: Record<string, AttributionDecision>; roles: Record<string, string>; audit: Record<string, unknown>[];
   sidecar: { object_id: string } | null;
   qualification: { object_id: string; adapter_version: string; status: string; baseline_sha256: string; diff_id: string;

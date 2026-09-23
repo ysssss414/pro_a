@@ -7,6 +7,7 @@ import {
 import { getSession, listPackets, loginWorkbench, type PacketSummary, WorkbenchError } from "../api/workbench";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
+const noopAuthenticated = () => undefined;
 
 function operationId() {
   return crypto.randomUUID ? crypto.randomUUID() : "stage6-00000000-0000-4000-8000-" + Date.now();
@@ -34,7 +35,7 @@ function Usage({ job }: { job: CloudJob }) {
   </strong>;
 }
 
-export function CloudJobsWorkbench({ onAuthenticated = () => undefined }: { onAuthenticated?: () => void }) {
+export function CloudJobsWorkbench({ onAuthenticated = noopAuthenticated }: { onAuthenticated?: () => void }) {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [packets, setPackets] = useState<PacketSummary[]>([]);
   const [jobs, setJobs] = useState<CloudJob[]>([]);
