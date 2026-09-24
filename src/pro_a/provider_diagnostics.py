@@ -48,6 +48,10 @@ def safe_provider_error_value(value: Any) -> str | None:
     return value if isinstance(value, str) and value in _PROVIDER_ERROR_VALUES else None
 
 
+def safe_timestamp(value: Any) -> str | None:
+    return value if _safe_time(value) else None
+
+
 def http_error_class(status: int) -> str:
     specific = f"HTTP_{status}"
     if specific in _CLASSES:
@@ -94,8 +98,8 @@ def build_failure_diagnostic(*, provider: str, model: str, operation_kind: str,
         "http_response_received": (True if status is not None else
                                    False if stage in ("TRANSPORT", "REQUEST_BUILD") else None),
         "retryable": retryable, "provider_failure_code": safe_identifier(failure_code),
-        "started_at": info.get("started_at") if _safe_time(info.get("started_at")) else None,
-        "finished_at": info.get("finished_at") if _safe_time(info.get("finished_at")) else None,
+        "started_at": safe_timestamp(info.get("started_at")),
+        "finished_at": safe_timestamp(info.get("finished_at")),
         "duration_ms": round(duration, 3) if type(duration) in (int, float) and 0 <= duration < 86400000 else None,
         "response_content_type": info.get("response_content_type") if info.get("response_content_type") in ("application/json", "other", None) else None,
         "response_size_bytes": size if type(size) is int and 0 <= size < 100000000 else None,

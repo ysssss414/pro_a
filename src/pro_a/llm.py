@@ -80,34 +80,39 @@ def _transport_error_class(exc: BaseException) -> str:
 
 
 def _response_diagnostic(resp: Any) -> dict[str, Any]:
-    headers = getattr(resp, "headers", {}) or {}
-    request_id = next((safe_request_id(headers.get(key)) for key in
-                       ("x-request-id", "X-Request-ID", "request-id", "Request-Id", "x-ds-request-id")
-                       if safe_request_id(headers.get(key))), None)
-    content_type = str(headers.get("content-type") or headers.get("Content-Type") or "").split(";", 1)[0].lower()
-    content = getattr(resp, "content", None)
-    if not isinstance(content, bytes):
-        content = str(getattr(resp, "text", "")).encode("utf-8")
-    return {
-        "provider_request_id": request_id,
-        "response_content_type": "application/json" if content_type == "application/json" else "other" if content_type else None,
-        "response_size_bytes": len(content),
-        "http_request_sent": True,
-    }
+    try:
+        headers = getattr(resp, "headers", {}) or {}
+        request_id = next((safe_request_id(headers.get(key)) for key in
+                           ("x-request-id", "X-Request-ID", "request-id", "Request-Id", "x-ds-request-id")
+                           if safe_request_id(headers.get(key))), None)
+        content_type = str(headers.get("content-type") or headers.get("Content-Type") or "").split(";", 1)[0].lower()
+        content = getattr(resp, "content", None)
+        if not isinstance(content, bytes):
+            content = str(getattr(resp, "text", "")).encode("utf-8")
+        return {
+            "provider_request_id": request_id,
+            "response_content_type": "application/json" if content_type == "application/json" else "other" if content_type else None,
+            "response_size_bytes": len(content),
+            "http_request_sent": True,
+        }
+    except Exception:
+        return {"http_request_sent": True}
 
 
 def _body_diagnostic(data: Any) -> dict[str, Any]:
-    if not isinstance(data, dict):
+    try:
+        if not isinstance(data, dict):
+            return {}
+        error = data.get("error")
+        error = error if isinstance(error, dict) else {}
+        return {
+            "provider_error_type": safe_provider_error_value(error.get("type")),
+            "provider_error_code": safe_provider_error_value(error.get("code")),
+            "provider_error_type_present": isinstance(error.get("type"), str),
+            "provider_error_code_present": isinstance(error.get("code"), str),
+        }
+    except Exception:
         return {}
-    error = data.get("error")
-    error = error if isinstance(error, dict) else {}
-    return {
-        "provider_request_id": safe_request_id(data.get("id")) or safe_request_id(data.get("request_id")) or safe_request_id(error.get("request_id")),
-        "provider_error_type": safe_provider_error_value(error.get("type")),
-        "provider_error_code": safe_provider_error_value(error.get("code")),
-        "provider_error_type_present": isinstance(error.get("type"), str),
-        "provider_error_code_present": isinstance(error.get("code"), str),
-    }
 
 
 def _completion_details(data: dict[str, Any], choice: dict[str, Any], content: str) -> str:
@@ -294,7 +299,7 @@ class ChatLLM:
                 try:
                     body = _body_diagnostic(resp.json())
                     self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
-                except ValueError:
+                except Exception:
                     pass
                 raise LLMError(
                     "LLM HTTP retry exhausted: failure_category=http_status; "
@@ -306,20 +311,17 @@ class ChatLLM:
                 try:
                     body = _body_diagnostic(resp.json())
                     self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
-                except ValueError:
+                except Exception:
                     pass
                 raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
             break
 
         try:
             data = resp.json()
-        except UnicodeError as e:
-            self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
-                                             error_class="RESPONSE_DECODE_ERROR")
-            raise LLMError("Unexpected LLM response: invalid JSON body") from e
         except ValueError as e:
             self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
-                                             error_class=("RESPONSE_EMPTY" if not getattr(resp, "text", "")
+                                             error_class=("RESPONSE_DECODE_ERROR" if isinstance(e, UnicodeError)
+                                                          else "RESPONSE_EMPTY" if not getattr(resp, "text", "")
                                                           else "RESPONSE_CONTENT_TYPE_INVALID" if self._attempt_events[-1].get("response_content_type") == "other"
                                                           else "RESPONSE_JSON_PARSE_ERROR"))
             raise LLMError(f"Unexpected LLM response: invalid JSON body: {resp.text[:1000]}") from e
@@ -340,11 +342,9 @@ class ChatLLM:
             raise LLMError(f"Unexpected LLM response: {data}")
 
         usage = data.get("usage")
-        response_id = data.get("id") or self._attempt_events[-1].get("provider_request_id")
+        response_id = self._attempt_events[-1].get("provider_request_id")
         self._attempt_events[-1].update(
-            provider_request_id=(
-                response_id if isinstance(response_id, str) and response_id else None
-            ),
+            provider_request_id=safe_request_id(response_id),
             response_model=data.get("model"),
             finish_reason=finish_reason,
             prompt_tokens=(

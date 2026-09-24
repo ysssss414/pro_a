@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -63,7 +64,7 @@ def adapter(monkeypatch, outcome):
 
 @pytest.mark.parametrize("name,outcome,stage,error_class,status,retryable,request_id", [
     ("401", Response({"error": {"type": "auth_error", "code": "invalid_key", "request_id": "req-body-401"}}, 401,
-                     headers={"x-request-id": "req-header-401"}), "HTTP_RESPONSE", "HTTP_401", 401, False, "req-body-401"),
+                     headers={"x-request-id": "req-header-401"}), "HTTP_RESPONSE", "HTTP_401", 401, False, "req-header-401"),
     ("429", Response({"error": {"type": "rate_limit", "code": "rate_limited"}}, 429,
                      headers={"x-request-id": "req-header-429"}), "HTTP_RESPONSE", "HTTP_429", 429, True, "req-header-429"),
     ("500", Response({}, 500), "HTTP_RESPONSE", "HTTP_500", 500, True, None),
@@ -74,8 +75,9 @@ def adapter(monkeypatch, outcome):
     ("invalid_json", Response({}, 200, headers={"x-request-id": "req-json-200"}, body="{invalid", invalid_json=True),
      "PROVIDER_PARSE", "RESPONSE_JSON_PARSE_ERROR", 200, False, "req-json-200"),
     ("invalid_envelope", Response({"id": "req-envelope", "unexpected": 1}),
-     "PROVIDER_PARSE", "PROVIDER_RESPONSE_SCHEMA_ERROR", 200, False, "req-envelope"),
-    ("invalid_model_output", Response(completion("{not-json")),
+     "PROVIDER_PARSE", "PROVIDER_RESPONSE_SCHEMA_ERROR", 200, False, None),
+    ("invalid_model_output", Response(completion("{not-json"),
+                                      headers={"x-request-id": "chatcmpl-synthetic"}),
      "MODEL_OUTPUT_PARSE", "OUTPUT_PARSE_ERROR", 200, False, "chatcmpl-synthetic"),
 ])
 def test_http_and_transport_matrix(monkeypatch, name, outcome, stage, error_class,
@@ -103,7 +105,8 @@ def test_http_and_transport_matrix(monkeypatch, name, outcome, stage, error_clas
 
 
 def test_success_has_no_failure_diagnostic(monkeypatch):
-    provider, request = adapter(monkeypatch, Response(completion()))
+    provider, request = adapter(monkeypatch, Response(completion(),
+                                                     headers={"x-request-id": "chatcmpl-synthetic"}))
     result = provider.invoke(request)
     assert result.provider_request_id == "chatcmpl-synthetic"
     assert result.output == {"source_analysis": "ok"}
@@ -161,7 +164,7 @@ def test_explicit_not_dispatched_failure_records_no_http_request(tmp_path):
     assert diagnostic["http_status"] is None
 
 
-def test_unknown_exception_is_bounded_and_no_secrets_persist(tmp_path, caplog):
+def test_unknown_exception_preserves_baseline_state_and_logs_safe_diagnostic(tmp_path, caplog):
     case = stage6_fixture(tmp_path)
     job = case["jobs"].submit(idempotency_key="stage72a-unknown",
                               input_artifact_id=case["artifact_id"],
@@ -175,14 +178,18 @@ def test_unknown_exception_is_bounded_and_no_secrets_persist(tmp_path, caplog):
             raise error
 
     with caplog.at_level(logging.DEBUG):
-        result = case["jobs"].run_once(UnknownProvider(), worker_id="synthetic", job_id=job["job_id"])
-    assert result["status"] == "RECOVERY_REQUIRED"
-    assert result["failure_diagnostic"]["error_class"] == "UNKNOWN_PROVIDER_ERROR"
-    assert result["failure_diagnostic"]["retryable"] is False
+        with pytest.raises(RuntimeError) as caught:
+            case["jobs"].run_once(UnknownProvider(), worker_id="synthetic", job_id=job["job_id"])
+    assert caught.value.args == (secret,)
+    result = case["jobs"].get(job["job_id"])
+    assert result["status"] == "RUNNING"
+    assert result["failure_diagnostic"] is None
+    assert '"error_class": "UNKNOWN_PROVIDER_ERROR"' in caplog.text
     with sqlite3.connect(case["config"].state_db) as db:
         rows = db.execute("SELECT event_json FROM cloud_job_events WHERE job_id=?", (job["job_id"],)).fetchall()
-        outcome = db.execute("SELECT provider_request_id FROM cloud_attempt_outcomes").fetchone()[0]
-    assert outcome == result["provider_request_id"] == "req-exception-unknown"
+        outcomes = db.execute("SELECT provider_request_id FROM cloud_attempt_outcomes").fetchall()
+    assert outcomes == []
+    assert result["provider_request_id"] is None
     disclosed = json.dumps(result) + json.dumps(rows) + caplog.text
     for marker in ("SECRET_TEST_TOKEN", "SECRET_API_KEY", "SECRET_COOKIE", "SECRET_COMMUNITY_CONTENT"):
         assert marker not in disclosed
@@ -225,7 +232,8 @@ def test_real_adapter_output_rejection_retains_http_200_without_body(tmp_path, m
                               input_artifact_id=case["artifact_id"],
                               operation_kind="SEMANTIC_DECOMPOSITION")["job"]
     adapter(monkeypatch, Response(completion('{"SECRET_COMMUNITY_CONTENT":"private"}',
-                                                 request_id="chatcmpl-output-rejected")))
+                                                 request_id="chatcmpl-output-rejected"),
+                                  headers={"x-request-id": "chatcmpl-output-rejected"}))
     llm = ChatLLM(LLMConfig(enabled=True, api_key_env="STAGE72A_FAKE_KEY",
                             model="deepseek-flash", timeout_seconds=60,
                             max_retries=0, max_output_tokens=8192))
@@ -268,3 +276,142 @@ def test_untrusted_identifier_fields_are_dropped():
     assert diagnostic["provider_error_type"] is None
     assert diagnostic["provider_error_code"] is None
     assert "SECRET" not in json.dumps(diagnostic)
+
+
+def _semantic_job(tmp_path, monkeypatch, outcome):
+    profile = CloudProfile("deepseek", "deepseek-flash", (), ADAPTER_VERSION,
+                           60, 8192, 1, 1, 20000)
+    case = stage6_fixture(tmp_path, profile=profile)
+    job = case["jobs"].submit(idempotency_key="stage72a-r1-synthetic",
+                              input_artifact_id=case["artifact_id"],
+                              operation_kind="SEMANTIC_DECOMPOSITION")["job"]
+    adapter(monkeypatch, outcome)
+    llm = ChatLLM(LLMConfig(enabled=True, api_key_env="STAGE72A_FAKE_KEY",
+                            model="deepseek-flash", timeout_seconds=60,
+                            max_retries=0, max_output_tokens=8192))
+    provider = SemanticBackendProvider(ChatLLMSemanticBackend(llm), provider_identity="deepseek")
+    return case, job, provider
+
+
+def test_http_401_diagnostic_parser_failure_preserves_auth_state(tmp_path, monkeypatch):
+    class BrokenJson(Response):
+        def json(self):
+            raise RuntimeError("SECRET_TEST_TOKEN")
+
+    case, job, provider = _semantic_job(
+        tmp_path, monkeypatch,
+        BrokenJson({}, 401, headers={"x-request-id": "req-r1-auth"}, body="unauthorized"),
+    )
+    result = case["jobs"].run_once(provider, worker_id="synthetic", job_id=job["job_id"])
+    assert (result["status"], result["last_error"]) == ("FAILED", "AUTHENTICATION_ERROR")
+    diagnostic = result["failure_diagnostic"]
+    assert (diagnostic["http_status"], diagnostic["failure_stage"],
+            diagnostic["error_class"], diagnostic["provider_request_id"],
+            diagnostic["retryable"]) == (401, "HTTP_RESPONSE", "HTTP_401", "req-r1-auth", False)
+    assert b"SECRET_TEST_TOKEN" not in case["config"].state_db.read_bytes()
+
+
+@pytest.mark.parametrize("outcome,stage", [
+    (Response({}, 200, invalid_json=True), "PROVIDER_PARSE"),
+    (Response(completion("{not-json")), "MODEL_OUTPUT_PARSE"),
+    (Response(completion('{"unexpected":true}')), "OUTPUT_VALIDATION"),
+])
+def test_http_200_context_survives_later_failure(tmp_path, monkeypatch, outcome, stage):
+    case, job, provider = _semantic_job(tmp_path, monkeypatch, outcome)
+    result = case["jobs"].run_once(provider, worker_id="synthetic", job_id=job["job_id"])
+    assert result["status"] == "FAILED"
+    assert result["failure_diagnostic"]["http_status"] == 200
+    assert result["failure_diagnostic"]["failure_stage"] == stage
+
+
+def test_http_200_context_survives_durable_artifact_recovery(tmp_path, monkeypatch):
+    outcome = Response(completion('{"unexpected":true}', request_id="SECRET_API_KEY"),
+                       headers={"x-request-id": "req-r1-recovery"})
+    case, job, provider = _semantic_job(tmp_path, monkeypatch, outcome)
+    with pytest.raises(InjectedCrash, match="after_result_artifact_durable"):
+        case["jobs"].run_once(provider, worker_id="synthetic", job_id=job["job_id"],
+                              lease_seconds=0, fault_at="after_result_artifact_durable")
+    restarted = CloudJobs(case["config"], case["profile"])
+    assert restarted.reconcile()["reconciled"] == 1
+    result = restarted.get(job["job_id"])
+    assert result["status"] == "FAILED"
+    assert (result["failure_diagnostic"]["http_status"],
+            result["failure_diagnostic"]["provider_request_id"]) == (200, "req-r1-recovery")
+    assert b"SECRET_API_KEY" not in case["config"].state_db.read_bytes()
+    assert "SECRET_API_KEY" not in json.dumps(restarted.private_result(job["job_id"]))
+
+
+def test_untrusted_response_identity_is_absent_from_failed_surfaces(tmp_path, monkeypatch, caplog):
+    markers = ("SECRET_TEST_TOKEN", "SECRET_API_KEY", "SECRET_COOKIE", "SECRET_COMMUNITY_CONTENT")
+    outcome = Response(completion('{"SECRET_COMMUNITY_CONTENT":"private"}',
+                                  request_id="SECRET_API_KEY"),
+                       headers={"x-request-id": "req-SECRET_TEST_TOKEN",
+                                "set-cookie": "SECRET_COOKIE"})
+    case, job, provider = _semantic_job(tmp_path, monkeypatch, outcome)
+    with caplog.at_level(logging.DEBUG):
+        result = case["jobs"].run_once(provider, worker_id="synthetic", job_id=job["job_id"])
+    assert result["status"] == "FAILED"
+    assert result["provider_request_id"] is None
+    assert result["failure_diagnostic"]["provider_request_id"] is None
+    disclosed = (case["config"].state_db.read_bytes().decode("utf-8", errors="ignore")
+                 + json.dumps(result) + json.dumps(case["jobs"].private_result(job["job_id"]))
+                 + caplog.text)
+    assert all(marker not in disclosed for marker in markers)
+
+
+def test_untrusted_provider_error_and_nested_transport_metadata_are_absent(tmp_path, monkeypatch, caplog):
+    marker = "SECRET_TEST_TOKEN"
+    response = Response({"error": {"type": "SECRET_API_KEY", "code": "SECRET_COOKIE",
+                                   "nested": {"token": "SECRET_COMMUNITY_CONTENT"}}},
+                        401, headers={"x-request-id": "req-SECRET_TEST_TOKEN"}, body=marker)
+    case, job, provider = _semantic_job(tmp_path / "http", monkeypatch, response)
+    with caplog.at_level(logging.DEBUG):
+        result = case["jobs"].run_once(provider, worker_id="synthetic", job_id=job["job_id"])
+    assert result["last_error"] == "AUTHENTICATION_ERROR"
+    assert result["failure_diagnostic"]["provider_error_type"] is None
+    assert result["failure_diagnostic"]["provider_error_code"] is None
+    assert result["failure_diagnostic"]["provider_request_id"] is None
+    error = requests.exceptions.ConnectionError(marker)
+    error.metadata = {"nested": {"cookie": "SECRET_COOKIE"}}
+    other, other_job, other_provider = _semantic_job(tmp_path / "transport", monkeypatch, error)
+    with caplog.at_level(logging.DEBUG):
+        transport = other["jobs"].run_once(other_provider, worker_id="synthetic",
+                                            job_id=other_job["job_id"])
+    assert transport["status"] == "RECOVERY_REQUIRED"
+    assert transport["failure_diagnostic"]["http_status"] is None
+    disclosed = (case["config"].state_db.read_bytes().decode("utf-8", errors="ignore")
+                 + other["config"].state_db.read_bytes().decode("utf-8", errors="ignore")
+                 + json.dumps(result) + json.dumps(transport) + caplog.text)
+    assert all(value not in disclosed for value in
+               (marker, "SECRET_API_KEY", "SECRET_COOKIE", "SECRET_COMMUNITY_CONTENT"))
+
+
+def test_completion_id_alone_is_not_request_id(monkeypatch):
+    provider, request = adapter(monkeypatch, Response(completion(request_id="req-completion-only")))
+    assert provider.invoke(request).provider_request_id is None
+
+
+def test_all_provider_result_strings_are_sanitized_before_failure_persistence(tmp_path, caplog):
+    case = stage6_fixture(tmp_path)
+    job = case["jobs"].submit(idempotency_key="stage72a-r1-result-taint",
+                              input_artifact_id=case["artifact_id"],
+                              operation_kind="SEMANTIC_DECOMPOSITION")["job"]
+
+    class TaintedResult(DeterministicFakeProvider):
+        def invoke(self, request):
+            result = super().invoke(request)
+            return replace(result, provider="SECRET_TEST_TOKEN",
+                           requested_model="SECRET_API_KEY",
+                           provider_reported_model="SECRET_COOKIE",
+                           provider_request_id="req-SECRET_COMMUNITY_CONTENT",
+                           started_at="SECRET_TEST_TOKEN", ended_at="SECRET_API_KEY",
+                           latency_ms="SECRET_COOKIE", finish_reason="SECRET_COMMUNITY_CONTENT")
+
+    with caplog.at_level(logging.DEBUG):
+        result = case["jobs"].run_once(TaintedResult(), worker_id="synthetic", job_id=job["job_id"])
+    assert (result["status"], result["last_error"]) == ("FAILED", "PROVIDER_IDENTITY_MISMATCH")
+    disclosed = (case["config"].state_db.read_bytes().decode("utf-8", errors="ignore")
+                 + json.dumps(result) + json.dumps(case["jobs"].private_result(job["job_id"]))
+                 + caplog.text)
+    assert all(marker not in disclosed for marker in
+               ("SECRET_TEST_TOKEN", "SECRET_API_KEY", "SECRET_COOKIE", "SECRET_COMMUNITY_CONTENT"))

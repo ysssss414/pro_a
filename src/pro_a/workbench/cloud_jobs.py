@@ -3,11 +3,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import re
 import sqlite3
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -32,13 +33,17 @@ from pro_a.cloud_contract import (
     validate_output,
 )
 from pro_a.phase4_orchestration import _runtime as phase4_runtime
-from pro_a.provider_diagnostics import build_failure_diagnostic, safe_identifier
+from pro_a.provider_diagnostics import (build_failure_diagnostic, safe_identifier,
+                                        safe_request_id, safe_timestamp)
 from pro_a.production_promotion import sha256_file
 from pro_a.semantic_decomposition import build_evidence_units
 from .artifacts import Artifacts
 from .config import BoundaryError, checked_path
 from .review_store import schema_version
 from .store import Store
+
+
+logger = logging.getLogger(__name__)
 
 
 STATES = (
@@ -461,9 +466,9 @@ class CloudJobs:
                       "sha256": result["input_sha256"], "source_id": result["source_id"]},
             "status": result["state"], "phase": result["phase"],
             "provider": result["provider"], "requested_model": result["requested_model"],
-            "provider_reported_model": result["provider_reported_model"],
+            "provider_reported_model": safe_identifier(result["provider_reported_model"]),
             "model_identity_status": result["model_identity_status"],
-            "provider_request_id": result["provider_request_id"],
+            "provider_request_id": safe_request_id(result["provider_request_id"]),
             "provider_adapter_version": result["provider_adapter_version"],
             "runtime_identity": json.loads(result["runtime_json"]),
             "prompt_identity": json.loads(result["prompt_json"]),
@@ -802,6 +807,32 @@ class CloudJobs:
             raise JobError("RESULT_ARTIFACT_PATH_INVALID")
         return checked_path(directory / f"{attempt_id}.json", missing=True), relative
 
+    @staticmethod
+    def _durable_result(request: CloudRequest, result: CloudResult,
+                        model_status: str) -> CloudResult:
+        """Allowlist provider-supplied result metadata after business validation."""
+        latency = result.latency_ms
+        return replace(
+            result,
+            provider=(request.provider if result.provider == request.provider
+                      else "UNKNOWN_PROVIDER"),
+            requested_model=(request.requested_model
+                             if result.requested_model == request.requested_model
+                             else "UNKNOWN_MODEL"),
+            provider_reported_model=((safe_identifier(result.provider_reported_model)
+                                      if model_status in ("EXACT", "ACCEPTED_ALIAS")
+                                      else None) or "UNKNOWN"),
+            provider_request_id=safe_request_id(result.provider_request_id),
+            started_at=safe_timestamp(result.started_at) or now(),
+            ended_at=safe_timestamp(result.ended_at) or now(),
+            latency_ms=(latency if type(latency) in (int, float)
+                        and 0 <= latency < 86400000 else 0.0),
+            finish_reason=(result.finish_reason if isinstance(result.finish_reason, str)
+                           and result.finish_reason in ("stop", "length", "content_filter",
+                                                        "tool_calls", "insufficient_system_resource")
+                           else "UNKNOWN"),
+        )
+
     def _write_result_artifact(self, request: CloudRequest, result: CloudResult,
                                validation_status: str, normalized: Mapping[str, Any] | None,
                                model_identity_status: str,
@@ -827,6 +858,9 @@ class CloudJobs:
             "raw_provider_output": result.output if terminal_error is None else None,
             "normalized_output": normalized,
         }
+        if terminal_error is not None:
+            status = (result.transport_diagnostic or {}).get("http_status")
+            envelope["http_status"] = status if type(status) is int and 100 <= status <= 599 else None
         content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, indent=2,
                               allow_nan=False) + "\n").encode("utf-8")
         sha = hashlib.sha256(content).hexdigest()
@@ -971,15 +1005,20 @@ class CloudJobs:
                 if retry:
                     continue
                 return self.get(current_job)
-            except Exception as error:
-                failure = ProviderFailure(
-                    "UNKNOWN_PROVIDER_ERROR", retryable=False, external_outcome="UNKNOWN",
-                    diagnostic={"failure_stage": "UNKNOWN", "error_class": "UNKNOWN_PROVIDER_ERROR",
-                                "provider_request_id": safe_identifier(getattr(error, "request_id", None))
-                                or safe_identifier(getattr(error, "provider_request_id", None))},
-                )
-                self._record_provider_failure(current_job, attempt_id, worker_id, fence, failure)
-                return self.get(current_job)
+            except Exception:
+                try:
+                    diagnostic = build_failure_diagnostic(
+                        provider=request.provider, model=request.requested_model,
+                        operation_kind=request.operation_kind, job_id=current_job,
+                        call_id=attempt_id, attempt_number=request.attempt_number,
+                        failure_code="UNKNOWN_PROVIDER_ERROR", retryable=False,
+                        details={"failure_stage": "UNKNOWN", "error_class": "UNKNOWN_PROVIDER_ERROR"},
+                    )
+                    logger.warning("Unexpected provider failure diagnostic=%s",
+                                   json.dumps(diagnostic, sort_keys=True))
+                except Exception:
+                    pass
+                raise
             self._fault(fault_at, "after_provider_response")
             with self.store.connect() as connection:
                 job_row = connection.execute("SELECT * FROM cloud_jobs WHERE job_id=?",
@@ -1002,6 +1041,7 @@ class CloudJobs:
                 except CloudContractError:
                     validation_status = "FAIL"
                     terminal_error = "OUTPUT_VALIDATION_FAILED"
+            result = self._durable_result(request, result, model_status)
             self._fault(fault_at, "before_result_artifact_durable")
             _, relative, sha = self._write_result_artifact(
                 request, result, validation_status, normalized, model_status, terminal_error
@@ -1034,7 +1074,7 @@ class CloudJobs:
                 "latency_ms", "finish_reason", "usage", "model_identity_status", "validation_status",
                 "normalized_error", "raw_provider_output", "normalized_output",
             }
-            if (not isinstance(envelope, dict) or set(envelope) != required
+            if (not isinstance(envelope, dict) or set(envelope) not in (required, required | {"http_status"})
                     or envelope["document_type"] != "phase42_stage6_private_cloud_result"
                     or envelope["schema_version"] != "1"
                     or envelope["contract_version"] != CONTRACT_VERSION
@@ -1042,6 +1082,9 @@ class CloudJobs:
                     or envelope["attempt_id"] != attempt["attempt_id"]
                     or envelope["request_sha256"] != attempt["request_sha256"]):
                 raise JobError("RESULT_ARTIFACT_BINDING_MISMATCH")
+            status = envelope.get("http_status")
+            if status is not None and (type(status) is not int or not 100 <= status <= 599):
+                raise JobError("RESULT_ARTIFACT_INVALID")
             expected_content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, indent=2,
                                            allow_nan=False) + "\n").encode("utf-8")
             if content != expected_content:
@@ -1066,13 +1109,14 @@ class CloudJobs:
             result = CloudResult(
                 provider=envelope["provider"], requested_model=envelope["requested_model"],
                 provider_reported_model=envelope["provider_reported_model"],
-                provider_request_id=envelope["provider_request_id"], operation_kind=envelope["operation_kind"],
+                provider_request_id=safe_request_id(envelope["provider_request_id"]), operation_kind=envelope["operation_kind"],
                 attempt_number=envelope["attempt_number"], started_at=envelope["started_at"],
                 ended_at=envelope["ended_at"], latency_ms=envelope["latency_ms"],
                 finish_reason=envelope["finish_reason"], usage_status=usage["status"],
                 input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
                 total_tokens=usage.get("total_tokens"), cached_tokens=usage.get("cached_tokens"),
                 output=envelope["raw_provider_output"],
+                transport_diagnostic={"http_status": status},
             )
             aliases = set(json.loads(row["accepted_model_aliases_json"]))
             if result.provider != request.provider or result.requested_model != request.requested_model:
@@ -1128,7 +1172,7 @@ class CloudJobs:
                 cached_tokens,latency_ms,finish_reason,sanitized_error,ended_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''', (
                 attempt["attempt_id"], "COMPLETED" if validation_status == "PASS" else "REJECTED",
                 "KNOWN_SUCCESS",
-                envelope["provider_reported_model"], envelope.get("provider_request_id"), usage["status"],
+                envelope["provider_reported_model"], safe_request_id(envelope.get("provider_request_id")), usage["status"],
                 usage.get("input_tokens"), usage.get("output_tokens"), usage.get("total_tokens"),
                 usage.get("cached_tokens"), envelope["latency_ms"], envelope["finish_reason"],
                 terminal_error, envelope["ended_at"],
@@ -1138,7 +1182,7 @@ class CloudJobs:
                 usage_status=?,input_tokens=?,output_tokens=?,total_tokens=?,cached_tokens=?,
                 reserved_calls=0,reserved_tokens=0,sanitized_error=?,updated_at=? WHERE job_id=?''', (
                 result_id, validation_status, envelope["model_identity_status"],
-                envelope["provider_reported_model"], envelope.get("provider_request_id"), usage["status"],
+                envelope["provider_reported_model"], safe_request_id(envelope.get("provider_request_id")), usage["status"],
                 usage.get("input_tokens"), usage.get("output_tokens"), usage.get("total_tokens"),
                 usage.get("cached_tokens"), terminal_error, now(), row["job_id"],
             ))
@@ -1150,6 +1194,7 @@ class CloudJobs:
                     failure_code=terminal_error, retryable=False,
                     details={"failure_stage": "OUTPUT_VALIDATION",
                              "error_class": "OUTPUT_SCHEMA_VALIDATION_ERROR",
+                             "http_status": status,
                              "provider_request_id": result.provider_request_id,
                              "started_at": result.started_at, "finished_at": result.ended_at,
                              "duration_ms": result.latency_ms},
