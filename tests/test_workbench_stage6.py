@@ -157,6 +157,7 @@ def _live_adapter_llm(monkeypatch, output, request_id):
     class Response:
         status_code = 200
         text = ""
+        headers = {"x-request-id": request_id}
 
         @staticmethod
         def json():

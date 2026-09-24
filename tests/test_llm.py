@@ -11,10 +11,11 @@ from pro_a.llm import ChatLLM, LLMError
 
 
 class FakeResponse:
-    def __init__(self, payload, *, status_code: int = 200, text: str = ""):
+    def __init__(self, payload, *, status_code: int = 200, text: str = "", headers=None):
         self.payload = payload
         self.status_code = status_code
         self.text = text
+        self.headers = headers or {}
 
     def json(self):
         return self.payload
@@ -115,7 +116,7 @@ def test_provider_metadata_captures_real_response_id_model_and_usage(monkeypatch
         FakeResponse(completion(
             '{"ok": true}', response_id="chatcmpl-ID-A", model="deepseek-flash",
             prompt_tokens=11, completion_tokens=3, total_tokens=14,
-        )),
+        ), headers={"x-request-id": "chatcmpl-ID-A"}),
     )
 
     assert llm.json("Return JSON.", "synthetic input") == {"ok": True}
@@ -133,7 +134,8 @@ def test_missing_response_id_is_explicit_and_failed_next_call_clears_prior_id(mo
     llm, _ = make_llm(
         monkeypatch,
         [
-            FakeResponse(completion('{"ok": true}', response_id="chatcmpl-ID-A")),
+            FakeResponse(completion('{"ok": true}', response_id="chatcmpl-ID-A"),
+                         headers={"x-request-id": "chatcmpl-ID-A"}),
             FakeResponse({}, status_code=401, text="unauthorized"),
         ],
     )
