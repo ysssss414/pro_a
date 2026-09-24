@@ -146,10 +146,10 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
     catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
   }
   async function sendCommunity() {
-    if (!communityFile || !communityPreview || !companyTarget || !communityDomain || !session?.csrf_token) return;
+    if (!communityFile || !communityPreview || !companyTarget || !session?.csrf_token) return;
     const current = new AbortController(); setBusy(true); setError(""); setMessage("");
     try {
-      const value = await importCommunity(communityFile, companyTarget.node_id, communityDomain, session.csrf_token, current.signal);
+      const value = await importCommunity(communityFile, companyTarget.node_id, communityDomain || null, session.csrf_token, current.signal);
       setSelectedId(value.source.source_id);
       window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source.source_id)}?company=${encodeURIComponent(companyTarget.node_id)}&community=1`);
       setMessage(value.duplicate ? "Existing Community processing run returned." : "Community material queued for private Source processing.");
@@ -194,9 +194,10 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
         <p>ZSXQ input: {communityPreview.company_input} · Group: {communityPreview.group_label} ({communityPreview.group_id})</p>
         <p>{communityPreview.topic_count} topics · {communityPreview.date_min ?? "Unknown"} to {communityPreview.date_max ?? "Unknown"}</p>
         <p>{communityPreview.trust_policy} · Bundle <code>{communityPreview.bundle_sha256}</code></p>
-        <label>Processing domain<select value={communityDomain} onChange={event => setCommunityDomain(event.target.value)}>
-          <option value="">Select registered domain</option>{communityDomains.map(item => <option key={`${item.domain_id}:${item.version}`} value={item.domain_id}>{item.domain_id} · {item.version}</option>)}</select></label>
-        <button type="button" disabled={busy || !communityDomain} onClick={() => void sendCommunity()}>Import and start processing</button></div>}</section>}
+        <label>Processing scope<select value={communityDomain} onChange={event => setCommunityDomain(event.target.value)}>
+          <option value="">Shared Core — Domain pending</option>{communityDomains.map(item => <option key={`${item.domain_id}:${item.version}`} value={item.domain_id}>{item.domain_id} · {item.version}</option>)}</select></label>
+        {!communityDomain && <p>Industry routing is intentionally deferred until the extracted evidence is reviewed.</p>}
+        <button type="button" disabled={busy} onClick={() => void sendCommunity()}>Import and start processing</button></div>}</section>}
     {!communityMode && <section className="jobs-submit"><h2>Upload one clean PDF</h2><form onSubmit={sendUpload}>
       <label>Private PDF<input aria-label="Private PDF" type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
       <label>Boundary<input value={`${maxPdfBytes === null ? "Configured" : `${(maxPdfBytes / 1024 / 1024).toLocaleString()} MiB`} maximum · OCR unsupported`} readOnly /></label>
@@ -209,7 +210,11 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
         <strong>{source.safe_filename}</strong><code>{source.source_id}</code><small>{source.size_bytes.toLocaleString()} bytes · {source.validation.gate}</small></button>)}</section>
       <section className="job-detail">{!selected ? <p>Select a Source to inspect its product lineage.</p> : <>
         <div className="jobs-heading"><div><span className={`job-state state-${(run?.state ?? "registered").toLowerCase()}`}>{run?.state ?? "REGISTERED"}</span><h2>{selected.safe_filename}</h2></div><code>{selected.source_id}</code></div>
-        {!run && <button disabled={busy || Boolean(selected.known_canonical_source_id) || Boolean(contextId && !companyTarget) || Boolean(companyTarget && (!materialKind || !sourceChannel))} onClick={() => void startProcessing()}>Start Processing</button>}
+        {!run && <><p>If no Domain is assigned, processing starts in Shared Core with Domain assignment pending.</p>
+          <button disabled={busy || Boolean(selected.known_canonical_source_id) || Boolean(contextId && !companyTarget) || Boolean(companyTarget && (!materialKind || !sourceChannel))} onClick={() => void startProcessing()}>Start Processing</button></>}
+        {run?.processing_scope_mode && <dl className="job-facts"><div><dt>Processing Scope</dt><dd>{run.processing_scope_mode === "SHARED_CORE" ? "Shared Core" : "Domain assigned"}</dd></div>
+          <div><dt>Domain Assignment</dt><dd>{run.domain_assignment_status === "PENDING" ? "Pending" : run.primary_domain}</dd></div></dl>}
+        {run?.domain_assignment_status === "PENDING" && <p>Industry routing is intentionally deferred until the extracted evidence is reviewed.</p>}
         {run?.company_material_intent && <dl className="job-facts"><div><dt>Target Company</dt><dd>{run.company_material_intent.target_company_name} · {run.company_material_intent.target_company_node_id}</dd></div>
           <div><dt>Material Kind</dt><dd>{run.company_material_intent.material_kind}</dd></div><div><dt>Source Channel / Trust Policy</dt><dd>{run.company_material_intent.source_channel} · {run.company_material_intent.material_trust_policy}</dd></div>
           <div><dt>Material Date</dt><dd>{run.company_material_intent.material_date ?? "Unknown"} {run.company_material_intent.material_date_basis ?? ""}</dd></div>

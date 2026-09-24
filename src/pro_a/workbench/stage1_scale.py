@@ -324,7 +324,17 @@ class Stage1ReviewProjection:
                    ORDER BY revision DESC LIMIT 1""", (source_id,),
             ).fetchone()
             domains: list[str] = []
-            if assignment:
+            from .domains import Domains
+            source_run = connection.execute(
+                "SELECT processing_run_id FROM source_processing_runs WHERE packet_artifact_id=?",
+                (artifact_id,),
+            ).fetchone()
+            frozen = Domains(self.config).read(source_run["processing_run_id"], connection=connection) if source_run else None
+            if frozen and frozen["contract_version"] == "run-domain-context-v1":
+                composition = frozen["basis"]["composition"]
+                domains = [composition["primary_domain"]] + [pack["domain_id"] for pack in composition["packs"]
+                                                       if pack["domain_id"] != composition["primary_domain"]]
+            elif frozen is None and assignment:
                 domains = [str(assignment["primary_domain"])]
                 for identity in json.loads(assignment["packs_json"]):
                     domain_id = str(identity.get("domain_id") or "")

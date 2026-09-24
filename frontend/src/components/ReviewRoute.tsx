@@ -100,6 +100,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
       </section>}
       <section aria-label="Packet identity">
         <h2>Packet and Source</h2>
+        {packet.processing_scope_mode === "SHARED_CORE" && <p>Shared Core processing · Domain assignment pending</p>}
         <dl><dt>Packet</dt><dd>{packet.packet_id}</dd><dt>Run</dt><dd>{packet.run_id}</dd>
           <dt>Validation</dt><dd>{packet.validation_state}</dd><dt>Packet status</dt><dd>{packet.packet_status}</dd>
           <dt>Packet file SHA-256</dt><dd>{packet.packet_file_sha256}</dd><dt>Immutable packet SHA-256</dt><dd>{packet.immutable_packet_sha256}</dd>
