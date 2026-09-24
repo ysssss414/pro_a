@@ -1,6 +1,10 @@
 {
   "stage": "PHASE43_STAGE72A_PROVIDER_FAILURE_DIAGNOSTICS",
-  "status": "PASS",
+  "status": "SUPERSEDED_BY_R1",
+  "initial_self_qualification": "PASS_ON_ORIGINAL_19_CASES",
+  "initial_premerge_audit": "BLOCKED_AT_93298cd6337df61b286d3c88ccfc07056ad99901",
+  "r1_repair_code_head": "658e13e11a18abe44e4b6ea654790f6220de0f8d",
+  "r1_repair_qualification": "PASS",
   "baseline_main_sha": "9179e28e73c8658b4893729a90f40166f556a0bd",
   "branch": "codex/phase43-stage72a-provider-failure-diagnostics",
   "commit_sha": "25c4d51170b69455be6fc08c5e9e203f27be86b6",
@@ -20,7 +24,7 @@
   ],
   "synthetic_cases_run": 19,
   "synthetic_cases_passed": 19,
-  "secret_leakage_test": "PASS",
+  "secret_leakage_test": "INITIAL_CLAIM_DISPROVED_BY_PREMERGE_AUDIT; R1_REPAIRED_AND_QUALIFIED",
   "provider_live_calls": 0,
   "zsxq_reads": 0,
   "zsxq_writes": 0,
@@ -33,10 +37,18 @@
   "related_tests": "124 passed; provider, CloudJobs, Workbench, Stage 7 Community, Stage 7.1 Shared Core Pending",
   "frontend_tests": "159 passed in 29 files; production build and TypeScript PASS",
   "compileall": "PASS",
-  "full_repo_results_if_run": null,
-  "full_repo_not_run_reason": "Relevant changed paths were covered; historical full-repo run has 4 failures and 29 errors requiring separate baseline comparison",
+  "full_repo_results_if_run": {
+    "r1_total": 2444,
+    "r1_passed": 2409,
+    "r1_skipped": 2,
+    "r1_failed": 4,
+    "r1_errors": 29,
+    "historical_exception_set_match": true
+  },
+  "full_repo_not_run_reason": "Initial implementation did not run the full suite; R1 subsequently ran it in the historical local environment.",
+  "initial_audit_confirmed_new_behavior_regressions": 2,
   "new_regression_count": 0,
   "full_response_body_persisted_on_failure": false,
   "sensitive_content_persisted_in_diagnostics": false,
-  "final_status": "PASS"
+  "final_status": "SUPERSEDED_BY_R1"
 }
