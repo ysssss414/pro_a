@@ -19,7 +19,7 @@ The focused Stage 7.1 tests and Stage 0/7 regressions passed in the 263-test rel
 
 ## Real state and delivery
 
-Read-only checks confirm schema 11, zero registered Domain Packs, zero private Sources, zero processing runs, WIP `OPEN`, zero operational pending rows, and 274 historical lifecycle closures. The exact before and after Production and Workbench hashes, test results, gates, and Draft PR are recorded in `phase43_stage71_qualification_receipt.json`. The next separately controlled pilot may use a real Community Source under Shared Core Pending and stop at Human Review.
+Read-only checks confirm schema 11, zero registered Domain Packs, zero private Sources, zero processing runs, WIP `OPEN`, zero operational pending rows, and 274 historical lifecycle closures. The exact before and after Production and Workbench hashes, test results, and gates are recorded in `phase43_stage71_qualification_receipt.json`. Draft PR metadata is verified in the joint pre-merge audit receipt. The next separately controlled pilot may use a real Community Source under Shared Core Pending and stop at Human Review.
 
 Required checks:
 
