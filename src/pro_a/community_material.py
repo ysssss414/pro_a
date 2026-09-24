@@ -230,11 +230,29 @@ def _wrapped(text: str, width: float, size: float) -> list[str]:
     return lines
 
 
+def _pdf_safe_text(value: str, glyphs: dict[int, int]) -> str:
+    if all(char == "\n" or ord(char) in glyphs for char in value):
+        return value
+    converted = []
+    for char in value:
+        if char == "\\":
+            converted.append("\\\\")
+        elif char == "\n" or ord(char) in glyphs:
+            converted.append(char)
+        elif ord(char) <= 0xFFFF:
+            converted.append(f"\\u{ord(char):04X}")
+        else:
+            converted.append(f"\\U{ord(char):08X}")
+    return "".join(converted)
+
+
 def render_pdf(bundle: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]]]:
     font_path = next((path for path in _FONT_CANDIDATES if path.is_file()), None)
     if font_path is None:
         _fail("COMMUNITY_CHINESE_FONT_UNAVAILABLE", 503)
-    pdfmetrics.registerFont(TTFont("CommunityChinese", str(font_path)))
+    font = TTFont("CommunityChinese", str(font_path))
+    pdfmetrics.registerFont(font)
+    glyphs = font.face.charToGlyph
     output = io.BytesIO()
     drawing = canvas.Canvas(output, pagesize=A4, invariant=1, pageCompression=0)
     drawing.setTitle("Community Snapshot")
@@ -246,6 +264,7 @@ def render_pdf(bundle: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]]]:
 
     def line(value: str, y: float, size: int = 10) -> float:
         nonlocal page_number
+        value = _pdf_safe_text(value, glyphs)
         drawing.setFont("CommunityChinese", size)
         for segment in _wrapped(value, page_width - 2 * left, size):
             if y < bottom:
@@ -271,14 +290,14 @@ def render_pdf(bundle: dict[str, Any]) -> tuple[bytes, list[dict[str, Any]]]:
                              ("Keyword Sources", ", ".join(row["keyword_sources"]))):
             y = line(f"{label}: {value}", y)
         y -= 12
-        y = line("Raw sanitized evidence text", y, 11) - 5
+        y = line("Raw sanitized evidence text (unsupported glyphs use Unicode escapes)", y, 11) - 5
         line(row["evidence_text"], y)
         ranges.append({"topic_id": row["topic_id"], "start_page": start, "end_page": page_number})
     drawing.save()
     pdf = output.getvalue()
     reader = PdfReader(io.BytesIO(pdf), strict=True)
     extracted = "\n".join(page.extract_text() or "" for page in reader.pages)
-    if not all(row["evidence_text"].replace("\n", "") in extracted.replace("\n", "")
+    if not all(_pdf_safe_text(row["evidence_text"], glyphs).replace("\n", "") in extracted.replace("\n", "")
                for row in bundle["topics"]):
         _fail("COMMUNITY_PDF_TEXT_LOSS")
     return pdf, ranges

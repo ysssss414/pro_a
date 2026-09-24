@@ -150,6 +150,19 @@ def test_bundle_security_hashes_and_chinese_pdf():
         parse_bundle(b"x" * (20 * 1024 * 1024 + 1))
 
 
+def test_pdf_preserves_unsupported_glyphs_as_reversible_escapes():
+    evidence = "光模块订单增长。⛵️ 路径 \\u26F5"
+    parsed = parse_bundle(bundle(evidence=evidence))
+    first, ranges = render_pdf(parsed)
+    second, _ = render_pdf(parsed)
+    text = PdfReader(io.BytesIO(first)).pages[0].extract_text()
+    assert first == second
+    assert ranges == [{"topic_id": "topic-1", "start_page": 1, "end_page": 1}]
+    assert "光模块订单增长" in text
+    assert "\\u26F5\\uFE0F" in text
+    assert "\\\\u26F5" in text
+
+
 def test_disposable_schema11_import_dedupes_and_binds_events(tmp_path):
     value = case(tmp_path)
     raw = bundle()
