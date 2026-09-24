@@ -32,6 +32,7 @@ from pro_a.cloud_contract import (
     validate_output,
 )
 from pro_a.phase4_orchestration import _runtime as phase4_runtime
+from pro_a.provider_diagnostics import build_failure_diagnostic, safe_identifier
 from pro_a.production_promotion import sha256_file
 from pro_a.semantic_decomposition import build_evidence_units
 from .artifacts import Artifacts
@@ -446,6 +447,13 @@ class CloudJobs:
         if row is None:
             raise JobError("JOB_NOT_FOUND", 404)
         result = dict(row)
+        diagnostic = None
+        if result["state"] in ("FAILED", "RECOVERY_REQUIRED"):
+            failure_event = connection.execute('''SELECT event_json FROM cloud_job_events
+                WHERE job_id=? AND event_type IN ('PROVIDER_ATTEMPT_FAILED','PROVIDER_OUTPUT_REJECTED')
+                ORDER BY sequence DESC LIMIT 1''', (job_id,)).fetchone()
+            if failure_event is not None:
+                diagnostic = json.loads(failure_event["event_json"]).get("diagnostic")
         return {
             "job_id": result["job_id"],
             "operation_kind": result["operation_kind"],
@@ -476,6 +484,7 @@ class CloudJobs:
                                  "status": result["validation_status"]}
                                 if result["result_artifact_id"] else None),
             "last_error": result["sanitized_error"],
+            "failure_diagnostic": diagnostic,
             "recovery_required": result["state"] == "RECOVERY_REQUIRED",
             "created_at": result["created_at"], "started_at": result["started_at"],
             "ended_at": result["ended_at"], "updated_at": result["updated_at"],
@@ -733,34 +742,53 @@ class CloudJobs:
             connection.execute("BEGIN IMMEDIATE")
             row = self._owned(connection, job_id, worker_id, fence)
             ended = now()
+            attempt = connection.execute("SELECT attempt_number FROM cloud_attempts WHERE attempt_id=?",
+                                         (attempt_id,)).fetchone()
+            details = dict(failure.diagnostic)
+            if failure.external_outcome == "NOT_DISPATCHED":
+                details.setdefault("failure_stage", "REQUEST_BUILD")
+                details.setdefault("error_class", "INTERNAL_PROVIDER_ADAPTER_ERROR")
+                details.setdefault("http_request_sent", False)
+            diagnostic = build_failure_diagnostic(
+                provider=row["provider"], model=row["requested_model"],
+                operation_kind=row["operation_kind"], job_id=job_id, call_id=attempt_id,
+                attempt_number=attempt["attempt_number"], failure_code=failure.code,
+                retryable=failure.retryable, details=details,
+            )
+            safe_code = safe_identifier(failure.code) or "UNKNOWN_PROVIDER_ERROR"
             connection.execute('''INSERT INTO cloud_attempt_outcomes(attempt_id,outcome,external_outcome,
-                usage_status,sanitized_error,ended_at) VALUES(?,?,?,?,?,?)''',
+                provider_request_id,usage_status,sanitized_error,ended_at) VALUES(?,?,?,?,?,?,?)''',
                                (attempt_id, "FAILED", failure.external_outcome,
-                                "UNKNOWN", failure.code, ended))
+                                diagnostic["provider_request_id"], "UNKNOWN", safe_code, ended))
             self._event(connection, job_id, "PROVIDER_ATTEMPT_FAILED",
-                        {"attempt_id": attempt_id, "code": failure.code,
-                         "external_outcome": failure.external_outcome})
+                        {"attempt_id": attempt_id, "code": safe_code,
+                         "external_outcome": failure.external_outcome,
+                         "diagnostic": diagnostic})
             if failure.external_outcome == "UNKNOWN":
                 connection.execute('''UPDATE cloud_jobs SET state='RECOVERY_REQUIRED',phase='UNKNOWN',
                     sanitized_error='UNKNOWN_EXTERNAL_OUTCOME',usage_status='UNKNOWN',
+                    provider_request_id=?,
                     reserved_calls=0,reserved_tokens=0,lease_owner=NULL,lease_expires_at=NULL,
-                    ended_at=?,updated_at=? WHERE job_id=?''', (ended, ended, job_id))
+                    ended_at=?,updated_at=? WHERE job_id=?''',
+                                   (diagnostic["provider_request_id"], ended, ended, job_id))
                 self._event(connection, job_id, "RECOVERY_REQUIRED",
                             {"code": "UNKNOWN_EXTERNAL_OUTCOME", "automatic_retry": False})
                 return False
             retry = failure.retryable and row["attempt_count"] < min(row["max_attempts"], row["max_calls"])
             if retry:
                 connection.execute('''UPDATE cloud_jobs SET phase='CLAIMED',sanitized_error=?,
-                    reserved_calls=0,reserved_tokens=0,updated_at=? WHERE job_id=?''',
-                                   (failure.code, ended, job_id))
+                    provider_request_id=?,reserved_calls=0,reserved_tokens=0,updated_at=? WHERE job_id=?''',
+                                   (safe_code, diagnostic["provider_request_id"], ended, job_id))
                 self._event(connection, job_id, "RETRY_AUTHORIZED",
                             {"owner": RETRY_OWNER, "prior_attempt_id": attempt_id,
                              "next_attempt_number": row["attempt_count"] + 1})
                 return True
             connection.execute('''UPDATE cloud_jobs SET state='FAILED',phase='TERMINAL',sanitized_error=?,
+                provider_request_id=?,
                 reserved_calls=0,reserved_tokens=0,lease_owner=NULL,lease_expires_at=NULL,
-                ended_at=?,updated_at=? WHERE job_id=?''', (failure.code, ended, ended, job_id))
-            self._event(connection, job_id, "FAILED", {"code": failure.code})
+                ended_at=?,updated_at=? WHERE job_id=?''',
+                               (safe_code, diagnostic["provider_request_id"], ended, ended, job_id))
+            self._event(connection, job_id, "FAILED", {"code": safe_code})
             return False
 
     def _artifact_path(self, job_id: str, attempt_id: str, *, create: bool = True) -> tuple[Path, str]:
@@ -796,7 +824,7 @@ class CloudJobs:
             "model_identity_status": model_identity_status,
             "validation_status": validation_status,
             "normalized_error": terminal_error,
-            "raw_provider_output": result.output,
+            "raw_provider_output": result.output if terminal_error is None else None,
             "normalized_output": normalized,
         }
         content = (json.dumps(envelope, ensure_ascii=False, sort_keys=True, indent=2,
@@ -860,6 +888,21 @@ class CloudJobs:
                          "model_identity_status": model_status})
             self._event(connection, request.job_id, "OUTPUT_VALIDATED",
                         {"attempt_id": request.attempt_id, "status": validation_status})
+            if terminal_error == "OUTPUT_VALIDATION_FAILED":
+                transport = dict(result.transport_diagnostic or {})
+                diagnostic = build_failure_diagnostic(
+                    provider=request.provider, model=request.requested_model,
+                    operation_kind=request.operation_kind, job_id=request.job_id,
+                    call_id=request.attempt_id, attempt_number=request.attempt_number,
+                    failure_code=terminal_error, retryable=False,
+                    details={**transport, "failure_stage": "OUTPUT_VALIDATION",
+                             "error_class": "OUTPUT_SCHEMA_VALIDATION_ERROR",
+                             "provider_request_id": result.provider_request_id,
+                             "started_at": result.started_at, "finished_at": result.ended_at,
+                             "duration_ms": result.latency_ms},
+                )
+                self._event(connection, request.job_id, "PROVIDER_OUTPUT_REJECTED",
+                            {"attempt_id": request.attempt_id, "diagnostic": diagnostic})
             self._event(connection, request.job_id, "RESULT_REGISTERED",
                         {"result_artifact_id": result_id, "sha256": sha,
                          "validation_status": validation_status})
@@ -927,6 +970,15 @@ class CloudJobs:
                 retry = self._record_provider_failure(current_job, attempt_id, worker_id, fence, failure)
                 if retry:
                     continue
+                return self.get(current_job)
+            except Exception as error:
+                failure = ProviderFailure(
+                    "UNKNOWN_PROVIDER_ERROR", retryable=False, external_outcome="UNKNOWN",
+                    diagnostic={"failure_stage": "UNKNOWN", "error_class": "UNKNOWN_PROVIDER_ERROR",
+                                "provider_request_id": safe_identifier(getattr(error, "request_id", None))
+                                or safe_identifier(getattr(error, "provider_request_id", None))},
+                )
+                self._record_provider_failure(current_job, attempt_id, worker_id, fence, failure)
                 return self.get(current_job)
             self._fault(fault_at, "after_provider_response")
             with self.store.connect() as connection:
@@ -1034,12 +1086,18 @@ class CloudJobs:
             normalized = None
             validation_status = "NOT_RUN"
             if terminal_error is None:
-                try:
-                    normalized = validate_output(request, result.output)
-                    validation_status = "PASS"
-                except CloudContractError:
+                if (envelope["raw_provider_output"] is None
+                        and envelope["validation_status"] == "FAIL"
+                        and envelope["normalized_error"] == "OUTPUT_VALIDATION_FAILED"):
                     validation_status = "FAIL"
                     terminal_error = "OUTPUT_VALIDATION_FAILED"
+                else:
+                    try:
+                        normalized = validate_output(request, result.output)
+                        validation_status = "PASS"
+                    except CloudContractError:
+                        validation_status = "FAIL"
+                        terminal_error = "OUTPUT_VALIDATION_FAILED"
             if (envelope["model_identity_status"] != model_status
                     or envelope["validation_status"] != validation_status
                     or envelope["normalized_error"] != terminal_error
@@ -1084,6 +1142,20 @@ class CloudJobs:
                 usage.get("input_tokens"), usage.get("output_tokens"), usage.get("total_tokens"),
                 usage.get("cached_tokens"), terminal_error, now(), row["job_id"],
             ))
+            if terminal_error == "OUTPUT_VALIDATION_FAILED":
+                diagnostic = build_failure_diagnostic(
+                    provider=request.provider, model=request.requested_model,
+                    operation_kind=request.operation_kind, job_id=request.job_id,
+                    call_id=request.attempt_id, attempt_number=request.attempt_number,
+                    failure_code=terminal_error, retryable=False,
+                    details={"failure_stage": "OUTPUT_VALIDATION",
+                             "error_class": "OUTPUT_SCHEMA_VALIDATION_ERROR",
+                             "provider_request_id": result.provider_request_id,
+                             "started_at": result.started_at, "finished_at": result.ended_at,
+                             "duration_ms": result.latency_ms},
+                )
+                self._event(connection, row["job_id"], "PROVIDER_OUTPUT_REJECTED",
+                            {"attempt_id": request.attempt_id, "diagnostic": diagnostic})
             self._event(connection, row["job_id"], "RECONCILED",
                         {"from": "DURABLE_RESULT_ARTIFACT", "provider_call_repeated": False})
         return True
