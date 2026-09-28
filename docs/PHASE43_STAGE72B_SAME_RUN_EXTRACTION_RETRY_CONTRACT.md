@@ -62,6 +62,8 @@ The original `source_processing_jobs` binding remains immutable. Execution resol
 
 Same key + same Run + same failed attempt + same reason returns the same reservation/Job, including after completion. Reusing a key for different intent returns `IDEMPOTENCY_CONFLICT`. Concurrent different keys for the same parent yield one retry and `RETRY_ALREADY_IN_PROGRESS` for the other. Sequence derives from the terminal parent under the write transaction, not an unprotected row count.
 
+The idempotency key is deliberately unique across the entire Workbench database, not scoped to a Run or parent attempt. Reusing it for another Run returns `IDEMPOTENCY_CONFLICT`; callers must use a fresh key for that distinct command. This is the scope of the global duplicate lookup and schema UNIQUE constraint, independently verified by the pre-merge audit.
+
 ## Execution and outcomes
 
 One accepted command authorizes at most one extraction dispatch. Existing CloudJobs request building, provider invocation, validation, persistence, and Stage 7.2A diagnostics are reused. Explicit retry lineage prevents the ordinary Job failure handler from looping, even when diagnostic `retryable=true`; frozen provider policy values themselves remain unchanged. No adapter, HTTP format, parser, output schema or diagnostic semantics change.
