@@ -130,7 +130,8 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
     if workbench_schema_version in ("9", "10", "11"):
         package = Path(__file__).parent.parent
         names = ('domain_packs.py', 'run_context.py', 'workbench/domains.py',
-                 'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py')
+                 'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py',
+                 'workbench/extraction_retry.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     value["runtime_sha256"] = digest(value)
@@ -621,6 +622,13 @@ class CloudJobs:
         if (provider.provider_identity != row["provider"]
                 or provider.adapter_version != row["provider_adapter_version"]):
             raise JobError("PROVIDER_CONTRACT_MISMATCH")
+        from .extraction_retry import for_job
+        with self.store.connect() as connection:
+            lineage = for_job(connection, job_id)
+            if lineage:
+                source = connection.execute('SELECT * FROM private_sources WHERE source_id=?', (row['source_id'],)).fetchone()
+                if (source is None or sha256_file(self.artifacts.resolve(source['storage_relative'])) != source['source_sha256']):
+                    raise JobError('RETRY_SOURCE_IDENTITY_MISMATCH')
         checkpoint = json.loads(row["native_checkpoint_json"])
         context = checkpoint.get("domain_context")
         if context is not None:
@@ -681,7 +689,10 @@ class CloudJobs:
             connection.execute("BEGIN IMMEDIATE")
             row = self._owned(connection, job_id, worker_id, fence)
             attempt_number = row["attempt_count"] + 1
+            from .extraction_retry import for_job
+            retry_lineage = for_job(connection, job_id)
             budget_exceeded = (attempt_number > row["max_attempts"] or attempt_number > row["max_calls"]
+                    or (retry_lineage is not None and attempt_number > 1)
                     or row["max_output_tokens"] > row["max_total_tokens"]
                     or ((row["total_tokens"] or 0) + row["max_output_tokens"] > row["max_total_tokens"]))
             if budget_exceeded:
@@ -693,7 +704,8 @@ class CloudJobs:
                 request = None
                 attempt_id = ""
             else:
-                attempt_id = "ATTEMPT_" + uuid4().hex.upper()
+                attempt_id = retry_lineage['attempt_id'] if retry_lineage else "ATTEMPT_" + uuid4().hex.upper()
+                execution_number = retry_lineage['attempt_number'] if retry_lineage else attempt_number
                 runtime = json.loads(row["runtime_json"])
                 prompt = json.loads(row["prompt_json"])
                 configuration = json.loads(row["configuration_json"])
@@ -702,7 +714,7 @@ class CloudJobs:
                           "max_total_tokens": row["max_total_tokens"],
                           "reserved_call": attempt_number, "reserved_output_tokens": row["max_output_tokens"]}
                 request = CloudRequest(
-                    job_id=job_id, attempt_id=attempt_id, attempt_number=attempt_number,
+                    job_id=job_id, attempt_id=attempt_id, attempt_number=execution_number,
                     operation_kind=row["operation_kind"], input_artifact_id=row["input_artifact_id"],
                     input_sha256=row["input_sha256"], source_id=row["source_id"],
                     runtime_identity=runtime, schema_version=schema_version(connection), provider=row["provider"],
@@ -714,7 +726,7 @@ class CloudJobs:
                 identity = request.public_identity()
                 connection.execute('''INSERT INTO cloud_attempts(attempt_id,job_id,attempt_number,fence,
                     request_sha256,request_identity_json,dispatch_intent_at) VALUES(?,?,?,?,?,?,?)''',
-                                   (attempt_id, job_id, attempt_number, fence, request.request_sha256,
+                                   (attempt_id, job_id, execution_number, fence, request.request_sha256,
                                     canonical(identity), now()))
                 connection.execute('''UPDATE cloud_jobs SET phase='DISPATCH_INTENT',attempt_count=?,
                     reserved_calls=1,reserved_tokens=?,updated_at=? WHERE job_id=?''',
@@ -723,7 +735,7 @@ class CloudJobs:
                             {"attempt_id": attempt_id, "calls": 1,
                              "output_tokens": row["max_output_tokens"]})
                 self._event(connection, job_id, "DISPATCH_INTENT_RECORDED",
-                            {"attempt_id": attempt_id, "attempt_number": attempt_number,
+                            {"attempt_id": attempt_id, "attempt_number": execution_number,
                              "request_sha256": request.request_sha256})
         if request is None:
             raise JobError("BUDGET_EXCEEDED")
@@ -779,7 +791,9 @@ class CloudJobs:
                 self._event(connection, job_id, "RECOVERY_REQUIRED",
                             {"code": "UNKNOWN_EXTERNAL_OUTCOME", "automatic_retry": False})
                 return False
-            retry = failure.retryable and row["attempt_count"] < min(row["max_attempts"], row["max_calls"])
+            from .extraction_retry import for_job
+            retry = (for_job(connection, job_id) is None and failure.retryable
+                     and row["attempt_count"] < min(row["max_attempts"], row["max_calls"]))
             if retry:
                 connection.execute('''UPDATE cloud_jobs SET phase='CLAIMED',sanitized_error=?,
                     provider_request_id=?,reserved_calls=0,reserved_tokens=0,updated_at=? WHERE job_id=?''',
@@ -961,6 +975,26 @@ class CloudJobs:
     def run_once(self, provider: CloudProvider, *, worker_id: str,
                  job_id: str | None = None, lease_seconds: int | None = None,
                  fault_at: str | None = None) -> dict[str, Any] | None:
+        # A retry uses its persisted provider configuration even when the worker's
+        # current profile has changed. No caller may supply replacement semantics.
+        if job_id is None:
+            from .extraction_retry import for_job
+            with self.store.connect() as connection:
+                queued = connection.execute("SELECT job_id FROM cloud_jobs WHERE state='QUEUED' ORDER BY created_at,job_id LIMIT 1").fetchone()
+                if queued and for_job(connection, queued[0]):
+                    job_id = queued[0]
+        if job_id is not None:
+            from .extraction_retry import for_job, frozen_cloud
+            with self.store.connect() as connection:
+                lineage = for_job(connection, job_id)
+                frozen_row = (connection.execute('SELECT * FROM cloud_jobs WHERE job_id=?', (job_id,)).fetchone()
+                              if lineage else None)
+            if frozen_row is not None:
+                profile = frozen_cloud(frozen_row)
+                if self.profile != profile:
+                    return CloudJobs(self.config, profile).run_once(
+                        provider, worker_id=worker_id, job_id=job_id,
+                        lease_seconds=lease_seconds, fault_at=fault_at)
         if fault_at is not None and fault_at not in FAULT_POINTS:
             raise ValueError("INVALID_FAULT_POINT")
         effective_lease = (self.profile.timeout_seconds + 60

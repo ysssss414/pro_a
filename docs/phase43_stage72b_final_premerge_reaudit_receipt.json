@@ -1,0 +1,381 @@
+{
+  "stage": "PHASE43_STAGE72B_FINAL_PREMERGE_REAUDIT",
+  "status": "PASS",
+  "timestamp": "2026-09-28T04:40:20.379081+00:00",
+  "base_sha": "4c1c98a1dc4bc85f807c5817ab9fd5a9058378bd",
+  "audit_target_head_sha": "d2c732f8a46cbd806f6dd85411dc94f96657a797",
+  "evidence_commit_scope": "One subsequent documentation-only audit commit; final commit SHA is verified after commit/push.",
+  "pr_number": 78,
+  "pr_state": "OPEN",
+  "pr_draft": true,
+  "pr_merged": false,
+  "pr_at_audit_target": {
+    "commits": 4,
+    "changed_files": 12,
+    "mergeable": "MERGEABLE"
+  },
+  "git_boundary": "PASS",
+  "r1_diff_scope": "PASS",
+  "unicode_single_line_validation": "PASS",
+  "service_level_validation": "PASS",
+  "api_level_validation": "PASS",
+  "invalid_reason_no_write": "PASS",
+  "valid_unicode_reason": "PASS",
+  "retry_reason_security_regression": "PASS",
+  "contract_implementation_alignment": "PASS",
+  "run_attempt_model": "PASS",
+  "original_attempt_immutability": "PASS",
+  "retry_acceptance_atomicity": "PASS",
+  "retry_lineage": "PASS",
+  "attempt_numbering": "PASS",
+  "idempotency_semantics": "PASS",
+  "concurrent_retry_protection": "PASS",
+  "retry_eligibility": "PASS",
+  "retry_vs_reprocess_separation": "PASS",
+  "no_reacquisition": "PASS",
+  "no_rerouting": "PASS",
+  "frozen_execution_semantics": "PASS",
+  "runtime_identity_change": "PASS",
+  "normal_execution_regression": "PASS",
+  "retry_dispatch_identity": "PASS",
+  "one_dispatch_per_retry": "PASS",
+  "successful_retry_continuation": "PASS",
+  "stage72a_regression": "PASS",
+  "stage71_context_immutability": "PASS",
+  "schema_extension": "PASS",
+  "api_security": "PASS",
+  "historical_runtime_gate_unchanged": "PASS",
+  "real_state_immutability": "PASS",
+  "documentation_accuracy": "PASS",
+  "gate_evidence": {
+    "git_boundary": "Fetched main/base/target match; PR OPEN/DRAFT/UNMERGED/MERGEABLE, four commits and twelve files at target.",
+    "r1_diff_scope": "61c794d..d2c732f: one added service predicate, one Unicode test file and four documentation files; no other application source change.",
+    "unicode_single_line_validation": "extraction_retry.py:129-137; LF/CR/VT/FF/NEL/LS/PS plus C0/DEL rejected by fresh R1 matrix and original independent Unicode reproductions.",
+    "service_level_validation": "Direct retry_failed_extraction calls bypass Pydantic and return INVALID_RETRY_REASON/status422 for embedded Unicode separators.",
+    "api_level_validation": "Authenticated actual endpoint returns HTTP422/INVALID_RETRY_REASON for NEL/LS/PS; the former U+2028 HTTP200 path now fails closed.",
+    "invalid_reason_no_write": "Each invalid matrix entry compares exact Run/Job/Attempt/retry/Run-event/Job-event rows plus dispatches/outcomes; all unchanged.",
+    "valid_unicode_reason": "Eight accepted API cases retain exact Chinese/English/mixed/digits/punctuation/fullwidth/internal U+3000/emoji/1000-character strings in storage and direct-service duplicates.",
+    "retry_reason_security_regression": "Fresh service+API audit covers Bearer, api_key=, apikey=, token=, cookie=, authorization=, all rejected without writes; R1 matrix retains controls/trim/markup.",
+    "contract_implementation_alignment": "Complete Stage72B state, frozen identity, transaction, lineage, dispatch and reprocess contract mapped to fresh tests below; Unicode blocker closed.",
+    "run_attempt_model": "Frozen Run identity and current projection are distinct; acceptance changes FAILED projection to EXTRACTION_PROCESSING with append-only event, without replacing the Run.",
+    "original_attempt_immutability": "Original cloud_jobs/cloud_attempts/dispatches/outcomes/job-events and Run event prefix remain identical on success, failure and retry-of-retry.",
+    "retry_acceptance_atomicity": "BEGIN IMMEDIATE includes lookup/checks/Job/lineage/events/projection. Four injected SQL boundary failures reach their targets and roll back complete table snapshots.",
+    "retry_lineage": "Append-only extraction_retries links Run/root Job/new Job/reserved attempt/parent/reason/key/context. UPDATE/DELETE rejected; original binding preserved.",
+    "attempt_numbering": "Terminal-parent number+1 inside the transaction, with UNIQUE(root_job_id,attempt_number); independent 1->2->3 reconstruction plus concurrent request tests.",
+    "idempotency_semantics": "Database-global key lookup and UNIQUE constraint deliberately identify command intent; same intent returns prior identity, changed reason or other existing Run conflicts. Contract clarification included.",
+    "concurrent_retry_protection": "Same-key threads share one reservation/Job; different-key threads for one parent allow one acceptance and RETRY_ALREADY_IN_PROGRESS.",
+    "retry_eligibility": "FAILED/EXTRACTION_JOBS/PROVIDER_ERROR and latest effective terminal FAILED/KNOWN_FAILURE required; successful/review/acquisition/security/context/unknown/nonlatest/other Run/lease/queued/running cases reject.",
+    "retry_vs_reprocess_separation": "Retry keeps Source/Run count and run_id; start(reprocess_reason) creates a different Run and retains its separate basis rules.",
+    "no_reacquisition": "Success test forbids HTTP acquisition, Source upload and native start_execution; immutable Source/input/checkpoint reused without Community/ZSXQ access.",
+    "no_rerouting": "frozen_cloud/frozen_service reconstruct persisted profile and original context; no current model or Domain selection replaces the frozen values.",
+    "frozen_execution_semantics": "Original source/input hashes, context, Shared Core, provider/model/aliases/limits, prompt/runtime/config and SOURCE_READY native checkpoint guarded; changed native config/runtime rejects.",
+    "runtime_identity_change": "Including extraction_retry.py in domain_code_sha256 protects orchestration/authorization semantics. Two fresh processes at target produce identical verified runtime digests.",
+    "normal_execution_regression": "No-retry paths retain original service/bindings and ordinary policy. Fresh full Workbench/Stage0 Domain/Stage71 pending execution checks retain only the historical exception set.",
+    "retry_dispatch_identity": "Independent audit equates reserved ID/number, CloudRequest, persisted cloud_attempts and dispatch event; local Job attempt_count=1 vs lineage number2/3.",
+    "one_dispatch_per_retry": "HTTP503/retryable=true double causes one dispatch per explicit Job and terminal failure; next dispatch requires another explicit command.",
+    "successful_retry_continuation": "One extraction retry plus one separate downstream semantic double reaches review packet/HUMAN_REVIEW_REQUIRED on the same Run.",
+    "stage72a_regression": "Fresh diagnostic suite and retry failure assertions preserve stage/class/status/validated request ID/retryable/fingerprint/summary and secret/body protections.",
+    "stage71_context_immutability": "Later Source Domain assignment leaves the original pending Run context/Shared Core SHA unchanged; current cloud drift cannot replace frozen request identity.",
+    "schema_extension": "Explicit private operator prepare only; real schema9/10/11 fixtures retain metadata/history, missing-extension reads work, prepare idempotent, FK clean, backup/restore and append-only triggers pass.",
+    "api_security": "Authentication, Origin, CSRF, strict extra-forbid and no provider/model/Source/Domain/runtime/prompt/context overrides verified; Unicode service guard is reached through actual HTTP endpoint.",
+    "historical_runtime_gate_unchanged": "R1 touches no compatibility implementation; current synthetic runtime/config drift tests still reject. Historical isolated-copy finding preserved without new real-Run acceptance or override.",
+    "real_state_immutability": "Fresh before/after Production and Workbench hashes identical; all mutated databases are synthetic fixtures.",
+    "documentation_accuracy": "Initial qualification PASS, first audit BLOCKED, R1 PASS and historical runtime BLOCKED retained. Current final generic PASS has no implication of historical retry readiness."
+  },
+  "contract_test_mapping": {
+    "unicode_and_no_write": "tests/test_phase43_stage72b_unicode_reason.py (10 cases; 55 service inputs and 55 API inputs, 8 valid reasons)",
+    "same_run_and_immutability": "test_success_same_run_context_history_and_no_acquisition_routing; test_failure_diagnostics_no_auto_retry_and_retry_of_retry",
+    "atomicity": "workspace/test_stage72b_premerge_audit.py::test_acceptance_fault_rollback[before_retry_insert,after_job_insert,after_retry_insert,before_projection]",
+    "lineage_and_dispatch": "test_dispatch_identity_and_lineage_reconstruction; test_schema_additive_idempotent_and_lineage_append_only",
+    "idempotency_concurrency": "test_database_global_key_scope_and_wrong_existing_run; test_duplicate_and_active_guard; test_concurrent_commands_allocate_once[True,False]",
+    "eligibility": "test_unsupported_run_states_rejected; test_additional_eligibility[lease,queued,running,successful,unknown_outcome,nonlatest]; wrong-existing-Run audit",
+    "frozen_identity": "test_frozen_cloud_configuration_and_later_domain_assignment; test_missing_frozen_configuration_fails_closed; test_direct_worker_uses_frozen_profile_and_blocks_source_drift; test_runtime_drift_is_not_silently_overridden",
+    "reprocess": "test_retry_and_reprocess_are_separate; ordinary Stage7/Stage71 reprocess tests in full JUnit",
+    "schema_and_api": "test_extension_missing_reads_and_real_schema_versions[9,10,11]; test_extension_backup_restore_preserves_lineage; original and independent API auth/Origin/CSRF/override tests",
+    "credentials": "workspace/test_stage72b_final_security.py::test_credential_spellings_no_write[service,api]",
+    "diagnostics_and_normal_execution": "Full JUnit Stage72A, Stage71, Workbench, lifecycle/reprocess, Stage0 Domain and LLM tests"
+  },
+  "r1_application_diff": {
+    "added_lines": 1,
+    "removed_lines": 0,
+    "file": "src/pro_a/workbench/extraction_retry.py"
+  },
+  "focused_tests": {
+    "passed": 58,
+    "failed": 0,
+    "composition": "25 original retry + 10 R1 Unicode + 21 independent audit + 2 credential spelling cases"
+  },
+  "related_tests": {
+    "passed": 294,
+    "failed": 0
+  },
+  "full_repo": {
+    "PASSED": 2444,
+    "SKIPPED": 2,
+    "FAILED": 4,
+    "ERROR": 29
+  },
+  "full_repo_total": 2479,
+  "historical_exception_count": 33,
+  "historical_exception_set_match": true,
+  "new_regression": 0,
+  "historical_exception_comparison": "exact node/status/exception-class set equality",
+  "historical_exceptions": [
+    [
+      "tests/test_foundation_requalification.py::test_all_native_rows_requalify_without_db_writes",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_claim_identity_and_temporal_exception_stay_separate",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_comparison_explains_all_rows_without_accepting_content",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_full_old_baseline_preflight_releases_handle_without_gc",
+      "FAILED",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_manifest_cannot_expand_native_authority",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_native_roles_and_cpo_scope_not_content_authority",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+      "FAILED",
+      "PilotError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_exact_seven_item_handoff_and_phase3d_validation",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_parent_placement_requires_executable_create_child",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_qualification_only_boundary_cannot_be_widened",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_requalification_build_is_deterministic",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_authorization_wrong_packet_or_extra_candidate_fails",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_clearly_synthetic_seven_decision_completion_validates",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_explicit_packet_bound_human_authorization_validates",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_generated_manifest_binds_packet_view_and_source",
+      "FAILED",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_missing_and_unknown_selected_decisions_fail_closed",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_no_unselected_candidate_can_enter_the_slice",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_parent_and_reuse_display_context_is_exact",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_persisted_completed_packet_and_receipt_match_authorization",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[production_authorization]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_relation_create_requires_explicit_child_node_create",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_reuse_requires_the_exact_target",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_selected_records_exactly_match_the_full_packet",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_source_binding_and_candidate_content_tamper_fail",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_source_packet_immutable_identity_is_verified",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase43_stage3_double_review.py::test_production_immutable_during_read_only_binding_when_available",
+      "FAILED",
+      "ValueError"
+    ]
+  ],
+  "build": "PASS_EXIT_0",
+  "compileall": "PASS_EXIT_0",
+  "frontend_tests": "NOT_RUN_NO_FRONTEND_CHANGE",
+  "full_suite_environment": "Historical root fixture environment; test-only overlay loads current changed runtime modules. Exact worktree source independently used for focused tests. Credentials cleared; two unrelated preexisting untracked root tests excluded; all historical exceptions retained.",
+  "original_stage72_real_run_retry_readiness": "BLOCKED_RUNTIME_INCOMPATIBLE",
+  "historical_compatibility_probe": "COMPLETED_ON_ISOLATED_COPY_IN_FIRST_AUDIT; NOT_REPEATED_IN_FINAL_REAUDIT",
+  "old_runtime_identity": {
+    "cloud_contract_version": "cloud-inference-v1",
+    "domain_code_sha256": "a9430329b10ba99b073205290e3a7fa20e21bee7fc01f08be3a865a0f5542f57",
+    "domain_contract_version": "run-domain-context-v1",
+    "git_sha": "9179e28e73c8658b4893729a90f40166f556a0bd",
+    "phase4_contract_version": "phase4-execution-v1",
+    "phase4_processing_code_sha256": "1e633f9c4d68a1110aed5941d5cd30405c256ff618547b9841994c7430157c25",
+    "provider_adapter_version": "stage72-deepseek-dual-v1",
+    "runtime_sha256": "ef7fb67f6057f5c9532990aa2e692a320eadda00b5b6dc4a271d30a69fa357c2",
+    "workbench_schema_version": "11"
+  },
+  "first_audit_runtime_identity": {
+    "git_sha": "61c794df26893362f08cc712035b6da60bb1ada4",
+    "phase4_contract_version": "phase4-execution-v1",
+    "phase4_processing_code_sha256": "750fdc33bcb1078a44296c62f936e4aaede4dfa82c85dc3f7e93f628775334a4",
+    "cloud_contract_version": "cloud-inference-v1",
+    "workbench_schema_version": "11",
+    "provider_adapter_version": "stage72-deepseek-dual-v1",
+    "domain_contract_version": "run-domain-context-v1",
+    "domain_code_sha256": "aba44350259e1cb7854eaeb406e2a862897507b3356ccd26af19014199b3cc39",
+    "runtime_sha256": "f7181953f6bd4e3126cb7184c598f4d0d2742670521cef1d71232cc58cbedd35"
+  },
+  "current_runtime_identity": {
+    "cloud_contract_version": "cloud-inference-v1",
+    "domain_code_sha256": "994eb0302caaab13e3f0056e021871bb7d80473da0c061fea80b376a5a5fcaf7",
+    "domain_contract_version": "run-domain-context-v1",
+    "git_sha": "d2c732f8a46cbd806f6dd85411dc94f96657a797",
+    "phase4_contract_version": "phase4-execution-v1",
+    "phase4_processing_code_sha256": "750fdc33bcb1078a44296c62f936e4aaede4dfa82c85dc3f7e93f628775334a4",
+    "provider_adapter_version": "stage72-deepseek-dual-v1",
+    "runtime_sha256": "90266971ab3da1030324e2492a6f324dfd6064e43458cd4791745b50dec61367",
+    "workbench_schema_version": "11"
+  },
+  "current_runtime_identity_scope": "Exact audit target d2c732f; two fresh processes. Subsequent evidence commit naturally changes Git-based runtime identity.",
+  "compatibility_blocker": [
+    "RETRY_FROZEN_CONFIG_INCOMPLETE",
+    "PROCESSING_RUN_CONTEXT_DRIFT",
+    "CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE"
+  ],
+  "compatibility_blocker_scope": "Preserved actual first isolated-copy probe results, supported by unchanged guard implementation and fresh synthetic guard tests; no new historical-Run acceptance attempted.",
+  "historical_outcomes": {
+    "initial_qualification": "PASS",
+    "first_premerge_audit": "BLOCKED",
+    "r1_repair": "PASS",
+    "historical_run_readiness": "BLOCKED_RUNTIME_INCOMPATIBLE"
+  },
+  "historical_audit_artifacts_unchanged": true,
+  "historical_audit_report_sha256": "7248e9fe57a47d0f80297429888eb26c8e52e64258375d6328b7995d3d46f673",
+  "historical_audit_receipt_sha256": "47b6627906d5e071ba6a0563d2b68041094d4d860469a881b0eeb7d2a90f87ec",
+  "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "workbench_sha_before": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "workbench_sha_after": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "real_provider_calls": 0,
+  "real_zsxq_reads": 0,
+  "real_zsxq_downloads": 0,
+  "real_zsxq_writes": 0,
+  "production_writes": 0,
+  "real_workbench_writes": 0,
+  "audited_source_sha256": {
+    "src/pro_a/workbench/cloud_jobs.py": "77c98e8a4df3abc2f7422e7d13caaa6de7086b2a8c9996ae3d3da34fc705eabc",
+    "src/pro_a/workbench/domains.py": "435e19de282d21644c84233eb1570abd7b7f2f2927851c7177e5b4e87f90a066",
+    "src/pro_a/workbench/source_operations.py": "6227854e7511873af524f495e154af2d544e8c55e57bea426796b95bf7be8c2e",
+    "src/pro_a/phase4_orchestration.py": "4dbf00f88ad5ead85c77120bf50aeb5e6bef865fbe6e06f69ecb7818df0a4d0f",
+    "src/pro_a/processing_context.py": "c442f2903a0f21ab7ba16506d0a85fbc57d1e2ce3e8133becff4d0c27494a5d6",
+    "src/pro_a/run_context.py": "1f08856dfcfa6227735774ba5afa5d09a35caab5decfaa2b1edb64ce770920fd",
+    "src/pro_a/workbench/extraction_retry.py": "4507442f728635ac152349e8e008d36aa7962e84aa5dd0bf41dbdebbc85ed1b3",
+    "src/pro_a/workbench/api.py": "9acc11fc68fd9ea02ab287669adcd881609d21bcfc5d6c535229b4e52954230e",
+    "src/pro_a/workbench/__main__.py": "230d7fa4b5f69b26de3def072e9a0b09a4aad31dd11dee1b8414683abac8459c"
+  },
+  "evidence_sha256": {
+    "workspace/stage72b_final_full.xml": "a9c7282fd84cb14c309edd0cc9925b75df59677bed7c526f65a24a553238eb57",
+    "workspace/stage72b_final_full.log": "dd950f12f1b315d21bff2b63fcbb9c5a79b6499aacb8018a9454bba58c32c42a",
+    "workspace/stage72b_final_focus.xml": "b62c2d593dfe87f32e0d9ba50f48e4d412f0de11b0767d8ea35a4743c225f8fe",
+    "workspace/stage72b_final_focus.log": "f8248aa308260c69ca1945e75b10810b67e75c73694d696ac5cf5be9ebff37c1",
+    "workspace/stage72b_final_build.log": "75936883d90e6c74f1318b3788a5c8f68a76a2a76f1ce0bd2efda085e22fe4a7",
+    "workspace/stage72b_final_runtime_identity.json": "4d4576d60cfe6213f86adb28871789fe6241deebe14cc7688dc26327e44c5879",
+    "workspace/stage72b_final_runtime_identity_repeat.json": "4d4576d60cfe6213f86adb28871789fe6241deebe14cc7688dc26327e44c5879",
+    "workspace/stage72b_final_runtime.py": "438a5fb10a40bd46dd5dd25f3b5db87bd1759f8f20a2c3ff90cc4c64dd3dcedb",
+    "workspace/test_stage72b_premerge_audit.py": "10e903a9b4689434bb19e8d2023c7f8dd238fa7ef9d78fe899faab77071b69af",
+    "workspace/test_stage72b_final_security.py": "d28ac78bd1668b04ef1b4d98d176edd73ae3e385290acccfbeb9c1467e5be872",
+    "workspace/stage72b_env/sitecustomize.py": "25133d3129c05734fc23d3d0157e5218e3e2e5a720fba31f0aebb4ec2e440766"
+  },
+  "final_status": "PASS",
+  "next_action": "Stage 7.2B generic same-Run retry capability is eligible for release handoff. Mark PR #78 Ready, merge it under repository governance, verify remote main, and complete Stage 7.2B release closure in a separate step. Keep the original Stage 7.2 real Run classified as BLOCKED_RUNTIME_INCOMPATIBLE. Do not retry that historical Run after release; address cross-release retry compatibility in a separate Stage 7.2C."
+}
