@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import copy
 from dataclasses import dataclass
 from functools import lru_cache
 import hashlib
@@ -32,39 +33,87 @@ _CLOUD_METADATA_FIELDS = frozenset(("git_sha", "runtime_sha256"))
 _NATIVE_METADATA_FIELDS = frozenset(("repository_commit",))
 _CLOUD_SURFACE_FIELDS = frozenset(("domain_code_sha256", "phase4_processing_code_sha256"))
 _NATIVE_SURFACE_FIELDS = frozenset(("processing_code_sha256",))
-_CLOUD_EXECUTION_SURFACE = {
+_CLOUD_EXECUTION_ROOTS = {
+    "workbench/cloud_jobs.py": ("CloudJobs.run_once",),
+    "workbench/source_operations.py": ("SourceOperations._advance_claimed",),
+}
+_CLOUD_EXECUTION_DEPENDENCIES = {
     "cloud_contract.py": None,
     "provider_diagnostics.py": None,
     "domain_packs.py": None,
     "run_context.py": None,
     "workbench/artifacts.py": None,
     "workbench/domains.py": (
-        "config_digest", "prompt_digest", "Domains.basis", "Domains.pending_basis",
+        "config_digest", "prompt_digest", "Domains.assignment", "Domains.packs",
+        "Domains.basis", "Domains.pending_basis", "Domains.read", "Domains.guard",
     ),
     "workbench/cloud_jobs.py": (
-        "CloudProfile.public_identity", "CloudJobs.submit", "CloudJobs._input_payload",
-        "CloudJobs._claim", "CloudJobs._owned",
-        "CloudJobs._dispatch_intent", "CloudJobs._record_provider_failure",
-        "CloudJobs._mark_call_possible",
-        "CloudJobs._durable_result", "CloudJobs._write_result_artifact",
-        "CloudJobs._register_result", "CloudJobs._terminal",
-        "CloudJobs._fault", "CloudJobs.run_once", "CloudJobs._reconcile_artifact",
+        "runtime_identity", "CloudProfile.validate", "CloudProfile.public_identity",
+        "CloudJobs.__init__", "CloudJobs.current_runtime", "CloudJobs._event",
+        "CloudJobs._verify_event_chain", "CloudJobs._native_identity",
+        "CloudJobs._input_payload", "CloudJobs._preflight", "CloudJobs._claim",
+        "CloudJobs._owned", "CloudJobs._dispatch_intent",
+        "CloudJobs._record_provider_failure", "CloudJobs._mark_call_possible",
+        "CloudJobs._artifact_path", "CloudJobs._durable_result",
+        "CloudJobs._write_result_artifact", "CloudJobs._register_result",
+        "CloudJobs._terminal", "CloudJobs._fault", "CloudJobs._project", "CloudJobs.get",
     ),
     "workbench/source_operations.py": (
-        "_ExtractionReplay", "SourceOperations._run_pending_jobs",
-        "SourceOperations._extraction_replay", "SourceOperations._semantic_replay",
+        "_canonical", "_now", "_ExtractionReplay", "SourceProfile.validate",
+        "SourceOperations.__init__", "SourceOperations._event",
+        "SourceOperations._transition", "SourceOperations._community_bound",
+        "SourceOperations._register_input", "SourceOperations._bind_job",
+        "SourceOperations._jobs_for", "SourceOperations._propagate_job_state",
+        "SourceOperations._run_pending_jobs", "SourceOperations._extraction_replay",
+        "SourceOperations._native_root", "SourceOperations._semantic_replay",
+        "SourceOperations._copy_and_register_packet", "SourceOperations._post_processing",
+        "SourceOperations._project_run", "SourceOperations.get_run",
     ),
 }
-_NATIVE_EXECUTION_SURFACE = {
+_CLOUD_EXECUTION_SURFACE = {
+    **_CLOUD_EXECUTION_DEPENDENCIES,
+    "workbench/cloud_jobs.py": (
+        *_CLOUD_EXECUTION_DEPENDENCIES["workbench/cloud_jobs.py"],
+        *_CLOUD_EXECUTION_ROOTS["workbench/cloud_jobs.py"],
+    ),
+    "workbench/source_operations.py": (
+        *_CLOUD_EXECUTION_DEPENDENCIES["workbench/source_operations.py"],
+        *_CLOUD_EXECUTION_ROOTS["workbench/source_operations.py"],
+    ),
+}
+_NATIVE_EXECUTION_ROOTS = {
+    "phase4_orchestration.py": ("resume_execution",),
+}
+_NATIVE_EXECUTION_DEPENDENCIES = {
     **{
         f"{name}.py": None
         for name in PROCESSING_MODULES
         if name != "phase4_orchestration"
     },
     "phase4_orchestration.py": (
-        "_configuration", "_inventory", "_commit", "_result", "_emit", "_review",
-        "_advance",
+        "_now", "_publish", "_runtime", "_configuration", "_inventory", "_commit",
+        "_result", "_compatible", "_emit", "_review", "_advance",
     ),
+}
+_NATIVE_EXECUTION_SURFACE = {
+    **_NATIVE_EXECUTION_DEPENDENCIES,
+    "phase4_orchestration.py": (
+        *_NATIVE_EXECUTION_DEPENDENCIES["phase4_orchestration.py"],
+        *_NATIVE_EXECUTION_ROOTS["phase4_orchestration.py"],
+    ),
+}
+_EXECUTION_SURFACE_EXCLUSIONS = {
+    "cloud": {
+        "workbench/extraction_retry.py": (
+            "Target-only authorization and immutable retry-copy construction; it does not "
+            "exist in the historical execution and remains bound by the target contract digest."
+        ),
+        "workbench/retry_compatibility.py": (
+            "Target-only evidence validator and authorization token; exact call-site plumbing is "
+            "normalized below and the validator remains bound by the target contract digest."
+        ),
+    },
+    "native": {},
 }
 _INTEGRATION_FILES = (
     "analyzer.py",
@@ -157,24 +206,18 @@ def compatibility_contract_sha256() -> str:
         "native_metadata_fields": sorted(_NATIVE_METADATA_FIELDS),
         "cloud_surface_fields": sorted(_CLOUD_SURFACE_FIELDS),
         "native_surface_fields": sorted(_NATIVE_SURFACE_FIELDS),
+        "cloud_execution_roots": _CLOUD_EXECUTION_ROOTS,
+        "cloud_execution_dependencies": _CLOUD_EXECUTION_DEPENDENCIES,
         "cloud_execution_surface": _CLOUD_EXECUTION_SURFACE,
+        "native_execution_roots": _NATIVE_EXECUTION_ROOTS,
+        "native_execution_dependencies": _NATIVE_EXECUTION_DEPENDENCIES,
         "native_execution_surface": _NATIVE_EXECUTION_SURFACE,
+        "execution_surface_exclusions": _EXECUTION_SURFACE_EXCLUSIONS,
         "files": {name: sha256_file(package / name) for name in _CONTRACT_FILES},
     })
 
 
 class _RemoveDocstrings(ast.NodeTransformer):
-    def visit_Call(self, node):
-        node = self.generic_visit(node)
-        # The qualification token is authorization plumbing, not provider or
-        # parser behavior. Its implementation is target-bound by the contract
-        # digest and tested separately; compare dispatch semantics around it.
-        node.keywords = [
-            keyword for keyword in node.keywords
-            if keyword.arg != "runtime_compatibility"
-        ]
-        return node
-
     def generic_visit(self, node):
         node = super().generic_visit(node)
         body = getattr(node, "body", None)
@@ -201,11 +244,249 @@ def _selected_node(tree: ast.AST, selector: str) -> ast.AST:
     return node
 
 
-def _ast_sha256(content: bytes, selectors: tuple[str, ...] | None) -> str:
+_COMPATIBILITY_SIGNATURES = frozenset({
+    ("workbench/cloud_jobs.py", "CloudJobs.__init__"),
+    ("workbench/source_operations.py", "SourceOperations.__init__"),
+    ("workbench/domains.py", "Domains.guard"),
+    ("phase4_orchestration.py", "_compatible"),
+    ("phase4_orchestration.py", "resume_execution"),
+})
+_COMPATIBILITY_ASSIGNMENTS = frozenset({
+    ("workbench/cloud_jobs.py", "CloudJobs.__init__"),
+    ("workbench/source_operations.py", "SourceOperations.__init__"),
+})
+_COMPATIBILITY_CALL_KEYWORDS = {
+    ("workbench/cloud_jobs.py", "CloudJobs._native_identity"): {"guard": 1},
+    ("workbench/cloud_jobs.py", "CloudJobs.run_once"): {"CloudJobs": 1},
+    ("workbench/source_operations.py", "SourceOperations.__init__"): {"CloudJobs": 1},
+    ("workbench/source_operations.py", "SourceOperations._register_input"): {"guard": 1},
+    ("workbench/source_operations.py", "SourceOperations._advance_claimed"): {
+        "guard": 1, "resume_execution": 2,
+    },
+    ("phase4_orchestration.py", "resume_execution"): {"_compatible": 1},
+}
+_COMPATIBILITY_STATEMENT_REPLACEMENTS = {
+    ("workbench/cloud_jobs.py", "CloudJobs._preflight"): ((
+        '''
+runtime_valid = (stored_runtime_hash == digest(runtime_basis)
+                 and row["runtime_sha256"] == stored_runtime_hash)
+if runtime_valid and canonical(stored_runtime) != canonical(current_runtime):
+    try:
+        from .retry_compatibility import guard_cloud_runtime
+        guard_cloud_runtime(stored_runtime, current_runtime, self.runtime_compatibility)
+    except Exception:
+        runtime_valid = False
+if not runtime_valid:
+    raise JobError("RUNTIME_DRIFT")
+''',
+        '''
+if (stored_runtime_hash != digest(runtime_basis)
+        or row["runtime_sha256"] != stored_runtime_hash
+        or canonical(stored_runtime) != canonical(current_runtime)):
+    raise JobError("RUNTIME_DRIFT")
+''',
+    ),),
+    ("workbench/domains.py", "Domains.guard"): (
+        (
+            '''
+if runtime_compatibility is None:
+    processing_context.guard_resume(frozen, current)
+else:
+    from .retry_compatibility import guard_context
+    guard_context(frozen, current, runtime_compatibility)
+''',
+            '''processing_context.guard_resume(frozen, current)''',
+        ),
+        (
+            '''
+if runtime_compatibility is None:
+    guard_resume(frozen, current)
+else:
+    from .retry_compatibility import guard_context
+    guard_context(frozen, current, runtime_compatibility)
+''',
+            '''guard_resume(frozen, current)''',
+        ),
+    ),
+    ("workbench/source_operations.py", "SourceOperations._advance_claimed"): ((
+        '''
+current_runtime = self.jobs.current_runtime()
+if row["runtime_sha256"] != current_runtime["runtime_sha256"]:
+    try:
+        from .retry_compatibility import guard_cloud_runtime
+        guard_cloud_runtime(
+            json.loads(row["runtime_json"]), current_runtime,
+            self.runtime_compatibility,
+        )
+    except Exception:
+        self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
+        return self.get_run(run_id)
+''',
+        '''
+if row["runtime_sha256"] != self.jobs.current_runtime()["runtime_sha256"]:
+    self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
+    return self.get_run(run_id)
+''',
+    ),),
+    ("phase4_orchestration.py", "_compatible"): ((
+        '''
+current_runtime = _runtime()
+if identity["runtime"] != current_runtime:
+    try:
+        from .workbench.retry_compatibility import guard_native_runtime
+        guard_native_runtime(identity["runtime"], current_runtime, runtime_compatibility)
+    except Exception:
+        raise ExecutionBlocked("CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE") from None
+''',
+        '''
+if identity["runtime"] != _runtime():
+    raise ExecutionBlocked("CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE")
+''',
+    ),),
+}
+
+
+def _call_name(call: ast.Call) -> str | None:
+    if isinstance(call.func, ast.Name):
+        return call.func.id
+    if isinstance(call.func, ast.Attribute):
+        return call.func.attr
+    return None
+
+
+def _statement_dump(statement: ast.AST) -> str:
+    return ast.dump(statement, include_attributes=False)
+
+
+def _replace_exact_statements(node: ast.AST, before: str, after: str) -> int:
+    expected = ast.parse(before).body
+    replacement = ast.parse(after).body
+    expected_dump = [_statement_dump(statement) for statement in expected]
+    count = 0
+    for child in ast.walk(node):
+        for field in ("body", "orelse", "finalbody"):
+            body = getattr(child, field, None)
+            if not isinstance(body, list) or len(body) < len(expected):
+                continue
+            index = 0
+            while index <= len(body) - len(expected):
+                candidate = body[index:index + len(expected)]
+                if [_statement_dump(statement) for statement in candidate] == expected_dump:
+                    body[index:index + len(expected)] = copy.deepcopy(replacement)
+                    count += 1
+                    index += len(replacement)
+                else:
+                    index += 1
+    if count > 1:
+        raise RetryCompatibilityError("EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS")
+    return count
+
+
+def _normalize_compatibility_plumbing(name: str, selector: str, node: ast.AST) -> ast.AST:
+    key = (name, selector)
+    node = copy.deepcopy(node)
+    if key in _COMPATIBILITY_SIGNATURES and isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        matches = [
+            index for index, argument in enumerate(node.args.kwonlyargs)
+            if argument.arg == "runtime_compatibility"
+            and isinstance(node.args.kw_defaults[index], ast.Constant)
+            and node.args.kw_defaults[index].value is None
+        ]
+        if len(matches) > 1:
+            raise RetryCompatibilityError("EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS")
+        if matches:
+            index = matches[0]
+            del node.args.kwonlyargs[index]
+            del node.args.kw_defaults[index]
+    if key in _COMPATIBILITY_ASSIGNMENTS and isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        assignment = _statement_dump(ast.parse(
+            "self.runtime_compatibility = runtime_compatibility"
+        ).body[0])
+        matches = [
+            index for index, statement in enumerate(node.body)
+            if _statement_dump(statement) == assignment
+        ]
+        if len(matches) > 1:
+            raise RetryCompatibilityError("EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS")
+        if matches:
+            del node.body[matches[0]]
+    allowed_calls = _COMPATIBILITY_CALL_KEYWORDS.get(key, {})
+    call_matches = {name: [] for name in allowed_calls}
+    for call in (item for item in ast.walk(node) if isinstance(item, ast.Call)):
+        if _call_name(call) not in allowed_calls:
+            continue
+        matches = [
+            keyword for keyword in call.keywords
+            if keyword.arg == "runtime_compatibility"
+            and (
+                isinstance(keyword.value, ast.Name)
+                and keyword.value.id == "runtime_compatibility"
+                or isinstance(keyword.value, ast.Attribute)
+                and isinstance(keyword.value.value, ast.Name)
+                and keyword.value.value.id == "self"
+                and keyword.value.attr == "runtime_compatibility"
+            )
+        ]
+        if len(matches) > 1:
+            raise RetryCompatibilityError("EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS")
+        if matches:
+            call_matches[_call_name(call)].append((call, matches[0]))
+    for call_name, matches in call_matches.items():
+        if len(matches) not in (0, allowed_calls[call_name]):
+            raise RetryCompatibilityError("EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS")
+        for call, keyword in matches:
+            call.keywords.remove(keyword)
+    for before, after in _COMPATIBILITY_STATEMENT_REPLACEMENTS.get(key, ()):
+        _replace_exact_statements(node, before, after)
+    ast.fix_missing_locations(node)
+    return node
+
+
+def _validate_dependency_closure(tree: ast.AST, name: str,
+                                 selectors: tuple[str, ...] | None) -> None:
+    if selectors is None:
+        return
+    included = set(selectors)
+    module_functions = {
+        item.name for item in getattr(tree, "body", ())
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    for selector in selectors:
+        node = _selected_node(tree, selector)
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        dependencies: set[str] = set()
+        if "." in selector:
+            class_name = selector.split(".", 1)[0]
+            for call in (item for item in ast.walk(node) if isinstance(item, ast.Call)):
+                if (isinstance(call.func, ast.Attribute)
+                        and isinstance(call.func.value, ast.Name)
+                        and call.func.value.id == "self"):
+                    dependencies.add(f"{class_name}.{call.func.attr}")
+        else:
+            dependencies.update(
+                call.func.id
+                for call in (item for item in ast.walk(node) if isinstance(item, ast.Call))
+                if isinstance(call.func, ast.Name) and call.func.id in module_functions
+            )
+        missing = sorted(dependencies - included)
+        if missing:
+            raise RetryCompatibilityError(
+                f"EXECUTION_SURFACE_DEPENDENCY_UNCLOSED:{name}:{selector}:{','.join(missing)}"
+            )
+
+
+def _ast_sha256(content: bytes, selectors: tuple[str, ...] | None, *, name: str = "") -> str:
     tree = _RemoveDocstrings().visit(ast.parse(content.decode("utf-8")))
     ast.fix_missing_locations(tree)
+    _validate_dependency_closure(tree, name, selectors)
     selected = tree if selectors is None else {
-        selector: ast.dump(_selected_node(tree, selector), include_attributes=False)
+        selector: ast.dump(
+            _normalize_compatibility_plumbing(name, selector, _selected_node(tree, selector)),
+            include_attributes=False,
+        )
         for selector in selectors
     }
     value = ast.dump(selected, include_attributes=False) if selectors is None else canonical(selected)
@@ -217,13 +498,35 @@ def _surface_manifest(sources: Mapping[str, bytes],
     files = {
         name: {
             "source_sha256": hashlib.sha256(sources[name]).hexdigest(),
-            "semantic_ast_sha256": _ast_sha256(sources[name], selectors),
+            "semantic_ast_sha256": _ast_sha256(sources[name], selectors, name=name),
         }
         for name, selectors in specification.items()
     }
-    return {"files": files, "semantic_surface_sha256": digest({
+    return {"files": files, "roots": {
+        key: value for key, value in {
+            **_CLOUD_EXECUTION_ROOTS, **_NATIVE_EXECUTION_ROOTS,
+        }.items() if key in specification
+    }, "semantic_surface_sha256": digest({
         name: value["semantic_ast_sha256"] for name, value in files.items()
     })}
+
+
+def _execution_surface_sources(
+        historical_git_sha: str,
+        specification: Mapping[str, tuple[str, ...] | None],
+) -> tuple[dict[str, bytes], dict[str, bytes]]:
+    package = Path(__file__).resolve().parent.parent
+    root = package.parents[1]
+    historical: dict[str, bytes] = {}
+    target: dict[str, bytes] = {}
+    for name in specification:
+        repository_name = f"src/pro_a/{name}"
+        historical[name] = subprocess.check_output(
+            ["git", "show", f"{historical_git_sha}:{repository_name}"], cwd=root,
+            stderr=subprocess.DEVNULL,
+        )
+        target[name] = (package / name).read_bytes()
+    return historical, target
 
 
 @lru_cache(maxsize=64)
@@ -241,18 +544,8 @@ def _execution_surface_comparison(kind: str, historical_git_sha: str) -> dict[st
     if specification is None or not re.fullmatch(r"[0-9a-f]{40,64}", historical_git_sha or ""):
         result["reason"] = "HISTORICAL_GIT_IDENTITY_INVALID"
         return result
-    package = Path(__file__).resolve().parent.parent
-    root = package.parents[1]
-    historical: dict[str, bytes] = {}
-    target: dict[str, bytes] = {}
     try:
-        for name in specification:
-            repository_name = f"src/pro_a/{name}"
-            historical[name] = subprocess.check_output(
-                ["git", "show", f"{historical_git_sha}:{repository_name}"], cwd=root,
-                stderr=subprocess.DEVNULL,
-            )
-            target[name] = (package / name).read_bytes()
+        historical, target = _execution_surface_sources(historical_git_sha, specification)
         historical_manifest = _surface_manifest(historical, specification)
         target_manifest = _surface_manifest(target, specification)
     except (OSError, UnicodeError, subprocess.CalledProcessError, SyntaxError,

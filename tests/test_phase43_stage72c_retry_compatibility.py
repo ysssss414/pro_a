@@ -173,6 +173,159 @@ def test_changed_execution_surface_blocks_broad_code_digest_drift(
 
 
 @pytest.mark.parametrize(
+    'name,original,replacement',
+    [
+        (
+            'workbench/cloud_jobs.py',
+            b'PROMPT_IDENTITY_MISMATCH',
+            b'PROMPT_IDENTITY_BYPASS',
+        ),
+        (
+            'workbench/source_operations.py',
+            b'BLOCKED_EMPTY_EXTRACTION_PLAN',
+            b'BYPASSED_EMPTY_EXTRACTION_PLAN',
+        ),
+    ],
+)
+def test_execution_surface_manifest_covers_retry_execution_dependencies(
+        name, original, replacement):
+    import pro_a.workbench.retry_compatibility as compatibility
+
+    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
+    sources = {
+        path: (package / path).read_bytes()
+        for path in compatibility._CLOUD_EXECUTION_SURFACE
+    }
+    assert sources[name].count(original) == 1
+    changed = dict(sources)
+    changed[name] = sources[name].replace(original, replacement, 1)
+
+    before = compatibility._surface_manifest(
+        sources, compatibility._CLOUD_EXECUTION_SURFACE,
+    )
+    after = compatibility._surface_manifest(
+        changed, compatibility._CLOUD_EXECUTION_SURFACE,
+    )
+    assert after['semantic_surface_sha256'] != before['semantic_surface_sha256']
+
+
+@pytest.mark.parametrize(
+    'kind,name,original,replacement,blocker',
+    [
+        (
+            'cloud', 'workbench/cloud_jobs.py',
+            b'guard_cloud_runtime(stored_runtime, current_runtime, self.runtime_compatibility)',
+            b'bypass_cloud_runtime(stored_runtime, current_runtime, self.runtime_compatibility)',
+            'BLOCKED_EXECUTION_CONTRACT_CHANGED',
+        ),
+        (
+            'cloud', 'workbench/domains.py',
+            b'processing_context.guard_resume(frozen, current)',
+            b'processing_context.skip_resume(frozen, current)',
+            'BLOCKED_EXECUTION_CONTRACT_CHANGED',
+        ),
+        (
+            'cloud', 'workbench/source_operations.py',
+            b'guard_cloud_runtime(\n                    json.loads(row["runtime_json"]), current_runtime,',
+            b'bypass_cloud_runtime(\n                    json.loads(row["runtime_json"]), current_runtime,',
+            'BLOCKED_EXECUTION_CONTRACT_CHANGED',
+        ),
+        (
+            'native', 'phase4_orchestration.py',
+            b'guard_native_runtime(identity["runtime"], current_runtime, runtime_compatibility)',
+            b'bypass_native_runtime(identity["runtime"], current_runtime, runtime_compatibility)',
+            'BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE',
+        ),
+        (
+            'native', 'phase4_orchestration.py',
+            b'runtime_compatibility=runtime_compatibility,',
+            b'runtime_override=runtime_compatibility,',
+            'BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE',
+        ),
+    ],
+)
+def test_semantic_surface_mutation_makes_qualification_block(
+        tmp_path, monkeypatch, kind, name, original, replacement, blocker):
+    import pro_a.workbench.retry_compatibility as compatibility
+
+    value = failed(tmp_path)
+    prepare_retry_compatibility(value['config'])
+    release_drift(monkeypatch, value, broad_code_drift=True)
+    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
+
+    def adversarial_sources(_historical_git_sha, specification):
+        historical = {path: (package / path).read_bytes() for path in specification}
+        target = dict(historical)
+        selected = (
+            specification is compatibility._CLOUD_EXECUTION_SURFACE
+            if kind == 'cloud'
+            else specification is compatibility._NATIVE_EXECUTION_SURFACE
+        )
+        if selected:
+            assert target[name].count(original) == 1
+            target[name] = target[name].replace(original, replacement, 1)
+        return historical, target
+
+    monkeypatch.setattr(compatibility, '_execution_surface_sources', adversarial_sources)
+    compatibility._execution_surface_comparison.cache_clear()
+    try:
+        result = qualify(value, persist=False)
+    finally:
+        compatibility._execution_surface_comparison.cache_clear()
+    assert result['status'] == 'BLOCKED'
+    assert blocker in result['blockers']
+    surface = result['evidence'][f'{kind}_execution_surface']
+    assert surface['compatible'] is False
+    assert surface['reason'] == 'SEMANTIC_SURFACE_CHANGED'
+
+
+def test_exact_compatibility_plumbing_normalizes_to_pre_extension_surface():
+    import subprocess
+    import pro_a.workbench.retry_compatibility as compatibility
+
+    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
+    root = package.parents[1]
+    for specification in (
+            compatibility._CLOUD_EXECUTION_SURFACE,
+            compatibility._NATIVE_EXECUTION_SURFACE):
+        historical = {
+            name: subprocess.check_output(
+                ['git', 'show', f'origin/main:src/pro_a/{name}'], cwd=root,
+            )
+            for name in specification
+        }
+        target = {name: (package / name).read_bytes() for name in specification}
+        before = compatibility._surface_manifest(historical, specification)
+        after = compatibility._surface_manifest(target, specification)
+        assert after['semantic_surface_sha256'] == before['semantic_surface_sha256']
+
+
+def test_unrepresented_helper_dependency_fails_closed():
+    import pro_a.workbench.retry_compatibility as compatibility
+
+    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
+    sources = {
+        path: (package / path).read_bytes()
+        for path in compatibility._CLOUD_EXECUTION_SURFACE
+    }
+    marker = b'        if fault_at is not None and fault_at not in FAULT_POINTS:'
+    assert sources['workbench/cloud_jobs.py'].count(marker) == 1
+    line_ending = (
+        b'\r\n' if b'\r\n' in sources['workbench/cloud_jobs.py'] else b'\n'
+    )
+    changed = dict(sources)
+    changed['workbench/cloud_jobs.py'] = sources['workbench/cloud_jobs.py'].replace(
+        marker,
+        b'        self._unrepresented_authorizer()' + line_ending + marker,
+        1,
+    )
+    with pytest.raises(RetryCompatibilityError, match='DEPENDENCY_UNCLOSED'):
+        compatibility._surface_manifest(
+            changed, compatibility._CLOUD_EXECUTION_SURFACE,
+        )
+
+
+@pytest.mark.parametrize(
     'mutation,blocker',
     [
         ('source', 'BLOCKED_SOURCE_IDENTITY_CHANGED'),
