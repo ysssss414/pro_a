@@ -130,6 +130,7 @@ def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason,
     from .source_operations import SourceOperationError
     if (not isinstance(retry_reason, str) or not 1 <= len(retry_reason) <= 1000
             or retry_reason != retry_reason.strip()
+            or retry_reason.splitlines() != [retry_reason]
             or any(ord(c) < 32 or ord(c) == 127 or c in '<>' for c in retry_reason)
             or re.search(r'(?i)(bearer\s+|sk-[a-z0-9]{8}|(?:api[_ -]?key|token|cookie|authorization)\s*[:=])', retry_reason)):
         raise SourceOperationError('INVALID_RETRY_REASON', 422)
