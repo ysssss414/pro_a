@@ -89,7 +89,7 @@ class ProviderFailure(RuntimeError):
     """A bounded failure. private_detail must never enter job state or public DTOs."""
 
     def __init__(self, code: str, *, retryable: bool, external_outcome: str,
-                 private_detail: str = ""):
+                 private_detail: str = "", diagnostic: Mapping[str, Any] | None = None):
         if external_outcome not in OUTCOME_STATUSES:
             raise ValueError("INVALID_EXTERNAL_OUTCOME")
         super().__init__(code)
@@ -97,6 +97,25 @@ class ProviderFailure(RuntimeError):
         self.retryable = retryable
         self.external_outcome = external_outcome
         self.private_detail = private_detail
+        self.diagnostic = dict(diagnostic or {})
+
+
+def _llm_provider_failure(error: LLMError, metadata: Mapping[str, Any]) -> ProviderFailure:
+    attempts = list(metadata.get("attempts") or [])
+    last = attempts[-1] if attempts else {}
+    status = last.get("http_status")
+    if status == 429:
+        code, retryable, external = "RATE_LIMITED", True, "KNOWN_FAILURE"
+    elif status in (500, 503):
+        code, retryable, external = "PROVIDER_UNAVAILABLE", True, "KNOWN_FAILURE"
+    elif status in (401, 403):
+        code, retryable, external = "AUTHENTICATION_ERROR", False, "KNOWN_FAILURE"
+    elif "transport failure" in str(error):
+        code, retryable, external = "UNKNOWN_EXTERNAL_OUTCOME", False, "UNKNOWN"
+    else:
+        code, retryable, external = "PROVIDER_ERROR", False, "KNOWN_FAILURE"
+    return ProviderFailure(code, retryable=retryable, external_outcome=external,
+                           diagnostic=last)
 
 
 @dataclass(frozen=True)
@@ -179,6 +198,7 @@ class CloudResult:
     total_tokens: int | None
     cached_tokens: int | None
     output: Mapping[str, Any]
+    transport_diagnostic: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.usage_status not in USAGE_STATUSES:
@@ -232,25 +252,7 @@ class SemanticBackendProvider:
         try:
             output = self.backend.decompose_batch(request.payload["claims"])
         except LLMError as error:
-            metadata = dict(self.backend.last_call_metadata or {})
-            attempts = list(metadata.get("attempts") or [])
-            last = attempts[-1] if attempts else {}
-            status = last.get("http_status")
-            text = str(error)
-            if status == 429:
-                raise ProviderFailure("RATE_LIMITED", retryable=True,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if status in (500, 503):
-                raise ProviderFailure("PROVIDER_UNAVAILABLE", retryable=True,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if status in (401, 403):
-                raise ProviderFailure("AUTHENTICATION_ERROR", retryable=False,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if "transport failure" in text:
-                raise ProviderFailure("UNKNOWN_EXTERNAL_OUTCOME", retryable=False,
-                                      external_outcome="UNKNOWN") from error
-            raise ProviderFailure("PROVIDER_ERROR", retryable=False,
-                                  external_outcome="KNOWN_FAILURE") from error
+            raise _llm_provider_failure(error, dict(self.backend.last_call_metadata or {})) from error
         metadata = dict(self.backend.last_call_metadata or {})
         attempts = list(metadata.get("attempts") or [])
         last = attempts[-1] if attempts else {}
@@ -276,6 +278,7 @@ class SemanticBackendProvider:
             cached_tokens=(int(last["cached_tokens"])
                            if known and isinstance(last.get("cached_tokens"), int) else None),
             output=output,
+            transport_diagnostic=last,
         )
 
 
@@ -310,24 +313,7 @@ class SourceAnalysisPieceProvider:
         try:
             output = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user_prompt)
         except LLMError as error:
-            metadata = dict(self.llm.last_call_metadata or {})
-            attempts = list(metadata.get("attempts") or [])
-            last = attempts[-1] if attempts else {}
-            status = last.get("http_status")
-            if status == 429:
-                raise ProviderFailure("RATE_LIMITED", retryable=True,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if status in (500, 503):
-                raise ProviderFailure("PROVIDER_UNAVAILABLE", retryable=True,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if status in (401, 403):
-                raise ProviderFailure("AUTHENTICATION_ERROR", retryable=False,
-                                      external_outcome="KNOWN_FAILURE") from error
-            if "transport failure" in str(error):
-                raise ProviderFailure("UNKNOWN_EXTERNAL_OUTCOME", retryable=False,
-                                      external_outcome="UNKNOWN") from error
-            raise ProviderFailure("PROVIDER_ERROR", retryable=False,
-                                  external_outcome="KNOWN_FAILURE") from error
+            raise _llm_provider_failure(error, dict(self.llm.last_call_metadata or {})) from error
         metadata = dict(self.llm.last_call_metadata or {})
         attempts = list(metadata.get("attempts") or [])
         last = attempts[-1] if attempts else {}
@@ -353,6 +339,7 @@ class SourceAnalysisPieceProvider:
             cached_tokens=(int(last["cached_tokens"])
                            if known and isinstance(last.get("cached_tokens"), int) else None),
             output=output,
+            transport_diagnostic=last,
         )
 
 

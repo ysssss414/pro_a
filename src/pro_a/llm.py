@@ -4,12 +4,16 @@ import hashlib
 import json
 import logging
 import re
+import socket
 import time
+from datetime import datetime, timezone
 from typing import Any
 
 import requests
 
 from .config import LLMConfig
+from .provider_diagnostics import (http_error_class, safe_provider_error_value,
+                                   safe_request_id)
 
 
 logger = logging.getLogger(__name__)
@@ -54,6 +58,61 @@ def _exception_chain(exc: BaseException) -> list[BaseException]:
 
 def _is_retryable_transport_exception(exc: BaseException) -> bool:
     return any(isinstance(item, _RETRYABLE_EXCEPTIONS) for item in _exception_chain(exc))
+
+
+def _transport_error_class(exc: BaseException) -> str:
+    chain = _exception_chain(exc)
+    if any(isinstance(item, socket.gaierror) for item in chain):
+        return "TRANSPORT_DNS_ERROR"
+    if any(isinstance(item, requests.exceptions.ConnectTimeout) for item in chain):
+        return "TRANSPORT_TIMEOUT"
+    if any(isinstance(item, requests.exceptions.ReadTimeout) for item in chain):
+        return "TRANSPORT_READ_TIMEOUT"
+    if any(isinstance(item, requests.exceptions.SSLError) for item in chain):
+        return "TRANSPORT_TLS_ERROR"
+    if any(isinstance(item, (ConnectionResetError, requests.exceptions.ChunkedEncodingError)) for item in chain):
+        return "TRANSPORT_CONNECTION_RESET"
+    if any(isinstance(item, requests.exceptions.Timeout) for item in chain):
+        return "TRANSPORT_TIMEOUT"
+    if any(isinstance(item, requests.exceptions.ConnectionError) for item in chain):
+        return "TRANSPORT_CONNECT_ERROR"
+    return "UNKNOWN_PROVIDER_ERROR"
+
+
+def _response_diagnostic(resp: Any) -> dict[str, Any]:
+    try:
+        headers = getattr(resp, "headers", {}) or {}
+        request_id = next((safe_request_id(headers.get(key)) for key in
+                           ("x-request-id", "X-Request-ID", "request-id", "Request-Id", "x-ds-request-id")
+                           if safe_request_id(headers.get(key))), None)
+        content_type = str(headers.get("content-type") or headers.get("Content-Type") or "").split(";", 1)[0].lower()
+        content = getattr(resp, "content", None)
+        if not isinstance(content, bytes):
+            content = str(getattr(resp, "text", "")).encode("utf-8")
+        return {
+            "provider_request_id": request_id,
+            "response_content_type": "application/json" if content_type == "application/json" else "other" if content_type else None,
+            "response_size_bytes": len(content),
+            "http_request_sent": True,
+        }
+    except Exception:
+        return {"http_request_sent": True}
+
+
+def _body_diagnostic(data: Any) -> dict[str, Any]:
+    try:
+        if not isinstance(data, dict):
+            return {}
+        error = data.get("error")
+        error = error if isinstance(error, dict) else {}
+        return {
+            "provider_error_type": safe_provider_error_value(error.get("type")),
+            "provider_error_code": safe_provider_error_value(error.get("code")),
+            "provider_error_type_present": isinstance(error.get("type"), str),
+            "provider_error_code_present": isinstance(error.get("code"), str),
+        }
+    except Exception:
+        return {}
 
 
 def _completion_details(data: dict[str, Any], choice: dict[str, Any], content: str) -> str:
@@ -130,6 +189,7 @@ class ChatLLM:
         exception_class: str | None = None,
         exception_chain: list[str] | None = None,
         will_retry: bool = False,
+        diagnostic: dict[str, Any] | None = None,
     ) -> None:
         event = {
             "attempt_number": attempt_number,
@@ -140,6 +200,7 @@ class ChatLLM:
             "exception_class": exception_class,
             "exception_chain": exception_chain or [],
             "will_retry": will_retry,
+            **(diagnostic or {}),
         }
         self._attempt_events.append(event)
         log = logger.warning if will_retry else logger.info
@@ -179,6 +240,9 @@ class ChatLLM:
         headers = {"Authorization": f"Bearer {self.cfg.api_key}", "Content-Type": "application/json"}
         max_attempts = 1 + self.cfg.max_retries
         for attempt_number in range(1, max_attempts + 1):
+            started_at = datetime.now(timezone.utc).isoformat()
+            started = time.perf_counter()
+            payload_size = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
             try:
                 resp = requests.post(
                     endpoint,
@@ -195,6 +259,11 @@ class ChatLLM:
                     exception_class=type(e).__name__,
                     exception_chain=exception_chain,
                     will_retry=will_retry,
+                    diagnostic={"started_at": started_at,
+                                "finished_at": datetime.now(timezone.utc).isoformat(),
+                                "duration_ms": (time.perf_counter() - started) * 1000,
+                                "request_payload_size_bytes": payload_size,
+                                "failure_stage": "TRANSPORT", "error_class": _transport_error_class(e)},
                 )
                 if will_retry:
                     self._sleep_before_retry(attempt_number)
@@ -215,39 +284,67 @@ class ChatLLM:
                 attempt_number,
                 http_status=resp.status_code,
                 will_retry=will_retry,
+                diagnostic={"started_at": started_at,
+                            "finished_at": datetime.now(timezone.utc).isoformat(),
+                            "duration_ms": (time.perf_counter() - started) * 1000,
+                            "request_payload_size_bytes": payload_size,
+                            **_response_diagnostic(resp)},
             )
             if will_retry:
                 self._sleep_before_retry(attempt_number)
                 continue
             if resp.status_code in _RETRYABLE_STATUS_CODES:
+                self._attempt_events[-1].update(failure_stage="HTTP_RESPONSE",
+                                                 error_class=http_error_class(resp.status_code))
+                try:
+                    body = _body_diagnostic(resp.json())
+                    self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
+                except Exception:
+                    pass
                 raise LLMError(
                     "LLM HTTP retry exhausted: failure_category=http_status; "
                     f"attempts={attempt_number}; final_status={resp.status_code}: {resp.text[:1000]}"
                 )
             if resp.status_code >= 400:
+                self._attempt_events[-1].update(failure_stage="HTTP_RESPONSE",
+                                                 error_class=http_error_class(resp.status_code))
+                try:
+                    body = _body_diagnostic(resp.json())
+                    self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
+                except Exception:
+                    pass
                 raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
             break
 
         try:
             data = resp.json()
         except ValueError as e:
+            self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
+                                             error_class=("RESPONSE_DECODE_ERROR" if isinstance(e, UnicodeError)
+                                                          else "RESPONSE_EMPTY" if not getattr(resp, "text", "")
+                                                          else "RESPONSE_CONTENT_TYPE_INVALID" if self._attempt_events[-1].get("response_content_type") == "other"
+                                                          else "RESPONSE_JSON_PARSE_ERROR"))
             raise LLMError(f"Unexpected LLM response: invalid JSON body: {resp.text[:1000]}") from e
+        body = _body_diagnostic(data)
+        self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
         try:
             choice = data["choices"][0]
             finish_reason = choice["finish_reason"]
             content = choice["message"]["content"]
         except (KeyError, IndexError, TypeError) as e:
+            self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
+                                             error_class="PROVIDER_API_ERROR" if isinstance(data, dict) and isinstance(data.get("error"), dict) else "PROVIDER_RESPONSE_SCHEMA_ERROR")
             raise LLMError(f"Unexpected LLM response: {data}") from e
 
         if not isinstance(content, str):
+            self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
+                                             error_class="PROVIDER_RESPONSE_SCHEMA_ERROR")
             raise LLMError(f"Unexpected LLM response: {data}")
 
         usage = data.get("usage")
-        response_id = data.get("id")
+        response_id = self._attempt_events[-1].get("provider_request_id")
         self._attempt_events[-1].update(
-            provider_request_id=(
-                response_id if isinstance(response_id, str) and response_id else None
-            ),
+            provider_request_id=safe_request_id(response_id),
             response_model=data.get("model"),
             finish_reason=finish_reason,
             prompt_tokens=(
@@ -266,6 +363,8 @@ class ChatLLM:
 
         details = _completion_details(data, choice, content)
         if finish_reason == "length":
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE",
+                                             error_class="OUTPUT_PARSE_ERROR")
             self._attempt_events[-1].update(
                 result="output_truncation",
                 content_tail=content[-500:],
@@ -280,25 +379,32 @@ class ChatLLM:
                 f"content_tail={json.dumps(content[-500:], ensure_ascii=False)}"
             )
         if finish_reason == "content_filter":
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(f"LLM JSON output blocked: {details}")
         if finish_reason == "insufficient_system_resource":
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(f"LLM JSON output interrupted: {details}")
         if finish_reason == "tool_calls":
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(f"LLM returned tool calls instead of JSON content: {details}")
         if finish_reason != "stop":
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(f"Unexpected LLM finish_reason: {details}")
         if not content.strip():
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="RESPONSE_EMPTY")
             raise LLMError(f"LLM returned empty JSON content: {details}")
 
         try:
             parsed = _extract_json(content)
         except json.JSONDecodeError as e:
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(
                 f"LLM returned non-JSON content: {details}; "
                 f"JSONDecodeError: {e.msg} at position {e.pos}; "
                 f"content={content[:2000]}"
             ) from e
         if not isinstance(parsed, dict):
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
             raise LLMError(f"LLM returned non-object JSON content: {details}")
         self._attempt_events[-1]["result"] = "success"
         return parsed
