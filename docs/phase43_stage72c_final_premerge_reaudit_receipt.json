@@ -1,0 +1,122 @@
+{
+  "stage": "PHASE43_STAGE72C_FINAL_PREMERGE_REAUDIT",
+  "status": "PASS",
+  "technical_reaudit_status": "PASS",
+  "timestamp_date": "2026-09-28",
+  "repository": "ysssss414/pro_a",
+  "authoritative_baseline_sha": "ec0497df63595fb21dca7b1a7fc91ca81c942ef8",
+  "branch": "codex/phase43-stage72c-cross-release-retry-compatibility",
+  "audited_pr_head_before_evidence_commit": "c7df80aebe9aca9c9473c5599fb803bf4e09320d",
+  "lineage": {
+    "implementation_sha": "0fbd01116100f53b832331deb865976b785a12d6",
+    "initial_stage72c_evidence_sha": "dfea7e93e216615b8a1d5bded298ad7c6d0b1a21",
+    "r1_execution_surface_repair_sha": "7aaa0c0352a31c344742d623d062bf4f77644004",
+    "r1_evidence_sha": "2aab5b97b600173f389dd0df3081880fa0ae6dc7",
+    "r1_evidence_clarification_sha": "c7df80aebe9aca9c9473c5599fb803bf4e09320d"
+  },
+  "chronology": [
+    "INITIAL_STAGE72C_GENERIC_QUALIFICATION_PASS",
+    "DRAFT_REVIEW_FOUND_NON_TRANSITIVE_EXECUTION_SURFACE",
+    "R1_REPRODUCED_TWO_REAL_SOURCE_FALSE_POSITIVES",
+    "R1_EXECUTION_SURFACE_CLOSURE_REPAIRED",
+    "R1_REQUALIFICATION_PASS",
+    "INDEPENDENT_FINAL_PREMERGE_TECHNICAL_REAUDIT_PASS"
+  ],
+  "r1_execution_surface_closure_validated": true,
+  "cloud_execution_surface_dependency_closed": true,
+  "native_execution_surface_dependency_closed": true,
+  "adversarial_transitive_drift_class_closed": true,
+  "generic_cross_release_compatibility": "PASS",
+  "original_stage72_cross_release_compatibility": "BLOCKED",
+  "original_stage72_blockers": [
+    "BLOCKED_EXECUTION_CONTRACT_CHANGED",
+    "BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE"
+  ],
+  "historical_runtime_gate_preserved": true,
+  "execution_surface": {
+    "cloud_roots": [
+      "workbench/cloud_jobs.py::CloudJobs.run_once",
+      "workbench/source_operations.py::SourceOperations._advance_claimed"
+    ],
+    "native_roots": [
+      "phase4_orchestration.py::resume_execution"
+    ],
+    "direct_selected_self_and_local_dependencies": "FAIL_CLOSED_IF_UNREPRESENTED",
+    "unrepresented_dependency_reason": "EXECUTION_SURFACE_DEPENDENCY_UNCLOSED",
+    "normalization": "EXACT_FILE_SELECTOR_CALLEE_OCCURRENCE_COUNT_AND_STATEMENT_SEQUENCE_ONLY"
+  },
+  "source_freeze": {
+    "r1_repair_sha": "7aaa0c0352a31c344742d623d062bf4f77644004",
+    "r1_is_ancestor_of_audited_head": true,
+    "src_tree_at_r1": "cf7ae40b5605c60bdd3a5dd7ebc214cc254a3259",
+    "src_tree_at_audited_head": "cf7ae40b5605c60bdd3a5dd7ebc214cc254a3259",
+    "tests_tree_at_r1": "d4f8be2f7526ec6742d154c05d7f688d37e05400",
+    "tests_tree_at_audited_head": "d4f8be2f7526ec6742d154c05d7f688d37e05400",
+    "application_source_changed_after_r1": false,
+    "test_source_changed_after_r1": false,
+    "post_r1_changes_before_final_evidence": "DOCUMENTATION_EVIDENCE_ONLY",
+    "full_suite_rerun_required_for_final_persistence": false
+  },
+  "verification": {
+    "focused_stage72b_stage72c": {
+      "passed": 58,
+      "failed": 0
+    },
+    "expanded_related": {
+      "passed": 166,
+      "failed": 0
+    },
+    "full_repository": {
+      "passed": 2477,
+      "skipped": 2,
+      "failed": 4,
+      "errors": 29,
+      "total": 2512,
+      "junit_sha256": "e8ddfc6b12e23e2354d0c824e6b2653ba026acc9fe245af07554cec8c5b2bbc6"
+    },
+    "historical_exception_count": 33,
+    "historical_exception_set_match": true,
+    "historical_exception_comparison": "exact node/status/exception-class set equality against docs/phase43_stage72b_final_premerge_reaudit_receipt.json",
+    "new_regression": 0,
+    "compileall": "PASS",
+    "cli": "PASS",
+    "json_and_compatibility_contract_evidence": "PASS",
+    "diff_check": "PASS",
+    "credential_scan": "PASS"
+  },
+  "real_state_boundary": {
+    "real_workbench_compat_extension_prepared": false,
+    "real_extraction_retry_extension_prepared": false,
+    "real_retry_executed": false,
+    "real_provider_calls": 0,
+    "real_zsxq_reads": 0,
+    "real_zsxq_downloads": 0,
+    "real_zsxq_writes": 0,
+    "production_writes": 0,
+    "real_workbench_writes": 0,
+    "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "workbench_sha_before": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+    "workbench_sha_after": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+  },
+  "pr": {
+    "number": 80,
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "mergeable": "MERGEABLE",
+    "merge_state_status": "CLEAN",
+    "unresolved_review_threads": 0,
+    "status_checks": "ABSENT",
+    "repository_rulesets": "ABSENT",
+    "base_branch_protection": "ABSENT",
+    "description_accuracy": "PASS"
+  },
+  "initial_evidence": "docs/PHASE43_STAGE72C_CROSS_RELEASE_RETRY_COMPATIBILITY.md",
+  "r1_evidence": "docs/PHASE43_STAGE72C_R1_EXECUTION_SURFACE_CLOSURE.md",
+  "final_evidence": "docs/PHASE43_STAGE72C_FINAL_PREMERGE_REAUDIT.md",
+  "real_state_inspection": "READ_ONLY",
+  "ready_marked": false,
+  "merge_performed": false,
+  "next_action": "READY_AND_RELEASE_HANDOFF"
+}
