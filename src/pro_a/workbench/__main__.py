@@ -20,6 +20,7 @@ def main():
     commands.add_parser('prepare-research')
     commands.add_parser('prepare-cloud-jobs')
     commands.add_parser('prepare-source-operations')
+    commands.add_parser('prepare-extraction-retries')
     commands.add_parser('prepare-domains')
     commands.add_parser('rollback-domains')
     commands.add_parser('prepare-stage1-scale')
@@ -104,6 +105,9 @@ def main():
         elif args.command == 'prepare-source-operations':
             from .source_operations import prepare_source_operations
             print(json.dumps(prepare_source_operations(config)))
+        elif args.command == 'prepare-extraction-retries':
+            from .extraction_retry import prepare_extraction_retries
+            print(json.dumps(prepare_extraction_retries(config)))
         elif args.command in ('prepare-domains', 'rollback-domains', 'register-domain', 'assign-domains'):
             from .domains import Domains, prepare_domains, rollback_domains
             from pro_a.domain_packs import read_json

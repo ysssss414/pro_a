@@ -159,6 +159,12 @@ class SourceProcessRequest(BaseModel):
     company_material_intent: dict[str, object] | None = None
 
 
+class ExtractionRetryRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
+    retry_reason: str = Field(min_length=1, max_length=1000)
+
+
 def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudProfile | None = None,
                source_profile: SourceProfile | None = None):
     config = config or WorkbenchConfig.load(Path(os.environ['PRO_A_WORKBENCH_CONFIG']))
@@ -655,6 +661,10 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def source_processing_events(processing_run_id: str, cursor: str | None = None,
                                  limit: int = 50):
         return source_service().events(processing_run_id, cursor=cursor, limit=limit)
+
+    @app.post(PREFIX + '/source-operations/runs/{processing_run_id}/attempts/{attempt_id}/retry')
+    def retry_extraction(processing_run_id: str, attempt_id: str, body: ExtractionRetryRequest):
+        return source_service().retry_failed_extraction(processing_run_id, attempt_id, **body.model_dump())
 
     @app.get(PREFIX + '/source-operations/{source_id}/runs')
     def source_run_history(source_id: str, cursor: str | None = None, limit: int = 25):

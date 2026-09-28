@@ -663,12 +663,16 @@ class SourceOperations:
                              "job_id": result["job"]["job_id"]})
         return result["job"]
 
+    def retry_failed_extraction(self, run_id: str, failed_attempt_id: str, *,
+                                retry_reason: str, idempotency_key: str) -> dict[str, Any]:
+        from .extraction_retry import retry_failed_extraction
+        return retry_failed_extraction(self, run_id, failed_attempt_id,
+                                       retry_reason=retry_reason, idempotency_key=idempotency_key)
+
     def _jobs_for(self, run_id: str, operation: str) -> list[dict[str, Any]]:
+        from .extraction_retry import effective_job_ids
         with self.store.connect() as connection:
-            ids = [row[0] for row in connection.execute(
-                "SELECT job_id FROM source_processing_jobs WHERE processing_run_id=? "
-                "AND operation_kind=? ORDER BY ordinal", (run_id, operation),
-            )]
+            ids = effective_job_ids(connection, run_id, operation)
         return [self.jobs.get(job_id) for job_id in ids]
 
     def _propagate_job_state(self, run_id: str, jobs: list[dict[str, Any]], stage: str) -> bool:
@@ -891,7 +895,8 @@ class SourceOperations:
             )
             run_id = row["processing_run_id"]
         try:
-            return self._advance_claimed(run_id, provider, worker_id)
+            from .extraction_retry import frozen_service
+            return frozen_service(self, run_id)._advance_claimed(run_id, provider, worker_id)
         except SourceOperationError as error:
             detail = str(error)
             code = (detail if re.fullmatch(r"[A-Z][A-Z0-9_]*(?::[A-Z][A-Z0-9_]*)?", detail)
@@ -1129,6 +1134,11 @@ class SourceOperations:
             "ended_at": row["ended_at"],
         }
         context = Domains(self.config).read(run_id, connection=connection)
+        from .extraction_retry import installed
+        result['extraction_retries'] = ([dict(item) for item in connection.execute(
+            'SELECT * FROM extraction_retries WHERE processing_run_id=? ORDER BY created_at,attempt_number',
+            (run_id,))] if installed(connection) else [])
+        result['jobs'].extend({'job_id': item['job_id']} for item in result['extraction_retries'])
         result["domain_context"] = context
         if context and context["contract_version"] == "run-processing-context-v2":
             result.update(domain_context_status="SHARED_CORE_PENDING", processing_scope_mode="SHARED_CORE",
@@ -1377,6 +1387,10 @@ class SourceOperations:
                 )}
                 from pro_a.company_material_intent import read_bound
                 intent_by_id = {run_id: read_bound(connection, run_id) for run_id in latest_ids}
+                from .extraction_retry import installed
+                job_bindings = 'SELECT processing_run_id,job_id FROM source_processing_jobs'
+                if installed(connection):
+                    job_bindings += ' UNION ALL SELECT processing_run_id,job_id FROM extraction_retries'
                 usage_by_id = {row["processing_run_id"]: dict(row) for row in connection.execute(
                     f'''SELECT spj.processing_run_id,COUNT(*) AS job_count,
                         COALESCE(SUM(j.attempt_count),0) AS attempts,
@@ -1384,7 +1398,7 @@ class SourceOperations:
                              THEN 'KNOWN' ELSE 'UNKNOWN' END AS usage_status,
                         SUM(j.input_tokens) AS input_tokens,SUM(j.output_tokens) AS output_tokens,
                         SUM(j.total_tokens) AS total_tokens
-                        FROM source_processing_jobs spj JOIN cloud_jobs j ON j.job_id=spj.job_id
+                        FROM ({job_bindings}) spj JOIN cloud_jobs j ON j.job_id=spj.job_id
                         WHERE spj.processing_run_id IN ({placeholders})
                         GROUP BY spj.processing_run_id''', latest_ids,
                 )}
