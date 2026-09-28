@@ -1,0 +1,192 @@
+{
+  "stage": "PHASE43_STAGE72C_R1_EXECUTION_SURFACE_CLOSURE",
+  "status": "PASS",
+  "timestamp_date": "2026-09-28",
+  "authoritative_baseline_sha": "ec0497df63595fb21dca7b1a7fc91ca81c942ef8",
+  "branch": "codex/phase43-stage72c-cross-release-retry-compatibility",
+  "original_implementation_sha": "0fbd01116100f53b832331deb865976b785a12d6",
+  "prior_pr_head_sha": "dfea7e93e216615b8a1d5bded298ad7c6d0b1a21",
+  "audited_r1_repair_sha": "7aaa0c0352a31c344742d623d062bf4f77644004",
+  "compatibility_contract_version": "extraction-retry-cross-release-v1",
+  "target_contract_sha256": "ba75a8afd2630d3d407a704606259272434545561eb1965e2716ff5b128dbbeb",
+  "generic_compatibility": "PASS",
+  "original_stage72_cross_release_compatibility": "BLOCKED",
+  "original_stage72_blockers": [
+    "BLOCKED_EXECUTION_CONTRACT_CHANGED",
+    "BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE"
+  ],
+  "pre_fix_adversarial_reproducer": {
+    "used_actual_surface_manifest": true,
+    "monkeypatched_execution_surface_comparison": false,
+    "cases": [
+      "CloudJobs._preflight prompt identity behavior",
+      "SourceOperations._advance_claimed empty-plan behavior"
+    ],
+    "expected_failures": 2,
+    "observed_failures": 2,
+    "false_positive_surface_sha256": "2786587d90c1a90ec486297dcf13bae8a7f6d3778c13cd6cb9a4fc4f3e9c6648"
+  },
+  "surface_manifest": {
+    "cloud_roots": {
+      "workbench/cloud_jobs.py": [
+        "CloudJobs.run_once"
+      ],
+      "workbench/source_operations.py": [
+        "SourceOperations._advance_claimed"
+      ]
+    },
+    "native_roots": {
+      "phase4_orchestration.py": [
+        "resume_execution"
+      ]
+    },
+    "cloud_critical_dependencies": [
+      "CloudJobs._preflight",
+      "CloudJobs._native_identity",
+      "Domains.guard/read/basis/pending_basis/assignment/packs",
+      "SourceOperations context/input/job/replay/native-resume/packet/projection helpers",
+      "complete claim/fence/one-dispatch/provider/result/artifact/terminal path",
+      "full cloud_contract/provider_diagnostics/domain_packs/run_context/artifacts files"
+    ],
+    "native_critical_dependencies": [
+      "all non-orchestration PROCESSING_MODULES in full",
+      "_compatible",
+      "_advance",
+      "_configuration",
+      "_inventory",
+      "_commit",
+      "_result",
+      "_emit",
+      "_review",
+      "_runtime",
+      "_now",
+      "_publish"
+    ],
+    "dependency_closure": "Every direct selected self helper and local module helper must be selected; otherwise EXECUTION_SURFACE_DEPENDENCY_UNCLOSED.",
+    "scope_exclusions": {
+      "workbench/extraction_retry.py": "Target-only authorization and immutable retry-copy construction, bound by target contract digest and focused tests.",
+      "workbench/retry_compatibility.py": "Target-only validator/token; exact plumbing is normalized and complete target bytes are contract-bound.",
+      "non_roots": "New-Run intake, initial submission/registration, recovery/reconciliation, HTTP and CLI presentation cannot authorize compatibility."
+    },
+    "generic_cloud_historical_sha256": "9baf711de7694a02c324ac5f700225e636e02d5090cff844f0346173b8728df2",
+    "generic_cloud_target_sha256": "9baf711de7694a02c324ac5f700225e636e02d5090cff844f0346173b8728df2",
+    "generic_native_historical_sha256": "8d2be1aa08d7dab92cab2b03e295b03b2d33248726109c9bac71efc2a6541b1b",
+    "generic_native_target_sha256": "8d2be1aa08d7dab92cab2b03e295b03b2d33248726109c9bac71efc2a6541b1b"
+  },
+  "normalization": {
+    "global_runtime_compatibility_keyword_removal": false,
+    "exact_selector_and_callee_allowlist": true,
+    "exact_expected_occurrence_counts": true,
+    "exact_statement_sequence_replacements": [
+      "CloudJobs._preflight",
+      "Domains.guard",
+      "SourceOperations._advance_claimed",
+      "phase4_orchestration._compatible"
+    ],
+    "exact_signature_assignment_and_forwarding_plumbing": [
+      "CloudJobs.__init__",
+      "SourceOperations.__init__",
+      "Domains.guard",
+      "phase4_orchestration._compatible",
+      "phase4_orchestration.resume_execution"
+    ],
+    "ambiguous_or_changed_plumbing": "FAIL_CLOSED"
+  },
+  "negative_qualification_tests": {
+    "CloudJobs._preflight": "BLOCKED_EXECUTION_CONTRACT_CHANGED",
+    "Domains.guard": "BLOCKED_EXECUTION_CONTRACT_CHANGED",
+    "SourceOperations._advance_claimed": "BLOCKED_EXECUTION_CONTRACT_CHANGED",
+    "phase4_orchestration._compatible": "BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE",
+    "phase4_orchestration.resume_execution": "BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE",
+    "unrepresented_helper": "EXECUTION_SURFACE_DEPENDENCY_UNCLOSED"
+  },
+  "positive_cross_release_retry": {
+    "status": "PASS",
+    "same_run": true,
+    "one_extraction_dispatch": true,
+    "one_separate_semantic_dispatch": true,
+    "final_state": "HUMAN_REVIEW_REQUIRED",
+    "original_history_unchanged": true
+  },
+  "real_read_only_assessment": {
+    "historical_source_id": "SRC_C70218574FB158D7",
+    "historical_processing_run_id": "SOURCE_RUN_BBADD851DA1E4526BAB9B6EBD1DBDCF0",
+    "historical_failed_attempt_id": "ATTEMPT_A1998074CE7545149AE15A9B865571B8",
+    "status": "BLOCKED",
+    "dimension_count": 28,
+    "dimension_passed": 25,
+    "dimension_failed": [
+      "code_runtime_identity",
+      "native_execution_checkpoint",
+      "extraction_parser_output_contract"
+    ],
+    "target_runtime_sha256": "2983aafa9c3fd93b1e32b161a65ae95535b14730a2cd2f93a633049da08b1c42",
+    "cloud_surface_reason": "EXECUTION_SURFACE_UNAVAILABLE:CalledProcessError",
+    "native_surface_reason": "SEMANTIC_SURFACE_CHANGED",
+    "native_historical_surface_sha256": "f2160149ebdbfa6f219b5acc5b27893749fc65d4cb9e92248892c8a36d848ff1",
+    "native_target_surface_sha256": "8d2be1aa08d7dab92cab2b03e295b03b2d33248726109c9bac71efc2a6541b1b",
+    "record": null,
+    "persist": false
+  },
+  "verification": {
+    "stage72c": {
+      "passed": 33,
+      "failed": 0
+    },
+    "focused_stage72b_stage72c": {
+      "passed": 58,
+      "failed": 0,
+      "composition": "25 Stage72B plus 33 Stage72C"
+    },
+    "expanded_related": {
+      "passed": 164,
+      "skipped": 1,
+      "historical_failed": 1,
+      "historical_failure": "Stage6 closure CRLF/LF fixture difference"
+    },
+    "full_repository": {
+      "passed": 2477,
+      "skipped": 2,
+      "failed": 4,
+      "errors": 29,
+      "total": 2512,
+      "junit_sha256": "e8ddfc6b12e23e2354d0c824e6b2653ba026acc9fe245af07554cec8c5b2bbc6"
+    },
+    "historical_exception_count": 33,
+    "historical_exception_set_match": true,
+    "historical_exception_comparison": "exact node/status/exception-class equality against docs/phase43_stage72b_final_premerge_reaudit_receipt.json",
+    "new_regression": 0,
+    "compileall": "PASS",
+    "cli_surface": "PASS",
+    "json_contract_match": true,
+    "diff_check": "PASS",
+    "credential_scan": "PASS"
+  },
+  "real_state_boundary": {
+    "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "workbench_sha_before": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+    "workbench_sha_after": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+    "real_compatibility_extension_prepared": false,
+    "real_extraction_retry_extension_prepared": false,
+    "wal_created": false,
+    "shm_created": false,
+    "qualification_record_written": false,
+    "real_retry_executed": false,
+    "provider_calls": 0,
+    "zsxq_reads": 0,
+    "zsxq_downloads": 0,
+    "zsxq_writes": 0,
+    "production_writes": 0,
+    "workbench_writes": 0
+  },
+  "pr": {
+    "number": 80,
+    "state": "OPEN",
+    "draft": true,
+    "merged": false
+  },
+  "version_bumped": false,
+  "tag_created": false,
+  "next_action": "STOP_FOR_FINAL_PREMERGE_REAUDIT"
+}
