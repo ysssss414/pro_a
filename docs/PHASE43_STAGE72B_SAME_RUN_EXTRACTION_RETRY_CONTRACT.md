@@ -14,6 +14,8 @@ HTTP: `POST /api/workbench/v1/source-operations/runs/{run_id}/attempts/{attempt_
 
 Request contains only `retry_reason` and `idempotency_key`. Extra fields, including Source, context, Domain, provider, model and prompt overrides, are rejected. The reason must be 1–1,000 characters of trimmed single-line plain text. Controls, markup delimiters, and recognizable credential/header assignments are rejected. The reason is operator metadata, never appended to a prompt or provider request.
 
+Single-line uses Python's Unicode-aware `str.splitlines()` boundary semantics: the result must be exactly the original string as one line. LF, CR, VT, FF, NEL, LINE SEPARATOR and PARAGRAPH SEPARATOR are rejected, including standalone and trailing separators. Existing C0/DEL, trim, markup and credential filters remain in force. Invalid input is rejected by the service as `INVALID_RETRY_REASON` / HTTP 422 before writes; it is never normalized. Chinese, ordinary/fullwidth punctuation, emoji and internal U+3000 spaces remain valid; leading/trailing whitespace remains invalid.
+
 The response contains the immutable `retry` lineage, the new `job`, and `duplicate`. Acceptance queues execution; it does **not** call a provider. Reading, refreshing, starting the application or scheduling ordinary work does not create a retry command.
 
 ## Eligibility and frozen execution

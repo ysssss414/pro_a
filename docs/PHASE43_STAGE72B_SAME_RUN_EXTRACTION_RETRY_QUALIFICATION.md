@@ -65,3 +65,9 @@ Real provider calls, ZSXQ reads/downloads/writes, Production writes and real Wor
 Current cloud profile drift is handled with complete frozen values. Missing/changed native TOML cannot be reconstructed from its digest and blocks. Existing Git/code/native runtime guards remain strict. The real Stage 7.2 Run's previously observed runtime mismatch is **not bypassed**; synthetic PASS must not be interpreted as permission or proof that the old real Run can execute on this release. Any runtime compatibility work requires a separate reviewed scope and pre-call proof.
 
 Perform a separate pre-merge audit of Stage 7.2B. Do not merge and do not retry the real Stage 7.2 pilot yet.
+
+## R1 Unicode single-line reason repair
+
+The pre-merge audit at `61c794df26893362f08cc712035b6da60bb1ada4` was **BLOCKED**: Unicode NEL/LINE SEPARATOR/PARAGRAPH SEPARATOR bypassed reason validation. That historical result remains unchanged. The narrow R1 repair uses Unicode-aware `str.splitlines()` rejection in the service, preserving the original text and existing filters. Its independent service/API/no-write and valid-Unicode evidence is recorded in `PHASE43_STAGE72B_R1_UNICODE_REASON_REPAIR.md` and `phase43_stage72b_r1_unicode_reason_repair_receipt.json`.
+
+R1 qualification requires a fresh full pre-merge audit of the new PR head. The historical real Run remains **BLOCKED_RUNTIME_INCOMPATIBLE**; R1 changes no runtime/context/native compatibility gate and grants no real retry authorization.

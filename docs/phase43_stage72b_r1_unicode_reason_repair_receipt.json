@@ -1,0 +1,299 @@
+{
+  "stage": "PHASE43_STAGE72B_R1_UNICODE_REASON_REPAIR",
+  "status": "PASS",
+  "timestamp": "2026-09-28T04:09:53.814378+00:00",
+  "base_sha": "4c1c98a1dc4bc85f807c5817ab9fd5a9058378bd",
+  "blocked_audit_head": "61c794df26893362f08cc712035b6da60bb1ada4",
+  "repair_implementation_head": "54547523952256e37e9a7f3f7d0310e39c4a2db9",
+  "head_scope": "Implementation commit; this report/receipt are in the following documentation commit. Test evidence binds the same source bytes before commit.",
+  "pr_number": 78,
+  "pr_state": "OPEN",
+  "pr_draft": true,
+  "pr_merged": false,
+  "ascii_newline_rejected": "PASS",
+  "unicode_nel_rejected": "PASS",
+  "unicode_line_separator_rejected": "PASS",
+  "unicode_paragraph_separator_rejected": "PASS",
+  "service_level_validation": "PASS",
+  "api_level_validation": "PASS",
+  "invalid_reason_no_write": "PASS",
+  "valid_unicode_reason": "PASS",
+  "security_reason_filter_regression": "PASS",
+  "stage72b_retry_regression": "PASS",
+  "stage72a_regression": "PASS",
+  "stage71_regression": "PASS",
+  "historical_run_runtime_gate_unchanged": "PASS",
+  "real_state_immutability": "PASS",
+  "implementation": "One service validation predicate: retry_reason.splitlines() != [retry_reason]; reject without normalization before any write connection.",
+  "runtime_source_changes": {
+    "src/pro_a/workbench/extraction_retry.py": {
+      "added_lines": 1,
+      "deleted_lines": 0
+    }
+  },
+  "qualified_source_sha256": "4507442f728635ac152349e8e008d36aa7962e84aa5dd0bf41dbdebbc85ed1b3",
+  "unicode_test_file_sha256": "b40945796146f9994c022dbcbd423b32fa6141311b721a724a44159f97c78d0b",
+  "invalid_matrix": {
+    "all_c0_controls": true,
+    "del": true,
+    "nel_ls_ps": true,
+    "standalone_and_trailing_separators": true,
+    "crlf": true,
+    "credential_patterns": [
+      "Bearer",
+      "api_key=",
+      "token=",
+      "cookie=",
+      "authorization="
+    ],
+    "service_cases": 55,
+    "api_cases": 55,
+    "api_service_error_code_cases": 53,
+    "api_pydantic_length_cases": 2,
+    "comparison": "Every invalid input: exact Run/Job/Attempt/retry/Run-event/Job-event/dispatch/outcome rows before and after"
+  },
+  "valid_matrix": [
+    "English",
+    "Chinese",
+    "mixed language",
+    "digits",
+    "ordinary punctuation",
+    "fullwidth punctuation",
+    "internal U+3000 and emoji",
+    "1000-character boundary"
+  ],
+  "valid_text_preserved": true,
+  "normalization_applied": false,
+  "focused_tests": {
+    "passed": 56,
+    "failed": 0,
+    "composition": "25 existing retry + 10 new Unicode + 21 prior independent audit cases"
+  },
+  "related_tests": {
+    "passed": 294,
+    "failed": 0,
+    "selection": "Workbench/lifecycle/Stage7/Stage71/Stage72A/LLM nodes in full JUnit"
+  },
+  "full_repo": {
+    "PASSED": 2444,
+    "SKIPPED": 2,
+    "FAILED": 4,
+    "ERROR": 29
+  },
+  "full_repo_total": 2479,
+  "historical_exception_count": 33,
+  "historical_exception_set_match": true,
+  "historical_exception_comparison": "exact node + status + exception class",
+  "historical_exceptions": [
+    [
+      "tests/test_foundation_requalification.py::test_all_native_rows_requalify_without_db_writes",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_claim_identity_and_temporal_exception_stay_separate",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_comparison_explains_all_rows_without_accepting_content",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_full_old_baseline_preflight_releases_handle_without_gc",
+      "FAILED",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_manifest_cannot_expand_native_authority",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_native_roles_and_cpo_scope_not_content_authority",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+      "ERROR",
+      "pytest.fail"
+    ],
+    [
+      "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+      "FAILED",
+      "PilotError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_exact_seven_item_handoff_and_phase3d_validation",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_parent_placement_requires_executable_create_child",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_qualification_only_boundary_cannot_be_widened",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_handoff_requalification.py::test_requalification_build_is_deterministic",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_authorization_wrong_packet_or_extra_candidate_fails",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_clearly_synthetic_seven_decision_completion_validates",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_explicit_packet_bound_human_authorization_validates",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_generated_manifest_binds_packet_view_and_source",
+      "FAILED",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_missing_and_unknown_selected_decisions_fail_closed",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_no_unselected_candidate_can_enter_the_slice",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_parent_and_reuse_display_context_is_exact",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_persisted_completed_packet_and_receipt_match_authorization",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[production_authorization]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_relation_create_requires_explicit_child_node_create",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_reuse_requires_the_exact_target",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_selected_records_exactly_match_the_full_packet",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_source_binding_and_candidate_content_tamper_fail",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase3f_qualification_review.py::test_source_packet_immutable_identity_is_verified",
+      "ERROR",
+      "QualificationReviewError"
+    ],
+    [
+      "tests/test_phase43_stage3_double_review.py::test_production_immutable_during_read_only_binding_when_available",
+      "FAILED",
+      "ValueError"
+    ]
+  ],
+  "new_regression": 0,
+  "compileall": "PASS_EXIT_0",
+  "frontend": "NOT_RUN_NOT_AFFECTED",
+  "original_stage72_real_run_retry_readiness": "BLOCKED_RUNTIME_INCOMPATIBLE",
+  "historical_audit_status": "BLOCKED",
+  "historical_audit_receipt_sha256": "47b6627906d5e071ba6a0563d2b68041094d4d860469a881b0eeb7d2a90f87ec",
+  "historical_audit_report_sha256": "7248e9fe57a47d0f80297429888eb26c8e52e64258375d6328b7995d3d46f673",
+  "historical_runtime_observation": {
+    "observed_at_head": "61c794df26893362f08cc712035b6da60bb1ada4",
+    "old_runtime_sha256": "ef7fb67f6057f5c9532990aa2e692a320eadda00b5b6dc4a271d30a69fa357c2",
+    "then_current_runtime_sha256": "f7181953f6bd4e3126cb7184c598f4d0d2742670521cef1d71232cc58cbedd35",
+    "acceptance": "RETRY_FROZEN_CONFIG_INCOMPLETE",
+    "context": "PROCESSING_RUN_CONTEXT_DRIFT",
+    "native": "CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE",
+    "probe_rerun_in_r1": false
+  },
+  "guard_file_sha256": {
+    "src/pro_a/workbench/cloud_jobs.py": "77c98e8a4df3abc2f7422e7d13caaa6de7086b2a8c9996ae3d3da34fc705eabc",
+    "src/pro_a/workbench/domains.py": "435e19de282d21644c84233eb1570abd7b7f2f2927851c7177e5b4e87f90a066",
+    "src/pro_a/phase4_orchestration.py": "4dbf00f88ad5ead85c77120bf50aeb5e6bef865fbe6e06f69ecb7818df0a4d0f",
+    "src/pro_a/processing_context.py": "c442f2903a0f21ab7ba16506d0a85fbc57d1e2ce3e8133becff4d0c27494a5d6",
+    "src/pro_a/run_context.py": "1f08856dfcfa6227735774ba5afa5d09a35caab5decfaa2b1edb64ce770920fd"
+  },
+  "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "workbench_sha_before": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "workbench_sha_after": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "real_provider_calls": 0,
+  "real_zsxq_reads": 0,
+  "real_zsxq_downloads": 0,
+  "real_zsxq_writes": 0,
+  "production_writes": 0,
+  "real_workbench_writes": 0,
+  "evidence_sha256": {
+    "workspace/stage72b_r1_full.xml": "32d4b2cd78c9cbb98b555ad2b2244bc9aeeeb2140f19de3514f9bd1ebf458c30",
+    "workspace/stage72b_r1_full.log": "1d9c7d62c75ddaadc3aace77a7e744c93748f61288105f74e40473b5a140d8f4",
+    "workspace/stage72b_r1_focus.xml": "3cd26407658283648c87e1c0a477fa60611e5554894903ede3bec9f0948b78da",
+    "workspace/stage72b_r1_focus.log": "ea52a939cfdb95258e7a7a1cd96e3ea97976a062f9be0d7b07fb1efc96cef75c",
+    "workspace/test_stage72b_premerge_audit.py": "10e903a9b4689434bb19e8d2023c7f8dd238fa7ef9d78fe899faab77071b69af",
+    "workspace/stage72b_env/sitecustomize.py": "25133d3129c05734fc23d3d0157e5218e3e2e5a720fba31f0aebb4ec2e440766"
+  },
+  "full_suite_environment": "Existing historical root fixtures with current changed modules via test-only overlay; credentials cleared. Worktree Stage72A/Stage72B/R1 tests explicitly collected. Two unrelated preexisting untracked root tests excluded. Exact worktree source used independently for focused tests.",
+  "preexisting_local_evidence": "Prior BLOCKED audit report/receipt and global idempotency clarification are preserved outside R1 commits.",
+  "final_status": "PASS",
+  "next_action": "Re-run the full Stage 7.2B pre-merge audit against the new PR #78 head. Keep the historical real Stage 7.2 Run classified as BLOCKED_RUNTIME_INCOMPATIBLE; do not attempt to fix or bypass that incompatibility in this stage."
+}
