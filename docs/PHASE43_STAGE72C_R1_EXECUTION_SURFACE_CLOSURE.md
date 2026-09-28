@@ -105,13 +105,13 @@ No record was returned or written. Both real extensions remain unprepared; no WA
 | Pre-fix adversarial reproducer | `2 failed` as expected; both exposed unchanged surface SHA |
 | Stage 7.2C focused | `33 passed` |
 | Final Stage 7.2B + Stage 7.2C | `58 passed` (`25 + 33`) |
-| Expanded related Domain/Cloud/native/Stage7/7.1/7.2A/Unicode selection | `164 passed, 1 skipped`; one known Stage 6 CRLF/LF historical failure |
+| Expanded related Domain/Cloud/native/Stage7/7.1/7.2A/Unicode selection | `166 passed` |
 | Full historical-environment repository | `2477 passed, 2 skipped, 4 failed, 29 errors` (`2512` total) |
 | Historical exception reconciliation | `33/33` exact node/status/exception-class equality; `NEW_REGRESSION = 0` |
 | Full JUnit SHA-256 | `e8ddfc6b12e23e2354d0c824e6b2653ba026acc9fe245af07554cec8c5b2bbc6` |
 | Compileall / CLI help / JSON-contract match / diff check / credential scan | PASS |
 
-The full-suite total increased by nine from 2503 to 2512; all nine new R1 cases passed. The first two full-suite attempts were discarded because the test-only import environment omitted helper/root source paths; the corrected final run above is the evidence run.
+The full-suite total increased by nine from 2503 to 2512; all nine new R1 cases passed. The first two full-suite attempts were discarded because the test-only import environment omitted helper/root source paths; the corrected final run above is the evidence run. An initial isolated-worktree related selection exposed only a CRLF/LF closure-fixture mismatch; the final related run used the same root fixture/current overlay as the full suite and passed all 166 cases.
 
 ## Real-state boundary
 

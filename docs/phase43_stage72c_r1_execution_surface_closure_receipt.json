@@ -139,10 +139,10 @@
       "composition": "25 Stage72B plus 33 Stage72C"
     },
     "expanded_related": {
-      "passed": 164,
-      "skipped": 1,
-      "historical_failed": 1,
-      "historical_failure": "Stage6 closure CRLF/LF fixture difference"
+      "passed": 166,
+      "skipped": 0,
+      "failed": 0,
+      "environment": "historical root fixture plus current R1 overlay"
     },
     "full_repository": {
       "passed": 2477,
