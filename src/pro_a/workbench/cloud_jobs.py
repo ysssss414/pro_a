@@ -243,7 +243,8 @@ def prepare_cloud_jobs(config):
 
 class CloudJobs:
     def __init__(self, config, profile: CloudProfile | None = None,
-                 *, runtime: Mapping[str, Any] | None = None):
+                 *, runtime: Mapping[str, Any] | None = None,
+                 runtime_compatibility=None):
         self.config = config
         self.store = Store(config)
         self.artifacts = Artifacts(config)
@@ -253,6 +254,7 @@ class CloudJobs:
         if self.profile is not None:
             self.profile.validate()
         self._runtime_override = dict(runtime) if runtime is not None else None
+        self.runtime_compatibility = runtime_compatibility
         self._registered_identity_cache: dict[str, tuple[dict, dict]] = {}
 
     def current_runtime(self) -> dict[str, Any]:
@@ -337,7 +339,10 @@ class CloudJobs:
                 raise JobError("INPUT_ARTIFACT_INVALID") from None
             from .domains import Domains
             try:
-                reference = Domains(self.config).guard(document["processing_run_id"], self)
+                reference = Domains(self.config).guard(
+                    document["processing_run_id"], self,
+                    runtime_compatibility=self.runtime_compatibility,
+                )
                 if document["checkpoint"].get("domain_context") != reference:
                     raise JobError("INPUT_DOMAIN_CONTEXT_MISMATCH")
             except BoundaryError as error:
@@ -600,9 +605,15 @@ class CloudJobs:
             current_runtime = self.current_runtime()
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             raise JobError("RUNTIME_IDENTITY_CORRUPT") from None
-        if (stored_runtime_hash != digest(runtime_basis)
-                or row["runtime_sha256"] != stored_runtime_hash
-                or canonical(stored_runtime) != canonical(current_runtime)):
+        runtime_valid = (stored_runtime_hash == digest(runtime_basis)
+                         and row["runtime_sha256"] == stored_runtime_hash)
+        if runtime_valid and canonical(stored_runtime) != canonical(current_runtime):
+            try:
+                from .retry_compatibility import guard_cloud_runtime
+                guard_cloud_runtime(stored_runtime, current_runtime, self.runtime_compatibility)
+            except Exception:
+                runtime_valid = False
+        if not runtime_valid:
             raise JobError("RUNTIME_DRIFT")
         current_prompt = operation_contract(row["operation_kind"])
         if (canonical(current_prompt) != row["prompt_json"]
@@ -992,7 +1003,10 @@ class CloudJobs:
             if frozen_row is not None:
                 profile = frozen_cloud(frozen_row)
                 if self.profile != profile:
-                    return CloudJobs(self.config, profile).run_once(
+                    return CloudJobs(
+                        self.config, profile,
+                        runtime_compatibility=self.runtime_compatibility,
+                    ).run_once(
                         provider, worker_id=worker_id, job_id=job_id,
                         lease_seconds=lease_seconds, fault_at=fault_at)
         if fault_at is not None and fault_at not in FAULT_POINTS:

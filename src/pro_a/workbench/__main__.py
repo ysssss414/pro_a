@@ -21,6 +21,10 @@ def main():
     commands.add_parser('prepare-cloud-jobs')
     commands.add_parser('prepare-source-operations')
     commands.add_parser('prepare-extraction-retries')
+    commands.add_parser('prepare-retry-compatibility')
+    qualify_compatibility = commands.add_parser('qualify-retry-compatibility')
+    qualify_compatibility.add_argument('--processing-run-id', required=True)
+    qualify_compatibility.add_argument('--failed-attempt-id', required=True)
     commands.add_parser('prepare-domains')
     commands.add_parser('rollback-domains')
     commands.add_parser('prepare-stage1-scale')
@@ -108,6 +112,14 @@ def main():
         elif args.command == 'prepare-extraction-retries':
             from .extraction_retry import prepare_extraction_retries
             print(json.dumps(prepare_extraction_retries(config)))
+        elif args.command == 'prepare-retry-compatibility':
+            from .retry_compatibility import prepare_retry_compatibility
+            print(json.dumps(prepare_retry_compatibility(config)))
+        elif args.command == 'qualify-retry-compatibility':
+            from .retry_compatibility import assess_retry_compatibility
+            print(json.dumps(assess_retry_compatibility(
+                config, args.processing_run_id, args.failed_attempt_id, persist=True,
+            )))
         elif args.command in ('prepare-domains', 'rollback-domains', 'register-domain', 'assign-domains'):
             from .domains import Domains, prepare_domains, rollback_domains
             from pro_a.domain_packs import read_json

@@ -256,7 +256,7 @@ class Domains:
                 and value['run_id'] == run_id and value['basis']['source_id'] == run['source_id'], 'FROZEN_CONTEXT_BINDING_MISMATCH')
         return value
 
-    def guard(self, run_id, jobs, profile=None):
+    def guard(self, run_id, jobs, profile=None, *, runtime_compatibility=None):
         with self.store.connect() as connection:
             frozen = self.read(run_id, connection=connection)
             if frozen is None:
@@ -271,11 +271,19 @@ class Domains:
             # Later assignment events do not relabel or invalidate the old frozen run.
             if frozen['contract_version'] == processing_context.VERSION:
                 current = self.pending_basis(source, jobs.current_runtime(), profile, jobs.profile)
-                processing_context.guard_resume(frozen, current)
+                if runtime_compatibility is None:
+                    processing_context.guard_resume(frozen, current)
+                else:
+                    from .retry_compatibility import guard_context
+                    guard_context(frozen, current, runtime_compatibility)
             else:
                 current = self.basis(connection, source, jobs.current_runtime(), profile, jobs.profile,
                                      revision=frozen['basis']['assignment_revision'])
-                guard_resume(frozen, current)
+                if runtime_compatibility is None:
+                    guard_resume(frozen, current)
+                else:
+                    from .retry_compatibility import guard_context
+                    guard_context(frozen, current, runtime_compatibility)
             return {'contract_version': frozen['contract_version'], 'context_sha256': frozen['context_sha256'],
                     'artifact_relative': binding['artifact_relative']}
 

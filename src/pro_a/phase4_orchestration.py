@@ -148,7 +148,8 @@ def _result(root: Path, state: str | None = None, code: str | None = None) -> di
     return result
 
 
-def _compatible(root: Path, execution_id: str, config, policy: RetryPolicy) -> dict:
+def _compatible(root: Path, execution_id: str, config, policy: RetryPolicy,
+                *, runtime_compatibility=None) -> dict:
     identity = read_json(root / "execution_identity.json")
     manifest = read_json(root / "execution_manifest.json")
     if (root.name != execution_id or identity["execution_id"] != execution_id
@@ -161,8 +162,13 @@ def _compatible(root: Path, execution_id: str, config, policy: RetryPolicy) -> d
         raise ExecutionBlocked("MANIFEST_COMMIT_MISMATCH")
     if len(list((root / "commits").iterdir())) != manifest["sequence"] + 1:
         raise ExecutionBlocked("UNRECONCILED_STAGE_PUBLICATION")
-    if identity["runtime"] != _runtime():
-        raise ExecutionBlocked("CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE")
+    current_runtime = _runtime()
+    if identity["runtime"] != current_runtime:
+        try:
+            from .workbench.retry_compatibility import guard_native_runtime
+            guard_native_runtime(identity["runtime"], current_runtime, runtime_compatibility)
+        except Exception:
+            raise ExecutionBlocked("CODE_OR_RUNTIME_CONTRACT_INCOMPATIBLE") from None
     if identity["configuration"] != _configuration(config, policy):
         raise ExecutionBlocked("PROCESSING_PROVIDER_OR_RETRY_CONFIG_DRIFT")
     if identity["production_baseline"] != production_identity(config.db_path):
@@ -341,7 +347,8 @@ def resume_execution(execution_root: Path, *, execution_id: str,
                      retry_policy: RetryPolicy = RetryPolicy.FORBID_ALL,
                      stop_after: str = "REVIEW_READY", extraction_llm_factory=None,
                      semantic_replay=None,
-                     semantic_execution_metadata: dict | None = None) -> dict:
+                     semantic_execution_metadata: dict | None = None,
+                     runtime_compatibility=None) -> dict:
     if stop_after not in CHECKPOINTS:
         raise ValueError("INVALID_STOP_CHECKPOINT")
     root = Path(execution_root).resolve()
@@ -356,7 +363,10 @@ def resume_execution(execution_root: Path, *, execution_id: str,
         return _result(root, "BLOCKED", "EXECUTION_MANIFEST_UNAVAILABLE")
     try:
         try:
-            identity = _compatible(root, execution_id, config, RetryPolicy(retry_policy))
+            identity = _compatible(
+                root, execution_id, config, RetryPolicy(retry_policy),
+                runtime_compatibility=runtime_compatibility,
+            )
         except (ExecutionBlocked, ValueError, KeyError, OSError) as exc:
             return _result(root, "BLOCKED", str(exc))
         return _advance(

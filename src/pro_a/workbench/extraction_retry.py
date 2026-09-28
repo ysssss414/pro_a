@@ -84,6 +84,9 @@ def frozen_cloud(row):
                       if field.name == 'accepted_model_aliases' else row[field.name])
             if stored != value[field.name]:
                 raise ValueError()
+        if (row['retry_owner'] != value['retry_owner']
+                or row['retry_policy_id'] != value['retry_policy_id']):
+            raise ValueError()
         if row['configuration_sha256'] != value['configuration_sha256']:
             raise ValueError()
         return profile
@@ -91,12 +94,13 @@ def frozen_cloud(row):
         raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE') from None
 
 
-def frozen_service(service, run_id, *, required=False):
+def frozen_service(service, run_id, *, required=False, failed_attempt_id=None):
     """Use frozen cloud values and the original, digest-guarded local config path.
 
     A hash-only config cannot reconstruct missing/edited TOML. Fail closed in
     that case; never manufacture a replacement configuration from current values.
-    Runtime compatibility remains the existing strict guard, without overrides.
+    Runtime compatibility remains strict unless an exact-scope, independently
+    validated Stage 7.2C qualification record is present.
     """
     from .source_operations import SourceOperations, SourceProfile, SourceOperationError
     with service.store.connect() as connection:
@@ -106,6 +110,9 @@ def frozen_service(service, run_id, *, required=False):
         frozen = Domains(service.config).read(run_id, connection=connection)
         if frozen is None:
             raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE')
+        run = connection.execute(
+            'SELECT * FROM source_processing_runs WHERE processing_run_id=?', (run_id,),
+        ).fetchone()
         binding = connection.execute('SELECT config_path FROM domain_run_bindings WHERE processing_run_id=?',
                                      (run_id,)).fetchone()
         row = connection.execute('SELECT j.* FROM cloud_jobs j JOIN source_processing_jobs s ON s.job_id=j.job_id '
@@ -120,8 +127,51 @@ def frozen_service(service, run_id, *, required=False):
             ref = json.loads(binding['config_path'])
             source_profile = SourceProfile(Path(ref['path']), ref['max_pdf_bytes'], ref['max_extraction_pieces'])
             worker = SourceOperations(service.config, source_profile, profile)
-            Domains(service.config).guard(run_id, worker.jobs, worker.profile)
+            from .domains import config_digest
+            limits = {'max_pdf_bytes': source_profile.max_pdf_bytes,
+                      'max_extraction_pieces': source_profile.max_extraction_pieces}
+            if config_digest(source_profile.phase4_config_path, limits) != frozen['basis']['config_sha256']:
+                raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE')
         except (KeyError, ValueError, OSError, BoundaryError, SourceOperationError):
+            raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE') from None
+        stored_runtime = json.loads(row['runtime_json'])
+        current_runtime = worker.jobs.current_runtime()
+        if canonical(stored_runtime) != canonical(current_runtime):
+            attempt_id = failed_attempt_id
+            if attempt_id is None:
+                lineage = connection.execute(
+                    'SELECT retry_of_attempt_id FROM extraction_retries WHERE processing_run_id=? '
+                    'ORDER BY attempt_number DESC LIMIT 1', (run_id,),
+                ).fetchone()
+                attempt_id = lineage['retry_of_attempt_id'] if lineage else None
+            failed = (connection.execute('SELECT job_id FROM cloud_attempts WHERE attempt_id=?',
+                                         (attempt_id,)).fetchone() if attempt_id else None)
+            from .retry_compatibility import load_qualification, RetryCompatibilityError
+            try:
+                token = (load_qualification(
+                    connection, run_id=run_id, failed_attempt_id=attempt_id,
+                    source_id=run['source_id'] if run else '',
+                    failed_job_id=failed['job_id'] if failed else '',
+                    historical_runtime_sha256=row['runtime_sha256'],
+                    target_runtime=current_runtime,
+                    historical_context_sha256=frozen['context_sha256'],
+                ) if attempt_id and failed else None)
+            except RetryCompatibilityError:
+                raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE') from None
+            if token is None:
+                raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
+            worker = SourceOperations(
+                service.config, source_profile, profile, runtime_compatibility=token,
+            )
+        try:
+            Domains(service.config).guard(
+                run_id, worker.jobs, worker.profile,
+                runtime_compatibility=worker.runtime_compatibility,
+            )
+        except Exception as error:
+            code = str(error)
+            if code in ('PROCESSING_RUN_CONTEXT_DRIFT', 'DOMAIN_RUN_CONTEXT_DRIFT'):
+                raise SourceOperationError(code) from None
             raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE') from None
         return worker
 
@@ -174,14 +224,25 @@ def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason,
             raise SourceOperationError('RETRY_NOT_ELIGIBLE')
         if not service.jobs._verify_event_chain(connection, job['job_id']):
             raise SourceOperationError('RETRY_NOT_ELIGIBLE')
-        worker = frozen_service(service, run_id, required=True)
+        worker = frozen_service(
+            service, run_id, required=True, failed_attempt_id=failed_attempt_id,
+        )
         context = Domains(service.config).read(run_id, connection=connection)
         source = connection.execute('SELECT * FROM private_sources WHERE source_id=?', (run['source_id'],)).fetchone()
         if (source is None or job['source_id'] != source['source_id']
                 or sha256_file(service.artifacts.resolve(source['storage_relative'])) != source['source_sha256']):
             raise SourceOperationError('RETRY_SOURCE_IDENTITY_MISMATCH')
-        if (json.loads(job['runtime_json']) != worker.jobs.current_runtime()
-                or job['runtime_sha256'] != run['runtime_sha256']
+        stored_runtime = json.loads(job['runtime_json'])
+        current_runtime = worker.jobs.current_runtime()
+        runtime_ok = stored_runtime == current_runtime
+        if not runtime_ok and worker.runtime_compatibility is not None:
+            try:
+                from .retry_compatibility import guard_cloud_runtime
+                guard_cloud_runtime(stored_runtime, current_runtime, worker.runtime_compatibility)
+                runtime_ok = True
+            except Exception:
+                runtime_ok = False
+        if (not runtime_ok or job['runtime_sha256'] != run['runtime_sha256']
                 or job['runtime_json'] != run['runtime_json']):
             raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
         if (job['prompt_json'] != canonical(operation_contract(job['operation_kind']))
@@ -199,7 +260,8 @@ def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason,
         from pro_a.phase4_retry import RetryPolicy
         try:
             _compatible(worker._native_root(run), run['native_execution_id'],
-                        load_config(worker.profile.phase4_config_path), RetryPolicy.FORBID_ALL)
+                        load_config(worker.profile.phase4_config_path), RetryPolicy.FORBID_ALL,
+                        runtime_compatibility=worker.runtime_compatibility)
         except (ExecutionBlocked, ValueError, KeyError, OSError):
             raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE') from None
         parent = for_job(connection, job['job_id'])
