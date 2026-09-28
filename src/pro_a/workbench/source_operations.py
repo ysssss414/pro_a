@@ -249,7 +249,7 @@ class _ExtractionReplay:
 
 class SourceOperations:
     def __init__(self, config: WorkbenchConfig, profile: SourceProfile,
-                 cloud_profile: CloudProfile | None = None):
+                 cloud_profile: CloudProfile | None = None, *, runtime_compatibility=None):
         self.config = config
         self.profile = profile
         self.profile.validate()
@@ -257,7 +257,10 @@ class SourceOperations:
             raise SourceOperationError("PRIVATE_SOURCE_MODE_REQUIRED", 503)
         self.store = Store(config)
         self.artifacts = Artifacts(config)
-        self.jobs = CloudJobs(config, cloud_profile)
+        self.runtime_compatibility = runtime_compatibility
+        self.jobs = CloudJobs(
+            config, cloud_profile, runtime_compatibility=runtime_compatibility,
+        )
         with self.store.connect() as connection:
             if schema_version(connection) not in ("8", "9", "10", "11"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
@@ -585,7 +588,10 @@ class SourceOperations:
         if run.get("company_material_intent"):
             checkpoint["company_material_intent_sha256"] = run["company_material_intent_sha256"]
             checkpoint["company_material_intent"] = run["company_material_intent"]
-        reference = Domains(self.config).guard(run["processing_run_id"], self.jobs, self.profile)
+        reference = Domains(self.config).guard(
+            run["processing_run_id"], self.jobs, self.profile,
+            runtime_compatibility=self.runtime_compatibility,
+        )
         if reference is not None:
             checkpoint["domain_context"] = reference
         body = {
@@ -935,12 +941,23 @@ class SourceOperations:
                         or checkpoint.get("company_material_intent") != intent):
                     raise SourceOperationError("COMPANY_MATERIAL_INTENT_DRIFT")
         try:
-            Domains(self.config).guard(run_id, self.jobs, self.profile)
+            Domains(self.config).guard(
+                run_id, self.jobs, self.profile,
+                runtime_compatibility=self.runtime_compatibility,
+            )
         except BoundaryError as error:
             raise SourceOperationError(str(error)) from None
-        if row["runtime_sha256"] != self.jobs.current_runtime()["runtime_sha256"]:
-            self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
-            return self.get_run(run_id)
+        current_runtime = self.jobs.current_runtime()
+        if row["runtime_sha256"] != current_runtime["runtime_sha256"]:
+            try:
+                from .retry_compatibility import guard_cloud_runtime
+                guard_cloud_runtime(
+                    json.loads(row["runtime_json"]), current_runtime,
+                    self.runtime_compatibility,
+                )
+            except Exception:
+                self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
+                return self.get_run(run_id)
         if row["state"] == "QUEUED":
             self._transition(run_id, "PARSING", "NATIVE_SOURCE_REGISTRATION")
             stored_source = self.artifacts.resolve(source["storage_relative"])
@@ -992,6 +1009,7 @@ class SourceOperations:
                 retry_policy=RetryPolicy.FORBID_ALL,
                 stop_after="SEMANTIC_INPUT_READY",
                 extraction_llm_factory=lambda _cfg: replay,
+                runtime_compatibility=self.runtime_compatibility,
             )
             if result["state"] != "SEMANTIC_INPUT_READY":
                 raise SourceOperationError(result.get("code") or "NATIVE_EXTRACTION_FAILED")
@@ -1087,6 +1105,7 @@ class SourceOperations:
                 retry_policy=RetryPolicy.FORBID_ALL,
                 stop_after="REVIEW_READY", semantic_replay=lambda _inputs: copy.deepcopy(replay_result),
                 semantic_execution_metadata=metadata,
+                runtime_compatibility=self.runtime_compatibility,
             )
             if result["state"] != "STOPPED" or result.get("code") != "HUMAN_REVIEW_REQUIRED":
                 raise SourceOperationError(result.get("code") or "NATIVE_PACKET_FAILED")
