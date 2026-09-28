@@ -1,0 +1,255 @@
+{
+  "stage": "PHASE43_STAGE72B_SAME_RUN_EXTRACTION_RETRY",
+  "status": "PASS",
+  "timestamp": "2026-09-28T02:47:02.110495+00:00",
+  "baseline_main_sha": "4c1c98a1dc4bc85f807c5817ab9fd5a9058378bd",
+  "branch": "codex/phase43-stage72b-same-run-extraction-retry",
+  "head_sha": "a38c1fcee7c372bcbc4475e2b398b13516b5d523",
+  "head_sha_scope": "Implementation commit; qualification receipt is a subsequent documentation commit.",
+  "qualified_runtime_files_sha256": {
+    "src/pro_a/workbench/__main__.py": "230d7fa4b5f69b26de3def072e9a0b09a4aad31dd11dee1b8414683abac8459c",
+    "src/pro_a/workbench/api.py": "9acc11fc68fd9ea02ab287669adcd881609d21bcfc5d6c535229b4e52954230e",
+    "src/pro_a/workbench/cloud_jobs.py": "77c98e8a4df3abc2f7422e7d13caaa6de7086b2a8c9996ae3d3da34fc705eabc",
+    "src/pro_a/workbench/source_operations.py": "6227854e7511873af524f495e154af2d544e8c55e57bea426796b95bf7be8c2e",
+    "src/pro_a/workbench/extraction_retry.py": "b58ef4156a3f22dc1fda24a7739bcdc31cbda25240c7a4fd722628fb293e9695"
+  },
+  "retry_semantics": "EXPLICIT_SAME_RUN_EXTRACTION_RETRY",
+  "same_run": true,
+  "new_attempt": true,
+  "original_attempt_immutable": true,
+  "attempt_creation": "New immutable pending identity at acceptance; same ID inserted into cloud_attempts at dispatch intent.",
+  "explicit_retry_reason_required": true,
+  "idempotency_supported": true,
+  "concurrent_retry_protection": true,
+  "retry_supported_failure_stage": "FAILED / EXTRACTION_JOBS / PROVIDER_ERROR; latest known-failed SOURCE_ANALYSIS_PIECE attempt only",
+  "run_context_immutable": true,
+  "shared_core_context_immutable": true,
+  "raw_source_immutable": true,
+  "reacquisition_calls": 0,
+  "routing_calls": 0,
+  "real_provider_calls": 0,
+  "real_zsxq_reads": 0,
+  "real_zsxq_writes": 0,
+  "real_zsxq_downloads": 0,
+  "production_writes": 0,
+  "real_workbench_writes": 0,
+  "synthetic_success_retry": "PASS_HUMAN_REVIEW_REQUIRED",
+  "synthetic_failure_retry": "PASS_WITH_DIAGNOSTICS_NO_AUTOMATIC_RETRY",
+  "idempotency_test": "PASS",
+  "concurrency_test": "PASS",
+  "domain_drift_test": "PASS",
+  "retry_vs_reprocess_test": "PASS",
+  "schema_change": "Additive append-only extraction_retries extension; existing schema version and historical rows unchanged.",
+  "migration": "Explicit prepare-extraction-retries; applied only to isolated test DBs.",
+  "production_sha_before": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "production_sha_after": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "workbench_sha_before": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "workbench_sha_after": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+  "focused_tests": {
+    "passed": 25,
+    "failed": 0,
+    "nodes": [
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_success_same_run_context_history_and_no_acquisition_routing",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_failure_diagnostics_no_auto_retry_and_retry_of_retry",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_duplicate_and_active_guard",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_concurrent_commands_allocate_once[True]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_concurrent_commands_allocate_once[False]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[ ]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[ x ]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[a\\r\\nAuthorization: secret]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[<script>x</script>]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_invalid_reason_rejected[api_key=sk-secretvalue]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_unsupported_run_states_rejected[HUMAN_REVIEW_REQUIRED-HUMAN_REVIEW-None]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_unsupported_run_states_rejected[FAILED-SOURCE_ACQUISITION-PROVIDER_ERROR]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_unsupported_run_states_rejected[FAILED-EXTRACTION_JOBS-SECURITY_FAILURE]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_unsupported_run_states_rejected[FAILED-RUN_CONTEXT-PROVIDER_ERROR]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_unsupported_run_states_rejected[BLOCKED-EXTRACTION_JOBS-None]",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_frozen_cloud_configuration_and_later_domain_assignment",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_missing_frozen_configuration_fails_closed",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_retry_and_reprocess_are_separate",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_schema_additive_idempotent_and_lineage_append_only",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_api_explicit_auth_csrf_and_no_overrides",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_other_run_attempt_and_active_job_rejected",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_direct_worker_uses_frozen_profile_and_blocks_source_drift",
+        "PASSED"
+      ],
+      [
+        "workspace/stage72b_retry/tests/test_phase43_stage72b_extraction_retry.py::test_runtime_drift_is_not_silently_overridden",
+        "PASSED"
+      ]
+    ]
+  },
+  "related_tests": {
+    "passed": 294,
+    "failed": 0,
+    "selection": "Workbench, lifecycle, Stage 7/7.1/7.2A and LLM cases from full JUnit"
+  },
+  "full_repo_results": {
+    "PASSED": 2434,
+    "SKIPPED": 2,
+    "FAILED": 4,
+    "ERROR": 29
+  },
+  "full_repo_total": 2469,
+  "full_repo_junit_sha256": "fe0185f3ee78241e2ca0717dae84a2837aa9dd9f0b400aad23f02561ccf671f2",
+  "full_repo_environment": "Historical local root config/fixtures retained; temporary import hook loads current changed modules; provider credential env cleared; no secrets copied. Two unrelated untracked root tests excluded; three Stage 7.2A test files and new Stage 7.2B file collected from worktree.",
+  "full_repo_local_junit": "D:\\ej\\材料\\codex\\get_knowledge\\pro_a_v0_1\\workspace\\stage72b_full_final.xml",
+  "historical_exception_count": 33,
+  "historical_exception_set_match": true,
+  "historical_exception_comparison": "exact node + status + exception class",
+  "new_regression_count": 0,
+  "missing_historical_exceptions": 0,
+  "qualification_matrix": {
+    "Q1": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q2": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q3": {
+      "status": "PASS",
+      "test": "test_frozen_cloud_configuration_and_later_domain_assignment"
+    },
+    "Q4": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q5": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q6": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q7": {
+      "status": "PASS",
+      "test": "test_success_same_run_context_history_and_no_acquisition_routing"
+    },
+    "Q8": {
+      "status": "PASS",
+      "test": "test_failure_diagnostics_no_auto_retry_and_retry_of_retry"
+    },
+    "Q9": {
+      "status": "PASS",
+      "test": "test_duplicate_and_active_guard"
+    },
+    "Q10": {
+      "status": "PASS",
+      "test": "test_concurrent_commands_allocate_once"
+    },
+    "Q11": {
+      "status": "PASS",
+      "test": "test_invalid_reason_rejected"
+    },
+    "Q12": {
+      "status": "PASS",
+      "test": "test_unsupported_run_states_rejected"
+    },
+    "Q13": {
+      "status": "PASS",
+      "test": "test_other_run_attempt_and_active_job_rejected"
+    },
+    "Q14": {
+      "status": "PASS",
+      "test": "test_frozen_cloud_configuration_and_later_domain_assignment"
+    },
+    "Q15": {
+      "status": "PASS",
+      "test": "test_frozen_cloud_configuration_and_later_domain_assignment"
+    },
+    "Q16": {
+      "status": "PASS",
+      "test": "test_retry_and_reprocess_are_separate"
+    },
+    "Q17": {
+      "status": "PASS",
+      "test": "test_failure_diagnostics_no_auto_retry_and_retry_of_retry"
+    }
+  },
+  "frontend_tests": {
+    "passed": 159,
+    "files": 29
+  },
+  "build": "PASS",
+  "compileall": "PASS",
+  "supplemental_checks": "Final projection assertion and explicit HTTP_503/request-ID assertions passed separately; no runtime edits after full-suite start.",
+  "runtime_compatibility": "STRICT_EXISTING_GUARDS; no cross-release override. Changed/missing native config fails closed.",
+  "real_pilot_dispatch_readiness": "NOT_QUALIFIED; previously observed runtime mismatch remains a separate pre-call gate.",
+  "final_status": "PASS",
+  "next_action": "Perform a separate pre-merge audit of Stage 7.2B. Do not merge and do not retry the real Stage 7.2 pilot yet."
+}
