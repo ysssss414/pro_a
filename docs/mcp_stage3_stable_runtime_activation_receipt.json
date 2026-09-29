@@ -1,0 +1,897 @@
+{
+  "stage": "PRO_A_MCP_STAGE3_POST_MERGE_STABLE_RUNTIME_ACTIVATION",
+  "final_gate": "PRO_A_MCP_STAGE3_STABLE_RUNTIME_ACTIVATION = PASS",
+  "status": "PASS",
+  "blocking_reason": null,
+  "recorded_at_utc": "2026-09-29T06:50:51.107278+00:00",
+  "merged_source_sha": "6229f7dc7e23f5cdd996a6d3b63df6d91750fabd",
+  "baseline_gate": {
+    "remote_main_exact_match": true,
+    "pr85_merged": true,
+    "pr85_merged_at": "2026-09-29T06:15:29Z",
+    "old_installed_contract": "pro-a-mcp-stage0-v1",
+    "old_actual_tool_count": 11
+  },
+  "branch": "codex/pro-a-mcp-stage3-runtime-activation",
+  "installed_source_identity": {
+    "source_commit": "6229f7dc7e23f5cdd996a6d3b63df6d91750fabd",
+    "source_repository": "ysssss414/pro_a",
+    "wheel_sha256": "f688b4c36d902e5e4f3f800084eb3d879fa4cd2f70f60f78956548379fb45433",
+    "source_files_verified_against_commit": 129,
+    "python": "3.13.14",
+    "pro_a": "0.5.1",
+    "mcp": "2.2.0",
+    "installation": "non-editable merged wheel",
+    "status": "PASS"
+  },
+  "wheel_sha256": "f688b4c36d902e5e4f3f800084eb3d879fa4cd2f70f60f78956548379fb45433",
+  "contract_version": "pro-a-mcp-stage3-v1",
+  "tool_count": 14,
+  "inventory": [
+    "pro_a_health",
+    "search_companies",
+    "get_company",
+    "list_company_materials",
+    "get_current_view",
+    "get_current_view_history",
+    "get_node_evidence",
+    "get_source",
+    "get_processing_run",
+    "get_review_packet",
+    "get_company_research_context",
+    "list_review_queue",
+    "get_review_context",
+    "get_review_item_context"
+  ],
+  "old_stable_baseline": {
+    "status": "PASS",
+    "observed_at_utc": "2026-09-29T06:22:18.934866+00:00",
+    "transport": "installed_package_guarded_stdio",
+    "versions": {
+      "python": "3.13.14",
+      "pro_a": "0.5.1",
+      "mcp": "2.2.0",
+      "sqlite": "3.50.4"
+    },
+    "tool_count": 11,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context"
+    ],
+    "discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage0-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context"
+      ]
+    },
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      }
+    ],
+    "database_integrity_unchanged": true,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 2
+  },
+  "candidate_qualification": {
+    "status": "PASS",
+    "observed_at_utc": "2026-09-29T06:23:33.719727+00:00",
+    "transport": "installed_package_guarded_stdio",
+    "versions": {
+      "python": "3.13.14",
+      "pro_a": "0.5.1",
+      "mcp": "2.2.0",
+      "sqlite": "3.50.4"
+    },
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_compatible": true,
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context",
+        "list_review_queue",
+        "get_review_context",
+        "get_review_item_context"
+      ]
+    },
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      },
+      {
+        "tool": "search_companies",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "PASS"
+      },
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "official_view_status": "OFFICIAL",
+    "research_context_read": true,
+    "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "queue_page_count": 0,
+    "queue_has_more": false,
+    "database_integrity_unchanged": true,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 23
+  },
+  "stable_package_discovery_and_smoke": {
+    "status": "PASS",
+    "observed_at_utc": "2026-09-29T06:27:10.048039+00:00",
+    "transport": "installed_package_guarded_stdio",
+    "versions": {
+      "python": "3.13.14",
+      "pro_a": "0.5.1",
+      "mcp": "2.2.0",
+      "sqlite": "3.50.4"
+    },
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_compatible": true,
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context",
+        "list_review_queue",
+        "get_review_context",
+        "get_review_item_context"
+      ]
+    },
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      },
+      {
+        "tool": "search_companies",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "PASS"
+      },
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "official_view_status": "OFFICIAL",
+    "research_context_read": true,
+    "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "queue_page_count": 0,
+    "queue_has_more": false,
+    "database_integrity_unchanged": true,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 23
+  },
+  "stable_activation": {
+    "status": "PASS",
+    "source_commit": "6229f7dc7e23f5cdd996a6d3b63df6d91750fabd",
+    "wheel_sha256": "f688b4c36d902e5e4f3f800084eb3d879fa4cd2f70f60f78956548379fb45433",
+    "clean_stop": true,
+    "rollback_available": true,
+    "rollback_wheel_sha256": "db38223ec714576a41c5666202940f9c9c99463a377971d2c5954548c8e7ef82",
+    "protected_files_unchanged": true,
+    "protected_before": {
+      "runtime_settings": "013bae51fdbe94c37ac6936d5c82c6b05928be92d260be1131d7e5654b001bc6",
+      "workbench_config": "0354bb40b7cb15679064656053f737e884a68d77b982908941982ea80bd79331",
+      "requirements_lock": "82d8be4a956fcdaf738c5881f1c74cbc9bc59ee0cf43047a139c566184e9c888",
+      "start_ps1": "c9f0d24ef5a3cd1b9ab6b1c46b68cdf063578a81b40a9669767e3c561844fb88",
+      "start_cmd": "87797be11145e22f034ca17697b4d0384a9ae7e2c7adad828000af825aaf437f",
+      "stop_ps1": "a4e7f9b39c082ea648ec63a3b481963f5bebcce5220e11e8a13e058f17db5c6d",
+      "stop_cmd": "4481b66c6b7abd0bb70e199b524842c0853b4df6dbd6ea0215869601dd4bb530",
+      "status_ps1": "c6a0acc1e8821985dfa15c17e92e15df41b6c13f2398595c1f6a5d08d3d937e7",
+      "status_cmd": "e6cb2ad7081b2e4adc83d8f59687b585e2f4061de9150b1ae2db9d9a65e477b2"
+    },
+    "protected_after": {
+      "runtime_settings": "013bae51fdbe94c37ac6936d5c82c6b05928be92d260be1131d7e5654b001bc6",
+      "workbench_config": "0354bb40b7cb15679064656053f737e884a68d77b982908941982ea80bd79331",
+      "requirements_lock": "82d8be4a956fcdaf738c5881f1c74cbc9bc59ee0cf43047a139c566184e9c888",
+      "start_ps1": "c9f0d24ef5a3cd1b9ab6b1c46b68cdf063578a81b40a9669767e3c561844fb88",
+      "start_cmd": "87797be11145e22f034ca17697b4d0384a9ae7e2c7adad828000af825aaf437f",
+      "stop_ps1": "a4e7f9b39c082ea648ec63a3b481963f5bebcce5220e11e8a13e058f17db5c6d",
+      "stop_cmd": "4481b66c6b7abd0bb70e199b524842c0853b4df6dbd6ea0215869601dd4bb530",
+      "status_ps1": "c6a0acc1e8821985dfa15c17e92e15df41b6c13f2398595c1f6a5d08d3d937e7",
+      "status_cmd": "e6cb2ad7081b2e4adc83d8f59687b585e2f4061de9150b1ae2db9d9a65e477b2"
+    },
+    "secret_content_read_by_agent": false,
+    "secret_file_metadata_unchanged": true,
+    "tunnel_recreated": false,
+    "connection_recreated": false,
+    "process_running": true
+  },
+  "dependency_versions_unchanged": true,
+  "candidate_pip_check": "PASS",
+  "stable_pip_check": "PASS",
+  "runtime_health_samples": [
+    {
+      "checked_at_utc": "2026-09-29T06:27:08.3356422Z",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T06:26:53.2662907Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T06:26:53.2662907Z",
+          "last_success": "2026-09-29T06:26:53.2662907Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 15.0687818,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "health_error": null
+    },
+    {
+      "checked_at_utc": "2026-09-29T06:28:09.0874647Z",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T06:27:54.3890686Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T06:27:54.3890686Z",
+          "last_success": "2026-09-29T06:27:54.3890686Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 14.6967365,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "health_error": null
+    },
+    {
+      "checked_at_utc": "2026-09-29T06:42:25.3267352Z",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T06:42:06.6391984Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T06:42:06.6391984Z",
+          "last_success": "2026-09-29T06:42:06.6391984Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 18.6862427,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "health_error": null
+    },
+    {
+      "checked_at_utc": "2026-09-29T06:49:03.6696777Z",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T06:48:56.2947861Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T06:48:56.2947861Z",
+          "last_success": "2026-09-29T06:48:56.2947861Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 7.3731092,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "health_error": null
+    }
+  ],
+  "control_plane_polling": "PASS",
+  "last_success_advances": true,
+  "native_poll_summary_state": "unknown",
+  "native_poll_summary_reason": "no live admin UI system snapshot",
+  "native_mcp_observability": {
+    "status": "unknown",
+    "state": "not_observed",
+    "child_state": "running",
+    "scope": "Not substituted for real ChatGPT Web evidence."
+  },
+  "stable_runtime_running": true,
+  "healthy": true,
+  "ready": true,
+  "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+  "real_packet_created": false,
+  "chatgpt_web_health": {
+    "status": "PASS",
+    "evidence_kind": "HUMAN_OPERATOR_CHATGPT",
+    "actual_call_reported": true,
+    "historical_result_used": false,
+    "observed_result": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true
+    },
+    "reported_capability_count": 14,
+    "scope": "Operator supplied current Web health result; exact call timestamp was not supplied."
+  },
+  "chatgpt_review_queue_read": {
+    "status": "PASS",
+    "evidence_kind": "HUMAN_OPERATOR_CHATGPT",
+    "actual_call_reported": true,
+    "historical_result_used": false,
+    "tool": "list_review_queue",
+    "read_only": true,
+    "results": [
+      {
+        "queue": "needs_review",
+        "packet_count": 0,
+        "next_cursor": null
+      },
+      {
+        "queue": "all",
+        "packet_count": 0,
+        "next_cursor": null
+      }
+    ],
+    "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "scope": "Operator supplied successful current Web calls; exact call timestamps were not supplied."
+  },
+  "database_integrity_evidence": {
+    "before": {
+      "production": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        },
+        "schema_sha256": "a9ea9463f1a0f60464f124b63eba56ca417a437a0bfce4852f6a9ad9073f3a27",
+        "row_counts_sha256": "08233036a9b5d3280a337f01fe8ee89d9e3e7ea104aa17c3ab55127df89f867a",
+        "table_count": 22
+      },
+      "workbench": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 823296,
+            "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        },
+        "schema_sha256": "e1c95e141cd11d44db8961c9dcd9321e0bb8d7c728969d87044aadfbc590c1fb",
+        "row_counts_sha256": "7bacfb312a43248ef2df8cc2440a70231f16279089cfdde65fe842030ffdb75d",
+        "table_count": 43
+      }
+    },
+    "after": {
+      "production": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        },
+        "schema_sha256": "a9ea9463f1a0f60464f124b63eba56ca417a437a0bfce4852f6a9ad9073f3a27",
+        "row_counts_sha256": "08233036a9b5d3280a337f01fe8ee89d9e3e7ea104aa17c3ab55127df89f867a",
+        "table_count": 22
+      },
+      "workbench": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 823296,
+            "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        },
+        "schema_sha256": "e1c95e141cd11d44db8961c9dcd9321e0bb8d7c728969d87044aadfbc590c1fb",
+        "row_counts_sha256": "7bacfb312a43248ef2df8cc2440a70231f16279089cfdde65fe842030ffdb75d",
+        "table_count": 43
+      }
+    },
+    "unchanged_across_baseline_candidate_activation_and_stable_smoke": true,
+    "unchanged_after_human_health_and_local_recheck": true,
+    "unchanged_after_completed_human_acceptance_and_final_local_recheck": true
+  },
+  "forbidden_action_counters": {
+    "production_writes": 0,
+    "workbench_writes": 0,
+    "provider_calls": 0,
+    "retry_calls": 0,
+    "reprocess_calls": 0,
+    "review_mutation_calls": 0,
+    "advertised_mutation_tools": 0
+  },
+  "counter_scope": "Guarded local stdio measurement windows for baseline, candidate, stable and both human-acceptance rechecks; mode=ro/query_only and a write-denying SQL authorizer were enforced. All seven measured counters are zero. Human Web health and both queue reads passed by operator report, with read_only=true. Final database snapshots remain identical to the baseline. No continuous host-wide instrumentation is claimed.",
+  "rollback": {
+    "available": true,
+    "previous_source_commit": "93d4e80490c8618d5719fe5cd7a875f61dcc5e05",
+    "wheel_sha256": "db38223ec714576a41c5666202940f9c9c99463a377971d2c5954548c8e7ef82",
+    "contents": [
+      "previous wheel",
+      "runtime metadata",
+      "requirements lock",
+      "wheel manifest",
+      "installed distribution metadata"
+    ],
+    "location_class": "operator-owned stable runtime rollback directory outside Git",
+    "procedure": "Clean stop; reinstall verified previous wheel with --force-reinstall --no-deps --no-index; restore previous runtime metadata; start using existing helper; recheck local and Web health. Preserve secret/settings/config throughout.",
+    "rollback_executed": false
+  },
+  "publication": {
+    "evidence_only": true,
+    "business_code_changed": false,
+    "branch": "codex/pro-a-mcp-stage3-runtime-activation",
+    "delivery": "Draft PR; evidence commit SHA and PR URL are reported in the final handoff.",
+    "merge": false
+  },
+  "official_references": [
+    "https://developers.openai.com/api/docs/guides/secure-mcp-tunnels",
+    "https://developers.openai.com/plugins/deploy/connect-chatgpt"
+  ],
+  "known_limitations": [
+    "Web evidence is HUMAN_OPERATOR_CHATGPT, as permitted by the activation task. Exact Web call timestamps and client refresh actions were not independently observed. The initial session exposed 11 tools and could not call the queue; the subsequent actual queue calls passed.",
+    "Installed-package local stdio discovery does not prove discovery through the hosted ChatGPT connection.",
+    "Native summary retains unknown; detailed health proves active successful polling with advancing last_success and zero consecutive failures.",
+    "Real Review queue was empty; no real packet/context was created for testing.",
+    "No new full application regression suite was run: this operation changes deployment and evidence only; merged Stage 3 retains 51 focused and 329 regression passes.",
+    "Sleep/reboot/proxy availability and unattended uptime are not qualified."
+  ],
+  "human_acceptance_attempts": [
+    {
+      "attempt": 1,
+      "recorded_at_utc": "2026-09-29T06:43:54.776537+00:00",
+      "health": {
+        "status": "PASS",
+        "evidence_kind": "HUMAN_OPERATOR_CHATGPT",
+        "actual_call_reported": true,
+        "historical_result_used": false,
+        "observed_result": {
+          "service": "pro_a",
+          "contract_version": "pro-a-mcp-stage3-v1",
+          "pro_a_version": "0.5.1",
+          "production_readable": true,
+          "workbench_readable": true,
+          "workbench_schema_version": "11",
+          "read_only": true
+        },
+        "reported_capability_count": 14,
+        "scope": "Operator supplied current Web health result; exact call timestamp was not supplied."
+      },
+      "queue": {
+        "status": "BLOCKED",
+        "evidence_kind": "HUMAN_OPERATOR_CHATGPT",
+        "tool_called": false,
+        "reported_session_tool_count": 11,
+        "reported_missing_tools": [
+          "list_review_queue",
+          "get_review_context",
+          "get_review_item_context"
+        ],
+        "reason": "Current ChatGPT conversation did not expose the Stage 3 queue tool.",
+        "suspected_cause": "Stale ChatGPT connection or conversation tool metadata; not independently proven.",
+        "next_action": "Refresh the existing connection, start a new conversation, and actually invoke list_review_queue.",
+        "queue_result": null
+      }
+    },
+    {
+      "attempt": 2,
+      "recorded_at_utc": "2026-09-29T06:50:51.107278+00:00",
+      "queue": {
+        "status": "PASS",
+        "evidence_kind": "HUMAN_OPERATOR_CHATGPT",
+        "actual_call_reported": true,
+        "historical_result_used": false,
+        "tool": "list_review_queue",
+        "read_only": true,
+        "results": [
+          {
+            "queue": "needs_review",
+            "packet_count": 0,
+            "next_cursor": null
+          },
+          {
+            "queue": "all",
+            "packet_count": 0,
+            "next_cursor": null
+          }
+        ],
+        "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+        "scope": "Operator supplied successful current Web calls; exact call timestamps were not supplied."
+      },
+      "resolution": "Operator reports successful actual Stage 3 queue calls after refresh guidance; UI actions were not independently observed."
+    }
+  ],
+  "post_human_health_local_recheck": {
+    "status": "PASS",
+    "observed_at_utc": "2026-09-29T06:42:27.874994+00:00",
+    "transport": "installed_package_guarded_stdio",
+    "versions": {
+      "python": "3.13.14",
+      "pro_a": "0.5.1",
+      "mcp": "2.2.0",
+      "sqlite": "3.50.4"
+    },
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_compatible": true,
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context",
+        "list_review_queue",
+        "get_review_context",
+        "get_review_item_context"
+      ]
+    },
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      },
+      {
+        "tool": "search_companies",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "PASS"
+      },
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "official_view_status": "OFFICIAL",
+    "research_context_read": true,
+    "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "queue_page_count": 0,
+    "queue_has_more": false,
+    "database_integrity_unchanged": true,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 23
+  },
+  "final_local_recheck": {
+    "status": "PASS",
+    "observed_at_utc": "2026-09-29T06:49:05.965475+00:00",
+    "transport": "installed_package_guarded_stdio",
+    "versions": {
+      "python": "3.13.14",
+      "pro_a": "0.5.1",
+      "mcp": "2.2.0",
+      "sqlite": "3.50.4"
+    },
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_compatible": true,
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context",
+        "list_review_queue",
+        "get_review_context",
+        "get_review_item_context"
+      ]
+    },
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      },
+      {
+        "tool": "search_companies",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "PASS"
+      },
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "official_view_status": "OFFICIAL",
+    "research_context_read": true,
+    "real_queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "queue_page_count": 0,
+    "queue_has_more": false,
+    "database_integrity_unchanged": true,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 23
+  }
+}
