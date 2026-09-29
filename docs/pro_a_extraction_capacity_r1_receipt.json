@@ -1,0 +1,393 @@
+{
+  "task": "PRO_A_EXTRACTION_CAPACITY_R1",
+  "result": "PASS",
+  "baseline": "bc151f3131dd6e9343937f3c5db9ddb7ed8e748a",
+  "branch": "codex/pro-a-extraction-capacity-r1",
+  "implementation_commit": "93100dbf6aaeffa6423f983b10473aa732b7ba96",
+  "publication_review": {
+    "status": "PASS",
+    "complete_diff_reviewed": true,
+    "private_source_excerpt_scan": "PASS: whitespace-normalized 32-character windows absent",
+    "private_identifiers_filenames_paths_scan": "PASS",
+    "credential_pattern_scan": "PASS",
+    "precommit_remote_main_matches_required_baseline": true,
+    "precommit_real_state_matches_before_snapshot": true
+  },
+  "confirmed_real_failure": {
+    "source_identity_sanitized": true,
+    "source_piece_chars": 9817,
+    "user_prompt_chars": 13027,
+    "http_status": 200,
+    "output_parse_kind": "TRUNCATED",
+    "finish_reason": "length",
+    "usage_status": "KNOWN",
+    "output_tokens": 8192,
+    "max_output_tokens": 8192,
+    "retryable": false
+  },
+  "candidate_study": {
+    "source_identity_sanitized": true,
+    "source_representation": "Verified existing immutable SOURCE_READY PDF; native parser/semantic eligibility exactly reproduces historical ordered extraction inputs.",
+    "real_provider_calls": 0,
+    "source_total_chars": 16823,
+    "historical_piece_chars": [
+      9817,
+      7006
+    ],
+    "candidates": [
+      {
+        "candidate_cap_chars": 4000,
+        "source_total_chars": 16823,
+        "piece_count": 5,
+        "ordered_piece_char_counts": [
+          3595,
+          3783,
+          3556,
+          3791,
+          2098
+        ],
+        "max_piece_chars": 3791,
+        "min_piece_chars": 2098,
+        "mean_piece_chars": 3364.6,
+        "ordered_user_prompt_char_counts": [
+          6416,
+          6517,
+          6489,
+          7316,
+          4768
+        ],
+        "max_user_prompt_chars": 7316,
+        "mean_user_prompt_chars": 6301.2,
+        "total_user_prompt_chars": 31506,
+        "locator_coverage_count": 14,
+        "scoped_node_catalog_counts": [
+          6,
+          5,
+          7,
+          11,
+          5
+        ],
+        "exact_ordered_reconstruction": true,
+        "omitted_chars": 0,
+        "duplicated_chars": 0,
+        "max_extraction_pieces_exceeded": false,
+        "remaining_job_headroom": 26,
+        "locator_units_split_across_pieces": 0,
+        "pieces_with_continuation_fragments": 0,
+        "average_locators_per_piece": 2.8,
+        "maximum_locators_per_piece": 3,
+        "deterministic_plan_identity": true,
+        "stable_locator_mapping": true,
+        "deterministic_node_catalog_scoping": true,
+        "model_response_consumed": false,
+        "response_time_splitting": "FORBIDDEN",
+        "expected_extraction_calls": 5,
+        "status": "PASS",
+        "call_count_relative_to_5k": 1.25,
+        "call_count_relative_to_historical_10k": 2.5
+      },
+      {
+        "candidate_cap_chars": 5000,
+        "source_total_chars": 16823,
+        "piece_count": 4,
+        "ordered_piece_char_counts": [
+          4828,
+          4989,
+          4908,
+          2098
+        ],
+        "max_piece_chars": 4989,
+        "min_piece_chars": 2098,
+        "mean_piece_chars": 4205.75,
+        "ordered_user_prompt_char_counts": [
+          7649,
+          8199,
+          8664,
+          4768
+        ],
+        "max_user_prompt_chars": 8664,
+        "mean_user_prompt_chars": 7320,
+        "total_user_prompt_chars": 29280,
+        "locator_coverage_count": 14,
+        "scoped_node_catalog_counts": [
+          6,
+          9,
+          13,
+          5
+        ],
+        "exact_ordered_reconstruction": true,
+        "omitted_chars": 0,
+        "duplicated_chars": 0,
+        "max_extraction_pieces_exceeded": false,
+        "remaining_job_headroom": 27,
+        "locator_units_split_across_pieces": 0,
+        "pieces_with_continuation_fragments": 0,
+        "average_locators_per_piece": 3.5,
+        "maximum_locators_per_piece": 4,
+        "deterministic_plan_identity": true,
+        "stable_locator_mapping": true,
+        "deterministic_node_catalog_scoping": true,
+        "model_response_consumed": false,
+        "response_time_splitting": "FORBIDDEN",
+        "expected_extraction_calls": 4,
+        "status": "PASS",
+        "selected_production_policy_replay": "PASS",
+        "call_count_relative_to_5k": 1.0,
+        "call_count_relative_to_historical_10k": 2.0
+      },
+      {
+        "candidate_cap_chars": 6000,
+        "source_total_chars": 16823,
+        "piece_count": 4,
+        "ordered_piece_char_counts": [
+          4828,
+          4989,
+          4908,
+          2098
+        ],
+        "max_piece_chars": 4989,
+        "min_piece_chars": 2098,
+        "mean_piece_chars": 4205.75,
+        "ordered_user_prompt_char_counts": [
+          7649,
+          8199,
+          8664,
+          4768
+        ],
+        "max_user_prompt_chars": 8664,
+        "mean_user_prompt_chars": 7320,
+        "total_user_prompt_chars": 29280,
+        "locator_coverage_count": 14,
+        "scoped_node_catalog_counts": [
+          6,
+          9,
+          13,
+          5
+        ],
+        "exact_ordered_reconstruction": true,
+        "omitted_chars": 0,
+        "duplicated_chars": 0,
+        "max_extraction_pieces_exceeded": false,
+        "remaining_job_headroom": 27,
+        "locator_units_split_across_pieces": 0,
+        "pieces_with_continuation_fragments": 0,
+        "average_locators_per_piece": 3.5,
+        "maximum_locators_per_piece": 4,
+        "deterministic_plan_identity": true,
+        "stable_locator_mapping": true,
+        "deterministic_node_catalog_scoping": true,
+        "model_response_consumed": false,
+        "response_time_splitting": "FORBIDDEN",
+        "expected_extraction_calls": 4,
+        "status": "PASS",
+        "call_count_relative_to_5k": 1.0,
+        "call_count_relative_to_historical_10k": 2.0
+      }
+    ],
+    "selected_r1_cap": 5000,
+    "live_provider_capacity_qualified": false
+  },
+  "selection": {
+    "selected_r1_cap": 5000,
+    "reason": "All structural gates pass. The 5k policy approximately halves the failing piece ceiling, uses four calls instead of five for 4k, preserves locator units, and has the same observed partition as 6k with a stricter hard ceiling.",
+    "production_modes": 1,
+    "live_provider_capacity_proven": false,
+    "source_cap_reduction_from_failed_piece_percent": 49.07,
+    "remaining_job_headroom": 27,
+    "real_semantic_job_count": "NOT_PREDICTED"
+  },
+  "policy": {
+    "capacity_version": "source-analysis-capacity-v1",
+    "planner_version": "PHASE3E2SL6_PRECALL_PARTITION_V2",
+    "default_constant": "FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS",
+    "hard_cap_chars": 5000,
+    "applies_to": "existing adaptive_retry_policy=forbid path",
+    "effective_cap": "min(existing configured max_chunk_chars, 5000)",
+    "runtime_override_added": false,
+    "adaptive_response_time_splitting": "FORBIDDEN",
+    "max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "max_extraction_pieces": 16,
+    "max_total_jobs": 31,
+    "semantic_batching_changed": false
+  },
+  "identity_audit": {
+    "status": "PASS",
+    "baseline": "bc151f3131dd6e9343937f3c5db9ddb7ed8e748a",
+    "protected_surfaces_unchanged": [
+      "cloud_contract.py",
+      "llm.py",
+      "provider_diagnostics.py",
+      "operational_ingestion.py",
+      "phase4_orchestration.py",
+      "semantic_decomposition.py",
+      "workbench/source_operations.py",
+      "workbench/cloud_jobs.py",
+      "workbench/domains.py",
+      "workbench/retry_compatibility.py"
+    ],
+    "comparison": {
+      "cloud": {
+        "kind": "cloud",
+        "compatible": true,
+        "reason": "SEMANTIC_SURFACE_EXACT"
+      },
+      "native": {
+        "kind": "native",
+        "compatible": false,
+        "reason": "SEMANTIC_SURFACE_CHANGED"
+      }
+    },
+    "native_fail_closed": true,
+    "compatibility_exception_added": false,
+    "cloud_dispatch_surface_note": "Dispatching an already-frozen piece is unchanged. Stage 7.2C also requires the separate native checkpoint comparison; its Analyzer dependency changes and fails closed.",
+    "identity_chain": [
+      "Analyzer bytes -> phase4 processing_code_sha256",
+      "Phase4 code hash -> Cloud runtime_sha256",
+      "Runtime identity -> frozen run-context basis/context_sha256",
+      "Capacity/version/effective cap/piece and prompt hashes/coverage -> initial_extraction_plan_sha256",
+      "Plan SHA -> each cloud input payload + native checkpoint + input/job identity"
+    ],
+    "config_digest": "UNCHANGED: existing config and CloudProfile policy unchanged; code-semantic change is represented by runtime and plan identities, not a duplicated config setting."
+  },
+  "synthetic_e2e": {
+    "status": "PASS",
+    "source_count": 1,
+    "processing_run_count": 1,
+    "source_kind": "generated four-page synthetic PDF",
+    "real_adapter_classes": true,
+    "mock_boundary": "HTTP transport responses only",
+    "extraction_jobs": 4,
+    "semantic_jobs": 20,
+    "extraction_response_bytes": [
+      24561,
+      24584,
+      24657,
+      24657
+    ],
+    "extraction_claims": [
+      40,
+      40,
+      40,
+      40
+    ],
+    "packet_registered": true,
+    "provider_network_calls": 0,
+    "total_jobs": 24,
+    "state": "HUMAN_REVIEW_REQUIRED",
+    "review_decisions": 0,
+    "production_bytes_unchanged": true,
+    "all_cloud_validations": "PASS",
+    "all_output_budgets": 8192,
+    "all_total_token_budgets": 20000,
+    "live_model_token_simulation": false,
+    "complete_pre_call_plan_matches_persisted_plan": true
+  },
+  "tests": {
+    "focused": {
+      "passed": 31,
+      "skipped": 0,
+      "failed": 0,
+      "skip_reasons": []
+    },
+    "required_and_related_regressions": {
+      "passed": 505,
+      "skipped": 2,
+      "failed": 0,
+      "skip_reasons": [
+        {
+          "test": "tests.test_operational_ingestion.test_known_fixture_end_to_end_semantic_equivalence",
+          "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+        },
+        {
+          "test": "tests.test_phase4_orchestration.test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+          "reason": "private frozen workflow unavailable"
+        }
+      ]
+    },
+    "final_e2e_assertion_replay": {
+      "passed": 1,
+      "skipped": 0,
+      "failed": 0,
+      "skip_reasons": []
+    },
+    "distinct_passed": 536,
+    "distinct_skipped": 2,
+    "full_repository_suite_run": false,
+    "external_requests_blocked": true,
+    "real_credential_absent_from_test_process": true
+  },
+  "build": {
+    "status": "PASS",
+    "packaged_python_files": 129,
+    "wheel_sha256": "f19a4b7424d8610956abe079acaff9a14605b31d40f6dea38135fbf311d5b41e",
+    "source_wheel_installed_byte_match": true,
+    "selected_cap": 5000,
+    "tool_count": 14,
+    "max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "pip_check": "PASS",
+    "compileall": "PASS",
+    "isolated_pep517_wheel_build": "PASS",
+    "git_diff_check": "PASS"
+  },
+  "real_state": {
+    "source_unchanged": true,
+    "run_1_unchanged": true,
+    "run_2_unchanged": true,
+    "run_3_unchanged": true,
+    "historical_attempt_counts": [
+      0,
+      2,
+      1
+    ],
+    "run_3_second_extraction_job_attempts": 0,
+    "run_3_packet_exists": false,
+    "historical_telemetry_mutated": false,
+    "all_workbench_table_digests_unchanged": true,
+    "production_integrity_schema_counts_hash_size_unchanged": true,
+    "workbench_integrity_schema_counts_hash_size_unchanged": true,
+    "workbench_schema": 11,
+    "retry_extension_installed": false,
+    "stable_runtime_metadata_unchanged": true,
+    "tunnel_restarted": false,
+    "new_real_run_created": false
+  },
+  "qualification_findings": {
+    "initial_240_claim_stress_fixture": "Blocked by unchanged total job budget; final 160-Claim fixture stays within the existing limit.",
+    "candidate_6k_vs_5k": "Identical actual partitions for this Source, not an efficiency win.",
+    "live_evidence_boundary": "Only the prior 9817-character extraction is empirically known to truncate. No live capacity result is claimed for 4000/5000/6000."
+  },
+  "final_gates": {
+    "real_truncation_root_cause_confirmed": true,
+    "candidate_4k_evaluated": true,
+    "candidate_5k_evaluated": true,
+    "candidate_6k_evaluated": true,
+    "candidate_plans_deterministic": true,
+    "full_source_coverage": true,
+    "omitted_chars": 0,
+    "duplicated_chars": 0,
+    "selected_r1_cap": 5000,
+    "selected_cap_explicitly_frozen": true,
+    "planner_identity_updated": true,
+    "max_output_tokens_unchanged": 8192,
+    "max_total_tokens_unchanged": 20000,
+    "adaptive_response_split_added": false,
+    "operation_specific_output_budget_added": false,
+    "single_run_dual_adapter_e2e": "PASS",
+    "review_packet_created_in_disposable_e2e": true,
+    "historical_runs_mutated": false,
+    "real_provider_calls": 0,
+    "new_real_runs": 0,
+    "retry_calls": 0,
+    "production_writes": 0,
+    "real_workbench_writes": 0,
+    "real_review_writes": 0,
+    "real_current_view_writes": 0,
+    "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+    "LIVE_PROVIDER_CAPACITY_VALIDATION_REQUIRED_AFTER_MERGE": true
+  },
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "LIVE_PROVIDER_CAPACITY_VALIDATION_REQUIRED_AFTER_MERGE": true,
+  "publication_boundary": "Draft PR only. No merge, live activation, real provider call, or new real Run."
+}
