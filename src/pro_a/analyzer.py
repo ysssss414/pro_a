@@ -198,8 +198,9 @@ def _canonical_sha256(value: Any) -> str:
     return _sha256_text(canonical)
 
 
-FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS = 10_000
-INITIAL_EXTRACTION_PLANNER_VERSION = "PHASE3E2SL6_PRECALL_PARTITION_V1"
+EXTRACTION_CAPACITY_POLICY_VERSION = "source-analysis-capacity-v1"
+FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS = 5_000
+INITIAL_EXTRACTION_PLANNER_VERSION = "PHASE3E2SL6_PRECALL_PARTITION_V2"
 
 
 @dataclass(frozen=True)
@@ -472,6 +473,7 @@ class Analyzer:
                 "system_prompt_sha256": _sha256_text(SOURCE_ANALYSIS_SYSTEM),
             },
             "partition_policy": {
+                "capacity_policy_version": EXTRACTION_CAPACITY_POLICY_VERSION,
                 "adaptive_retry_policy": adaptive_retry_policy,
                 "configured_max_chunk_chars": configured_max_chars,
                 "effective_initial_max_chars": effective_max_chars,
