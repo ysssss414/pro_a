@@ -95,6 +95,68 @@ def calls(case):
     }
 
 
+def test_review_facade_has_only_existing_read_methods(case, monkeypatch):
+    def forbidden_constructor(*args, **kwargs):
+        raise AssertionError('MCP must not construct the write-capable Review service')
+    monkeypatch.setattr(ReviewWorkbench, '__init__', forbidden_constructor)
+    review = ReadService(case['config']).reviews
+    from pro_a.mcp.reads import ReviewReads
+
+    assert type(review) is ReviewReads
+    assert ReviewReads.__bases__ == (object,)
+    assert hasattr(review, 'read') and not hasattr(review, 'mutate')
+    methods = {name for name in dir(review)
+               if not name.startswith('__') and callable(getattr(review, name))}
+    assert methods == {'_context', '_state', '_sealed', 'read'}
+    assert {name for name in methods if not name.startswith('_')} == {'read'}
+    assert set(vars(review)) == {'config', 'store', 'artifacts'}
+    assert not any(isinstance(value, ReviewWorkbench) for value in vars(review).values())
+    for name in methods:
+        assert getattr(review, name).__func__ is getattr(ReviewWorkbench, name)
+
+
+@pytest.mark.parametrize('state', ['draft', 'partial', 'sealed'])
+def test_review_facade_preserves_states_and_pages(tmp_path, monkeypatch, record_property, state):
+    from test_workbench_stage1 import case as review_fixture, complete, decide, operation, IDENTITY
+
+    value = review_fixture.__wrapped__(tmp_path, monkeypatch)
+    native = value['service']
+    if state == 'partial':
+        decide(value)
+    elif state == 'sealed':
+        complete(value)
+        native.mutate(value['handle'], 'seal', operation(value, confirm=True), IDENTITY)
+    # Synthetic fixture preparation ends here; all measured calls are reads.
+    before = hashes(value['config'])
+    def forbidden_mutation(*args, **kwargs):
+        raise AssertionError('Review mutation during read measurement')
+    monkeypatch.setattr(ReviewWorkbench, 'mutate', forbidden_mutation)
+    connect = Store.connect
+    def readonly_connect(store, *, operator_write=False):
+        assert operator_write is False
+        return connect(store)
+    monkeypatch.setattr(Store, 'connect', readonly_connect)
+
+    service = ReadService(value['config'])
+    assert service.reviews.read(value['handle']) == native.read(value['handle'])
+    pages = [(1, None), (1, '1'), (1, '2'), (1, '3'), (2, None), (2, '2'), (50, None)]
+    # Recreate the pre-R1 adapter composition on this same disposable state.
+    with monkeypatch.context() as prior:
+        prior.setattr(service, 'reviews', native)
+        expected = [service.get_review_packet(value['handle'], limit, cursor)
+                    for limit, cursor in pages]
+    actual = [service.get_review_packet(value['handle'], limit, cursor)
+              for limit, cursor in pages]
+    assert actual == expected
+    assert actual[0].review.status == ('SEALED' if state == 'sealed' else 'DRAFT')
+    assert actual[0].review.progress.completed == {'draft': 0, 'partial': 1, 'sealed': 3}[state]
+    assert actual[0].next_cursor == '1' and actual[3].items == []
+    assert len(actual[-1].items) == 3 and actual[-1].next_cursor is None
+    after = hashes(value['config'])
+    assert before == after
+    record_property('database_hashes', json.dumps({'before': before, 'after': after}))
+
+
 def test_company_resolution_and_limits(case):
     service = case['bridge']
     for query in ('MCP Company', 'Unique Alias', 'ｍｃｐ ｃｏｍｐａｎｙ'):

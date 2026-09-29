@@ -13,12 +13,11 @@ from pro_a.company_materials import CompanyMaterials
 from pro_a.production_promotion import canonical_sha256
 from pro_a.query import ReadOnlyQuery
 from pro_a.workbench.config import BoundaryError, WorkbenchConfig
-from pro_a.workbench.review_workbench import ReviewWorkbench
 from pro_a.workbench.store import Store
 
 from . import CONTRACT_VERSION
 from .errors import BridgeError, read_operation
-from .reads import OperationalReads
+from .reads import OperationalReads, ReviewReads
 from . import schemas as s
 
 
@@ -62,7 +61,7 @@ class ReadService:
         self.query = ReadOnlyQuery(config.knowledge_db)
         self.materials = CompanyMaterials(config)
         self.operations = OperationalReads(config)
-        self.reviews = ReviewWorkbench(config)
+        self.reviews = ReviewReads(config)
 
     def _production(self):
         try:
