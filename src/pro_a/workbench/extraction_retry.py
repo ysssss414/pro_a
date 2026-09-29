@@ -80,6 +80,10 @@ def frozen_cloud(row):
         if canonical(profile.public_identity()) != row['configuration_json']:
             raise ValueError()
         for field in fields(CloudProfile):
+            if field.name == 'provider_adapter_version':
+                if row[field.name] != profile.adapter_for_operation(row['operation_kind']):
+                    raise ValueError()
+                continue
             stored = (json.loads(row['accepted_model_aliases_json'])
                       if field.name == 'accepted_model_aliases' else row[field.name])
             if stored != value[field.name]:

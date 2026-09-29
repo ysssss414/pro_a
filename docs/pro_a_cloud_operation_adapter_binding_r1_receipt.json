@@ -1,0 +1,405 @@
+{
+  "stage": "PRO_A_CLOUD_OPERATION_ADAPTER_BINDING_R1",
+  "final_gate": "PRO_A_CLOUD_OPERATION_ADAPTER_BINDING_R1 = PASS",
+  "status": "PASS",
+  "recorded_at_utc": "2026-09-29T16:05:53.66182+08:00",
+  "baseline_sha": "1966c24d37644d02c9c0c3496725a177ab437106",
+  "branch": "codex/pro-a-cloud-operation-adapter-binding-r1",
+  "root_cause_confirmed": true,
+  "root_cause": "CloudJobs.submit copied a single legacy CloudProfile adapter to both operations; SourceOperations also forwarded one provider instance without operation routing. Extraction froze the semantic adapter and rejected the correct SourceAnalysisPieceProvider before dispatch.",
+  "baseline_synthetic_reproduction": {
+    "status": "PASS",
+    "tests_passed": 1,
+    "error": "PROVIDER_CONTRACT_MISMATCH",
+    "provider_invocations": 0,
+    "network_calls": 0
+  },
+  "historical_failure": {
+    "state": "BLOCKED",
+    "stage": "EXTRACTION_JOBS",
+    "error_code": "PROVIDER_CONTRACT_MISMATCH",
+    "extraction_job_count": 2,
+    "operation_kind": "SOURCE_ANALYSIS_PIECE",
+    "frozen_provider": "deepseek",
+    "frozen_model": "deepseek-flash",
+    "frozen_adapter": "semantic-backend-adapter-v1",
+    "attempt_count": 0,
+    "packet_absent": true
+  },
+  "operation_specific_adapter_binding": true,
+  "operation_adapter_mapping": {
+    "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v1",
+    "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v1"
+  },
+  "contract_owner": "pro_a.cloud_contract.adapter_version_for_operation",
+  "provider_routing_operation_aware": true,
+  "provider_router": "SourceOperations selects the supplied mapping entry for each job operation; missing entry fails with PROVIDER_OPERATION_UNAVAILABLE. Legacy single-provider calls retain exact native preflight.",
+  "provider_preflight_exact": true,
+  "wrong_adapter_fails_before_call": true,
+  "cloud_profile_compatibility": "Legacy provider_adapter_version is a policy-family marker, not a live operation override. Only the original explicit DETERMINISTIC_FAKE / deterministic-fake-v1 fixture pair retains its synthetic adapter contract. Live required adapter identity belongs exclusively to the operation contract.",
+  "operator_construction": {
+    "function": "build_source_providers",
+    "status": "PASS",
+    "provider": "deepseek",
+    "requested_model": "deepseek-flash",
+    "reads_actual_credential": false,
+    "construction_network_calls": 0,
+    "transport_max_retries": 0,
+    "private_config_modified": false
+  },
+  "durable_identity": {
+    "configuration_sha256": "Provider execution-policy hash; unchanged when only required operation adapter changes.",
+    "prompt_sha256": "Prompt-text hash; unchanged prompt bytes retain their hash.",
+    "prompt_json": "Full operation contract, now including required provider adapter.",
+    "runtime_sha256": "Includes authoritative operation-adapter mapping and existing code identity.",
+    "intent_sha256": "Binds full operation, runtime, provider policy and native checkpoint; required adapter changes alter identity.",
+    "historical_rewrite": false
+  },
+  "retry_preserves_adapter_identity": true,
+  "retry_behavior": "Copy original frozen fields; validate operation-specific row adapter independently from policy-family marker. Historical bad binding fails frozen reconstruction. Compatibility tokens cannot bypass exact adapter checks.",
+  "single_run_dual_adapter_e2e": "PASS",
+  "review_packet_created_in_disposable_e2e": true,
+  "disposable_e2e": {
+    "sources": 1,
+    "processing_runs": 1,
+    "registered_review_packets": 1,
+    "terminal_state": "HUMAN_REVIEW_REQUIRED",
+    "processing_scope": "SHARED_CORE",
+    "domain_assignment": "PENDING",
+    "real_adapter_classes": true,
+    "transport": "deterministic HTTP responses",
+    "external_provider_calls": 0,
+    "simulated_http_calls": 2,
+    "distinct_prompts_and_validators": true,
+    "production_writes": 0,
+    "production_unchanged": true
+  },
+  "qualification": {
+    "focused": {
+      "passed": 24,
+      "failed": 0
+    },
+    "required_regressions_final_aggregate": {
+      "passed": 332,
+      "skipped": 1,
+      "failed": 0
+    },
+    "initial_regression_run": {
+      "passed": 330,
+      "failed": 2,
+      "skipped": 1
+    },
+    "failure_resolution": "Two Stage 7.2C tests assumed pre-binding and current execution surfaces were equivalent. The metadata-only fixture now snapshots its actual synthetic source; a separate test requires rejection of the exact pre-binding baseline.",
+    "final_compatibility_replay": {
+      "passed": 33,
+      "failed": 0
+    },
+    "combined_focused_compatibility_run": {
+      "passed": 57,
+      "failed": 0
+    },
+    "aggregation_scope": "299 unchanged required regressions passed, plus 33 updated Stage 7.2C tests passed. Focused 24 are separate. No full-repository run was performed.",
+    "skip_reason": "Optional private frozen workflow fixture is unavailable for test_full_frozen_engine_replay_equivalence_and_zero_production_writes.",
+    "required_files": [
+      "tests/test_workbench_stage6.py",
+      "tests/test_workbench_stage7.py",
+      "tests/test_phase43_stage1_operator_scale.py",
+      "tests/test_phase43_stage71_shared_core_pending.py",
+      "tests/test_phase43_stage72a_provider_diagnostics.py",
+      "tests/test_phase43_stage72b_extraction_retry.py",
+      "tests/test_phase43_stage72b_unicode_reason.py",
+      "tests/test_phase43_stage72c_retry_compatibility.py",
+      "tests/test_phase43_stage7_community.py",
+      "tests/test_mcp_stage0.py",
+      "tests/test_mcp_stage3.py",
+      "tests/test_llm.py",
+      "tests/test_phase4_orchestration.py"
+    ],
+    "compileall": "PASS",
+    "pip_check": "PASS",
+    "isolated_wheel_build": "PASS",
+    "wheel_source_verification": {
+      "status": "PASS",
+      "verified_python_files": 129,
+      "wheel_sha256": "8a5338d6d817f5da1435b5bd53026a5bc4df9e00b202a1a733e5e429e9699983",
+      "build_isolation": true
+    },
+    "installed_wheel_no_network_construction": "PASS",
+    "git_diff_check": "PASS",
+    "historical_full_suite": "2380 passed, 108 skipped, 3 failed, 43 errors; all 46 original failures/errors passed targeted replays. Historical evidence unchanged."
+  },
+  "historical_real_source_preserved": true,
+  "historical_real_run_mutated": false,
+  "historical_real_job_mutated": false,
+  "historical_real_provider_calls": 0,
+  "historical_packet_created": false,
+  "production_writes": 0,
+  "real_workbench_repair_writes": 0,
+  "real_database_evidence": {
+    "production": {
+      "before": {
+        "integrity": "ok",
+        "schema_sha256": "a9ea9463f1a0f60464f124b63eba56ca417a437a0bfce4852f6a9ad9073f3a27",
+        "row_counts_sha256": "14540606720b7052f89a0edfeec4deb2a634393ffea7418ae2e1ae1f097422d3",
+        "row_counts": {
+          "claim_node_links": 19,
+          "claim_relations": 0,
+          "claims": 159,
+          "current_views": 3,
+          "ima_objects": 0,
+          "impact_attempt_audit": 0,
+          "impact_reviews": 0,
+          "knowledge_gaps": 0,
+          "meta": 2,
+          "node_aliases": 760,
+          "node_relations": 208,
+          "nodes": 327,
+          "processing_jobs": 5,
+          "proposals": 11,
+          "relation_evidence_authorizations": 34,
+          "relation_evidence_links": 34,
+          "relation_temporal_semantics": 27,
+          "research_questions": 0,
+          "side_effect_jobs": 2,
+          "source_node_links": 3,
+          "source_relations": 0,
+          "sources": 36
+        },
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "size_bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        }
+      },
+      "after": {
+        "integrity": "ok",
+        "schema_sha256": "a9ea9463f1a0f60464f124b63eba56ca417a437a0bfce4852f6a9ad9073f3a27",
+        "row_counts_sha256": "14540606720b7052f89a0edfeec4deb2a634393ffea7418ae2e1ae1f097422d3",
+        "row_counts": {
+          "claim_node_links": 19,
+          "claim_relations": 0,
+          "claims": 159,
+          "current_views": 3,
+          "ima_objects": 0,
+          "impact_attempt_audit": 0,
+          "impact_reviews": 0,
+          "knowledge_gaps": 0,
+          "meta": 2,
+          "node_aliases": 760,
+          "node_relations": 208,
+          "nodes": 327,
+          "processing_jobs": 5,
+          "proposals": 11,
+          "relation_evidence_authorizations": 34,
+          "relation_evidence_links": 34,
+          "relation_temporal_semantics": 27,
+          "research_questions": 0,
+          "side_effect_jobs": 2,
+          "source_node_links": 3,
+          "source_relations": 0,
+          "sources": 36
+        },
+        "journal_mode": "delete",
+        "files": {
+          "database": {
+            "exists": true,
+            "size_bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        }
+      },
+      "unchanged": true
+    },
+    "workbench": {
+      "before": {
+        "integrity": "ok",
+        "schema_sha256": "e1c95e141cd11d44db8961c9dcd9321e0bb8d7c728969d87044aadfbc590c1fb",
+        "row_counts_sha256": "07518ca3a789fe45b913bf0bb882d474a8dd974ae61f5fbbdc297d3b5583ee71",
+        "row_counts": {
+          "attribution_events": 0,
+          "attribution_objects": 0,
+          "cloud_attempt_dispatches": 1,
+          "cloud_attempt_outcomes": 1,
+          "cloud_attempts": 1,
+          "cloud_job_events": 16,
+          "cloud_job_results": 0,
+          "cloud_job_submissions": 3,
+          "cloud_jobs": 3,
+          "domain_activation_receipts": 0,
+          "domain_assignments": 0,
+          "domain_pack_registry": 0,
+          "domain_packet_bindings": 0,
+          "domain_run_bindings": 2,
+          "followup_note_events": 0,
+          "followup_notes": 0,
+          "impact_attention_events": 0,
+          "impact_attention_states": 0,
+          "lifecycle_closure_meta": 1,
+          "lifecycle_resolutions": 274,
+          "operational_packages": 0,
+          "operational_receipts": 0,
+          "private_sources": 2,
+          "registered_packets": 3,
+          "review_audit": 0,
+          "review_decisions": 0,
+          "review_drafts": 0,
+          "review_operations": 0,
+          "sealed_review_artifacts": 0,
+          "source_cloud_inputs": 3,
+          "source_processing_events": 13,
+          "source_processing_jobs": 3,
+          "source_processing_runs": 2,
+          "source_upload_events": 3,
+          "stage1_operator_control": 1,
+          "stage1_review_projection": 0,
+          "stage1_review_projection_domains": 0,
+          "stage1_review_projection_meta": 0,
+          "view_activation_packages": 0,
+          "view_activation_receipts": 0,
+          "view_draft_events": 0,
+          "view_drafts": 0,
+          "workbench_meta": 4
+        },
+        "journal_mode": "delete",
+        "schema_version": "11",
+        "registered_review_packets": 0,
+        "files": {
+          "database": {
+            "exists": true,
+            "size_bytes": 851968,
+            "sha256": "eefab9a4aed31fc511c8576ce3529e60f4e7f5f838f10156b2e5005db161d563"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        }
+      },
+      "after": {
+        "integrity": "ok",
+        "schema_sha256": "e1c95e141cd11d44db8961c9dcd9321e0bb8d7c728969d87044aadfbc590c1fb",
+        "row_counts_sha256": "07518ca3a789fe45b913bf0bb882d474a8dd974ae61f5fbbdc297d3b5583ee71",
+        "row_counts": {
+          "attribution_events": 0,
+          "attribution_objects": 0,
+          "cloud_attempt_dispatches": 1,
+          "cloud_attempt_outcomes": 1,
+          "cloud_attempts": 1,
+          "cloud_job_events": 16,
+          "cloud_job_results": 0,
+          "cloud_job_submissions": 3,
+          "cloud_jobs": 3,
+          "domain_activation_receipts": 0,
+          "domain_assignments": 0,
+          "domain_pack_registry": 0,
+          "domain_packet_bindings": 0,
+          "domain_run_bindings": 2,
+          "followup_note_events": 0,
+          "followup_notes": 0,
+          "impact_attention_events": 0,
+          "impact_attention_states": 0,
+          "lifecycle_closure_meta": 1,
+          "lifecycle_resolutions": 274,
+          "operational_packages": 0,
+          "operational_receipts": 0,
+          "private_sources": 2,
+          "registered_packets": 3,
+          "review_audit": 0,
+          "review_decisions": 0,
+          "review_drafts": 0,
+          "review_operations": 0,
+          "sealed_review_artifacts": 0,
+          "source_cloud_inputs": 3,
+          "source_processing_events": 13,
+          "source_processing_jobs": 3,
+          "source_processing_runs": 2,
+          "source_upload_events": 3,
+          "stage1_operator_control": 1,
+          "stage1_review_projection": 0,
+          "stage1_review_projection_domains": 0,
+          "stage1_review_projection_meta": 0,
+          "view_activation_packages": 0,
+          "view_activation_receipts": 0,
+          "view_draft_events": 0,
+          "view_drafts": 0,
+          "workbench_meta": 4
+        },
+        "journal_mode": "delete",
+        "schema_version": "11",
+        "registered_review_packets": 0,
+        "files": {
+          "database": {
+            "exists": true,
+            "size_bytes": 851968,
+            "sha256": "eefab9a4aed31fc511c8576ce3529e60f4e7f5f838f10156b2e5005db161d563"
+          },
+          "-wal": {
+            "exists": false
+          },
+          "-shm": {
+            "exists": false
+          },
+          "-journal": {
+            "exists": false
+          }
+        }
+      },
+      "unchanged": true
+    }
+  },
+  "safety_measurement_scope": "Read-only exact historical row and entire database snapshot comparison before/after; disposable E2E guards Production SQL writes and compares bytes. No continuous host-wide trace is claimed.",
+  "stable_runtime": {
+    "modified": false,
+    "restarted": false,
+    "process_running": true,
+    "healthy": true,
+    "ready": true,
+    "contract": "pro-a-mcp-stage3-v1",
+    "tool_count": 14,
+    "read_only": true,
+    "verification": "Existing installed-package stdio discovery/health and native managed-runtime status; no new Web operator acceptance requested."
+  },
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "future_real_processing": "NEW RUN REQUIRED using the same already-uploaded Source and an explicit reprocess reason, only after merge/activation and separate operator authorization.",
+  "known_limitations": [
+    "No real external provider call in repair qualification.",
+    "The existing explicit deterministic-fake fixture contract is retained; it is not the live DeepSeek adapter qualification.",
+    "No private Run was resumed or repaired, and no real new Run or packet was created.",
+    "Full repository suite not run; one private frozen replay unavailable.",
+    "Stable runtime activation remains a separate post-merge task."
+  ],
+  "publication": {
+    "draft_pr_required": true,
+    "merge": false,
+    "activate": false,
+    "real_smoke_resume": false,
+    "commit_and_pr_traceability": "Implementation and final evidence commits plus Draft PR URL are reported in the final handoff.",
+    "implementation_sha": "1f98099d05dd6475dc70a3a0626f9b88483d4d14"
+  }
+}
