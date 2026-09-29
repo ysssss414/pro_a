@@ -9,6 +9,46 @@ from pro_a.workbench.cloud_jobs import CloudJobs
 from pro_a.workbench.review_workbench import ReviewWorkbench
 from pro_a.workbench.source_operations import SourceOperations
 from pro_a.workbench.store import Store
+from pro_a.workbench.domains import Domains
+from pro_a.workbench.stage1_scale import Stage1ReviewProjection
+
+
+class ReadStore:
+    def __init__(self, config):
+        self.config = config
+
+    def connect(self):
+        return Store(self.config).connect()
+
+
+class ArtifactReads:
+    resolve = Artifacts.resolve
+    inventory = Artifacts.inventory
+    validate = Artifacts.validate
+    native = Artifacts.native
+    read = Artifacts.read
+    listing = Artifacts.listing
+
+    def __init__(self, config):
+        self.config = config
+        self.store = ReadStore(config)
+
+
+class DomainReads:
+    read = Domains.read
+
+    def __init__(self, config):
+        self.config = config
+        self.store = ReadStore(config)
+
+
+class ReviewQueueReads:
+    page = Stage1ReviewProjection.page
+    _decode_cursor = staticmethod(Stage1ReviewProjection._decode_cursor)
+    _encode_cursor = staticmethod(Stage1ReviewProjection._encode_cursor)
+
+    def __init__(self, config):
+        self.store = ReadStore(config)
 
 
 class JobReads:
@@ -16,7 +56,7 @@ class JobReads:
     get = CloudJobs.get
 
     def __init__(self, config):
-        self.store = Store(config)
+        self.store = ReadStore(config)
 
 
 class ReviewReads:
@@ -27,8 +67,8 @@ class ReviewReads:
 
     def __init__(self, config):
         self.config = config
-        self.store = Store(config)
-        self.artifacts = Artifacts(config)
+        self.store = ReadStore(config)
+        self.artifacts = ArtifactReads(config)
 
 
 class OperationalReads:
@@ -40,5 +80,5 @@ class OperationalReads:
 
     def __init__(self, config):
         self.config = config
-        self.store = Store(config)
+        self.store = ReadStore(config)
         self.jobs = JobReads(config)

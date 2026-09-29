@@ -416,7 +416,7 @@ def test_stdio_transport(case, tmp_path):
     async def exercise():
         target = StdioServerParameters(command=sys.executable, args=['-m', 'pro_a.mcp.server', '--config', str(config)])
         async with Client(target) as client:
-            assert len((await client.list_tools()).tools) == 11
+            assert len((await client.list_tools()).tools) == len(TOOLS)
             result = await client.call_tool('pro_a_health')
             assert not result.is_error and result.structured_content['read_only']
     before = hashes(case['config'])
@@ -445,7 +445,7 @@ def test_streamable_http_transport(case, tmp_path):
                 time.sleep(.05)
         async def exercise():
             async with Client(f'http://127.0.0.1:{port}/mcp') as client:
-                assert len((await client.list_tools()).tools) == 11
+                assert len((await client.list_tools()).tools) == len(TOOLS)
                 result = await client.call_tool('get_company_research_context', {'company_node_id': COMPANY})
                 assert not result.is_error, result
                 assert result.structured_content['company']['identity']['node_id'] == COMPANY

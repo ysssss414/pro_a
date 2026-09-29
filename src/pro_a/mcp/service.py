@@ -19,18 +19,31 @@ from . import CONTRACT_VERSION
 from .errors import BridgeError, read_operation
 from .reads import OperationalReads, ReviewReads
 from . import schemas as s
+from . import review_schemas as r
+from . import review_context
 
 
 TOOLS = (
     "pro_a_health", "search_companies", "get_company", "list_company_materials",
     "get_current_view", "get_current_view_history", "get_node_evidence",
     "get_source", "get_processing_run", "get_review_packet", "get_company_research_context",
+    "list_review_queue", "get_review_context", "get_review_item_context",
 )
 Identifier = Annotated[str, Field(min_length=1, max_length=200, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$", strict=True)]
 Limit = Annotated[int, Field(ge=1, le=50, strict=True)]
 Cursor = Annotated[str, Field(max_length=8, pattern=r"^(0|[1-9][0-9]{0,7})$", strict=True)]
 SearchText = Annotated[str, Field(min_length=1, max_length=200, strict=True)]
 ArtifactId = Annotated[str, Field(pattern=r"^ART_[0-9a-f]{32}$", strict=True)]
+ContextHash = Annotated[str, Field(pattern=r"^[0-9a-f]{64}$", strict=True)]
+
+
+def review_arguments(artifact_id, projection, expected):
+    if not isinstance(artifact_id, str) or not re.fullmatch(r"ART_[0-9a-f]{32}", artifact_id):
+        raise BridgeError("INVALID_ARGUMENT")
+    if projection not in ("blind", "stateful"):
+        raise BridgeError("INVALID_ARGUMENT")
+    if expected is not None and (not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected)):
+        raise BridgeError("INVALID_ARGUMENT")
 
 
 def identifier(value):
@@ -62,6 +75,30 @@ class ReadService:
         self.materials = CompanyMaterials(config)
         self.operations = OperationalReads(config)
         self.reviews = ReviewReads(config)
+
+    @read_operation
+    def list_review_queue(self, queue: r.Queue = "all", limit: Limit = 20,
+                          cursor: Cursor | None = None) -> r.ReviewQueue:
+        offset = page(limit, cursor)
+        if queue not in ("all", *review_context.QUEUES):
+            raise BridgeError("INVALID_ARGUMENT")
+        return review_context.queue(self, queue, limit, offset)
+
+    @read_operation
+    def get_review_context(self, artifact_id: ArtifactId, projection: r.Projection = "blind",
+                           limit: Limit = 20, cursor: Cursor | None = None,
+                           expected_context_sha256: ContextHash | None = None) -> r.ReviewContext:
+        review_arguments(artifact_id, projection, expected_context_sha256)
+        return review_context.packet_context(self, artifact_id, projection, limit,
+                                             page(limit, cursor), expected_context_sha256)
+
+    @read_operation
+    def get_review_item_context(self, artifact_id: ArtifactId, candidate_id: Identifier,
+                                projection: r.Projection = "blind",
+                                expected_context_sha256: ContextHash | None = None) -> r.ReviewItemContext:
+        review_arguments(artifact_id, projection, expected_context_sha256)
+        identifier(candidate_id)
+        return review_context.item_context(self, artifact_id, candidate_id, projection, expected_context_sha256)
 
     def _production(self):
         try:
