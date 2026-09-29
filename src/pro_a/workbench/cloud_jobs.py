@@ -30,6 +30,7 @@ from pro_a.cloud_contract import (
     digest,
     now,
     operation_contract,
+    adapter_version_for_operation,
     validate_output,
 )
 from pro_a.phase4_orchestration import _runtime as phase4_runtime
@@ -100,10 +101,23 @@ class CloudProfile:
                 or not identity.fullmatch(self.provider_adapter_version)
                 or any(not identity.fullmatch(item) for item in self.accepted_model_aliases)):
             raise JobError("CLOUD_PROFILE_INVALID", 422)
+        # Legacy field identifies the execution family, never the live operation.
+        # The existing offline fake family retains its exact synthetic contract.
+        if self.provider_adapter_version != ADAPTER_VERSION and not (
+                self.provider == "DETERMINISTIC_FAKE"
+                and self.provider_adapter_version == "deterministic-fake-v1"):
+            raise JobError("CLOUD_PROFILE_INVALID", 422)
         if not (1 <= self.timeout_seconds <= 3600 and 1 <= self.max_output_tokens <= 131072
                 and 1 <= self.max_calls <= 10 and 1 <= self.max_attempts <= self.max_calls
                 and 1 <= self.max_total_tokens <= 1_000_000):
             raise JobError("CLOUD_BUDGET_INVALID", 422)
+
+    def adapter_for_operation(self, operation_kind: str) -> str:
+        required = adapter_version_for_operation(operation_kind)
+        self.validate()
+        if self.provider == "DETERMINISTIC_FAKE" and self.provider_adapter_version == "deterministic-fake-v1":
+            return self.provider_adapter_version
+        return required
 
     def public_identity(self) -> dict[str, Any]:
         value = asdict(self)
@@ -126,6 +140,10 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         "cloud_contract_version": CONTRACT_VERSION,
         "workbench_schema_version": workbench_schema_version,
         "provider_adapter_version": adapter_version,
+        "operation_adapter_versions": {
+            operation: adapter_version_for_operation(operation)
+            for operation in ("SOURCE_ANALYSIS_PIECE", "SEMANTIC_DECOMPOSITION")
+        },
     }
     if workbench_schema_version in ("9", "10", "11"):
         package = Path(__file__).parent.parent
@@ -436,7 +454,7 @@ class CloudJobs:
                 operation_kind, intent_sha, canonical(runtime), runtime["runtime_sha256"],
                 canonical(operation), prompt_sha, canonical(configuration), configuration["configuration_sha256"],
                 canonical(checkpoint), self.profile.provider, self.profile.requested_model,
-                canonical(list(self.profile.accepted_model_aliases)), self.profile.provider_adapter_version,
+                canonical(list(self.profile.accepted_model_aliases)), self.profile.adapter_for_operation(operation_kind),
                 self.profile.timeout_seconds, self.profile.max_output_tokens, self.profile.max_calls,
                 self.profile.max_attempts, self.profile.max_total_tokens, RETRY_OWNER, RETRY_POLICY_ID,
                 "QUEUED", "QUEUED", created, created,
@@ -630,7 +648,8 @@ class CloudJobs:
                 or row["configuration_sha256"] != stored_configuration_hash
                 or canonical(stored_configuration) != canonical(self.profile.public_identity())):
             raise JobError("CONFIGURATION_IDENTITY_MISMATCH")
-        if (provider.provider_identity != row["provider"]
+        if (row["provider_adapter_version"] != self.profile.adapter_for_operation(row["operation_kind"])
+                or provider.provider_identity != row["provider"]
                 or provider.adapter_version != row["provider_adapter_version"]):
             raise JobError("PROVIDER_CONTRACT_MISMATCH")
         from .extraction_retry import for_job

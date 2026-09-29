@@ -49,6 +49,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     ),
     "workbench/cloud_jobs.py": (
         "runtime_identity", "CloudProfile.validate", "CloudProfile.public_identity",
+        "CloudProfile.adapter_for_operation",
         "CloudJobs.__init__", "CloudJobs.current_runtime", "CloudJobs._event",
         "CloudJobs._verify_event_chain", "CloudJobs._native_identity",
         "CloudJobs._input_payload", "CloudJobs._preflight", "CloudJobs._claim",
@@ -852,7 +853,7 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
             blockers.append("BLOCKED_INPUT_ARTIFACT_CHANGED")
 
         historical_runtime = json.loads(run["runtime_json"])
-        target_runtime = (runtime_identity(job["provider_adapter_version"], workbench_schema_version=schema_version(connection))
+        target_runtime = (runtime_identity(cloud_profile.provider_adapter_version, workbench_schema_version=schema_version(connection))
                           if cloud_profile is not None else {})
         cloud_surface = _execution_surface_comparison(
             "cloud", historical_runtime.get("git_sha", ""),

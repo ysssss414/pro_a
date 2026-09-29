@@ -22,12 +22,35 @@ from test_phase43_stage72b_extraction_retry import failed, original_rows, retry
 from test_phase43_stage71_shared_core_pending import case
 
 
+@pytest.fixture(autouse=True)
+def clear_surface_cache():
+    from pro_a.workbench.retry_compatibility import _execution_surface_comparison
+    _execution_surface_comparison.cache_clear()
+    yield
+    _execution_surface_comparison.cache_clear()
+
+
 def release_drift(monkeypatch, value, *, cloud_semantic=None, native_semantic=None,
                   broad_code_drift=False):
     import pro_a.phase4_orchestration as phase4
     import pro_a.workbench.cloud_jobs as cloud_jobs
     import pro_a.workbench.retry_compatibility as compatibility
 
+    # These jobs were created by the current source, including uncommitted repair
+    # work. Model a metadata-only release of that exact synthetic execution
+    # surface, not a release of the older repository HEAD.
+    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
+    frozen_sources = {
+        name: (package / name).read_bytes()
+        for specification in (compatibility._CLOUD_EXECUTION_SURFACE,
+                              compatibility._NATIVE_EXECUTION_SURFACE)
+        for name in specification
+    }
+    def synthetic_sources(_historical_git_sha, specification):
+        return ({name: frozen_sources[name] for name in specification},
+                {name: (package / name).read_bytes() for name in specification})
+    monkeypatch.setattr(compatibility, '_execution_surface_sources', synthetic_sources)
+    compatibility._execution_surface_comparison.cache_clear()
     target_cloud = value['service'].jobs.current_runtime()
     target_cloud = dict(target_cloud)
     target_cloud['git_sha'] = 'f' * 40
@@ -279,22 +302,29 @@ def test_semantic_surface_mutation_makes_qualification_block(
     assert surface['reason'] == 'SEMANTIC_SURFACE_CHANGED'
 
 
-def test_exact_compatibility_plumbing_normalizes_to_pre_extension_surface():
+def test_operation_adapter_repair_is_not_compatible_with_pre_binding_release():
     import subprocess
     import pro_a.workbench.retry_compatibility as compatibility
 
     package = compatibility.Path(compatibility.__file__).resolve().parent.parent
     root = package.parents[1]
-    for specification in (
-            compatibility._CLOUD_EXECUTION_SURFACE,
-            compatibility._NATIVE_EXECUTION_SURFACE):
+    baseline = '1966c24d37644d02c9c0c3496725a177ab437106'
+    for kind, specification in (
+            ('cloud', compatibility._CLOUD_EXECUTION_SURFACE),
+            ('native', compatibility._NATIVE_EXECUTION_SURFACE)):
         historical = {
             name: subprocess.check_output(
-                ['git', 'show', f'origin/main:src/pro_a/{name}'], cwd=root,
+                ['git', 'show', f'{baseline}:src/pro_a/{name}'], cwd=root,
             )
             for name in specification
         }
         target = {name: (package / name).read_bytes() for name in specification}
+        if kind == 'cloud':
+            # The old profile lacks the operation-binding dependency. Its
+            # execution surface must fail closed, never normalize to this repair.
+            with pytest.raises(RetryCompatibilityError):
+                compatibility._surface_manifest(historical, specification)
+            continue
         before = compatibility._surface_manifest(historical, specification)
         after = compatibility._surface_manifest(target, specification)
         assert after['semantic_surface_sha256'] == before['semantic_surface_sha256']

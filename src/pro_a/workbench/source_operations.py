@@ -8,11 +8,12 @@ import os
 import re
 import shutil
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PureWindowsPath
 from typing import Any, AsyncIterable, Mapping
 from uuid import uuid4
+from urllib.parse import urlsplit
 
 from pypdf import PdfReader
 
@@ -73,6 +74,36 @@ class SourceProfile:
             raise SourceOperationError("SOURCE_SIZE_LIMIT_INVALID", 422)
         if not 1 <= self.max_extraction_pieces <= 64:
             raise SourceOperationError("SOURCE_PIECE_LIMIT_INVALID", 422)
+
+
+def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str, Any]:
+    """Construct the qualified operator worker adapters without reading credentials.
+
+    CloudJobs owns the frozen call budgets and retry policy. Only the in-memory
+    transport configuration is derived; the operator's private config is unchanged.
+    """
+    from pro_a.cloud_contract import SourceAnalysisPieceProvider, SemanticBackendProvider
+    from pro_a.llm import ChatLLM
+    from pro_a.semantic_decomposition import ChatLLMSemanticBackend
+
+    cloud_profile.validate()
+    url = urlsplit(llm_config.base_url)
+    if (not llm_config.enabled or llm_config.provider != "deepseek"
+            or cloud_profile.provider != "deepseek"
+            or llm_config.model != cloud_profile.requested_model
+            or cloud_profile.requested_model != "deepseek-flash"
+            or llm_config.api_key_env != "PROA_LLM_API_KEY"
+            or url.scheme != "https" or url.username or url.password
+            or url.query or url.fragment or url.path not in ("", "/", "/v1", "/v1/")):
+        raise SourceOperationError("PROVIDER_CONFIGURATION_MISMATCH", 422)
+    effective = replace(llm_config, timeout_seconds=cloud_profile.timeout_seconds,
+                        max_output_tokens=cloud_profile.max_output_tokens, max_retries=0)
+    return {
+        SOURCE_ANALYSIS_OPERATION: SourceAnalysisPieceProvider(
+            ChatLLM(effective), provider_identity=cloud_profile.provider),
+        SEMANTIC_OPERATION: SemanticBackendProvider(
+            ChatLLMSemanticBackend(ChatLLM(effective)), provider_identity=cloud_profile.provider),
+    }
 
 
 def _now() -> str:
@@ -712,7 +743,10 @@ class SourceOperations:
                         return jobs
             for job in jobs:
                 if job["status"] == "QUEUED":
-                    self.jobs.run_once(provider, worker_id=worker_id, job_id=job["job_id"])
+                    selected = provider.get(job["operation_kind"]) if isinstance(provider, Mapping) else provider
+                    if selected is None:
+                        raise SourceOperationError("PROVIDER_OPERATION_UNAVAILABLE")
+                    self.jobs.run_once(selected, worker_id=worker_id, job_id=job["job_id"])
         return [self.jobs.get(job["job_id"]) for job in jobs]
 
     def _extraction_replay(self, jobs: list[dict[str, Any]]) -> _ExtractionReplay:

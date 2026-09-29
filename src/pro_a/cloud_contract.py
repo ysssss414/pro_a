@@ -48,6 +48,14 @@ def digest(value: Any) -> str:
     return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
 
 
+def adapter_version_for_operation(operation_kind: str) -> str:
+    if operation_kind == SOURCE_ANALYSIS_OPERATION:
+        return SOURCE_ANALYSIS_ADAPTER_VERSION
+    if operation_kind == OPERATION_KIND:
+        return ADAPTER_VERSION
+    raise CloudContractError("UNSUPPORTED_CLOUD_OPERATION", 422)
+
+
 def operation_contract(operation_kind: str) -> dict[str, Any]:
     if operation_kind == OPERATION_KIND:
         combined = hashlib.sha256(
@@ -55,6 +63,7 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
         ).hexdigest()
         return {
             "operation_kind": OPERATION_KIND,
+            "provider_adapter_version": adapter_version_for_operation(operation_kind),
             "operation_schema_version": "semantic-decomposition-result-v2.1",
             "prompt_id": PROMPT_ID,
             "prompt_version": PROMPT_VERSION,
@@ -69,6 +78,7 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
         ).hexdigest()
         return {
             "operation_kind": SOURCE_ANALYSIS_OPERATION,
+            "provider_adapter_version": adapter_version_for_operation(operation_kind),
             "operation_schema_version": "source-analysis-piece-v1",
             "prompt_id": "source-analysis-piece",
             "prompt_version": "phase3e2sl6",
