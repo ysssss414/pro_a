@@ -1,0 +1,1005 @@
+{
+  "stage": "PRO_A_MCP_STAGE2_STABLE_LOCAL_RUNTIME",
+  "status": "PASS",
+  "final_gate": "PRO_A_MCP_STAGE2_STABLE_LOCAL_RUNTIME = PASS",
+  "recorded_at_utc": "2026-09-29T05:20:26.175983+00:00",
+  "baseline_main_sha": "93d4e80490c8618d5719fe5cd7a875f61dcc5e05",
+  "baseline_gate": {
+    "remote_main_exact_match": true,
+    "stage0_merged_pr": 82,
+    "stage1_merged_pr": 83,
+    "remote_main_rechecked_before_publication": true
+  },
+  "branch": "codex/pro-a-mcp-stage2-stable-local-runtime",
+  "stable_runtime": {
+    "source_commit": "93d4e80490c8618d5719fe5cd7a875f61dcc5e05",
+    "source_repository": "ysssss414/pro_a",
+    "wheel_sha256": "db38223ec714576a41c5666202940f9c9c99463a377971d2c5954548c8e7ef82",
+    "source_files_verified_against_commit": 127,
+    "python": "3.13.14",
+    "sqlite": "3.50.4",
+    "pro_a": "0.5.1",
+    "mcp": "2.2.0",
+    "packages": {
+      "PyJWT": "2.15.1",
+      "PyYAML": "6.0.3",
+      "annotated-doc": "0.0.5",
+      "annotated-types": "0.8.0",
+      "anyio": "4.15.1",
+      "attrs": "26.1.0",
+      "certifi": "2026.7.22",
+      "cffi": "2.1.1",
+      "charset-normalizer": "3.5.1",
+      "click": "8.5.0",
+      "cos_python_sdk_v5": "1.9.44",
+      "crcmod": "1.7",
+      "cryptography": "50.0.1",
+      "et_xmlfile": "2.0.0",
+      "fastapi": "0.141.1",
+      "flatbuffers": "25.12.19",
+      "h11": "0.16.0",
+      "httpcore2": "2.13.1",
+      "httpx2": "2.13.1",
+      "idna": "3.20",
+      "jsonschema": "4.26.0",
+      "jsonschema-specifications": "2025.9.1",
+      "lxml": "6.1.3",
+      "mcp": "2.2.0",
+      "mcp-types": "2.2.0",
+      "networkx": "3.7",
+      "numpy": "2.5.3",
+      "onnxruntime": "1.30.0",
+      "openpyxl": "3.1.5",
+      "opentelemetry-api": "1.45.0",
+      "packaging": "26.3",
+      "pillow": "12.3.0",
+      "pip": "26.1.2",
+      "pro-a": "0.5.1",
+      "protobuf": "7.36.2",
+      "pycparser": "3.0",
+      "pycryptodome": "3.23.0",
+      "pydantic": "2.13.5",
+      "pydantic_core": "2.46.5",
+      "pymupdf": "1.28.2",
+      "pymupdf-layout": "1.28.2",
+      "pypdf": "6.19.0",
+      "python-docx": "1.2.0",
+      "python-multipart": "0.0.32",
+      "python-pptx": "1.0.2",
+      "pywin32": "312",
+      "referencing": "0.37.0",
+      "reportlab": "4.4.4",
+      "requests": "2.34.2",
+      "rpds-py": "2026.6.3",
+      "six": "1.17.0",
+      "sse-starlette": "3.5.0",
+      "starlette": "1.7.0",
+      "truststore": "0.10.4",
+      "typing-inspection": "0.4.4",
+      "typing_extensions": "4.16.0",
+      "urllib3": "2.8.0",
+      "uvicorn": "0.54.0",
+      "xlsxwriter": "3.2.9",
+      "xmltodict": "1.0.4"
+    },
+    "installation": "non-editable wheel",
+    "base_python": "operator-installed Windows Python, outside Codex",
+    "runtime_location_class": "fixed operator-owned tools directory outside all repositories and Codex"
+  },
+  "reproducibility": {
+    "saved_wheel_count": 59,
+    "wheel_manifest_sha256": "00c85d220965f5e09394086979fff3286c478c7851b6e22b5e33243671e2b1ee",
+    "offline_locked_resolution": "PASS",
+    "pip_check": "PASS",
+    "copied_virtualenv": false,
+    "editable_install": false,
+    "codex_runtime_dependency": false
+  },
+  "authority": {
+    "contract": "pro-a-mcp-stage0-v1",
+    "tool_count": 11,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context"
+    ],
+    "discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "runtime_business_code_changed": false
+  },
+  "private_config_policy": "Existing stable operator Workbench config and database locations retained, no relocation or rewrite.",
+  "secret_storage": {
+    "supported_reference": "file:",
+    "planned_location_class": "operator-private directory outside Git",
+    "operator_hidden_input_helper_prepared": true,
+    "acl_policy": "inheritance disabled on secret directory; current operator SID only, inherited by secret file",
+    "secret_setup": "PASS_OPERATOR_SAVED_METADATA_VERIFIED",
+    "secret_value_accessed_by_agent": false,
+    "existing_profile_preserved": true,
+    "old_profile_inspection": "Whole-profile parse rejected by automatic approval review because it could load a literal key; not retried or bypassed.",
+    "directory_acl_verified": {
+      "inheritance_disabled": true,
+      "only_current_operator": true,
+      "secret_file_present": true
+    },
+    "setup_acl_compatibility": {
+      "verified_powershell": "5.1.26100.9444",
+      "access_rules_verified": true,
+      "secret_contents_accessed": false,
+      "verified_as_administrator": false,
+      "fix": "Persist DACL only via DirectoryInfo.SetAccessControl; no owner or audit-policy changes",
+      "initial_operator_error": "Set-Acl requested SeSecurityPrivilege under Windows PowerShell"
+    },
+    "secret_file_metadata_verified": {
+      "present": true,
+      "nonempty": true,
+      "only_current_operator": true,
+      "contents_read_or_hashed": false
+    },
+    "tunnel_id_supplied": true
+  },
+  "proxy": {
+    "required": true,
+    "credential_free_loopback_proxy_observed": true,
+    "persisted_runtime_settings": true,
+    "mechanism": "start helper sets supported CONTROL_PLANE_HTTP_PROXY only for native managed-runtime launch",
+    "global_proxy_changed": false,
+    "local_mcp_transport": "direct stdio",
+    "control_plane_poll_health": "PASS_DETAILED_HEALTH_COMPONENT"
+  },
+  "tunnel_client": {
+    "version": "0.0.15+a390c168ff1b2d14e73a95991c186c6aba3ff5a0",
+    "installed_location_class": "existing stable tools directory",
+    "lifecycle": "native runtimes connect/status/stop",
+    "alias": "pro-a-local",
+    "alias_registered": true,
+    "process_running": true,
+    "healthy": true,
+    "ready": true,
+    "control_plane_poll_health": {
+      "native_summary_state": "unknown",
+      "native_summary_reason": "no live admin UI system snapshot",
+      "authoritative_detail_source": "loopback /health?details=true components.control-plane",
+      "detail_status_before_stop": "ok",
+      "last_success_observed": true,
+      "consecutive_failures_before_stop": 0
+    },
+    "binary_sha256": "1946de55a038313a9b9b2458d05fe1719fa9cf1f20a94dd5f38fc26a98bfdd42",
+    "matches_verified_official_release": true
+  },
+  "local_smoke": {
+    "baseline_main_sha": "93d4e80490c8618d5719fe5cd7a875f61dcc5e05",
+    "started_at_utc": "2026-09-29T04:36:23.415981+00:00",
+    "transport": "stdio",
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "arguments": {},
+        "status": "success"
+      },
+      {
+        "tool": "search_companies",
+        "arguments": {
+          "query": "昀冢科技",
+          "limit": 5
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_company",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E"
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_current_view",
+        "arguments": {
+          "node_id": "NODE_20260826_BC260F3E"
+        },
+        "status": "success"
+      },
+      {
+        "tool": "list_company_materials",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E",
+          "limit": 3
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_company_research_context",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E",
+          "recent_material_limit": 3
+        },
+        "status": "success"
+      }
+    ],
+    "local_gate": "PASS",
+    "before": {
+      "production": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 92,
+        "schema_fingerprint": "286729b8decec7a77e7f5d0ed17a639dff2bb2506d989c169547fb0b6f429927",
+        "row_count_fingerprint": "b130e49bd17bd37072552389773d5b73a2e7e79f2b0862bbe652b60e6e559ba1",
+        "table_count": 22,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      },
+      "workbench": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 129,
+        "schema_fingerprint": "08b8cf673086c223231da5039df04650abb02bcf474dde6fb9b6234a361ae96f",
+        "row_count_fingerprint": "9840f50d58a3e82238de17cfe61ac797d7047577d34c5f0a0c0eaa89d3e59e67",
+        "table_count": 43,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 823296,
+            "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      }
+    },
+    "tool_count": 11,
+    "tool_inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context"
+    ],
+    "discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage0-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context"
+      ]
+    },
+    "company": {
+      "node_id": "NODE_20260826_BC260F3E",
+      "canonical_name": "昀冢科技",
+      "primary_type": "Company",
+      "status": "active"
+    },
+    "results": {
+      "company_identity_matches": true,
+      "current_view_status": "OFFICIAL",
+      "official_view_id": "VIEW_20260826_99D621B2",
+      "material_count_returned": 2,
+      "material_counts": {
+        "total": 2,
+        "private": 1,
+        "canonical": 1
+      },
+      "research_context_success": true,
+      "context_company_identity_matches": true,
+      "context_material_count": 2,
+      "context_private_material_count": 1,
+      "context_canonical_material_count": 1,
+      "context_warnings": [
+        "PRIVATE_MATERIAL_IS_NOT_CANONICAL_EVIDENCE",
+        "OFFICIAL_VIEW_TRIGGER_REFERENCES_NOT_REVALIDATED"
+      ]
+    },
+    "after": {
+      "production": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 92,
+        "schema_fingerprint": "286729b8decec7a77e7f5d0ed17a639dff2bb2506d989c169547fb0b6f429927",
+        "row_count_fingerprint": "b130e49bd17bd37072552389773d5b73a2e7e79f2b0862bbe652b60e6e559ba1",
+        "table_count": 22,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      },
+      "workbench": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 129,
+        "schema_fingerprint": "08b8cf673086c223231da5039df04650abb02bcf474dde6fb9b6234a361ae96f",
+        "row_count_fingerprint": "9840f50d58a3e82238de17cfe61ac797d7047577d34c5f0a0c0eaa89d3e59e67",
+        "table_count": 43,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 823296,
+            "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      }
+    },
+    "database_observations_equal": true,
+    "finished_at_utc": "2026-09-29T04:36:25.497886+00:00"
+  },
+  "guarded_smoke": {
+    "status": "PASS",
+    "started_at_utc": "2026-09-29T04:37:33.363391+00:00",
+    "finished_at_utc": "2026-09-29T04:37:35.474340+00:00",
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "arguments": {},
+        "status": "success"
+      },
+      {
+        "tool": "search_companies",
+        "arguments": {
+          "query": "昀冢科技",
+          "limit": 5
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_company",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E"
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_current_view",
+        "arguments": {
+          "node_id": "NODE_20260826_BC260F3E"
+        },
+        "status": "success"
+      },
+      {
+        "tool": "list_company_materials",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E",
+          "limit": 3
+        },
+        "status": "success"
+      },
+      {
+        "tool": "get_company_research_context",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E",
+          "recent_material_limit": 3
+        },
+        "status": "success"
+      }
+    ],
+    "database_observations_equal": true,
+    "counter_maxima": {
+      "database_write_attempts": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "non_readonly_connections": 0
+    },
+    "events": 8
+  },
+  "operator_workflow": {
+    "helpers": [
+      "scripts/mcp/start-pro-a-mcp.ps1",
+      "scripts/mcp/status-pro-a-mcp.ps1",
+      "scripts/mcp/stop-pro-a-mcp.ps1",
+      "scripts/mcp/start-pro-a-mcp.cmd",
+      "scripts/mcp/status-pro-a-mcp.cmd",
+      "scripts/mcp/stop-pro-a-mcp.cmd"
+    ],
+    "powershell_syntax": "PASS",
+    "missing_setup_fails_closed": "PASS",
+    "end_to_end_start": "PASS",
+    "idempotent_repeat_start": "PASS_SAME_MANAGED_PROCESS",
+    "execution_policy": "Fixed-purpose CMD launchers use child-process RemoteSigned; no permanent policy changes."
+  },
+  "chatgpt_web_health": {
+    "status": "PASS",
+    "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+    "operator_report_received_date": "2026-09-29",
+    "exact_tool_call_timestamp_supplied": false,
+    "service": "pro_a",
+    "pro_a_version": "0.5.1",
+    "contract_version": "pro-a-mcp-stage0-v1",
+    "production_readable": true,
+    "workbench_readable": true,
+    "workbench_schema_version": "11",
+    "read_only": true,
+    "tool_count": 11,
+    "tool_inventory_matches": true
+  },
+  "stop_unavailable_restart_recovery": {
+    "clean_native_stop": "PASS",
+    "process_count_after_stop": 0,
+    "human_web_unavailable": {
+      "status": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "fresh_health_attempts": 2,
+      "both_timed_out": true,
+      "previous_success_not_reused": true,
+      "operator_report_received_date": "2026-09-29"
+    },
+    "stable_restart": "PASS_NEW_WINDOWS_POWERSHELL",
+    "human_web_recovery": {
+      "status": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "operator_report_received_date": "2026-09-29",
+      "exact_tool_call_timestamp_supplied": false,
+      "fresh_call_succeeded": true,
+      "historical_results_not_reused": true,
+      "service": "pro_a",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "contract_version": "pro-a-mcp-stage0-v1",
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "tool_count": 11,
+      "tool_inventory_matches": true
+    },
+    "status": "PASS"
+  },
+  "new_powershell_restore": {
+    "status": "PASS",
+    "mechanism": "New Windows PowerShell 5.1 process; fixed-purpose .cmd launches stable script; managed runtime outlives launching shell.",
+    "launch": {
+      "shell_pid": 544,
+      "powershell_version": "5.1.26100.9444",
+      "credential_env_present_before_start": false,
+      "fallback_credential_env_present_before_start": false,
+      "proxy_env_present_before_start": false,
+      "started_at_utc": "2026-09-29T05:10:59.2125688Z",
+      "status": {
+        "checked_at_utc": "2026-09-29T05:11:04.6242273Z",
+        "alias": "pro-a-local",
+        "process_running": true,
+        "healthy": true,
+        "ready": true,
+        "control_plane_poll_health": {
+          "reason": "no live admin UI system snapshot",
+          "state": "unknown"
+        },
+        "control_plane_details": {
+          "status": "ok",
+          "state": "polling",
+          "observed_at": "2026-09-29T05:11:04.3369184Z",
+          "limited": false,
+          "details": {
+            "last_attempt": "2026-09-29T05:11:04.3369184Z",
+            "last_success": "2026-09-29T05:11:04.3369184Z",
+            "consecutive_failures": 0,
+            "current_poll_age_seconds": 0.2861902,
+            "configured_wait_seconds": 30,
+            "effective_wait_seconds": 30,
+            "deadline_seconds": 35
+          }
+        },
+        "proxy_details": {
+          "status": "ok",
+          "state": "healthy",
+          "observed_at": "2026-09-29T05:11:02.1499709Z",
+          "limited": false,
+          "details": {
+            "route_count": 2,
+            "routes": [
+              {
+                "label": "route-1",
+                "kind": "control_plane",
+                "state": "healthy",
+                "last_check": "2026-09-29T05:11:02.1499709Z",
+                "last_success": "2026-09-29T05:11:02.1499709Z"
+              },
+              {
+                "label": "route-2",
+                "kind": "mcp_channel",
+                "state": "direct"
+              }
+            ]
+          }
+        },
+        "mcp_details": {
+          "status": "unknown",
+          "state": "not_observed",
+          "limited": false,
+          "details": {
+            "channel": "main",
+            "transport": "stdio",
+            "child_state": "running",
+            "child_generation": "335083dc7bc147d41227af47f5c3aac5",
+            "initialize_epoch": 0,
+            "evidence": "same_child",
+            "initialize": {
+              "ok": false,
+              "identity_complete": false,
+              "limited": false,
+              "capability_names": []
+            },
+            "tools_list": {
+              "ok": false,
+              "tool_names": [],
+              "retained_count": 0,
+              "complete": false,
+              "partial": false,
+              "limited": false
+            }
+          }
+        },
+        "health_error": null
+      },
+      "finished_at_utc": "2026-09-29T05:11:04.8476127Z"
+    },
+    "after_launch_shell_exit": {
+      "checked_at_utc": "2026-09-29T05:11:49.5503771Z",
+      "launch_shell_exited": true,
+      "status": {
+        "checked_at_utc": "2026-09-29T05:11:49.4843735Z",
+        "alias": "pro-a-local",
+        "process_running": true,
+        "healthy": true,
+        "ready": true,
+        "control_plane_poll_health": {
+          "reason": "no live admin UI system snapshot",
+          "state": "unknown"
+        },
+        "control_plane_details": {
+          "status": "ok",
+          "state": "polling",
+          "observed_at": "2026-09-29T05:11:49.4305239Z",
+          "limited": false,
+          "details": {
+            "last_attempt": "2026-09-29T05:11:49.4305239Z",
+            "last_success": "2026-09-29T05:11:49.4305239Z",
+            "consecutive_failures": 0,
+            "current_poll_age_seconds": 0.051821,
+            "configured_wait_seconds": 30,
+            "effective_wait_seconds": 30,
+            "deadline_seconds": 35
+          }
+        },
+        "proxy_details": {
+          "status": "ok",
+          "state": "healthy",
+          "observed_at": "2026-09-29T05:11:02.1499709Z",
+          "limited": false,
+          "details": {
+            "route_count": 2,
+            "routes": [
+              {
+                "label": "route-1",
+                "kind": "control_plane",
+                "state": "healthy",
+                "last_check": "2026-09-29T05:11:02.1499709Z",
+                "last_success": "2026-09-29T05:11:02.1499709Z"
+              },
+              {
+                "label": "route-2",
+                "kind": "mcp_channel",
+                "state": "direct"
+              }
+            ]
+          }
+        },
+        "mcp_details": {
+          "status": "unknown",
+          "state": "not_observed",
+          "limited": false,
+          "details": {
+            "channel": "main",
+            "transport": "stdio",
+            "child_state": "running",
+            "child_generation": "335083dc7bc147d41227af47f5c3aac5",
+            "initialize_epoch": 0,
+            "evidence": "same_child",
+            "initialize": {
+              "ok": false,
+              "identity_complete": false,
+              "limited": false,
+              "capability_names": []
+            },
+            "tools_list": {
+              "ok": false,
+              "tool_names": [],
+              "retained_count": 0,
+              "complete": false,
+              "partial": false,
+              "limited": false
+            }
+          }
+        },
+        "health_error": null
+      }
+    },
+    "bindings": {
+      "profile_mtime_unchanged": false,
+      "venv_config_content_unchanged": true,
+      "venv_config_mtime_unchanged": true,
+      "same_file_reference": true,
+      "same_tunnel_id": true,
+      "same_command_arguments": true,
+      "native_profile_rewritten": true,
+      "command_serialization_change": "Windows PowerShell native argument marshalling removed optional path quotes; all eight command arguments remain identical for these paths.",
+      "quoted_command_preserved_after_fix": true,
+      "final_profile_content_matches_initial": true,
+      "command_serialization_fix": "Escape quotes for Windows PowerShell native marshalling; idempotent start retains the same running process.",
+      "before_quote_fix_profile_content_unchanged": false,
+      "before_quote_fix_same_stdio_command": false
+    },
+    "first_attempt": {
+      "status": "FAILED_BEFORE_START",
+      "reason": "v0.0.15 connect requires explicit MCP target even for an existing alias",
+      "resolution": "Persist non-secret Tunnel ID and private config path locally; helper supplies fixed pro_a stdio target and existing key reference."
+    },
+    "manual_venv_recreation": false,
+    "manual_profile_reconstruction": false,
+    "manual_key_retrieval": false,
+    "native_profile_serialization": "Native connect writes the same generated profile; final content hash matches initial, mtime is not claimed unchanged."
+  },
+  "auto_start": "DEFERRED",
+  "auto_start_reason": "Deferred: reliable proxy availability at user logon is unqualified; no scheduled task or service created.",
+  "counters": {
+    "production_writes": 0,
+    "workbench_writes": 0,
+    "provider_calls": 0,
+    "retry_calls": 0,
+    "reprocess_calls": 0,
+    "advertised_mutation_tools": 0
+  },
+  "counter_scope": "Completed measured local MCP calls and accepted human Web health/loss/recovery observations. Final read-only integrity and DB/schema/count/hash evidence match initial state. No continuous remote/host-wide action trace is claimed.",
+  "limitations": [
+    "Native summary poll health remains unknown while detailed health reports successful polling. Same-child MCP telemetry has not observed initialization/discovery; Web call evidence is operator attestation, not inferred from that telemetry.",
+    "No auto-start, reboot, sleep recovery or always-on availability claim.",
+    "Windows Python must remain installed; updates require requalification.",
+    "Context remains sequential rather than atomic; private failed material is not canonical evidence."
+  ],
+  "git_governance": {
+    "commit_allowed_only_after_pass": true,
+    "publication": "Authorized commit/push and Draft PR against main after complete diff and credential/private-path review. Commit SHA and PR URL are reported externally after publication.",
+    "tracked_scope": "Six fixed-purpose operational launchers and two sanitized qualification documents only.",
+    "private_config_or_key_or_profile_or_logs_committed": false,
+    "runtime_business_code_changed": false,
+    "merge_authorized": false
+  },
+  "managed_runtime_observations": {
+    "initial": {
+      "checked_at_utc": "2026-09-29T04:59:37.4106533Z",
+      "alias": "pro-a-local",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "native_control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T04:59:19.7156624Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T04:59:19.7156624Z",
+          "last_success": "2026-09-29T04:59:19.7156624Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 17.6411096,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "proxy": {
+        "status": "ok",
+        "state": "healthy",
+        "observed_at": "2026-09-29T04:58:48.266564Z",
+        "limited": false,
+        "details": {
+          "route_count": 2,
+          "routes": [
+            {
+              "label": "route-1",
+              "kind": "control_plane",
+              "state": "healthy",
+              "last_check": "2026-09-29T04:58:48.266564Z",
+              "last_success": "2026-09-29T04:58:48.266564Z"
+            },
+            {
+              "label": "route-2",
+              "kind": "mcp_channel",
+              "state": "direct"
+            }
+          ]
+        }
+      },
+      "cloudflared": "disabled"
+    },
+    "after_human_web": {
+      "checked_at_utc": "2026-09-29T05:02:36.9414363Z",
+      "alias": "pro-a-local",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T05:02:24.4514896Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T05:02:24.4514896Z",
+          "last_success": "2026-09-29T05:02:24.4514896Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 12.4883272,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "proxy_details": {
+        "status": "ok",
+        "state": "healthy",
+        "observed_at": "2026-09-29T05:01:48.2673845Z",
+        "limited": false,
+        "details": {
+          "route_count": 2,
+          "routes": [
+            {
+              "label": "route-1",
+              "kind": "control_plane",
+              "state": "healthy",
+              "last_check": "2026-09-29T05:01:48.2673845Z",
+              "last_success": "2026-09-29T05:01:48.2673845Z"
+            },
+            {
+              "label": "route-2",
+              "kind": "mcp_channel",
+              "state": "direct"
+            }
+          ]
+        }
+      },
+      "mcp_details": {
+        "status": "unknown",
+        "state": "not_observed",
+        "limited": false,
+        "details": {
+          "channel": "main",
+          "transport": "stdio",
+          "child_state": "running",
+          "child_generation": "34e3682f7358dd99f4acdd119fba2c02",
+          "initialize_epoch": 0,
+          "evidence": "same_child",
+          "initialize": {
+            "ok": false,
+            "identity_complete": false,
+            "limited": false,
+            "capability_names": []
+          },
+          "tools_list": {
+            "ok": false,
+            "tool_names": [],
+            "retained_count": 0,
+            "complete": false,
+            "partial": false,
+            "limited": false
+          }
+        }
+      },
+      "health_error": null
+    },
+    "clean_stop": {
+      "checked_at_utc": "2026-09-29T05:02:39.5843178Z",
+      "alias": "pro-a-local",
+      "process_running": false,
+      "healthy": false,
+      "ready": false,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": null,
+      "proxy_details": null,
+      "mcp_details": null,
+      "health_error": null
+    },
+    "final_after_web_recovery": {
+      "checked_at_utc": "2026-09-29T05:18:55.1220725Z",
+      "alias": "pro-a-local",
+      "process_running": true,
+      "healthy": true,
+      "ready": true,
+      "control_plane_poll_health": {
+        "reason": "no live admin UI system snapshot",
+        "state": "unknown"
+      },
+      "control_plane_details": {
+        "status": "ok",
+        "state": "polling",
+        "observed_at": "2026-09-29T05:18:27.0787858Z",
+        "limited": false,
+        "details": {
+          "last_attempt": "2026-09-29T05:18:27.0787858Z",
+          "last_success": "2026-09-29T05:18:27.0787858Z",
+          "consecutive_failures": 0,
+          "current_poll_age_seconds": 28.0412521,
+          "configured_wait_seconds": 30,
+          "effective_wait_seconds": 30,
+          "deadline_seconds": 35
+        }
+      },
+      "proxy_details": {
+        "status": "ok",
+        "state": "healthy",
+        "observed_at": "2026-09-29T05:18:02.1509629Z",
+        "limited": false,
+        "details": {
+          "route_count": 2,
+          "routes": [
+            {
+              "label": "route-1",
+              "kind": "control_plane",
+              "state": "healthy",
+              "last_check": "2026-09-29T05:18:02.1509629Z",
+              "last_success": "2026-09-29T05:18:02.1509629Z"
+            },
+            {
+              "label": "route-2",
+              "kind": "mcp_channel",
+              "state": "direct"
+            }
+          ]
+        }
+      },
+      "mcp_details": {
+        "status": "unknown",
+        "state": "not_observed",
+        "limited": false,
+        "details": {
+          "channel": "main",
+          "transport": "stdio",
+          "child_state": "running",
+          "child_generation": "335083dc7bc147d41227af47f5c3aac5",
+          "initialize_epoch": 0,
+          "evidence": "same_child",
+          "initialize": {
+            "ok": false,
+            "identity_complete": false,
+            "limited": false,
+            "capability_names": []
+          },
+          "tools_list": {
+            "ok": false,
+            "tool_names": [],
+            "retained_count": 0,
+            "complete": false,
+            "partial": false,
+            "limited": false
+          }
+        }
+      },
+      "health_error": null
+    }
+  },
+  "final_integrity": {
+    "checked_at_utc": "2026-09-29T05:20:26.175035+00:00",
+    "current": {
+      "production": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 92,
+        "schema_fingerprint": "286729b8decec7a77e7f5d0ed17a639dff2bb2506d989c169547fb0b6f429927",
+        "row_count_fingerprint": "b130e49bd17bd37072552389773d5b73a2e7e79f2b0862bbe652b60e6e559ba1",
+        "table_count": 22,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 5410816,
+            "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      },
+      "workbench": {
+        "integrity_ok": true,
+        "journal_mode": "delete",
+        "schema_version": 129,
+        "schema_fingerprint": "08b8cf673086c223231da5039df04650abb02bcf474dde6fb9b6234a361ae96f",
+        "row_count_fingerprint": "9840f50d58a3e82238de17cfe61ac797d7047577d34c5f0a0c0eaa89d3e59e67",
+        "table_count": 43,
+        "files": {
+          "database": {
+            "exists": true,
+            "bytes": 823296,
+            "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+          },
+          "wal": {
+            "exists": false
+          },
+          "shm": {
+            "exists": false,
+            "bytes": null
+          }
+        },
+        "files_stable_during_snapshot": true
+      }
+    },
+    "matches_initial_stage2_before": true,
+    "integrity_ok": true,
+    "method": "Read-only transaction integrity/schema/count snapshots with DB/WAL hash observations; no checkpoint or write operations."
+  }
+}
