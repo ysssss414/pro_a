@@ -342,6 +342,7 @@ class ChatLLM:
             raise LLMError(f"Unexpected LLM response: {data}")
 
         usage = data.get("usage")
+        token_details = usage.get("prompt_tokens_details") if isinstance(usage, dict) else None
         response_id = self._attempt_events[-1].get("provider_request_id")
         self._attempt_events[-1].update(
             provider_request_id=safe_request_id(response_id),
@@ -356,6 +357,11 @@ class ChatLLM:
             total_tokens=(
                 usage.get("total_tokens") if isinstance(usage, dict) else None
             ),
+            cached_tokens=(
+                usage.get("prompt_cache_hit_tokens", token_details.get("cached_tokens")
+                          if isinstance(token_details, dict) else None)
+                if isinstance(usage, dict) else None
+            ),
             content_length=len(content),
             content_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
             **_raw_json_syntax(content),
@@ -364,7 +370,7 @@ class ChatLLM:
         details = _completion_details(data, choice, content)
         if finish_reason == "length":
             self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE",
-                                             error_class="OUTPUT_PARSE_ERROR")
+                                             error_class="OUTPUT_PARSE_ERROR", output_parse_kind="TRUNCATED")
             self._attempt_events[-1].update(
                 result="output_truncation",
                 content_tail=content[-500:],
@@ -379,32 +385,32 @@ class ChatLLM:
                 f"content_tail={json.dumps(content[-500:], ensure_ascii=False)}"
             )
         if finish_reason == "content_filter":
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="CONTENT_FILTER")
             raise LLMError(f"LLM JSON output blocked: {details}")
         if finish_reason == "insufficient_system_resource":
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="INSUFFICIENT_SYSTEM_RESOURCE")
             raise LLMError(f"LLM JSON output interrupted: {details}")
         if finish_reason == "tool_calls":
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="TOOL_CALLS")
             raise LLMError(f"LLM returned tool calls instead of JSON content: {details}")
         if finish_reason != "stop":
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="UNEXPECTED_FINISH_REASON")
             raise LLMError(f"Unexpected LLM finish_reason: {details}")
         if not content.strip():
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="RESPONSE_EMPTY")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="RESPONSE_EMPTY", output_parse_kind="EMPTY_CONTENT")
             raise LLMError(f"LLM returned empty JSON content: {details}")
 
         try:
             parsed = _extract_json(content)
         except json.JSONDecodeError as e:
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="MALFORMED_JSON")
             raise LLMError(
                 f"LLM returned non-JSON content: {details}; "
                 f"JSONDecodeError: {e.msg} at position {e.pos}; "
                 f"content={content[:2000]}"
             ) from e
         if not isinstance(parsed, dict):
-            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR")
+            self._attempt_events[-1].update(failure_stage="MODEL_OUTPUT_PARSE", error_class="OUTPUT_PARSE_ERROR", output_parse_kind="NON_OBJECT_JSON")
             raise LLMError(f"LLM returned non-object JSON content: {details}")
         self._attempt_events[-1]["result"] = "success"
         return parsed

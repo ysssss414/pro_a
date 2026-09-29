@@ -285,8 +285,9 @@ def test_semantic_surface_mutation_makes_qualification_block(
             else specification is compatibility._NATIVE_EXECUTION_SURFACE
         )
         if selected:
-            assert target[name].count(original) == 1
-            target[name] = target[name].replace(original, replacement, 1)
+            normalized = target[name].replace(b'\r\n', b'\n')
+            assert normalized.count(original) == 1
+            target[name] = normalized.replace(original, replacement, 1)
         return historical, target
 
     monkeypatch.setattr(compatibility, '_execution_surface_sources', adversarial_sources)
@@ -309,6 +310,7 @@ def test_operation_adapter_repair_is_not_compatible_with_pre_binding_release():
     package = compatibility.Path(compatibility.__file__).resolve().parent.parent
     root = package.parents[1]
     baseline = '1966c24d37644d02c9c0c3496725a177ab437106'
+    binding_release = '5eb9d6bedd97a615a5ef56e143840e17aa8ba6ad'
     for kind, specification in (
             ('cloud', compatibility._CLOUD_EXECUTION_SURFACE),
             ('native', compatibility._NATIVE_EXECUTION_SURFACE)):
@@ -318,7 +320,11 @@ def test_operation_adapter_repair_is_not_compatible_with_pre_binding_release():
             )
             for name in specification
         }
-        target = {name: (package / name).read_bytes() for name in specification}
+        # This assertion concerns the binding repair itself, not later changes
+        # to the live checkout's LLM or persistence execution surface.
+        target = {name: subprocess.check_output(
+            ['git', 'show', f'{binding_release}:src/pro_a/{name}'], cwd=root,
+        ) for name in specification}
         if kind == 'cloud':
             # The old profile lacks the operation-binding dependency. Its
             # execution surface must fail closed, never normalize to this repair.
@@ -328,6 +334,15 @@ def test_operation_adapter_repair_is_not_compatible_with_pre_binding_release():
         before = compatibility._surface_manifest(historical, specification)
         after = compatibility._surface_manifest(target, specification)
         assert after['semantic_surface_sha256'] == before['semantic_surface_sha256']
+
+
+@pytest.mark.parametrize('kind', ['cloud', 'native'])
+def test_output_telemetry_repair_changes_execution_surface(kind):
+    from pro_a.workbench.retry_compatibility import _execution_surface_comparison
+
+    result = _execution_surface_comparison(kind, '5eb9d6bedd97a615a5ef56e143840e17aa8ba6ad')
+    assert result['compatible'] is False
+    assert result['reason'] == 'SEMANTIC_SURFACE_CHANGED'
 
 
 def test_unrepresented_helper_dependency_fails_closed():
