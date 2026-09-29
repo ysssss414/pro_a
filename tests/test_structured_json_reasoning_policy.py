@@ -153,7 +153,9 @@ def test_structured_dual_adapter_e2e_reasoning_zero_durable_and_private(tmp_path
         payload = kwargs["json"]
         assert payload["thinking"] == {"type": "disabled"}
         assert "reasoning_effort" not in payload
-        assert payload["model"] == "deepseek-flash" and payload["max_tokens"] == 8192
+        from pro_a.prompts import SOURCE_ANALYSIS_SYSTEM
+        expected_output = 12000 if payload["messages"][0]["content"] == SOURCE_ANALYSIS_SYSTEM else 8192
+        assert payload["model"] == "deepseek-flash" and payload["max_tokens"] == expected_output
         assert payload["response_format"] == {"type": "json_object"}
         calls.append(payload["messages"][0]["content"])
         response = original(*args, **kwargs)
@@ -177,7 +179,8 @@ def test_structured_dual_adapter_e2e_reasoning_zero_durable_and_private(tmp_path
         assert contract["thinking_mode"] == "disabled"
         assert row["provider_adapter_version"] == adapter_version_for_operation(row["operation_kind"])
         assert row["provider_adapter_version"].endswith("-v2")
-        assert (row["max_output_tokens"], row["max_total_tokens"]) == (8192, 20000)
+        expected_output = 12000 if row["operation_kind"] == SOURCE_ANALYSIS_OPERATION else 8192
+        assert (row["max_output_tokens"], row["max_total_tokens"]) == (expected_output, 20000)
         assert value["service"].jobs.private_result(row["job_id"])["usage"]["reasoning_tokens"] == 0
         with value["service"].store.connect() as c:
             completed = [json.loads(r[0]) for r in c.execute("SELECT event_json FROM cloud_job_events WHERE job_id=? AND event_type='PROVIDER_ATTEMPT_COMPLETED'", (row["job_id"],))]

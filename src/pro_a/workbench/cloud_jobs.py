@@ -19,6 +19,7 @@ from pro_a.cloud_contract import (
     ADAPTER_VERSION,
     CONTRACT_VERSION,
     OPERATION_KIND,
+    OPERATION_OUTPUT_BUDGET_POLICY_VERSION,
     RETRY_OWNER,
     RETRY_POLICY_ID,
     CloudContractError,
@@ -31,6 +32,7 @@ from pro_a.cloud_contract import (
     now,
     operation_contract,
     adapter_version_for_operation,
+    budget_for_operation,
     validate_output,
 )
 from pro_a.phase4_orchestration import _runtime as phase4_runtime
@@ -125,6 +127,11 @@ class CloudProfile:
         value["retry_owner"] = RETRY_OWNER
         value["retry_policy_id"] = RETRY_POLICY_ID
         value["hidden_fallback"] = False
+        value["operation_output_budget_policy_version"] = OPERATION_OUTPUT_BUDGET_POLICY_VERSION
+        value["operation_output_budgets"] = {
+            operation: budget_for_operation(operation, self.max_total_tokens)
+            for operation in ("SOURCE_ANALYSIS_PIECE", OPERATION_KIND)
+        }
         value["configuration_sha256"] = digest(value)
         return value
 
@@ -401,6 +408,7 @@ class CloudJobs:
         operation = operation_contract(operation_kind)
         runtime = self.current_runtime()
         configuration = self.profile.public_identity()
+        budget = budget_for_operation(operation_kind, self.profile.max_total_tokens)
         with self.store.connect() as connection:
             prior = connection.execute(
                 "SELECT s.job_id,j.input_artifact_id,j.operation_kind,j.runtime_sha256,j.prompt_json,"
@@ -455,8 +463,8 @@ class CloudJobs:
                 canonical(operation), prompt_sha, canonical(configuration), configuration["configuration_sha256"],
                 canonical(checkpoint), self.profile.provider, self.profile.requested_model,
                 canonical(list(self.profile.accepted_model_aliases)), self.profile.adapter_for_operation(operation_kind),
-                self.profile.timeout_seconds, self.profile.max_output_tokens, self.profile.max_calls,
-                self.profile.max_attempts, self.profile.max_total_tokens, RETRY_OWNER, RETRY_POLICY_ID,
+                self.profile.timeout_seconds, budget["max_output_tokens"], self.profile.max_calls,
+                self.profile.max_attempts, budget["max_total_tokens"], RETRY_OWNER, RETRY_POLICY_ID,
                 "QUEUED", "QUEUED", created, created,
             ))
             self._event(connection, job_id, "JOB_CREATED", {
@@ -646,7 +654,9 @@ class CloudJobs:
             raise JobError("CONFIGURATION_IDENTITY_CORRUPT") from None
         if (stored_configuration_hash != digest(configuration_basis)
                 or row["configuration_sha256"] != stored_configuration_hash
-                or canonical(stored_configuration) != canonical(self.profile.public_identity())):
+                or canonical(stored_configuration) != canonical(self.profile.public_identity())
+                or any(row[key] != value for key, value in
+                       budget_for_operation(row["operation_kind"], self.profile.max_total_tokens).items())):
             raise JobError("CONFIGURATION_IDENTITY_MISMATCH")
         if (row["provider_adapter_version"] != self.profile.adapter_for_operation(row["operation_kind"])
                 or provider.provider_identity != row["provider"]

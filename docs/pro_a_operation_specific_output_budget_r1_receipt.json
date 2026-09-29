@@ -1,0 +1,322 @@
+{
+  "task": "PRO_A_OPERATION_SPECIFIC_OUTPUT_BUDGET_R1",
+  "result": "PASS",
+  "baseline_sha": "232b05fbbf32c7648876ec1fb58c94e0374c3bc1",
+  "implementation_sha": "06fba3a07310549dbc134e3f852f74cb86619905",
+  "branch": "codex/pro-a-operation-specific-output-budget-r1",
+  "qualification_scope": "Synthetic/offline only; no live 12000-token success claim",
+  "budget_policy_version": "operation-output-budget-v1",
+  "operation_output_budgets": {
+    "SOURCE_ANALYSIS_PIECE": {
+      "max_output_tokens": 12000,
+      "max_total_tokens": 20000
+    },
+    "SEMANTIC_DECOMPOSITION": {
+      "max_output_tokens": 8192,
+      "max_total_tokens": 20000
+    }
+  },
+  "CloudProfile_base_max_output_tokens": 8192,
+  "CloudProfile_global_max_output_changed_to_12000": false,
+  "effective_mapping_frozen": true,
+  "configuration_identity_changes": true,
+  "job_intent_and_run_context_identity_change": true,
+  "idempotency_policy_drift_rejected": true,
+  "job_row_budget_operation_specific": true,
+  "request_budget_operation_specific": true,
+  "provider_config_operation_specific": true,
+  "semantic_input_budget": 11808,
+  "semantic_input_budget_changed": false,
+  "semantic_boundary_tests": {
+    "accepted": [
+      8001,
+      11807,
+      11808
+    ],
+    "rejected": [
+      11809
+    ]
+  },
+  "extraction_cap": 5000,
+  "extraction_cap_changed": false,
+  "capacity_policy_version": "source-analysis-capacity-v1",
+  "planner": "PHASE3E2SL6_PRECALL_PARTITION_V2",
+  "structured_thinking": "disabled",
+  "thinking_policy_version": "structured-json-reasoning-v1",
+  "thinking_policy_changed": false,
+  "reasoning_effort_sent": false,
+  "reasoning_content_persisted": false,
+  "adapters": {
+    "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+    "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+  },
+  "adapter_version_unnecessarily_changed": false,
+  "prompt_changed": false,
+  "parser_changed": false,
+  "retryability_changed": false,
+  "max_total_tokens_changed": false,
+  "schema_migration": false,
+  "new_extraction_frozen_reconstruction": "PASS",
+  "new_semantic_frozen_reconstruction": "PASS",
+  "frozen_row_drift_rejected": {
+    "extraction_output": [
+      11999,
+      12001
+    ],
+    "semantic_output": [
+      8191,
+      8193
+    ],
+    "total": [
+      19999,
+      20001
+    ]
+  },
+  "historical_8192_reconstruction": "RETRY_FROZEN_CONFIG_INCOMPLETE; no normalization",
+  "historical_context_readable_without_backfill": true,
+  "historical_context_resume": "PROCESSING_RUN_CONTEXT_DRIFT",
+  "historical_jobs_rewritten": false,
+  "budget_failure_tests": {
+    "output_above_total_both_operations": "BUDGET_EXCEEDED before dispatch",
+    "cumulative_reservation_exact_boundary": "PASS",
+    "cumulative_reservation_one_above_boundary": "BUDGET_EXCEEDED before dispatch"
+  },
+  "synthetic_extraction_above_8192": {
+    "status": "PASS",
+    "completion_tokens": 10000,
+    "reasoning_tokens": 0,
+    "finish_reason": "stop",
+    "validation": "PASS"
+  },
+  "synthetic_dual_adapter_e2e": {
+    "status": "PASS",
+    "state": "HUMAN_REVIEW_REQUIRED",
+    "real_adapter_classes": true,
+    "transport": "Synthetic HTTP",
+    "wire_max_tokens": [
+      12000,
+      8192
+    ],
+    "Review_Packet_registered": true,
+    "review_decisions": 0,
+    "Production_unchanged": true
+  },
+  "new_ceiling_truncation": {
+    "completion_tokens": 12000,
+    "finish_reason": "length",
+    "output_parse_kind": "TRUNCATED",
+    "retryable": false
+  },
+  "cross_release_fail_closed": true,
+  "cross_release_cloud_reason": "SEMANTIC_SURFACE_CHANGED",
+  "run_5_historical_evidence": {
+    "source_chars": 4828,
+    "prompt_chars": 7649,
+    "http_status": 200,
+    "model": "deepseek-flash",
+    "thinking": {
+      "type": "disabled"
+    },
+    "reasoning_effort_sent": false,
+    "input_tokens": 6441,
+    "output_tokens": 8192,
+    "max_output_tokens": 8192,
+    "total_tokens": 14633,
+    "cached_tokens": 0,
+    "reasoning_tokens": null,
+    "reasoning_usage_status": "UNKNOWN",
+    "content_length": 23294,
+    "finish_reason": "length",
+    "output_parse_kind": "TRUNCATED",
+    "json_error_position": 23290
+  },
+  "run_5_interpretation": "Visible final JSON was generated and hit the frozen 8192 completion ceiling in this exact non-thinking extraction attempt. Omitted reasoning breakdown remains unknown; no universal 5k failure claim.",
+  "tests": {
+    "focused_passed": 25,
+    "regression_passed": 756,
+    "passed": 781,
+    "skipped": 2,
+    "failed": 0,
+    "files": {
+      "tests/test_cloud_operation_adapter_binding.py": {
+        "passed": 24,
+        "skipped": 0
+      },
+      "tests/test_extraction_capacity.py": {
+        "passed": 21,
+        "skipped": 0
+      },
+      "tests/test_llm.py": {
+        "passed": 36,
+        "skipped": 0
+      },
+      "tests/test_mcp_stage0.py": {
+        "passed": 30,
+        "skipped": 0
+      },
+      "tests/test_mcp_stage3.py": {
+        "passed": 51,
+        "skipped": 0
+      },
+      "tests/test_operation_output_budget.py": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests/test_operational_ingestion.py": {
+        "passed": 9,
+        "skipped": 1
+      },
+      "tests/test_per_piece_node_catalog.py": {
+        "passed": 6,
+        "skipped": 0
+      },
+      "tests/test_phase3c_semantic_failure_repair.py": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests/test_phase3e2sl2_bounded_semantic_closure.py": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests/test_phase3e2sl6_precall_partition.py": {
+        "passed": 10,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage0.py": {
+        "passed": 171,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage1_operator_scale.py": {
+        "passed": 14,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage3_cross_domain.py": {
+        "passed": 18,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage71_shared_core_pending.py": {
+        "passed": 14,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72a_provider_diagnostics.py": {
+        "passed": 28,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72b_extraction_retry.py": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72c_retry_compatibility.py": {
+        "passed": 35,
+        "skipped": 0
+      },
+      "tests/test_phase4_orchestration.py": {
+        "passed": 40,
+        "skipped": 1
+      },
+      "tests/test_piece_local_evidence_provenance.py": {
+        "passed": 11,
+        "skipped": 0
+      },
+      "tests/test_provider_output_failure_telemetry.py": {
+        "passed": 43,
+        "skipped": 0
+      },
+      "tests/test_semantic_admission.py": {
+        "passed": 49,
+        "skipped": 0
+      },
+      "tests/test_semantic_gold_replay.py": {
+        "passed": 2,
+        "skipped": 0
+      },
+      "tests/test_structured_json_reasoning_policy.py": {
+        "passed": 41,
+        "skipped": 0
+      },
+      "tests/test_workbench_stage6.py": {
+        "passed": 33,
+        "skipped": 0
+      },
+      "tests/test_workbench_stage7.py": {
+        "passed": 15,
+        "skipped": 0
+      }
+    },
+    "skip_details": [
+      {
+        "test": "tests.test_operational_ingestion::test_known_fixture_end_to_end_semantic_equivalence",
+        "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+      },
+      {
+        "test": "tests.test_phase4_orchestration::test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+        "reason": "private frozen workflow unavailable"
+      }
+    ],
+    "full_repository_run": false,
+    "rerun_note": "Initial focused checks exposed strict context field allowlists and a mismatched disposable fixture; both were repaired. PowerShell singleton argument expansion and supplemental context import paths were corrected. The first contract matrix had 21 failures from the old extraction 8192 wire assertion; only that assertion changed to 12000 and all 43 telemetry cases passed on rerun. Final counts deduplicate these cases."
+  },
+  "build": {
+    "status": "PASS",
+    "packaged_python_files": 129,
+    "wheel_sha256": "e42818bda78097b5eea9c78caf1ccb78ac9da6d6d8acac52b21d5f9d0142feb4",
+    "source_wheel_installed_byte_match": true,
+    "operation_policy_verified": true,
+    "extraction_max_output_tokens": 12000,
+    "semantic_max_output_tokens": 8192,
+    "base_max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "semantic_input_budget": 11808,
+    "selected_cap": 5000,
+    "mcp_tool_count": 14,
+    "protected_files_unchanged": [
+      "analyzer.py",
+      "prompts.py",
+      "parsers.py",
+      "llm.py",
+      "provider_diagnostics.py",
+      "semantic_decomposition.py",
+      "phase4_retry.py",
+      "operational_ingestion.py",
+      "phase4_orchestration.py",
+      "workbench/stage1_scale.py",
+      "workbench/retry_compatibility.py"
+    ],
+    "existing_adapter_contract_functions_unchanged": true,
+    "reservation_failure_persistence_functions_unchanged": true,
+    "isolated_pep517_build": "PASS",
+    "compileall": "PASS",
+    "pip_check": "PASS"
+  },
+  "real_state": {
+    "status": "UNCHANGED",
+    "before_snapshot_sha256": "06ae1cbf0d98471e5b011eed13cf81af56ec43af0f1440ccb1141a6aa75db604",
+    "after_snapshot_sha256": "06ae1cbf0d98471e5b011eed13cf81af56ec43af0f1440ccb1141a6aa75db604",
+    "source": "UNCHANGED",
+    "historical_runs_1_to_5": "UNCHANGED",
+    "attempt_counts": [
+      0,
+      2,
+      1,
+      1,
+      1
+    ],
+    "jobs_attempts_outcomes_events": "UNCHANGED",
+    "Production": "UNCHANGED",
+    "Workbench": "UNCHANGED",
+    "stable_runtime": "UNCHANGED"
+  },
+  "real_provider_calls": 0,
+  "new_real_runs": 0,
+  "Run_6_created": false,
+  "historical_runs_mutated": false,
+  "Production_writes": 0,
+  "real_Workbench_writes": 0,
+  "Review_mutations": 0,
+  "Current_View_mutations": 0,
+  "Production_Apply": 0,
+  "publication_privacy": "PASS",
+  "git_diff_check": "PASS",
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "LIVE_12K_EXTRACTION_VALIDATION_REQUIRED_AFTER_MERGE": true
+}

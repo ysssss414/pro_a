@@ -24,7 +24,7 @@ def fail_run(tmp_path, monkeypatch, content, reason, usage, *, model="deepseek-f
     calls = []
     def post(*args, **kwargs):
         calls.append(1)
-        assert kwargs['json']['max_tokens'] == 8192
+        assert kwargs['json']['max_tokens'] == 12000
         assert kwargs['json']['response_format'] == {'type': 'json_object'}
         return Response({'model': model, 'choices': [{'finish_reason': reason,
                         'message': {'content': content}}], 'usage': usage},

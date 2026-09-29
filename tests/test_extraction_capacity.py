@@ -228,8 +228,9 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
 
     def post(_url, **kwargs):
         request = kwargs["json"]
-        assert request["model"] == "deepseek-flash" and request["max_tokens"] == 8192
+        assert request["model"] == "deepseek-flash"
         user = request["messages"][1]["content"]
+        assert request["max_tokens"] == (12000 if user in prompts else 8192)
         if user in prompts:
             text = prompts[user]
             output = copy.deepcopy(DeterministicFakeProvider._source_analysis_output(
@@ -272,7 +273,8 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     assert all(j["state"] == "SUCCEEDED" and j["validation_status"] == "PASS" for j in all_jobs)
     assert all(j["provider_adapter_version"] == adapter_version_for_operation(j["operation_kind"])
                for j in all_jobs)
-    assert all(j["max_output_tokens"] == 8192 and j["max_total_tokens"] == 20000 for j in all_jobs)
+    assert all(j["max_output_tokens"] == (12000 if j["operation_kind"] == SOURCE_ANALYSIS_OPERATION else 8192)
+               and j["max_total_tokens"] == 20000 for j in all_jobs)
     assert all(j["attempt_count"] == 1 for j in all_jobs)
     assert len(calls) == len(all_jobs) and min(response_bytes) > 20_000
     assert sum(response_claims) == 160

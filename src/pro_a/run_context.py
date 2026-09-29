@@ -32,7 +32,9 @@ def validate_basis(basis):
     sha(runtime['runtime_sha256'])
     require(digest({k: v for k, v in runtime.items() if k != 'runtime_sha256'}) == runtime['runtime_sha256'], 'CONTEXT_RUNTIME_CORRUPT')
     model = basis['model_configuration']
-    fields(model, 'provider requested_model accepted_model_aliases provider_adapter_version timeout_seconds max_output_tokens max_calls max_attempts max_total_tokens retry_owner retry_policy_id hidden_fallback configuration_sha256')
+    budget_fields = (' operation_output_budget_policy_version operation_output_budgets'
+                     if isinstance(model, dict) and {'operation_output_budget_policy_version', 'operation_output_budgets'} & model.keys() else '')
+    fields(model, 'provider requested_model accepted_model_aliases provider_adapter_version timeout_seconds max_output_tokens max_calls max_attempts max_total_tokens retry_owner retry_policy_id hidden_fallback configuration_sha256' + budget_fields)
     require(digest({k: v for k, v in model.items() if k != 'configuration_sha256'}) == model['configuration_sha256'], 'CONTEXT_MODEL_CORRUPT')
     require(basis['execution_policy'] == 'OFFLINE_REPLAY_ONLY', 'DOMAIN_ACTIVATION_REQUIRED')
 

@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 from pypdf import PdfReader
 
 from pro_a.config import load_config
+from pro_a.cloud_contract import budget_for_operation
 from pro_a.operational_ingestion import plan_external_source_analysis
 from pro_a.phase4_orchestration import resume_execution, start_execution
 from pro_a.phase4_retry import RetryPolicy
@@ -97,12 +98,16 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
             or url.query or url.fragment or url.path not in ("", "/", "/v1", "/v1/")):
         raise SourceOperationError("PROVIDER_CONFIGURATION_MISMATCH", 422)
     effective = replace(llm_config, timeout_seconds=cloud_profile.timeout_seconds,
-                        max_output_tokens=cloud_profile.max_output_tokens, max_retries=0)
+                        max_retries=0)
     return {
         SOURCE_ANALYSIS_OPERATION: SourceAnalysisPieceProvider(
-            ChatLLM(effective), provider_identity=cloud_profile.provider),
+            ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
+                SOURCE_ANALYSIS_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"])),
+            provider_identity=cloud_profile.provider),
         SEMANTIC_OPERATION: SemanticBackendProvider(
-            ChatLLMSemanticBackend(ChatLLM(effective)), provider_identity=cloud_profile.provider),
+            ChatLLMSemanticBackend(ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
+                SEMANTIC_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"]))),
+            provider_identity=cloud_profile.provider),
     }
 
 
@@ -1053,8 +1058,9 @@ class SourceOperations:
                           "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],
                           "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
             claims = list(document["payload"].get("claims") or [])
+            semantic_budget = budget_for_operation(SEMANTIC_OPERATION, self.jobs.profile.max_total_tokens)
             input_token_budget = (
-                self.jobs.profile.max_total_tokens - self.jobs.profile.max_output_tokens
+                semantic_budget["max_total_tokens"] - semantic_budget["max_output_tokens"]
             )
             try:
                 batches = partition_semantic_claims(
