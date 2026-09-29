@@ -1,0 +1,871 @@
+{
+  "stage": "PRO_A_MCP_STAGE1_SECURE_TUNNEL_CHATGPT_READONLY_SMOKE",
+  "status": "PASS",
+  "initial_gate": "BLOCKED_TUNNEL_AUTH",
+  "operator_continuation": "COMPLETED",
+  "final_gate": "PRO_A_MCP_STAGE1_SECURE_TUNNEL_CHATGPT_READONLY_SMOKE = PASS",
+  "recorded_at_utc": "2026-09-29T04:17:58.529788+00:00",
+  "baseline_main_sha": "29fc3469525027cd676449d8fecbf953559e94df",
+  "remote_main_verification": {
+    "evidence_source": "CURRENT_READONLY_RECHECK",
+    "repository": "ysssss414/pro_a",
+    "ref": "refs/heads/main",
+    "observed_sha": "29fc3469525027cd676449d8fecbf953559e94df",
+    "verified_before_evidence_write": true,
+    "check_window_started_at_utc": "2026-09-29T04:11:05Z",
+    "method": "git ls-remote origin refs/heads/main; per-command OpenSSL TLS backend"
+  },
+  "branch": "codex/pro-a-mcp-stage1-secure-tunnel-closure",
+  "evidence_sources": {
+    "LOCAL_AUTOMATED": "Original real-state stdio qualification and local read-only audit, preserved below.",
+    "HUMAN_OPERATOR_TUNNEL": "Operator continuation supplied in this task: tunnel/profile, doctor, runtime, network, stop/restart.",
+    "HUMAN_OPERATOR_CHATGPT": "Operator continuation supplied in this task: real authenticated ChatGPT Web A-E and fresh loss/recovery.",
+    "CURRENT_READONLY_RECHECK": "Current local stdio discovery and four reads, guarded audit, file hashes, Git baseline and process/loopback probes."
+  },
+  "source_artifacts": {
+    "initial_status": {
+      "label": "private stage1-status.json",
+      "sha256": "14d7e9226b2ff4c6913cafb37c15b4ffac5c44d1eb1c499985eb184acabda40b",
+      "original_file_preserved": true,
+      "full_parsed_content_preserved_at": "initial_qualification"
+    },
+    "initial_handoff": {
+      "label": "private OPERATOR_HANDOFF.md",
+      "sha256": "ffc5cdd24c0d1d28512a82f23510252ed48be0f8d9d373d6c3c1a10df0f37bb4",
+      "original_file_preserved": true
+    },
+    "operator_continuation": {
+      "label": "operator-supplied continuation text in this task",
+      "sha256": "0770ceab5a69ff04c01ae749834755be741631f853cadf88ca785fec5b50a7b9",
+      "date_received": "2026-09-29",
+      "raw_text_committed": false,
+      "human_observations_accepted_as_evidence": true
+    }
+  },
+  "initial_qualification": {
+    "stage": "PRO_A_MCP_STAGE1_SECURE_TUNNEL_CHATGPT_READONLY_SMOKE",
+    "status": "BLOCKED",
+    "final_gate": "PRO_A_MCP_STAGE1_SECURE_TUNNEL_CHATGPT_READONLY_SMOKE = BLOCKED",
+    "blocking_class": "BLOCKED_TUNNEL_AUTH",
+    "blocking_detail": "Operator-supplied tunnel identity and runtime credential are not available; no authentication attempt has been made.",
+    "local_smoke": {
+      "baseline_main_sha": "29fc3469525027cd676449d8fecbf953559e94df",
+      "started_at_utc": "2026-09-29T02:21:30.013177+00:00",
+      "transport": "stdio",
+      "calls": [
+        {
+          "tool": "pro_a_health",
+          "arguments": {},
+          "status": "success"
+        },
+        {
+          "tool": "search_companies",
+          "arguments": {
+            "query": "昀冢科技",
+            "limit": 5
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_company",
+          "arguments": {
+            "company_node_id": "NODE_20260826_BC260F3E"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_current_view",
+          "arguments": {
+            "node_id": "NODE_20260826_BC260F3E"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "list_company_materials",
+          "arguments": {
+            "company_node_id": "NODE_20260826_BC260F3E",
+            "limit": 3
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_company_research_context",
+          "arguments": {
+            "company_node_id": "NODE_20260826_BC260F3E",
+            "recent_material_limit": 3
+          },
+          "status": "success"
+        }
+      ],
+      "local_gate": "PASS",
+      "before": {
+        "production": {
+          "integrity_ok": true,
+          "journal_mode": "delete",
+          "schema_version": 92,
+          "schema_fingerprint": "286729b8decec7a77e7f5d0ed17a639dff2bb2506d989c169547fb0b6f429927",
+          "row_count_fingerprint": "b130e49bd17bd37072552389773d5b73a2e7e79f2b0862bbe652b60e6e559ba1",
+          "table_count": 22,
+          "files": {
+            "database": {
+              "exists": true,
+              "bytes": 5410816,
+              "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+            },
+            "wal": {
+              "exists": false
+            },
+            "shm": {
+              "exists": false,
+              "bytes": null
+            }
+          },
+          "files_stable_during_snapshot": true
+        },
+        "workbench": {
+          "integrity_ok": true,
+          "journal_mode": "delete",
+          "schema_version": 129,
+          "schema_fingerprint": "08b8cf673086c223231da5039df04650abb02bcf474dde6fb9b6234a361ae96f",
+          "row_count_fingerprint": "9840f50d58a3e82238de17cfe61ac797d7047577d34c5f0a0c0eaa89d3e59e67",
+          "table_count": 43,
+          "files": {
+            "database": {
+              "exists": true,
+              "bytes": 823296,
+              "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+            },
+            "wal": {
+              "exists": false
+            },
+            "shm": {
+              "exists": false,
+              "bytes": null
+            }
+          },
+          "files_stable_during_snapshot": true
+        }
+      },
+      "tool_count": 11,
+      "tool_inventory": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context"
+      ],
+      "discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+      "health": {
+        "service": "pro_a",
+        "contract_version": "pro-a-mcp-stage0-v1",
+        "pro_a_version": "0.5.1",
+        "production_readable": true,
+        "workbench_readable": true,
+        "workbench_schema_version": "11",
+        "read_only": true,
+        "capabilities": [
+          "pro_a_health",
+          "search_companies",
+          "get_company",
+          "list_company_materials",
+          "get_current_view",
+          "get_current_view_history",
+          "get_node_evidence",
+          "get_source",
+          "get_processing_run",
+          "get_review_packet",
+          "get_company_research_context"
+        ]
+      },
+      "company": {
+        "node_id": "NODE_20260826_BC260F3E",
+        "canonical_name": "昀冢科技",
+        "primary_type": "Company",
+        "status": "active"
+      },
+      "results": {
+        "company_identity_matches": true,
+        "current_view_status": "OFFICIAL",
+        "official_view_id": "VIEW_20260826_99D621B2",
+        "material_count_returned": 2,
+        "material_counts": {
+          "total": 2,
+          "private": 1,
+          "canonical": 1
+        },
+        "research_context_success": true,
+        "context_company_identity_matches": true,
+        "context_material_count": 2,
+        "context_private_material_count": 1,
+        "context_canonical_material_count": 1,
+        "context_warnings": [
+          "PRIVATE_MATERIAL_IS_NOT_CANONICAL_EVIDENCE",
+          "OFFICIAL_VIEW_TRIGGER_REFERENCES_NOT_REVALIDATED"
+        ]
+      },
+      "after": {
+        "production": {
+          "integrity_ok": true,
+          "journal_mode": "delete",
+          "schema_version": 92,
+          "schema_fingerprint": "286729b8decec7a77e7f5d0ed17a639dff2bb2506d989c169547fb0b6f429927",
+          "row_count_fingerprint": "b130e49bd17bd37072552389773d5b73a2e7e79f2b0862bbe652b60e6e559ba1",
+          "table_count": 22,
+          "files": {
+            "database": {
+              "exists": true,
+              "bytes": 5410816,
+              "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+            },
+            "wal": {
+              "exists": false
+            },
+            "shm": {
+              "exists": false,
+              "bytes": null
+            }
+          },
+          "files_stable_during_snapshot": true
+        },
+        "workbench": {
+          "integrity_ok": true,
+          "journal_mode": "delete",
+          "schema_version": 129,
+          "schema_fingerprint": "08b8cf673086c223231da5039df04650abb02bcf474dde6fb9b6234a361ae96f",
+          "row_count_fingerprint": "9840f50d58a3e82238de17cfe61ac797d7047577d34c5f0a0c0eaa89d3e59e67",
+          "table_count": 43,
+          "files": {
+            "database": {
+              "exists": true,
+              "bytes": 823296,
+              "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+            },
+            "wal": {
+              "exists": false
+            },
+            "shm": {
+              "exists": false,
+              "bytes": null
+            }
+          },
+          "files_stable_during_snapshot": true
+        }
+      },
+      "database_observations_equal": true,
+      "finished_at_utc": "2026-09-29T02:21:31.971945+00:00"
+    },
+    "tunnel_client_version": "0.0.15+a390c168ff1b2d14e73a95991c186c6aba3ff5a0",
+    "download_asset_sha256_verified": true,
+    "tunnel_profile_created": false,
+    "doctor_run": false,
+    "tunnel_run_started": false,
+    "chatgpt_discovery": "NOT_RUN",
+    "chatgpt_smokes": {
+      "A": "NOT_RUN",
+      "B": "NOT_RUN",
+      "C": "NOT_RUN",
+      "D": "NOT_RUN",
+      "E": "NOT_RUN"
+    },
+    "connection_loss_test": "NOT_RUN",
+    "recovery_test": "NOT_RUN",
+    "account_capability": "NOT_DETERMINED",
+    "browser_automation": "UNAVAILABLE_MISSING_RUNTIME_MODULE",
+    "mcp_production_writes": 0,
+    "mcp_workbench_writes": 0,
+    "provider_calls": 0,
+    "retry_calls": 0,
+    "reprocess_calls": 0,
+    "advertised_mutation_tools": 0,
+    "counter_scope": "Completed local real-state smoke only; remote smoke not run",
+    "audit_counters": [
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      },
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      },
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      },
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      },
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      },
+      {
+        "database_write_attempts": 0,
+        "provider_calls": 0,
+        "retry_calls": 0,
+        "reprocess_calls": 0,
+        "review_mutation_calls": 0,
+        "non_readonly_connections": 0
+      }
+    ],
+    "git_publication": "NONE_UNTIL_PASS",
+    "known_limitations": [
+      "No ChatGPT Web tool invocation yet",
+      "Remote measurement window and security checks pending",
+      "Local helper/profile quoting must also pass tunnel-client doctor once real tunnel identity is supplied"
+    ]
+  },
+  "operator_tunnel_continuation": {
+    "evidence_source": "HUMAN_OPERATOR_TUNNEL",
+    "result": "PASS",
+    "tunnel_name": "pro-a-local",
+    "intended_chatgpt_workspace_associated": true,
+    "runtime_key_permissions": [
+      "Tunnels Read",
+      "Tunnels Use"
+    ],
+    "credential_delivery": "operator environment variable CONTROL_PLANE_API_KEY; value never accessed by this continuation",
+    "tunnel_client_version": "0.0.15",
+    "profile_template": "sample_mcp_stdio_local",
+    "profile_name": "pro-a-local",
+    "real_local_stdio_command_configured": true,
+    "doctor_command_shape": "doctor --profile pro-a-local --explain",
+    "doctor_result": "RESULT ok",
+    "observed_health": "live",
+    "observed_readiness": "ready",
+    "logs_connected": true,
+    "chatgpt_developer_mode_app_created": true,
+    "tunnel_identity_policy": "exact ID omitted; operator alias only"
+  },
+  "human_chatgpt_smokes": [
+    {
+      "id": "A",
+      "name": "health",
+      "prompt_equivalent": "检查一下 pro_a 当前是否可用，只读取状态。",
+      "observed": {
+        "service": "pro_a",
+        "pro_a_version": "0.5.1",
+        "contract_version": "pro-a-mcp-stage0-v1",
+        "production_readable": true,
+        "workbench_readable": true,
+        "workbench_schema_version": "11",
+        "read_only": true,
+        "capability_count": 11
+      },
+      "result": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "observation_timestamp_utc": null,
+      "raw_browser_trace_attached": false
+    },
+    {
+      "id": "B",
+      "name": "company_resolution",
+      "prompt_equivalent": "在 pro_a 里搜索昀冢科技。",
+      "observed": {
+        "canonical_name": "昀冢科技",
+        "node_id": "NODE_20260826_BC260F3E",
+        "primary_type": "Company",
+        "status": "active",
+        "resolution": "EXACT_UNIQUE"
+      },
+      "result": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "observation_timestamp_utc": null,
+      "raw_browser_trace_attached": false
+    },
+    {
+      "id": "C",
+      "name": "official_current_view",
+      "prompt_equivalent": "读取昀冢科技当前官方 Current View，并说明当前结论。",
+      "observed": {
+        "official_view_id": "VIEW_20260826_99D621B2",
+        "official_view_retrieved": true,
+        "draft_presented_as_official": false
+      },
+      "result": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "observation_timestamp_utc": null,
+      "raw_browser_trace_attached": false
+    },
+    {
+      "id": "D",
+      "name": "research_context",
+      "prompt_equivalent": "把昀冢科技最近的材料和现有 Current View 拉出来，比较有哪些新增事实、冲突、需要继续验证的点。明确区分 canonical evidence 和 private material，不要修改 pro_a。",
+      "observed": {
+        "real_context_loaded": true,
+        "official_view_used_as_baseline": true,
+        "canonical_private_separation": true,
+        "canonical_material_evidence_authoritative": true,
+        "community_material_private_low_trust": true,
+        "failed_extraction_converted_to_facts": false,
+        "unresolved_private_information_reported_as_unknown": true,
+        "mutation_occurred": false
+      },
+      "result": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "observation_timestamp_utc": null,
+      "raw_browser_trace_attached": false
+    },
+    {
+      "id": "E",
+      "name": "unsupported_write",
+      "prompt_equivalent": "把刚才的分析直接写回 pro_a 的 Current View。",
+      "observed": {
+        "read_only_explained": true,
+        "current_view_write_tool_exists": false,
+        "write_attempted": false,
+        "production_mutation": false,
+        "workbench_mutation": false
+      },
+      "result": "PASS",
+      "evidence_source": "HUMAN_OPERATOR_CHATGPT",
+      "observation_timestamp_utc": null,
+      "raw_browser_trace_attached": false
+    }
+  ],
+  "connection_loss_recovery": {
+    "evidence_sources": [
+      "HUMAN_OPERATOR_TUNNEL",
+      "HUMAN_OPERATOR_CHATGPT"
+    ],
+    "loss": {
+      "result": "PASS",
+      "tunnel_client_stopped_by_operator": true,
+      "fresh_request": true,
+      "timed_out_read_attempts": 2,
+      "current_availability_reported_unconfirmed": true,
+      "cached_result_presented_as_fresh": false,
+      "write_occurred": false
+    },
+    "recovery": {
+      "result": "PASS",
+      "tunnel_client_restarted_by_operator": true,
+      "new_request": true,
+      "readability_recovered": true,
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true
+    },
+    "conclusions": [
+      "PC / tunnel-client / local MCP unavailable => ChatGPT cannot perform a fresh pro_a read.",
+      "Runtime restored => ChatGPT access recovers."
+    ],
+    "automated_replay_performed": false,
+    "timeout_read_attempts_are_not_processing_retry_calls": true
+  },
+  "network_qualification": {
+    "evidence_source": "HUMAN_OPERATOR_TUNNEL",
+    "initial_local_health_green": true,
+    "initial_poll_error": "poll transport failed (network_error)",
+    "direct_api_openai_com_443_failed": true,
+    "windows_user_proxy_active": true,
+    "tunnel_client_initially_direct": true,
+    "proxy_environment_variable": "CONTROL_PLANE_HTTP_PROXY",
+    "configured_proxy_type": "local HTTP proxy",
+    "operator_reported_proxy_resolved_connectivity": true,
+    "app_creation_succeeded_after_proxy_configuration": true,
+    "proxy_address_and_credentials_omitted": true,
+    "requirement": "This operator network requires the control-plane HTTP proxy; local readiness alone does not prove end-to-end polling."
+  },
+  "current_readonly_recheck": {
+    "evidence_source": "CURRENT_READONLY_RECHECK",
+    "started_at_utc": "2026-09-29T04:09:50.518985+00:00",
+    "transport": "stdio",
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "arguments": {},
+        "is_error": false
+      },
+      {
+        "tool": "search_companies",
+        "arguments": {
+          "query": "昀冢科技",
+          "limit": 5
+        },
+        "is_error": false
+      },
+      {
+        "tool": "get_current_view",
+        "arguments": {
+          "node_id": "NODE_20260826_BC260F3E"
+        },
+        "is_error": false
+      },
+      {
+        "tool": "get_company_research_context",
+        "arguments": {
+          "company_node_id": "NODE_20260826_BC260F3E",
+          "recent_material_limit": 3
+        },
+        "is_error": false
+      }
+    ],
+    "browser_automation_used": false,
+    "tunnel_local_endpoints": {
+      "/healthz": {
+        "error_type": "URLError"
+      },
+      "/readyz": {
+        "error_type": "URLError"
+      }
+    },
+    "tunnel_runtime_local_ready": false,
+    "before": {
+      "production": {
+        "bytes": 5410816,
+        "mtime_ns": 1789007195494706400,
+        "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+        "sidecars_present": []
+      },
+      "workbench": {
+        "bytes": 823296,
+        "mtime_ns": 1790218462085029400,
+        "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+        "sidecars_present": []
+      },
+      "files": 23,
+      "entries": 31,
+      "inventory_sha256": "a36963ad6f64812581cc926bb249dee221fcf7c316b121b96fbdf30d50e66d17"
+    },
+    "tool_inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context"
+    ],
+    "annotations": [
+      {
+        "name": "pro_a_health",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "search_companies",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_company",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "list_company_materials",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_current_view",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_current_view_history",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_node_evidence",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_source",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_processing_run",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_review_packet",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      {
+        "name": "get_company_research_context",
+        "title": null,
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    ],
+    "discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage0-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context"
+      ]
+    },
+    "search": {
+      "resolution": "EXACT_UNIQUE",
+      "company": {
+        "node_id": "NODE_20260826_BC260F3E",
+        "canonical_name": "昀冢科技",
+        "primary_type": "Company",
+        "status": "active"
+      }
+    },
+    "current_view": {
+      "status": "OFFICIAL",
+      "view_id": "VIEW_20260826_99D621B2"
+    },
+    "research_context": {
+      "material_count": 2,
+      "canonical_count": 1,
+      "private_count": 1,
+      "private_states": [
+        "FAILED"
+      ],
+      "evidence_ref_count": 7,
+      "warnings": [
+        "PRIVATE_MATERIAL_IS_NOT_CANONICAL_EVIDENCE",
+        "OFFICIAL_VIEW_TRIGGER_REFERENCES_NOT_REVALIDATED"
+      ],
+      "consistency": "SEQUENTIAL_READS_NOT_ATOMIC"
+    },
+    "status": "PASS",
+    "after": {
+      "production": {
+        "bytes": 5410816,
+        "mtime_ns": 1789007195494706400,
+        "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+        "sidecars_present": []
+      },
+      "workbench": {
+        "bytes": 823296,
+        "mtime_ns": 1790218462085029400,
+        "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44",
+        "sidecars_present": []
+      },
+      "files": 23,
+      "entries": 31,
+      "inventory_sha256": "a36963ad6f64812581cc926bb249dee221fcf7c316b121b96fbdf30d50e66d17"
+    },
+    "all_monitored_entries_unchanged": true,
+    "hashes_match_initial_local_smoke": true,
+    "audit_tool_calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "success"
+      },
+      {
+        "tool": "search_companies",
+        "status": "success"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "success"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "success"
+      }
+    ],
+    "audit_counter_maxima": {
+      "database_write_attempts": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "non_readonly_connections": 0
+    },
+    "finished_at_utc": "2026-09-29T04:09:56.531999+00:00"
+  },
+  "current_runtime_probe": {
+    "evidence_source": "CURRENT_READONLY_RECHECK",
+    "process_observed_initially": true,
+    "process_check_at_utc": "2026-09-29T04:11:05.6317703Z",
+    "process_count": 0,
+    "loopback_probe": {
+      "evidence_source": "CURRENT_READONLY_RECHECK",
+      "checked_at_utc": "2026-09-29T04:10:29.687958+00:00",
+      "scope": "Existing local runtime endpoints only; no control-plane request",
+      "/healthz": {
+        "error_type": "URLError",
+        "reason_type": "ConnectionRefusedError",
+        "errno": 10061,
+        "winerror": 10061
+      },
+      "/readyz": {
+        "error_type": "URLError",
+        "reason_type": "ConnectionRefusedError",
+        "errno": 10061,
+        "winerror": 10061
+      },
+      "local_runtime_endpoints_pass": false
+    },
+    "current_live_availability": "UNAVAILABLE_RUNTIME_NOT_RUNNING",
+    "stopped_or_restarted_by_this_continuation": false,
+    "interpretation": "Historical operator success remains valid; this is not a current online/always-on claim. No fresh ChatGPT read was attempted."
+  },
+  "chatgpt_web_callable": true,
+  "tunnel_runtime_verified": true,
+  "real_company_search": true,
+  "real_current_view_read": true,
+  "real_company_research_context": true,
+  "canonical_private_separation": true,
+  "unsupported_write_correctly_rejected": true,
+  "connection_loss_verified": true,
+  "recovery_verified": true,
+  "final_boolean_evidence_sources": {
+    "chatgpt_web_callable": [
+      "HUMAN_OPERATOR_CHATGPT"
+    ],
+    "tunnel_runtime_verified": [
+      "HUMAN_OPERATOR_TUNNEL",
+      "HUMAN_OPERATOR_CHATGPT"
+    ],
+    "real_company_search": [
+      "HUMAN_OPERATOR_CHATGPT",
+      "CURRENT_READONLY_RECHECK"
+    ],
+    "real_current_view_read": [
+      "HUMAN_OPERATOR_CHATGPT",
+      "CURRENT_READONLY_RECHECK"
+    ],
+    "real_company_research_context": [
+      "HUMAN_OPERATOR_CHATGPT",
+      "CURRENT_READONLY_RECHECK"
+    ],
+    "canonical_private_separation": [
+      "HUMAN_OPERATOR_CHATGPT",
+      "CURRENT_READONLY_RECHECK"
+    ],
+    "unsupported_write_correctly_rejected": [
+      "HUMAN_OPERATOR_CHATGPT"
+    ],
+    "connection_loss_verified": [
+      "HUMAN_OPERATOR_TUNNEL",
+      "HUMAN_OPERATOR_CHATGPT"
+    ],
+    "recovery_verified": [
+      "HUMAN_OPERATOR_TUNNEL",
+      "HUMAN_OPERATOR_CHATGPT"
+    ]
+  },
+  "final_boolean_scope": "Completed Stage 1 qualification, including accepted human observations; not current online availability.",
+  "production_writes": 0,
+  "workbench_writes": 0,
+  "provider_calls": 0,
+  "retry_calls": 0,
+  "reprocess_calls": 0,
+  "advertised_mutation_tools": 0,
+  "counter_evidence": {
+    "scope": "MCP qualification calls and operator-reported Web tests only; excludes documentation, audit files and tunnel transport/logging.",
+    "initial_local": "LOCAL_AUTOMATED: exact original per-call audit counters retained in initial_qualification.",
+    "current_local": "CURRENT_READONLY_RECHECK: guarded stdio denies/counts write-capable SQLite connections, SQL mutations, provider, retry, reprocess and review mutation entry points.",
+    "human_remote": "HUMAN_OPERATOR_CHATGPT: reported no mutation; no write tool advertised. No continuous remote audit trace was supplied.",
+    "file_comparison": "23 monitored files unchanged during current recheck; both DB hashes also match initial local smoke.",
+    "limit": "Matching snapshots support unchanged persistent state; they are not a continuous host-wide write audit."
+  },
+  "git_boundary": {
+    "evidence_only": true,
+    "runtime_business_code_changed": false,
+    "existing_runtime_worktree_preserved": true,
+    "initial_artifacts_rewritten": false,
+    "private_config_committed": false,
+    "secrets_or_user_home_paths_committed": false,
+    "tunnel_profile_created_or_modified_by_continuation": false,
+    "intended_changed_files": [
+      "docs/MCP_STAGE1_SECURE_TUNNEL_CHATGPT_SMOKE.md",
+      "docs/mcp_stage1_secure_tunnel_chatgpt_smoke_receipt.json"
+    ],
+    "publication": "Authorized commit, push and Draft PR against main; verified after this evidence commit. No self-referential SHA.",
+    "merge_authorized": false
+  },
+  "limitations": [
+    "At the latest recheck tunnel-client is not running; current Web access is not claimed. The operator must restore the existing runtime before a fresh Web read.",
+    "PC, local MCP, tunnel-client, proxy and workspace authorization remain runtime dependencies; no always-on/service deployment was qualified.",
+    "Authenticated ChatGPT and loss/recovery results are human attestations; no browser automation, raw transcripts or per-call remote audit were supplied.",
+    "Exact human tool-selection trace, redundant-call count and missed-tool count were not supplied and are not inferred.",
+    "Current stdio recheck is local and does not replace the human end-to-end tests.",
+    "Research context is sequential, not atomic. Failed private material is not canonical evidence; official trigger references remain unvalidated.",
+    "This is a private developer connection, not public plugin distribution or a broader multi-user/security penetration qualification."
+  ],
+  "reference": "https://developers.openai.com/api/docs/guides/secure-mcp-tunnels"
+}
