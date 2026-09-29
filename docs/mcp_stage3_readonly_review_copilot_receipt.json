@@ -1,0 +1,371 @@
+{
+  "stage": "PRO_A_MCP_STAGE3_READONLY_REVIEW_COPILOT",
+  "status": "PASS",
+  "final_gate": "PRO_A_MCP_STAGE3_READONLY_REVIEW_COPILOT = PASS",
+  "recorded_at_utc": "2026-09-29T06:07:36.289398+00:00",
+  "baseline_main_sha": "ae6c0120dbc147f72424eb3bc66e7681e969838f",
+  "implementation_sha": "126799318f452c1653aac7b9403b999d6df41eb4",
+  "branch": "codex/pro-a-mcp-stage3-readonly-review-copilot",
+  "baseline_gate": {
+    "remote_main_exact_match": true,
+    "stage0_stage1_stage2_evidence_present": true,
+    "baseline_tool_count": 11,
+    "baseline_contract": "pro-a-mcp-stage0-v1",
+    "all_baseline_tools_read_only": true,
+    "stage2_helpers_unchanged": true,
+    "remote_main_rechecked_before_publication": true
+  },
+  "contract_version": "pro-a-mcp-stage3-v1",
+  "pro_a_version": "0.5.1",
+  "existing_tool_count": 11,
+  "added_tool_count": 3,
+  "tool_count": 14,
+  "inventory": [
+    "pro_a_health",
+    "search_companies",
+    "get_company",
+    "list_company_materials",
+    "get_current_view",
+    "get_current_view_history",
+    "get_node_evidence",
+    "get_source",
+    "get_processing_run",
+    "get_review_packet",
+    "get_company_research_context",
+    "list_review_queue",
+    "get_review_context",
+    "get_review_item_context"
+  ],
+  "existing_11_compatible": true,
+  "existing_11_discovery_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+  "full_14_discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+  "discovery_serialization": "SDK Tool.model_dump(mode=json, by_alias=true), including nulls; discovery order; UTF-8, sort_keys=true, ensure_ascii=false, separators=comma/colon",
+  "compatibility_proof": "Pinned normalized per-tool definitions plus exact historical ordered existing-11 digest; auto and legacy SDK client modes; wheel archive discovery equals candidate discovery.",
+  "all_tool_annotations": {
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+  },
+  "blind_review_projection": "PASS",
+  "blind_existing_decision_leakage": 0,
+  "blind_reviewer_identity_leakage": 0,
+  "blind_proof": "Native available_actions receives empty state. After disposable prior decisions, blind packet and item reads succeed with read/_state/_sealed replaced by failing functions; complete packet result and context hash equal the pre-decision result.",
+  "context_sha256_deterministic": true,
+  "basis_drift_fail_closed": true,
+  "context_hash_contract": {
+    "scope": "WHOLE_PACKET_AND_BOUNDED_CANONICAL_CONTEXT",
+    "includes": [
+      "projection",
+      "validated immutable packet identity and hashes",
+      "frozen Source/Run/processing identity",
+      "all safe native candidate content/hashes/capabilities",
+      "bounded exact-ID canonical identities/aliases/official Views/Claims/Sources",
+      "safe native decision state for stateful projection only"
+    ],
+    "excludes": [
+      "random registry artifact handle and derived Review basis handle",
+      "per-call time/PID",
+      "machine paths",
+      "credentials",
+      "blind existing decisions/reviewer/audit",
+      "private Company routing intent"
+    ],
+    "pagination": "Presentation only; every page/item shares packet basis.",
+    "expected_mismatch": "REVIEW_CONTEXT_CHANGED with no replacement context",
+    "canonical_drift_tests": [
+      "Claim evidence excerpt",
+      "official View content",
+      "canonical aliases"
+    ],
+    "consistency": "SEQUENTIAL_READS_NOT_ATOMIC"
+  },
+  "candidate_type_coverage": {
+    "CLAIM": "PASS",
+    "NODE": "PASS",
+    "PARENT_PLACEMENT": "PASS"
+  },
+  "queue": {
+    "order": "native registered_at, artifact_id",
+    "filters": [
+      "all",
+      "needs_review",
+      "high_attention",
+      "entity_resolution",
+      "parent_placement",
+      "deferred",
+      "completed"
+    ],
+    "schema10_11": "Native Stage1ReviewProjection.page filtering, including schema 11 lifecycle closures",
+    "older_schema": "Native ReviewWorkbench.read row queues",
+    "draft_partial_sealed": "PASS",
+    "foundation": "Visible disabled in all; context fails closed with REVIEW_CONTEXT_UNAVAILABLE",
+    "schema1": "Disabled, no available decisions",
+    "missing_stage1_projection": "REVIEW_QUEUE_UNAVAILABLE; never rebuild"
+  },
+  "bounds": {
+    "page_limit_max": 50,
+    "cursor_offset_max": 10000000,
+    "queue_registered_packets_max": 200,
+    "packet_candidates_max": 200,
+    "canonical_nodes_per_packet_max": 50,
+    "canonical_claims_per_node_max": 20,
+    "payload_bytes_max": 131072,
+    "text_characters_max": 16384,
+    "nested_list_items_max": 100,
+    "depth_max": 16
+  },
+  "read_authority": {
+    "facades": [
+      "JobReads",
+      "OperationalReads",
+      "ReviewReads",
+      "ArtifactReads",
+      "DomainReads",
+      "ReviewQueueReads",
+      "ReadStore"
+    ],
+    "mutators_structurally_absent": true,
+    "write_connection_argument_unavailable": true,
+    "native_validators_reused": true,
+    "no_server_recommendations": true
+  },
+  "qualification": {
+    "stage3_focused": {
+      "tests": 51,
+      "passed": 51,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 66.558,
+      "junit_sha256": "8b93c6c43928744ebb5d40c23ed5fdeb08929904c062b86166d31430635917bc",
+      "by_module": {
+        "tests.test_mcp_stage3": 51
+      }
+    },
+    "required_regressions": {
+      "tests": 329,
+      "passed": 329,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 610.406,
+      "junit_sha256": "8e77926647d7b288856e6e56cd12174458556053697253484286136b66523859",
+      "by_module": {
+        "tests.test_current_view_compare_api": 4,
+        "tests.test_current_view_history": 2,
+        "tests.test_mcp_stage0": 30,
+        "tests.test_phase43_stage1_operator_scale": 14,
+        "tests.test_phase43_stage71_shared_core_pending": 14,
+        "tests.test_phase43_stage72a_provider_diagnostics": 28,
+        "tests.test_phase43_stage72b_extraction_retry": 25,
+        "tests.test_phase43_stage72b_unicode_reason": 10,
+        "tests.test_phase43_stage72c_retry_compatibility": 33,
+        "tests.test_phase43_stage7_community": 3,
+        "tests.test_query": 24,
+        "tests.test_workbench_stage0": 31,
+        "tests.test_workbench_stage1": 39,
+        "tests.test_workbench_stage2": 16,
+        "tests.test_workbench_stage2_guards": 34,
+        "tests.test_workbench_stage5": 7,
+        "tests.test_workbench_stage7": 15
+      }
+    },
+    "total_passed": 380,
+    "regression_warnings": {
+      "pytest_record_property_xunit2": 5,
+      "intentional_duplicate_zip_fixture": 1
+    },
+    "compileall": "PASS: python -m compileall -q src",
+    "dependency_validation": "PASS: python -m pip check",
+    "wheel_build": "PASS: isolated PEP 517 build from a source copy; no live installation",
+    "wheel_sha256": "5d867d28411d7ef2c1438d02e7d00c5694cbceb8eb4239c40cb7d892130833ea",
+    "wheel_source_bytes_equal": true,
+    "wheel_discovery_equal": true,
+    "git_diff_check": "PASS",
+    "environment": {
+      "python": "3.12.14",
+      "sqlite": "3.53.1",
+      "mcp": "2.2.0",
+      "pytest": "9.1.1"
+    },
+    "full_repository_suite_run": false,
+    "historical_full_suite": "Stage 0: 2380 passed, 108 skipped, 3 failed, 43 errors; all 46 failures/errors passed targeted replays. Historical evidence unchanged.",
+    "commands": {
+      "stage3": "python -m pytest tests/test_mcp_stage3.py -q --tb=short --basetemp <fresh-short-disposable-path> -o junit_family=xunit1",
+      "regressions": "python -m pytest tests/test_current_view_compare_api.py tests/test_current_view_history.py tests/test_mcp_stage0.py tests/test_phase43_stage1_operator_scale.py tests/test_phase43_stage71_shared_core_pending.py tests/test_phase43_stage72a_provider_diagnostics.py tests/test_phase43_stage72b_extraction_retry.py tests/test_phase43_stage72b_unicode_reason.py tests/test_phase43_stage72c_retry_compatibility.py tests/test_phase43_stage7_community.py tests/test_query.py tests/test_workbench_stage0.py tests/test_workbench_stage1.py tests/test_workbench_stage2.py tests/test_workbench_stage2_guards.py tests/test_workbench_stage5.py tests/test_workbench_stage7.py -q --tb=short --basetemp <fresh-short-disposable-path>",
+      "compileall": "python -m compileall -q src",
+      "dependency_validation": "python -m pip check",
+      "wheel": "python -m pip wheel <isolated-source-copy> --no-deps --no-cache-dir --wheel-dir <candidate-wheels>"
+    }
+  },
+  "real_workbench_smoke": {
+    "before": {
+      "production": {
+        "database": {
+          "exists": true,
+          "bytes": 5410816,
+          "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+        },
+        "-wal": {
+          "exists": false
+        },
+        "-shm": {
+          "exists": false
+        },
+        "-journal": {
+          "exists": false
+        }
+      },
+      "workbench": {
+        "database": {
+          "exists": true,
+          "bytes": 823296,
+          "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+        },
+        "-wal": {
+          "exists": false
+        },
+        "-shm": {
+          "exists": false
+        },
+        "-journal": {
+          "exists": false
+        }
+      }
+    },
+    "transport": "isolated_candidate_stdio",
+    "calls": [
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "full_14_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "queue_page_count": 0,
+    "queue_has_more": false,
+    "queue_status": "REAL_REVIEW_QUEUE_EMPTY",
+    "packets": [],
+    "status": "PASS",
+    "after": {
+      "production": {
+        "database": {
+          "exists": true,
+          "bytes": 5410816,
+          "sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+        },
+        "-wal": {
+          "exists": false
+        },
+        "-shm": {
+          "exists": false
+        },
+        "-journal": {
+          "exists": false
+        }
+      },
+      "workbench": {
+        "database": {
+          "exists": true,
+          "bytes": 823296,
+          "sha256": "1ff852dbe76c5fc4054c3e6f4e308b98a66f918dc3081e287b793c682a61ca44"
+        },
+        "-wal": {
+          "exists": false
+        },
+        "-shm": {
+          "exists": false
+        },
+        "-journal": {
+          "exists": false
+        }
+      }
+    },
+    "database_files_unchanged": true
+  },
+  "real_smoke_observed_at_utc": "2026-09-29T05:59:37.648391+00:00",
+  "real_measurement": {
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 3
+  },
+  "forbidden_action_counters": {
+    "production_writes": 0,
+    "workbench_writes": 0,
+    "provider_calls": 0,
+    "retry_calls": 0,
+    "reprocess_calls": 0,
+    "review_mutation_calls": 0,
+    "advertised_mutation_tools": 0
+  },
+  "counter_scope": "MCP synthetic measurement windows and all real-state actions. Disposable setup and regression workflows intentionally exercise fixture writes/fake providers/retries outside those windows. No host-wide continuous trace is claimed.",
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "stable_runtime": {
+    "updated": false,
+    "restarted": false,
+    "tunnel_disrupted": false,
+    "activation_status": "REQUIRED_AFTER_MERGE"
+  },
+  "publication_review": {
+    "complete_diff_reviewed": true,
+    "credentials_private_paths_scan": "PASS; synthetic private-path/API-key sentinel strings only in security tests",
+    "stage2_runtime_files_committed": false,
+    "historical_evidence_modified": false,
+    "merge_authorized": false
+  },
+  "known_limitations": [
+    "Real review queue empty; real context/item reads not exercised; synthetic coverage supplies their qualification.",
+    "Foundation review engine is outside Stage 3; queue shows disabled and context fails closed.",
+    "Context reads are sequential, not atomic; queue offsets are not snapshot-pinned.",
+    "Evidence outside the documented bounds is outside the basis; no automatic full-text retrieval.",
+    "Legacy runs can have no frozen processing context; explicitly reported without inventing one.",
+    "Stable ChatGPT connection continues serving Stage 2 until a separate post-merge activation.",
+    "No full-repository suite was run for Stage 3."
+  ],
+  "synthetic_measurement": {
+    "forbidden_actions": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "database_hashes": {
+      "before": {
+        "production": "a1fc9fad007a7e4b8c4a455f2418f72113e17dd9b4fadc051bfc3508312a2122",
+        "workbench": "4493d1a89d50a9b8ac8eeb32528d7e0bb5d6b93161f201d2e68de6d7bc2715c0"
+      },
+      "after": {
+        "production": "a1fc9fad007a7e4b8c4a455f2418f72113e17dd9b4fadc051bfc3508312a2122",
+        "workbench": "4493d1a89d50a9b8ac8eeb32528d7e0bb5d6b93161f201d2e68de6d7bc2715c0"
+      }
+    }
+  }
+}
