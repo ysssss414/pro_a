@@ -37,6 +37,19 @@ SOURCE_ANALYSIS_ADAPTER_VERSION = "source-analysis-piece-adapter-v2"
 USAGE_STATUSES = ("KNOWN", "UNKNOWN")
 OUTCOME_STATUSES = ("NOT_DISPATCHED", "KNOWN_FAILURE", "UNKNOWN")
 
+OPERATION_OUTPUT_BUDGET_POLICY_VERSION = "operation-output-budget-v1"
+OPERATION_MAX_OUTPUT_TOKENS = {
+    "SOURCE_ANALYSIS_PIECE": 12000,
+    "SEMANTIC_DECOMPOSITION": 8192,
+}
+
+
+def budget_for_operation(operation_kind: str, max_total_tokens: int) -> dict[str, int]:
+    if operation_kind not in OPERATION_MAX_OUTPUT_TOKENS:
+        raise CloudContractError("UNSUPPORTED_CLOUD_OPERATION")
+    return {"max_output_tokens": OPERATION_MAX_OUTPUT_TOKENS[operation_kind],
+            "max_total_tokens": max_total_tokens}
+
 
 def now() -> str:
     return datetime.now(timezone.utc).isoformat()

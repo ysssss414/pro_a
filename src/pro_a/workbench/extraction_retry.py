@@ -7,7 +7,7 @@ from dataclasses import fields
 from pathlib import Path
 from uuid import uuid4
 
-from pro_a.cloud_contract import canonical, digest, now, operation_contract
+from pro_a.cloud_contract import budget_for_operation, canonical, digest, now, operation_contract
 from pro_a.production_promotion import sha256_file
 from .cloud_jobs import CloudProfile, JobError
 from .config import BoundaryError
@@ -79,6 +79,7 @@ def frozen_cloud(row):
         profile.validate()
         if canonical(profile.public_identity()) != row['configuration_json']:
             raise ValueError()
+        budget = budget_for_operation(row['operation_kind'], profile.max_total_tokens)
         for field in fields(CloudProfile):
             if field.name == 'provider_adapter_version':
                 if row[field.name] != profile.adapter_for_operation(row['operation_kind']):
@@ -86,7 +87,8 @@ def frozen_cloud(row):
                 continue
             stored = (json.loads(row['accepted_model_aliases_json'])
                       if field.name == 'accepted_model_aliases' else row[field.name])
-            if stored != value[field.name]:
+            expected = budget[field.name] if field.name in budget else value[field.name]
+            if stored != expected:
                 raise ValueError()
         if (row['retry_owner'] != value['retry_owner']
                 or row['retry_policy_id'] != value['retry_policy_id']):
