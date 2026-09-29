@@ -195,3 +195,66 @@ These are future tasks, not actions performed by this change. Connection steps a
 the private tunnel alternative were checked against [OpenAI connection documentation](https://developers.openai.com/plugins/deploy/connect-chatgpt)
 and [Secure MCP Tunnel documentation](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)
 on 2026-09-29. Account permissions and actual ChatGPT connectivity were not tested.
+
+## R1 — Review read-authority hardening
+
+Final gate: **PRO_A_MCP_STAGE0_R1_READ_AUTHORITY_HARDENING = PASS**.
+
+Pre-R1 PR #82 head: 6dcce69979175ea5eb28b04127ce4092ed9abc12. Remote main:
+b10d4ed8d770f8606335d53287cf8d415b38b383. Both were fetched and verified before editing.
+R1 implementation commit: 6ca4662a29d95f4e97242ded870ba523bd5c6d0a. A following documentation-only commit
+appends this section and the receipt's r1_read_authority_hardening object.
+
+This pre-merge hardening replaces the MCP-held ReviewWorkbench instance with
+pro_a.mcp.reads.ReviewReads. The facade directly binds the unchanged _context,
+_state, _sealed, and read implementations. Its only public callable is read;
+its constructor initializes only config, store, and artifacts. It inherits
+directly from object, never constructs or retains a ReviewWorkbench instance,
+and exposes neither mutate nor an equivalent write alias.
+**mutate_reachable_from_mcp_review_object = false**.
+
+Exact R1 changed files:
+
+- src/pro_a/mcp/reads.py
+- src/pro_a/mcp/service.py
+- tests/test_mcp_stage0.py
+- docs/MCP_STAGE0_READONLY_BRIDGE_QUALIFICATION.md
+- docs/mcp_stage0_readonly_bridge_receipt.json
+
+The structural test failed on the pre-R1 implementation because it constructed
+the write-capable service. It now passes, asserting the concrete facade type,
+direct base, exact callable surface, stored attributes and identity of the reused
+methods. Comparisons cover empty DRAFT, partial DRAFT, and SEALED fixtures,
+including native full projections and seven MCP pages per state. Packet identities,
+immutable hashes, status, progress, bounded items and pagination equal the
+pre-R1 composition.
+
+| R1 check | Result |
+| --- | --- |
+| Focused MCP suite | 30 passed |
+| Frozen Stage 0 relevant regression | 276 passed, 0 failed, 0 errors, 0 skipped; includes Review Workbench and Stage 7 / 7.1 / 7.2A / 7.2B / 7.2C |
+| MCP tools before / after | 11 / 11; complete serialized discovery byte-identical |
+| Discovery SHA-256 before / after | 89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc |
+| Disposable database hashes | All five recorded Production/Workbench before/after pairs equal: three Review states and two protocol client modes |
+| Forbidden actions | Production writes, Workbench writes, provider, retry, reprocess and advertised mutation tools all 0 in MCP/real-state scope |
+| Compile / dependency / packaging | compileall, pip check and isolated wheel build/inspection passed |
+| Diff boundary | Only the five listed files; existing business implementations, schemas and tool contracts unchanged |
+
+The wheel contains the exact facade/service source, all six MCP modules, the
+existing console entry point and pinned SDK dependency. A first build without
+isolation could not import setuptools; normal isolated build dependencies resolved
+that tooling issue. Build-generated metadata was restored and excluded from commits.
+
+The full repository suite was not rerun for this narrow R1. Its original Stage 0
+**2380 passed / 108 skipped / 3 failed / 43 errors** result, replay classification,
+transient caveat and skipped-fixture limitations remain unchanged above and in the
+receipt. No historical full-suite result is reclassified as green.
+
+Exact R1 JUnit hashes, per-file regression counts, database hashes and zero-action
+measurements are appended in the existing JSON receipt. Synthetic setup may create
+decisions/sealed state before measurement; historical regression tests may exercise
+fake workflow actions. No real Production/Workbench database was opened, and no
+real provider, retry or reprocess was invoked.
+
+Continue only on PR #82, keeping it Draft and unmerged. Public deployment,
+authentication, tunnels and ChatGPT registration remain outside this hardening.

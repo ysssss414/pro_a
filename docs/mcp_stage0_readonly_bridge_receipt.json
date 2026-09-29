@@ -1158,5 +1158,328 @@
     "Full suite was not repeated end-to-end after environment corrections; all original failed/error IDs passed targeted replay",
     "Authentication, access policy, public HTTPS or Secure MCP Tunnel, ChatGPT registration and end-to-end ChatGPT checks are future authorized work"
   ],
-  "raw_test_artifact_policy": "JUnit/log files and synthetic fixtures remain local under ignored workspace; this durable receipt retains counts, node IDs, measurements and JUnit hashes"
+  "raw_test_artifact_policy": "JUnit/log files and synthetic fixtures remain local under ignored workspace; this durable receipt retains counts, node IDs, measurements and JUnit hashes",
+  "r1_read_authority_hardening": {
+    "stage": "PRO_A_MCP_STAGE0_R1_READ_AUTHORITY_HARDENING",
+    "status": "PASS",
+    "final_gate": "PRO_A_MCP_STAGE0_R1_READ_AUTHORITY_HARDENING = PASS",
+    "qualified_at_utc": "2026-09-29T01:59:12.625208+00:00",
+    "pre_r1_sha": "6dcce69979175ea5eb28b04127ce4092ed9abc12",
+    "baseline_main_sha": "b10d4ed8d770f8606335d53287cf8d415b38b383",
+    "baseline_remote_pr_head_verified": "6dcce69979175ea5eb28b04127ce4092ed9abc12",
+    "baseline_remote_main_verified": "b10d4ed8d770f8606335d53287cf8d415b38b383",
+    "r1_implementation_sha": "6ca4662a29d95f4e97242ded870ba523bd5c6d0a",
+    "qualification_commit_scope": "Subsequent documentation-only commit; PR head verified after push",
+    "branch": "codex/pro-a-mcp-stage0-readonly-bridge",
+    "pr_number": 82,
+    "changed_files": [
+      "src/pro_a/mcp/reads.py",
+      "src/pro_a/mcp/service.py",
+      "tests/test_mcp_stage0.py",
+      "docs/MCP_STAGE0_READONLY_BRIDGE_QUALIFICATION.md",
+      "docs/mcp_stage0_readonly_bridge_receipt.json"
+    ],
+    "implementation_changed_files": [
+      "src/pro_a/mcp/reads.py",
+      "src/pro_a/mcp/service.py",
+      "tests/test_mcp_stage0.py"
+    ],
+    "facade": {
+      "class": "pro_a.mcp.reads.ReviewReads",
+      "direct_base_classes": [
+        "object"
+      ],
+      "instance_attributes": [
+        "config",
+        "store",
+        "artifacts"
+      ],
+      "callable_read_surface_excluding_dunder": [
+        "_context",
+        "_sealed",
+        "_state",
+        "read"
+      ],
+      "public_callable_surface": [
+        "read"
+      ],
+      "constructor": "__init__(config)",
+      "method_source": "Existing unbound ReviewWorkbench implementations, bound directly without copying domain logic",
+      "review_workbench_constructor_used_by_mcp": false,
+      "inherits_review_workbench": false,
+      "retains_review_workbench_instance": false,
+      "equivalent_write_aliases_present": false
+    },
+    "mutate_reachable_from_mcp_review_object": false,
+    "review_semantics": {
+      "states_compared": [
+        "DRAFT_EMPTY",
+        "DRAFT_PARTIAL",
+        "SEALED"
+      ],
+      "native_full_projection_equal": true,
+      "pre_r1_mcp_projection_equal": true,
+      "compared_fields": [
+        "packet identity",
+        "packet_file_sha256",
+        "immutable_packet_sha256",
+        "review status",
+        "progress",
+        "items",
+        "pagination",
+        "all other output fields"
+      ],
+      "pages_per_state": [
+        {
+          "limit": 1,
+          "cursor": null
+        },
+        {
+          "limit": 1,
+          "cursor": "1"
+        },
+        {
+          "limit": 1,
+          "cursor": "2"
+        },
+        {
+          "limit": 1,
+          "cursor": "3"
+        },
+        {
+          "limit": 2,
+          "cursor": null
+        },
+        {
+          "limit": 2,
+          "cursor": "2"
+        },
+        {
+          "limit": 50,
+          "cursor": null
+        }
+      ],
+      "fixture_preparation": "Synthetic decision/seal setup finishes before read measurement",
+      "measured_operator_write_connections_rejected": true
+    },
+    "tool_contract": {
+      "count_before": 11,
+      "count_after": 11,
+      "inventory": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context"
+      ],
+      "discovery_before_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+      "discovery_after_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+      "full_serialized_discovery_byte_equal": true,
+      "comparison_includes": [
+        "names",
+        "descriptions",
+        "input schemas",
+        "output schemas",
+        "annotations"
+      ],
+      "contract_discovery_database_paths_opened": false
+    },
+    "production_writes": 0,
+    "workbench_writes": 0,
+    "provider_calls": 0,
+    "retry_calls": 0,
+    "reprocess_calls": 0,
+    "advertised_mutation_tools": 0,
+    "counter_scope": "MCP read measurements and all real-state actions. Synthetic setup and historical regression tests intentionally exercise disposable writes/fake workflow paths.",
+    "real_production_opened": false,
+    "real_workbench_opened": false,
+    "database_immutability": {
+      "all_before_after_equal": true,
+      "measurements": [
+        {
+          "test": "tests/test_mcp_stage0.py::test_review_facade_preserves_states_and_pages[draft]",
+          "database_hashes": {
+            "before": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "fadf771093300883037bf4a898432bf5612747dbecbba5ee2b8f82f849f98fa7"
+            },
+            "after": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "fadf771093300883037bf4a898432bf5612747dbecbba5ee2b8f82f849f98fa7"
+            }
+          }
+        },
+        {
+          "test": "tests/test_mcp_stage0.py::test_review_facade_preserves_states_and_pages[partial]",
+          "database_hashes": {
+            "before": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "863638d4956238428ba333e587c6c466de27dbd2a8c30fb5fc089f9bbbb51aa6"
+            },
+            "after": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "863638d4956238428ba333e587c6c466de27dbd2a8c30fb5fc089f9bbbb51aa6"
+            }
+          }
+        },
+        {
+          "test": "tests/test_mcp_stage0.py::test_review_facade_preserves_states_and_pages[sealed]",
+          "database_hashes": {
+            "before": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "69f234b3f078105d1a6250d7039f91f33b1270b67bdc996f3fef2f718b9e7103"
+            },
+            "after": {
+              "production": "67b35d314477d607872d0d317d3579edc3f3b4174250d30c7b6235a98477e248",
+              "workbench": "69f234b3f078105d1a6250d7039f91f33b1270b67bdc996f3fef2f718b9e7103"
+            }
+          }
+        },
+        {
+          "test": "tests/test_mcp_stage0.py::test_protocol_discovery_calls_hashes_and_no_actions[auto]",
+          "database_hashes": {
+            "before": {
+              "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+              "workbench": "d057f23110e4746548b52d2a2edffe8d9e1c01c29b528abafa2834d4e7df50d6"
+            },
+            "after": {
+              "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+              "workbench": "d057f23110e4746548b52d2a2edffe8d9e1c01c29b528abafa2834d4e7df50d6"
+            }
+          },
+          "forbidden_calls": {
+            "provider": 0,
+            "retry": 0,
+            "reprocess": 0,
+            "write": 0
+          }
+        },
+        {
+          "test": "tests/test_mcp_stage0.py::test_protocol_discovery_calls_hashes_and_no_actions[legacy]",
+          "database_hashes": {
+            "before": {
+              "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+              "workbench": "038a77301cf7c3d9d56137cda7ae37b9f6359ba2e32572bb4adadbbe8304b0f1"
+            },
+            "after": {
+              "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+              "workbench": "038a77301cf7c3d9d56137cda7ae37b9f6359ba2e32572bb4adadbbe8304b0f1"
+            }
+          },
+          "forbidden_calls": {
+            "provider": 0,
+            "retry": 0,
+            "reprocess": 0,
+            "write": 0
+          }
+        }
+      ]
+    },
+    "tests": {
+      "red_test_before_implementation": {
+        "junit_path": "workspace/mcp-r1-red.xml",
+        "junit_sha256": "5af1683e7df8dbeaaaeea07ba44b24b8d27bce390845e4050d0aa63b0b061987",
+        "counts": {
+          "tests": 1,
+          "failures": 1,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 0
+        },
+        "duration_seconds": 2.073,
+        "cases_by_file": {
+          "tests/test_mcp_stage0.py": 1
+        },
+        "expected_failure": "MCP must not construct the write-capable Review service"
+      },
+      "focused": {
+        "junit_path": "workspace/mcp-r1-focused.xml",
+        "junit_sha256": "09e96c9199661f8fe1941d17bb3fd4b31a035992c280c0707b35916f69d69bb9",
+        "counts": {
+          "tests": 30,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 30
+        },
+        "duration_seconds": 40.084,
+        "cases_by_file": {
+          "tests/test_mcp_stage0.py": 30
+        }
+      },
+      "relevant_regression": {
+        "junit_path": "workspace/mcp-r1-regression.xml",
+        "junit_sha256": "3afcc4f71877e100b2108b9a27b8e66258fd902c6aadf24ab90aa838ecbd2ede",
+        "counts": {
+          "tests": 276,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 276
+        },
+        "duration_seconds": 334.377,
+        "cases_by_file": {
+          "tests/test_api.py": 26,
+          "tests/test_current_view_comparator.py": 8,
+          "tests/test_current_view_compare_api.py": 4,
+          "tests/test_current_view_history.py": 2,
+          "tests/test_phase43_stage5.py": 6,
+          "tests/test_phase43_stage71_shared_core_pending.py": 14,
+          "tests/test_phase43_stage72a_provider_diagnostics.py": 28,
+          "tests/test_phase43_stage72b_extraction_retry.py": 25,
+          "tests/test_phase43_stage72b_unicode_reason.py": 10,
+          "tests/test_phase43_stage72c_retry_compatibility.py": 33,
+          "tests/test_phase43_stage7_community.py": 3,
+          "tests/test_query.py": 24,
+          "tests/test_research_navigation.py": 7,
+          "tests/test_research_navigation_api.py": 1,
+          "tests/test_workbench_stage0.py": 31,
+          "tests/test_workbench_stage1.py": 39,
+          "tests/test_workbench_stage7.py": 15
+        }
+      },
+      "focused_command": "python -m pytest -q tests/test_mcp_stage0.py --basetemp SHORT_TEMP --junitxml workspace/mcp-r1-focused.xml -o junit_family=xunit1",
+      "regression_command": "python -m pytest -q tests/test_api.py tests/test_query.py tests/test_phase43_stage5.py tests/test_current_view_history.py tests/test_current_view_compare_api.py tests/test_current_view_comparator.py tests/test_research_navigation.py tests/test_research_navigation_api.py tests/test_workbench_stage0.py tests/test_workbench_stage1.py tests/test_workbench_stage7.py tests/test_phase43_stage7_community.py tests/test_phase43_stage71_shared_core_pending.py tests/test_phase43_stage72a_provider_diagnostics.py tests/test_phase43_stage72b_extraction_retry.py tests/test_phase43_stage72b_unicode_reason.py tests/test_phase43_stage72c_retry_compatibility.py --basetemp SHORT_TEMP --junitxml workspace/mcp-r1-regression.xml -o junit_family=xunit1",
+      "command_notation": "python is the existing isolated .venv interpreter; SHORT_TEMP is a fresh short local disposable directory",
+      "full_repository_suite_rerun": false,
+      "historical_full_suite_original": "2380 passed, 108 skipped, 3 failed, 43 errors",
+      "new_regressions_observed": 0
+    },
+    "static_and_package_checks": {
+      "compileall": {
+        "command": "python -m compileall -q src tests",
+        "result": "PASS"
+      },
+      "pip_check": {
+        "command": "python -m pip check",
+        "result": "PASS"
+      },
+      "wheel": {
+        "command": "python -m pip wheel --no-deps --no-cache-dir . -w workspace/dist-r1",
+        "path": "workspace/dist-r1/pro_a-0.5.1-py3-none-any.whl",
+        "sha256": "b9b1f1009128dc7c3daf1369fb7872645feec95984595272fd27711fafa66909",
+        "result": "PASS",
+        "six_mcp_modules_present": true,
+        "facade_and_service_packaged_bytes_equal": true,
+        "sdk_dependency": "mcp==2.2.0",
+        "console_entrypoint": "pro-a-mcp = pro_a.mcp.server:main",
+        "initial_nonisolated_build": "Could not import setuptools.build_meta; normal isolated build dependencies resolved the toolchain issue",
+        "generated_egg_info_changes_restored": true
+      },
+      "git_diff_check": "PASS",
+      "complete_diff_review": "PASS"
+    },
+    "historical_evidence_preservation": {
+      "pre_r1_receipt_all_existing_fields_preserved": true,
+      "pre_r1_qualification_document_preserved_as_prefix": true,
+      "historical_full_suite_claimed_green": false,
+      "stage7_through_stage72c_business_source_unchanged": true
+    }
+  }
 }
