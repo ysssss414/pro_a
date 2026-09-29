@@ -1,0 +1,1162 @@
+{
+  "stage": "PRO_A_MCP_STAGE0",
+  "status": "PASS",
+  "final_gate": "PRO_A_MCP_STAGE0 = PASS",
+  "qualified_at_utc": "2026-09-29T01:37:28.044182+00:00",
+  "baseline_sha": "b10d4ed8d770f8606335d53287cf8d415b38b383",
+  "remote_main_verified_before_implementation": "b10d4ed8d770f8606335d53287cf8d415b38b383",
+  "remote_main_reverified_before_commit": "b10d4ed8d770f8606335d53287cf8d415b38b383",
+  "implementation_sha": "5eb06408e14e391d94113bc607cd9b395e242046",
+  "qualification_commit_scope": "A subsequent documentation-only commit. No self-referential commit hash.",
+  "branch": "codex/pro-a-mcp-stage0-readonly-bridge",
+  "git_boundary": {
+    "isolated_worktree": true,
+    "original_local_main_sha_preserved": "9179e28e73c8658b4893729a90f40166f556a0bd",
+    "unrelated_user_files_preserved": true,
+    "existing_business_source_changed": false,
+    "historical_release_evidence_content_changed": false,
+    "merge_authorized": false,
+    "pr_intent": "Draft PR against main; publication verified after this receipt commit"
+  },
+  "contract_version": "pro-a-mcp-stage0-v1",
+  "runtime": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1",
+    "mcp": "2.2.0",
+    "mcp-types": "2.2.0",
+    "pydantic": "2.13.5",
+    "fastapi": "0.141.1",
+    "httpx": "0.28.1",
+    "anyio": "4.15.1",
+    "uvicorn": "0.54.0",
+    "pytest": "9.1.1",
+    "sdk_api": "mcp.server.MCPServer",
+    "sdk_pin": "mcp==2.2.0"
+  },
+  "tools": [
+    "pro_a_health",
+    "search_companies",
+    "get_company",
+    "list_company_materials",
+    "get_current_view",
+    "get_current_view_history",
+    "get_node_evidence",
+    "get_source",
+    "get_processing_run",
+    "get_review_packet",
+    "get_company_research_context"
+  ],
+  "transports": {
+    "stdio": "PASS: actual subprocess discovery and call",
+    "streamable_http": "PASS: actual loopback server discovery and research-context call",
+    "in_process_client_modes": [
+      "auto",
+      "legacy"
+    ],
+    "public_deployment": false,
+    "chatgpt_registered_or_tested": false
+  },
+  "production_writes": 0,
+  "workbench_writes": 0,
+  "provider_calls": 0,
+  "retry_calls": 0,
+  "reprocess_calls": 0,
+  "advertised_mutation_tools": 0,
+  "counter_scope": "MCP measurement windows and all real-state actions. Disposable fixture setup and historical regression tests intentionally exercise synthetic writes/fake providers/retries and are excluded.",
+  "real_production_opened": false,
+  "real_workbench_opened": false,
+  "historical_stage72_run_activated": false,
+  "historical_stage72c_compatibility_activated_against_real_state": false,
+  "community_reacquisition": false,
+  "frozen_real_processing_context_changed": false,
+  "readonly_evidence": {
+    "connection_mode": "Existing mode=ro URI connections; query_only mechanisms retained",
+    "write_probe_target": "Disposable fixture connections only",
+    "write_probes": [
+      "INSERT",
+      "UPDATE",
+      "DELETE",
+      "DDL"
+    ],
+    "write_probes_rejected": true,
+    "protocol_fixture_measurements": [
+      {
+        "test": "tests/test_mcp_stage0.py::test_protocol_discovery_calls_hashes_and_no_actions[auto]",
+        "database_hashes": {
+          "before": {
+            "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+            "workbench": "62bb4a3b56d293cbea09be3fd06d2461e9b7acac4c88f30a817dc09dd627e151"
+          },
+          "after": {
+            "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+            "workbench": "62bb4a3b56d293cbea09be3fd06d2461e9b7acac4c88f30a817dc09dd627e151"
+          }
+        },
+        "forbidden_calls": {
+          "provider": 0,
+          "retry": 0,
+          "reprocess": 0,
+          "write": 0
+        }
+      },
+      {
+        "test": "tests/test_mcp_stage0.py::test_protocol_discovery_calls_hashes_and_no_actions[legacy]",
+        "database_hashes": {
+          "before": {
+            "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+            "workbench": "879a6399472fbab9114a68cd22768de4b2464bbc4e3a91845540d944ee662ec2"
+          },
+          "after": {
+            "production": "4be1fa8c703d97f24940a3557a6a2b50d373808d1fb6245b95d2126117215929",
+            "workbench": "879a6399472fbab9114a68cd22768de4b2464bbc4e3a91845540d944ee662ec2"
+          }
+        },
+        "forbidden_calls": {
+          "provider": 0,
+          "retry": 0,
+          "reprocess": 0,
+          "write": 0
+        }
+      }
+    ],
+    "schema11_frozen_context_read_test": "PASS: pending context identity and database hashes unchanged"
+  },
+  "tests": {
+    "results": {
+      "mcp-qualified": {
+        "junit_path": "workspace/mcp-qualified.xml",
+        "junit_sha256": "cdbb7113557173a016a395a44ea5bdefdec1686cc42d3b811b5719d5831b9e4f",
+        "counts": {
+          "tests": 26,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 26
+        },
+        "duration_seconds": 61.098,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-regression": {
+        "junit_path": "workspace/mcp-regression.xml",
+        "junit_sha256": "aa5ca66daf76c2fc2cec36f77a6728289f542cc57b7d3e78327666f9608f6cc2",
+        "counts": {
+          "tests": 276,
+          "failures": 19,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 257
+        },
+        "duration_seconds": 393.587,
+        "failed_nodeids": [
+          "tests/test_phase43_stage5.py::test_fake_provider_review_attribution_and_qualified_unapplied",
+          "tests/test_workbench_stage7.py::test_golden_path_uses_durable_jobs_and_survives_restart",
+          "tests/test_workbench_stage7.py::test_review_attribution_qualification_disposable_activation_and_research",
+          "tests/test_phase43_stage7_community.py::test_disposable_schema11_import_dedupes_and_binds_events",
+          "tests/test_phase43_stage7_community.py::test_authenticated_preview_then_explicit_import",
+          "tests/test_phase43_stage71_shared_core_pending.py::test_generic_pending_packet_and_later_assignment_are_immutable",
+          "tests/test_phase43_stage71_shared_core_pending.py::test_community_pending_without_registered_domain",
+          "tests/test_phase43_stage71_shared_core_pending.py::test_community_http_preview_and_import_without_domain_header",
+          "tests/test_phase43_stage71_shared_core_pending.py::test_v2_allows_shaped_non_network_provider_but_v1_stays_blocked",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_durable_output_validation_and_no_failed_body",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_redacted_rejected_artifact_reconciles_without_repeating_call",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_real_adapter_output_rejection_retains_http_200_without_body",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_http_200_context_survives_later_failure[outcome2-OUTPUT_VALIDATION]",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_http_200_context_survives_durable_artifact_recovery",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_untrusted_response_identity_is_absent_from_failed_surfaces",
+          "tests/test_phase43_stage72a_provider_diagnostics.py::test_all_provider_result_strings_are_sanitized_before_failure_persistence",
+          "tests/test_phase43_stage72b_extraction_retry.py::test_success_same_run_context_history_and_no_acquisition_routing",
+          "tests/test_phase43_stage72c_retry_compatibility.py::test_metadata_only_release_drift_qualifies_and_reaches_human_review",
+          "tests/test_phase43_stage72c_retry_compatibility.py::test_semantic_surface_mutation_makes_qualification_block[cloud-workbench/source_operations.py-guard_cloud_runtime(\\n                    json.loads(row[\"runtime_json\"]), current_runtime,-bypass_cloud_runtime(\\n                    json.loads(row[\"runtime_json\"]), current_runtime,-BLOCKED_EXECUTION_CONTRACT_CHANGED]"
+        ],
+        "error_nodeids": []
+      },
+      "mcp-regression-short": {
+        "junit_path": "workspace/mcp-regression-short.xml",
+        "junit_sha256": "8302f329b51c0ffc571e2f15d50d590d47d4532ec86a4f9009a1eeac64109b77",
+        "counts": {
+          "tests": 276,
+          "failures": 1,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 275
+        },
+        "duration_seconds": 701.489,
+        "failed_nodeids": [
+          "tests/test_phase43_stage72c_retry_compatibility.py::test_semantic_surface_mutation_makes_qualification_block[cloud-workbench/source_operations.py-guard_cloud_runtime(\\n                    json.loads(row[\"runtime_json\"]), current_runtime,-bypass_cloud_runtime(\\n                    json.loads(row[\"runtime_json\"]), current_runtime,-BLOCKED_EXECUTION_CONTRACT_CHANGED]"
+        ],
+        "error_nodeids": []
+      },
+      "mcp-stage72c-lf": {
+        "junit_path": "workspace/mcp-stage72c-lf.xml",
+        "junit_sha256": "0ebbfa75bf91a461ab91e6f7097ee3e95566db3ced26763f5d84093ca8c8215c",
+        "counts": {
+          "tests": 5,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 5
+        },
+        "duration_seconds": 56.866,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-full": {
+        "junit_path": "workspace/mcp-full.xml",
+        "junit_sha256": "069f9fe8993410e39d722fb48e1792d5de28824765611bccde79fbe50d28c46a",
+        "counts": {
+          "tests": 2534,
+          "failures": 3,
+          "errors": 43,
+          "skipped": 108,
+          "passed": 2380
+        },
+        "duration_seconds": 1727.168,
+        "failed_nodeids": [
+          "tests/test_phase43_stage3_human_qualification.py::test_immutable_input_hashes_and_production_boundary",
+          "tests/test_phase43_stage6_lifecycle.py::test_closure_builder_is_deterministic_and_has_exact_authority_partition",
+          "tests/test_v0_2_1_knowledge_quality.py::test_parent_match_is_derived_from_confirmed_part_of_relation"
+        ],
+        "error_nodeids": [
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[minor]",
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[material]",
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[thesis]",
+          "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[ACCEPT]",
+          "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[REJECT]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[reason- ]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[action-MODIFY]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[document_type-other]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[schema_version-1]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[status-DRAFT]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_snapshot-value5]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_id-]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[created_at]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[target_node_id]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[payload]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_id]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_type]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[view-STALE_TARGET_VIEW]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[version-STALE_TARGET_VIEW]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[added-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[removed-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[role-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[ineligible-EVIDENCE_INELIGIBLE]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[inactive-NODE_NOT_ACTIVE]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[identity-NODE_IDENTITY_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[source-SOURCE_NOT_FOUND]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[frozen-FROZEN_CURRENT_VIEW_VALIDATION_FAILED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[no_change-CHANGE_DECISION_WITHOUT_VIEW_CHANGE]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[proposal_type-new_node]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[source_impact_id-IMPACT_1]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[propagation_batch_id-BATCH_1]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-malformed]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-{}]",
+          "tests/test_human_proposal_resolution.py::test_same_day_revision_uses_existing_helper",
+          "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[ACCEPT]",
+          "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[REJECT]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[backup]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_view]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_update]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[receipt]",
+          "tests/test_human_proposal_resolution.py::test_trigger_write_is_blocked_and_rolls_back",
+          "tests/test_human_proposal_resolution.py::test_read_api_terminal_history_and_no_write_routes",
+          "tests/test_human_proposal_resolution.py::test_isolated_guard_and_cli_intent"
+        ]
+      },
+      "mcp-full-configured-replay": {
+        "junit_path": "workspace/mcp-full-configured-replay.xml",
+        "junit_sha256": "69a0f5d52950090ea347285090506e826913028e61cdd5283e62b9149eb750fc",
+        "counts": {
+          "tests": 43,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 43
+        },
+        "duration_seconds": 13.207,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-full-environment-replay": {
+        "junit_path": "workspace/mcp-full-environment-replay.xml",
+        "junit_sha256": "bdd372132bb398c440e7b8918e46d069600a5b4287fae670bbadb001ef05bcef",
+        "counts": {
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 3
+        },
+        "duration_seconds": 1.373,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-timing-replay": {
+        "junit_path": "workspace/mcp-timing-replay.xml",
+        "junit_sha256": "ce9105dc15777b2300fff384b568ce2bdd7e2963e33cd869106fd955ab302a97",
+        "counts": {
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        "duration_seconds": 0.499,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-baseline-foundation": {
+        "junit_path": "workspace/mcp-baseline-foundation.xml",
+        "junit_sha256": "629b3a6867c03c308af5c8e011305f395e4cd3a05f54b6c0ae60b23b25866814",
+        "counts": {
+          "tests": 228,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 11,
+          "passed": 217
+        },
+        "duration_seconds": 113.201,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-baseline-human": {
+        "junit_path": "workspace/mcp-baseline-human.xml",
+        "junit_sha256": "11876ed280fbc283eff00bdd78172d233d589be855fdb6e023f6a84dcd649348",
+        "counts": {
+          "tests": 184,
+          "failures": 0,
+          "errors": 43,
+          "skipped": 0,
+          "passed": 141
+        },
+        "duration_seconds": 92.653,
+        "failed_nodeids": [],
+        "error_nodeids": [
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[minor]",
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[material]",
+          "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[thesis]",
+          "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[ACCEPT]",
+          "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[REJECT]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[reason- ]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[action-MODIFY]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[document_type-other]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[schema_version-1]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[status-DRAFT]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_snapshot-value5]",
+          "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_id-]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[created_at]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[target_node_id]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[payload]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_id]",
+          "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_type]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[view-STALE_TARGET_VIEW]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[version-STALE_TARGET_VIEW]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[added-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[removed-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[role-CANDIDATE_EVIDENCE_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[ineligible-EVIDENCE_INELIGIBLE]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[inactive-NODE_NOT_ACTIVE]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[identity-NODE_IDENTITY_CHANGED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[source-SOURCE_NOT_FOUND]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[frozen-FROZEN_CURRENT_VIEW_VALIDATION_FAILED]",
+          "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[no_change-CHANGE_DECISION_WITHOUT_VIEW_CHANGE]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[proposal_type-new_node]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[source_impact_id-IMPACT_1]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[propagation_batch_id-BATCH_1]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-malformed]",
+          "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-{}]",
+          "tests/test_human_proposal_resolution.py::test_same_day_revision_uses_existing_helper",
+          "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[ACCEPT]",
+          "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[REJECT]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[backup]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_view]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_update]",
+          "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[receipt]",
+          "tests/test_human_proposal_resolution.py::test_trigger_write_is_blocked_and_rolls_back",
+          "tests/test_human_proposal_resolution.py::test_read_api_terminal_history_and_no_write_routes",
+          "tests/test_human_proposal_resolution.py::test_isolated_guard_and_cli_intent"
+        ]
+      },
+      "mcp-baseline-configured": {
+        "junit_path": "workspace/mcp-baseline-configured.xml",
+        "junit_sha256": "9b67d4e4b52475a18e772224647bcf69ecd1a7839ca0805324256dedb1ae36eb",
+        "counts": {
+          "tests": 43,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 43
+        },
+        "duration_seconds": 37.864,
+        "failed_nodeids": [],
+        "error_nodeids": []
+      },
+      "mcp-baseline-three": {
+        "junit_path": "workspace/mcp-baseline-three.xml",
+        "junit_sha256": "0be1d4fd4ea82afd2ff5e9300553498c081999d561af3fc04d13e61f873611dd",
+        "counts": {
+          "tests": 3,
+          "failures": 2,
+          "errors": 0,
+          "skipped": 0,
+          "passed": 1
+        },
+        "duration_seconds": 2.424,
+        "failed_nodeids": [
+          "tests/test_phase43_stage3_human_qualification.py::test_immutable_input_hashes_and_production_boundary",
+          "tests/test_phase43_stage6_lifecycle.py::test_closure_builder_is_deterministic_and_has_exact_authority_partition"
+        ],
+        "error_nodeids": []
+      }
+    },
+    "focused_final": "26 passed",
+    "relevant_regression_final": "All 276 unique cases passed across the short-path run and LF correction replay",
+    "full_suite_first_invocation_green": false,
+    "full_suite_original": "2380 passed, 108 skipped, 3 failed, 43 errors",
+    "full_suite_original_mcp_cases": 22,
+    "final_mcp_cases_added_after_full_collection": 4,
+    "full_suite_rerun_after_final_test_only_additions": false,
+    "full_suite_original_failed_or_error_count": 46,
+    "full_suite_failed_or_error_nodeids_covered_by_passing_replays": [
+      "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[material]",
+      "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[minor]",
+      "tests/test_human_proposal_resolution.py::test_accept_exact_content_provenance_and_only_two_tables[thesis]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[added-CANDIDATE_EVIDENCE_CHANGED]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[frozen-FROZEN_CURRENT_VIEW_VALIDATION_FAILED]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[identity-NODE_IDENTITY_CHANGED]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[inactive-NODE_NOT_ACTIVE]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[ineligible-EVIDENCE_INELIGIBLE]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[no_change-CHANGE_DECISION_WITHOUT_VIEW_CHANGE]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[removed-CANDIDATE_EVIDENCE_CHANGED]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[role-CANDIDATE_EVIDENCE_CHANGED]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[source-SOURCE_NOT_FOUND]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[version-STALE_TARGET_VIEW]",
+      "tests/test_human_proposal_resolution.py::test_accept_revalidates_and_reject_still_works[view-STALE_TARGET_VIEW]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[action-MODIFY]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[document_type-other]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_id-]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[proposal_snapshot-value5]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[reason- ]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[schema_version-1]",
+      "tests/test_human_proposal_resolution.py::test_artifact_shape_rejections[status-DRAFT]",
+      "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[ACCEPT]",
+      "tests/test_human_proposal_resolution.py::test_concurrent_exact_resolution[REJECT]",
+      "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[ACCEPT]",
+      "tests/test_human_proposal_resolution.py::test_exact_replay_and_conflicts[REJECT]",
+      "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[created_at]",
+      "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[payload]",
+      "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_id]",
+      "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[proposal_type]",
+      "tests/test_human_proposal_resolution.py::test_exact_snapshot_rejections[target_node_id]",
+      "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_update]",
+      "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[after_view]",
+      "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[backup]",
+      "tests/test_human_proposal_resolution.py::test_failure_transaction_and_postcommit_reporting[receipt]",
+      "tests/test_human_proposal_resolution.py::test_isolated_guard_and_cli_intent",
+      "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-malformed]",
+      "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[payload_json-{}]",
+      "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[propagation_batch_id-BATCH_1]",
+      "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[proposal_type-new_node]",
+      "tests/test_human_proposal_resolution.py::test_legacy_or_malformed_never_resolved[source_impact_id-IMPACT_1]",
+      "tests/test_human_proposal_resolution.py::test_read_api_terminal_history_and_no_write_routes",
+      "tests/test_human_proposal_resolution.py::test_same_day_revision_uses_existing_helper",
+      "tests/test_human_proposal_resolution.py::test_trigger_write_is_blocked_and_rolls_back",
+      "tests/test_phase43_stage3_human_qualification.py::test_immutable_input_hashes_and_production_boundary",
+      "tests/test_phase43_stage6_lifecycle.py::test_closure_builder_is_deterministic_and_has_exact_authority_partition",
+      "tests/test_v0_2_1_knowledge_quality.py::test_parent_match_is_derived_from_confirmed_part_of_relation"
+    ],
+    "unresolved_failures_or_errors": [],
+    "new_regressions_observed": 0,
+    "transient_caveat": "Existing parent-match pipeline test yielded an empty result once; baseline and two candidate replays pass. Exact transient cause is unproven.",
+    "command_notation": "python is the isolated .venv interpreter. SHORT_TEMP is a fresh short local disposable directory; node IDs come from the corresponding original JUnit.",
+    "commands": {
+      "focused": "python -m pytest -q tests/test_mcp_stage0.py --basetemp SHORT_TEMP --junitxml workspace/mcp-qualified.xml -o junit_family=xunit1",
+      "relevant": "python -m pytest -q tests/test_api.py tests/test_query.py tests/test_phase43_stage5.py tests/test_current_view_history.py tests/test_current_view_compare_api.py tests/test_current_view_comparator.py tests/test_research_navigation.py tests/test_research_navigation_api.py tests/test_workbench_stage0.py tests/test_workbench_stage1.py tests/test_workbench_stage7.py tests/test_phase43_stage7_community.py tests/test_phase43_stage71_shared_core_pending.py tests/test_phase43_stage72a_provider_diagnostics.py tests/test_phase43_stage72b_extraction_retry.py tests/test_phase43_stage72b_unicode_reason.py tests/test_phase43_stage72c_retry_compatibility.py --basetemp SHORT_TEMP --junitxml workspace/mcp-regression-short.xml -o junit_family=xunit1",
+      "stage72c_lf": "python -m pytest -q tests/test_phase43_stage72c_retry_compatibility.py -k semantic_surface_mutation --basetemp SHORT_TEMP --junitxml workspace/mcp-stage72c-lf.xml",
+      "full": "python -m pytest -q --basetemp SHORT_TEMP --junitxml workspace/mcp-full.xml -o junit_family=xunit1",
+      "configured_replay": "python -m pytest -q <43 error node IDs from workspace/mcp-full.xml> --junitxml workspace/mcp-full-configured-replay.xml",
+      "failure_replay": "python -m pytest -q <3 failed node IDs from workspace/mcp-full.xml> --junitxml workspace/mcp-full-environment-replay.xml",
+      "compile": "python -m compileall -q src tests",
+      "dependency_check": "python -m pip check",
+      "package_build": "python -m pip wheel --no-deps --no-build-isolation . -w workspace/dist-final",
+      "diff_check": "git diff --check; git diff --cached --check"
+    }
+  },
+  "environment_corrections": {
+    "long_path_diagnostic_run_retained": "workspace/mcp-regression.xml; superseded by fresh short temporary paths",
+    "missing_ignored_config": "43 identical baseline and candidate setup errors; all pass with the offline-only config",
+    "offline_config": {
+      "workspace_root": "workspace/mcp-offline-empty",
+      "settle_seconds": 0,
+      "llm_enabled": false,
+      "ima_enabled": false
+    },
+    "windows_newline_conversion": "Restored exact baseline Git blob bytes after verifying CRLF-only conversion; no logical source or evidence edits",
+    "baseline_byte_restored_files": [
+      "docs/PHASE43_STAGE3_HUMAN_QUALIFICATION_PACKET_SELF_CONTAINED.md",
+      "docs/phase43_stage3_human_decision_template.json",
+      "docs/phase43_stage3_ai_review_a.json",
+      "docs/phase43_stage3_ai_review_b.json",
+      "docs/phase43_stage3_ai_review_reconciliation.json",
+      "docs/phase43_stage3_human_decisions_completed.json",
+      "lifecycle_closure/phase43_stage2_foundation_v1.json",
+      "src/pro_a/workbench/source_operations.py"
+    ],
+    "restored_files_in_implementation_diff": []
+  },
+  "historical_exceptions": {
+    "reference_receipt": "docs/phase43_stage72b_final_premerge_reaudit_receipt.json",
+    "reference_sha256": "74ccf35d3947fdb3be4f8e5b44a5dd5e9ede44b9b4a7225b7d186938439de158",
+    "reference_exception_count": 33,
+    "reference_exceptions": [
+      [
+        "tests/test_foundation_requalification.py::test_all_native_rows_requalify_without_db_writes",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_claim_identity_and_temporal_exception_stay_separate",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_comparison_explains_all_rows_without_accepting_content",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_full_old_baseline_preflight_releases_handle_without_gc",
+        "FAILED",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_manifest_cannot_expand_native_authority",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_native_roles_and_cpo_scope_not_content_authority",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+        "ERROR",
+        "pytest.fail"
+      ],
+      [
+        "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+        "FAILED",
+        "PilotError"
+      ],
+      [
+        "tests/test_phase3f_handoff_requalification.py::test_exact_seven_item_handoff_and_phase3d_validation",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_handoff_requalification.py::test_parent_placement_requires_executable_create_child",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_handoff_requalification.py::test_qualification_only_boundary_cannot_be_widened",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_handoff_requalification.py::test_requalification_build_is_deterministic",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_authorization_wrong_packet_or_extra_candidate_fails",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_clearly_synthetic_seven_decision_completion_validates",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_explicit_packet_bound_human_authorization_validates",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_generated_manifest_binds_packet_view_and_source",
+        "FAILED",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_missing_and_unknown_selected_decisions_fail_closed",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_no_unselected_candidate_can_enter_the_slice",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_parent_and_reuse_display_context_is_exact",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_persisted_completed_packet_and_receipt_match_authorization",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[production_authorization]",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_relation_create_requires_explicit_child_node_create",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_reuse_requires_the_exact_target",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_selected_records_exactly_match_the_full_packet",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_source_binding_and_candidate_content_tamper_fail",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase3f_qualification_review.py::test_source_packet_immutable_identity_is_verified",
+        "ERROR",
+        "QualificationReviewError"
+      ],
+      [
+        "tests/test_phase43_stage3_double_review.py::test_production_immutable_during_read_only_binding_when_available",
+        "FAILED",
+        "ValueError"
+      ]
+    ],
+    "same_exception_set_asserted": false,
+    "reason": "Isolated checkout has different unavailable private/frozen fixtures; baseline controls and explicit replay classify this run independently",
+    "current_skipped_count": 108,
+    "current_skip_reason_counts": {
+      "Path alias creation unavailable on platform": 1,
+      "historical private Foundation baseline is not configured in this checkout": 10,
+      "Frozen Phase 3C/3D replay artifacts unavailable": 1,
+      "local evidence-bearing Phase 3F audit fixture is intentionally untracked": 33,
+      "local evidence-bearing inputs are intentionally untracked": 1,
+      "private qualification inputs unavailable": 1,
+      "private Stage 3 native handoff is not present": 10,
+      "frozen Stage 3 private review or Production snapshot unavailable": 4,
+      "private frozen workflow unavailable": 1,
+      "Frozen local Stage 3D.2 artifacts unavailable": 7,
+      "Frozen local Stage 3D.3C inputs unavailable": 9,
+      "Frozen local Stage 3D.3A package unavailable": 11,
+      "Frozen local Pilot 6 qualification artifacts unavailable": 19
+    },
+    "current_skips": [
+      {
+        "nodeid": "tests/test_foundation_production_entry.py::test_shadow_path_aliases_stay_blocked[symlink]",
+        "reason": "Path alias creation unavailable on platform"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_full_old_baseline_preflight_releases_handle_without_gc",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_all_native_rows_requalify_without_db_writes",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_claim_identity_and_temporal_exception_stay_separate",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_native_roles_and_cpo_scope_not_content_authority",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_comparison_explains_all_rows_without_accepting_content",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[source-SOURCE_SHA]",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[excerpt-CLAIM_FIELD]",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[target-TARGET_DRIFT]",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_requalification_rejects_projection_tampering[time-CLAIM_FIELD]",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_foundation_requalification.py::test_manifest_cannot_expand_native_authority",
+        "reason": "historical private Foundation baseline is not configured in this checkout"
+      },
+      {
+        "nodeid": "tests/test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+        "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase3f_handoff_requalification.py::test_exact_seven_item_handoff_and_phase3d_validation",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_handoff_requalification.py::test_qualification_only_boundary_cannot_be_widened",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_handoff_requalification.py::test_parent_placement_requires_executable_create_child",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_handoff_requalification.py::test_requalification_build_is_deterministic",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_public_sanitization.py::test_public_audit_regeneration_is_deterministic",
+        "reason": "local evidence-bearing inputs are intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_blank_slice_is_exact_hash_bound_and_non_authorizing",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_selected_records_exactly_match_the_full_packet",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_parent_and_reuse_display_context_is_exact",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_generated_manifest_binds_packet_view_and_source",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_clearly_synthetic_seven_decision_completion_validates",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_source_packet_immutable_identity_is_verified",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_source_binding_and_candidate_content_tamper_fail",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_missing_and_unknown_selected_decisions_fail_closed",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_reuse_requires_the_exact_target",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_relation_create_requires_explicit_child_node_create",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[full_operational_review_complete]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[production_authorization]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_qualification_packet_cannot_masquerade[unselected_candidates_reviewed]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_no_unselected_candidate_can_enter_the_slice",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_explicit_packet_bound_human_authorization_validates",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_authorization_wrong_packet_or_extra_candidate_fails",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_qualification_review.py::test_persisted_completed_packet_and_receipt_match_authorization",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_real_blank_packet_is_hash_bound_deterministic_and_has_no_decisions",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_clearly_synthetic_completed_fixture_validates_without_authorizing_production",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_missing_unknown_and_gold_labels_fail_closed[-MISSING_DECISION]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_missing_unknown_and_gold_labels_fail_closed[ACCEPT-UNKNOWN_DECISION]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_missing_unknown_and_gold_labels_fail_closed[HUMAN_KEEP-UNKNOWN_DECISION]",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_immutable_candidate_tamper_fails",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_stale_artifact_hash_fails",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_malformed_and_duplicate_candidate_ids_fail",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_missing_reason_and_reuse_target_fail",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_unexpected_target_and_parent_create_dependency_fail",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_wrong_run_and_extra_candidate_fail_closed",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase3f_review_completion.py::test_duplicate_json_keys_are_rejected",
+        "reason": "local evidence-bearing Phase 3F audit fixture is intentionally untracked"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_double_review.py::test_production_immutable_during_read_only_binding_when_available",
+        "reason": "private qualification inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_completion_preserves_parent_candidates_and_evidence",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[missing]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[extra]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[duplicate]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[section_a]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[override]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[target]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[native]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[reviewer]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage3_human_qualification.py::test_native_validator_rejects_unauthorized_changes[parent_hash]",
+        "reason": "private Stage 3 native handoff is not present"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage4d_overlay.py::test_builder_binds_100_decisions_and_revised_endpoint_authority",
+        "reason": "frozen Stage 3 private review or Production snapshot unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage4d_overlay.py::test_overlay_readonly_map_selection_search_and_governance",
+        "reason": "frozen Stage 3 private review or Production snapshot unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage4d_overlay.py::test_overlay_hash_or_production_drift_fails_closed",
+        "reason": "frozen Stage 3 private review or Production snapshot unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase43_stage4d_overlay.py::test_authenticated_overlay_api_uses_readonly_production_copy",
+        "reason": "frozen Stage 3 private review or Production snapshot unavailable"
+      },
+      {
+        "nodeid": "tests/test_phase4_orchestration.py::test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+        "reason": "private frozen workflow unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_exact_26_node_review_universe_excludes_rejects_and_relations",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_review_is_deterministic_pending_and_advisory",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_ambiguous_and_unsupported_candidates_remain_defer",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_exact_production_resolution_is_bound_and_deterministic",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_source_wrong_bytes_same_name_fails_closed",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_staged_copy_preserves_exact_sha_and_real_archive_is_untouched",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_authorization.py::test_stage3d2_configured_production_hard_block_remains",
+        "reason": "Frozen local Stage 3D.2 artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_exact_source_freezes_deterministically_and_wrong_bytes_fail",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_production_archive_collision_is_rejected",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_exact_human_review_binding_and_tampering_fail",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_final_payload_is_deterministic_and_has_exact_inventory",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_final_payload_binds_source_human_and_production",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_defer_reject_relation_and_link_mutations_cannot_become_executable",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_final_preflight_and_production_write_blocks",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_conflicting_replay_fails_closed",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_final_qualification.py::test_full_final_shadow_rehearsal_replay_rollback_source_cleanup_and_restore",
+        "reason": "Frozen local Stage 3D.3C inputs unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_exact_26_human_decisions_bind_with_expected_counts",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_wrong_candidate_id_fails",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_missing_decision_fails",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_duplicate_decision_fails",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_wrong_reuse_target_fails",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_unexpected_decision_classification_fails[CREATE]",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_unexpected_decision_classification_fails[DEFER]",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_unexpected_decision_classification_fails[REJECT]",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_defer_and_rejected_duplicates_remain_nonexecutable",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_source_blocker_prevents_executable_or_final_payload",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_human_review.py::test_production_unchanged_and_hard_blocked",
+        "reason": "Frozen local Stage 3D.3A package unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_exact_pilot6_artifact_convergence_107_to_104",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_modified_artifact_hash_fails",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_missing_or_extra_claim_fails[missing]",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_missing_or_extra_claim_fails[extra]",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_reviewer_surface_mismatch_fails",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_incorrect_table_decision_fails",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_payload_is_deterministic_with_deterministic_ids_and_hash",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_payload_binds_baseline_and_changes_when_baseline_changes",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_payload_preserves_audit_chain_and_excludes_audit_only_operations",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_accepted_claim_does_not_authorize_node_or_relation_mutation",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_update_non_structural_relation_and_unsupported_operation_fail_closed",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_node_id_canonical_alias_and_package_internal_collisions",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_reuse_target_drift_and_inactive_target_fail",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_configured_production_path_and_samefile_are_hard_blocked",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_symlink_equivalent_production_path_is_blocked",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_shadow_apply_exact_delta_fk_integrity_and_idempotency",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_conflicting_replay_fails",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_injected_failure_rolls_back_semantic_state",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      },
+      {
+        "nodeid": "tests/test_production_promotion.py::test_qualification_proves_restore_and_production_unchanged",
+        "reason": "Frozen local Pilot 6 qualification artifacts unavailable"
+      }
+    ]
+  },
+  "static_and_package_checks": {
+    "compileall": "PASS",
+    "pip_check": "PASS",
+    "new_module_ast_forbidden_action_call_inspection": "PASS",
+    "complete_implementation_diff_review": "PASS",
+    "git_diff_check": "PASS",
+    "wheel": {
+      "path": "workspace/dist-final/pro_a-0.5.1-py3-none-any.whl",
+      "sha256": "8bfba3bd85bc4447885d99aa797cc26bb1073d78b7ec4c5464061b828ac02269",
+      "six_mcp_modules_present": true,
+      "console_entrypoint": "pro-a-mcp = pro_a.mcp.server:main",
+      "runtime_dependency_present": "mcp==2.2.0"
+    }
+  },
+  "bounds": {
+    "request_list_max": 50,
+    "nested_list_max": 100,
+    "text_char_max": 16384,
+    "payload_utf8_bytes_max": 131072,
+    "nested_depth_max": 16,
+    "cursor_offset_max": 10000000
+  },
+  "limitations": [
+    "Sequential composite reads are not an atomic cross-database snapshot; no cache",
+    "Existing read models may materialize a full collection internally before result pagination",
+    "Allowlisting and recognizable-secret/path checks do not detect every secret embedded in natural language",
+    "108 full-suite skipped cases retain their unavailable-fixture/platform limitations",
+    "Full suite was not repeated end-to-end after environment corrections; all original failed/error IDs passed targeted replay",
+    "Authentication, access policy, public HTTPS or Secure MCP Tunnel, ChatGPT registration and end-to-end ChatGPT checks are future authorized work"
+  ],
+  "raw_test_artifact_policy": "JUnit/log files and synthetic fixtures remain local under ignored workspace; this durable receipt retains counts, node IDs, measurements and JUnit hashes"
+}
