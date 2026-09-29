@@ -803,10 +803,17 @@ class CloudJobs:
                 retryable=failure.retryable, details=details,
             )
             safe_code = safe_identifier(failure.code) or "UNKNOWN_PROVIDER_ERROR"
+            usage = tuple(diagnostic[key] for key in ("prompt_tokens", "completion_tokens", "total_tokens"))
+            known = all(value is not None for value in usage)
             connection.execute('''INSERT INTO cloud_attempt_outcomes(attempt_id,outcome,external_outcome,
-                provider_request_id,usage_status,sanitized_error,ended_at) VALUES(?,?,?,?,?,?,?)''',
+                provider_request_id,usage_status,sanitized_error,ended_at,provider_reported_model,
+                input_tokens,output_tokens,total_tokens,cached_tokens,latency_ms,finish_reason)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
                                (attempt_id, "FAILED", failure.external_outcome,
-                                diagnostic["provider_request_id"], "UNKNOWN", safe_code, ended))
+                                diagnostic["provider_request_id"], "KNOWN" if known else "UNKNOWN", safe_code, ended,
+                                diagnostic["response_model"], *(usage if known else (None, None, None)),
+                                diagnostic["cached_tokens"] if known else None,
+                                diagnostic["duration_ms"], diagnostic["finish_reason"]))
             self._event(connection, job_id, "PROVIDER_ATTEMPT_FAILED",
                         {"attempt_id": attempt_id, "code": safe_code,
                          "external_outcome": failure.external_outcome,

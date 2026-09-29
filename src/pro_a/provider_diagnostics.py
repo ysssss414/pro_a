@@ -29,6 +29,37 @@ _CLASSES = {
 _STAGES = {"ROUTING", "REQUEST_BUILD", "TRANSPORT", "HTTP_RESPONSE",
            "PROVIDER_PARSE", "MODEL_OUTPUT_PARSE", "OUTPUT_VALIDATION",
            "PERSISTENCE", "UNKNOWN"}
+_FINISH_REASONS = {"stop", "length", "content_filter", "insufficient_system_resource",
+                   "tool_calls", "function_call"}
+_OUTPUT_PARSE_KINDS = {"TRUNCATED", "MALFORMED_JSON", "NON_OBJECT_JSON", "EMPTY_CONTENT",
+                       "CONTENT_FILTER", "INSUFFICIENT_SYSTEM_RESOURCE", "TOOL_CALLS",
+                       "UNEXPECTED_FINISH_REASON"}
+
+
+def _bounded_integer(value: Any, maximum: int) -> int | None:
+    return value if type(value) is int and 0 <= value <= maximum else None
+
+
+def _output_diagnostic(info: Mapping[str, Any]) -> dict[str, Any]:
+    finish = info.get("finish_reason")
+    kind = info.get("output_parse_kind")
+    length = _bounded_integer(info.get("content_length"), 100_000_000)
+    position = _bounded_integer(info.get("raw_response_json_error_position"), 100_000_000)
+    if position is not None and length is not None and position > length:
+        position = None
+    content_hash = info.get("content_sha256")
+    syntax = info.get("raw_response_syntactically_parseable")
+    return {
+        "finish_reason": finish if isinstance(finish, str) and finish in _FINISH_REASONS else None,
+        "response_model": safe_identifier(info.get("response_model")),
+        **{key: _bounded_integer(info.get(key), 10_000_000)
+           for key in ("prompt_tokens", "completion_tokens", "total_tokens", "cached_tokens")},
+        "content_length": length,
+        "content_sha256": content_hash if isinstance(content_hash, str) and re.fullmatch(r"[0-9a-f]{64}", content_hash) else None,
+        "raw_response_syntactically_parseable": syntax if type(syntax) is bool else None,
+        "raw_response_json_error_position": position,
+        "output_parse_kind": kind if isinstance(kind, str) and kind in _OUTPUT_PARSE_KINDS else None,
+    }
 
 
 def safe_identifier(value: Any) -> str | None:
@@ -78,6 +109,9 @@ def build_failure_diagnostic(*, provider: str, model: str, operation_kind: str,
     provider_code = safe_provider_error_value(info.get("provider_error_code"))
     fingerprint_input = [provider_name, model_name, operation, stage, error_class,
                          status, provider_type, provider_code]
+    output = _output_diagnostic(info if stage == "MODEL_OUTPUT_PARSE" else {})
+    if output["output_parse_kind"] is not None or output["finish_reason"] is not None:
+        fingerprint_input.extend((output["output_parse_kind"], output["finish_reason"]))
     fingerprint = hashlib.sha256(json.dumps(fingerprint_input, separators=(",", ":")).encode()).hexdigest()
     summary = (f"HTTP {status} from provider API" if stage == "HTTP_RESPONSE" and status is not None
                else f"{error_class.replace('_', ' ').lower()} after HTTP {status}" if status is not None
@@ -105,6 +139,7 @@ def build_failure_diagnostic(*, provider: str, model: str, operation_kind: str,
         "response_size_bytes": size if type(size) is int and 0 <= size < 100000000 else None,
         "request_payload_size_bytes": payload_size if type(payload_size) is int and 0 <= payload_size < 100000000 else None,
         "error_fingerprint": fingerprint, "safe_error_summary": summary[:500],
+        **output,
     }
 
 

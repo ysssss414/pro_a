@@ -1,0 +1,122 @@
+{
+  "task": "PRO_A_PROVIDER_OUTPUT_FAILURE_TELEMETRY_R1",
+  "result": "PASS",
+  "baseline_sha": "5eb9d6bedd97a615a5ef56e143840e17aa8ba6ad",
+  "implementation_sha": "b53cd1fa72166a66652de4949c3fec459e1c5f8f",
+  "root_cause": "ChatLLM parse metadata survived provider error conversion but was omitted from the diagnostic allowlist and failure outcome insert.",
+  "newly_durable_fields": [
+    "finish_reason",
+    "response_model",
+    "prompt_tokens",
+    "completion_tokens",
+    "total_tokens",
+    "cached_tokens",
+    "content_length",
+    "content_sha256",
+    "raw_response_syntactically_parseable",
+    "raw_response_json_error_position",
+    "output_parse_kind"
+  ],
+  "cached_token_capture": "DeepSeek prompt_cache_hit_tokens; standard prompt_tokens_details.cached_tokens when absent.",
+  "prohibited_fields": [
+    "raw_content",
+    "content_tail",
+    "raw_response",
+    "prompt_text",
+    "source_text",
+    "raw_response_json_error",
+    "exception_message",
+    "credentials",
+    "authorization",
+    "cookie"
+  ],
+  "output_parse_kinds": [
+    "TRUNCATED",
+    "MALFORMED_JSON",
+    "NON_OBJECT_JSON",
+    "EMPTY_CONTENT",
+    "CONTENT_FILTER",
+    "INSUFFICIENT_SYSTEM_RESOURCE",
+    "TOOL_CALLS",
+    "UNEXPECTED_FINISH_REASON"
+  ],
+  "outcome_behavior": "Existing columns only; KNOWN requires three valid nonnegative bounded integer usage counts. Otherwise UNKNOWN and null outcome counts. Safe response model, finish reason and latency retained.",
+  "event_behavior": "Additive allowlisted PROVIDER_ATTEMPT_FAILED diagnostic; no historical backfill or migration.",
+  "fingerprint_behavior": "Safe subtype/finish categories distinguish parse classes; content hash/length, parser offset, request ID and timestamps excluded.",
+  "tests": {
+    "focused": {
+      "passed": 43
+    },
+    "required_matrix_initial": {
+      "passed": 287,
+      "failed": 2
+    },
+    "affected_compatibility_file_final": {
+      "passed": 35
+    },
+    "final_unique_regression_cases_passed": 291,
+    "unaffected_matrix_cases_passed": 256,
+    "full_repository_suite_run": false,
+    "initial_failures_resolved": [
+      "Make synthetic multiline mutation independent of CRLF.",
+      "Pin old adapter-repair comparison to its actual merged release; assert telemetry changes both execution surfaces."
+    ]
+  },
+  "validation": {
+    "compileall": "PASS",
+    "pip_check": "PASS",
+    "isolated_pep517_wheel": "PASS",
+    "wheel": {
+      "wheel_sha256": "78d28835a4294187cd97432b3c2fa9a4ea728272a30c1f868b62f272c5add4c3",
+      "python_files_verified": 129,
+      "source_byte_match": true
+    },
+    "diff_check": "PASS",
+    "privacy_sentinel_scan": "PASS",
+    "publication_private_data_scan": "PASS"
+  },
+  "real_state": {
+    "production_unchanged": true,
+    "workbench_unchanged": true,
+    "historical_run_1_unchanged": true,
+    "historical_run_2_unchanged": true,
+    "job_rows_unchanged": true,
+    "attempt_rows_unchanged": true,
+    "outcome_rows_unchanged": true,
+    "old_diagnostics_backfilled": false
+  },
+  "cross_release": {
+    "cloud": "SEMANTIC_SURFACE_CHANGED",
+    "native": "SEMANTIC_SURFACE_CHANGED",
+    "compatibility_bypass_added": false,
+    "preferred_future_recovery": "Separately authorized new Run after merge and activation, unless separately qualified otherwise."
+  },
+  "gates": {
+    "observability_gap_confirmed": true,
+    "output_parse_kind_durable": true,
+    "finish_reason_durable": true,
+    "known_failure_token_usage_durable": true,
+    "content_length_durable": true,
+    "content_sha256_durable": true,
+    "json_syntax_boolean_durable": true,
+    "json_error_position_durable_when_available": true,
+    "raw_model_content_persisted": false,
+    "raw_prompt_persisted_in_failure_diagnostic": false,
+    "content_tail_persisted": false,
+    "parser_behavior_changed": false,
+    "retryability_changed": false,
+    "output_budget_changed": false,
+    "chunking_changed": false,
+    "historical_real_run_mutated": false,
+    "historical_attempt_count": 2,
+    "real_provider_calls": 0,
+    "production_writes": 0,
+    "real_workbench_writes": 0,
+    "retry_calls": 0,
+    "new_real_runs": 0
+  },
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "stable_runtime_upgraded": false,
+  "tunnel_restarted": false,
+  "real_processing_resumed": false
+}
