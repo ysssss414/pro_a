@@ -296,7 +296,7 @@ def test_required_adapter_change_changes_new_identity(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
     row = jobs(value)[0]
-    monkeypatch.setattr(contract, "SOURCE_ANALYSIS_ADAPTER_VERSION", "source-analysis-piece-adapter-v2")
+    monkeypatch.setattr(contract, "SOURCE_ANALYSIS_ADAPTER_VERSION", "source-analysis-piece-adapter-future")
     runtime_identity.cache_clear()
     try:
         new = service.jobs.submit(idempotency_key="changed-operation-identity-0001",
@@ -305,7 +305,7 @@ def test_required_adapter_change_changes_new_identity(tmp_path, monkeypatch):
             changed = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (new["job"]["job_id"],)).fetchone())
             original = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (row["job_id"],)).fetchone())
         assert original == row
-        assert changed["provider_adapter_version"] == "source-analysis-piece-adapter-v2"
+        assert changed["provider_adapter_version"] == "source-analysis-piece-adapter-future"
         assert changed["intent_sha256"] != row["intent_sha256"]
         assert changed["runtime_sha256"] != row["runtime_sha256"]
         assert changed["prompt_json"] != row["prompt_json"]

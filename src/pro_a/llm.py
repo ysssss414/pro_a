@@ -7,13 +7,13 @@ import re
 import socket
 import time
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Literal
 
 import requests
 
 from .config import LLMConfig
 from .provider_diagnostics import (http_error_class, safe_provider_error_value,
-                                   safe_request_id)
+                                   safe_request_id, safe_reasoning_tokens)
 
 
 logger = logging.getLogger(__name__)
@@ -220,8 +220,11 @@ class ChatLLM:
     def _sleep_before_retry(self, attempt_number: int) -> None:
         time.sleep(self.cfg.retry_backoff_seconds * (2 ** (attempt_number - 1)))
 
-    def json(self, system: str, user: str) -> dict[str, Any]:
+    def json(self, system: str, user: str, *,
+             thinking_mode: Literal["disabled"] | None = None) -> dict[str, Any]:
         self._attempt_events = []
+        if thinking_mode is not None and thinking_mode != "disabled":
+            raise LLMError("UNSUPPORTED_THINKING_MODE")
         if not self.available:
             raise LLMError("LLM is disabled or API key is missing")
         endpoint = self.cfg.base_url.rstrip("/")
@@ -237,6 +240,8 @@ class ChatLLM:
             "response_format": {"type": "json_object"},
             "max_tokens": self.cfg.max_output_tokens,
         }
+        if thinking_mode is not None:
+            payload["thinking"] = {"type": thinking_mode}
         headers = {"Authorization": f"Bearer {self.cfg.api_key}", "Content-Type": "application/json"}
         max_attempts = 1 + self.cfg.max_retries
         for attempt_number in range(1, max_attempts + 1):
@@ -303,7 +308,7 @@ class ChatLLM:
                     pass
                 raise LLMError(
                     "LLM HTTP retry exhausted: failure_category=http_status; "
-                    f"attempts={attempt_number}; final_status={resp.status_code}: {resp.text[:1000]}"
+                    f"attempts={attempt_number}; final_status={resp.status_code}"
                 )
             if resp.status_code >= 400:
                 self._attempt_events[-1].update(failure_stage="HTTP_RESPONSE",
@@ -313,7 +318,7 @@ class ChatLLM:
                     self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
                 except Exception:
                     pass
-                raise LLMError(f"LLM HTTP {resp.status_code}: {resp.text[:1000]}")
+                raise LLMError(f"LLM HTTP {resp.status_code}")
             break
 
         try:
@@ -324,25 +329,26 @@ class ChatLLM:
                                                           else "RESPONSE_EMPTY" if not getattr(resp, "text", "")
                                                           else "RESPONSE_CONTENT_TYPE_INVALID" if self._attempt_events[-1].get("response_content_type") == "other"
                                                           else "RESPONSE_JSON_PARSE_ERROR"))
-            raise LLMError(f"Unexpected LLM response: invalid JSON body: {resp.text[:1000]}") from e
+            raise LLMError("Unexpected LLM response: invalid JSON body") from None
         body = _body_diagnostic(data)
         self._attempt_events[-1].update({k: v for k, v in body.items() if v is not None})
         try:
             choice = data["choices"][0]
             finish_reason = choice["finish_reason"]
             content = choice["message"]["content"]
-        except (KeyError, IndexError, TypeError) as e:
+        except (KeyError, IndexError, TypeError):
             self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
                                              error_class="PROVIDER_API_ERROR" if isinstance(data, dict) and isinstance(data.get("error"), dict) else "PROVIDER_RESPONSE_SCHEMA_ERROR")
-            raise LLMError(f"Unexpected LLM response: {data}") from e
+            raise LLMError("Unexpected LLM response: invalid response schema") from None
 
         if not isinstance(content, str):
             self._attempt_events[-1].update(failure_stage="PROVIDER_PARSE",
                                              error_class="PROVIDER_RESPONSE_SCHEMA_ERROR")
-            raise LLMError(f"Unexpected LLM response: {data}")
+            raise LLMError("Unexpected LLM response: invalid content type")
 
         usage = data.get("usage")
         token_details = usage.get("prompt_tokens_details") if isinstance(usage, dict) else None
+        completion_details = usage.get("completion_tokens_details") if isinstance(usage, dict) else None
         response_id = self._attempt_events[-1].get("provider_request_id")
         self._attempt_events[-1].update(
             provider_request_id=safe_request_id(response_id),
@@ -353,6 +359,10 @@ class ChatLLM:
             ),
             completion_tokens=(
                 usage.get("completion_tokens") if isinstance(usage, dict) else None
+            ),
+            reasoning_tokens=safe_reasoning_tokens(
+                completion_details.get("reasoning_tokens") if isinstance(completion_details, dict) else None,
+                usage.get("completion_tokens") if isinstance(usage, dict) else None,
             ),
             total_tokens=(
                 usage.get("total_tokens") if isinstance(usage, dict) else None

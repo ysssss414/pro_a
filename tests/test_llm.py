@@ -464,7 +464,7 @@ def test_non_retryable_http_status_is_attempted_once(monkeypatch, status_code):
         FakeResponse({}, status_code=status_code, text="not retryable"),
     )
 
-    with pytest.raises(LLMError, match=rf"LLM HTTP {status_code}: not retryable"):
+    with pytest.raises(LLMError, match=rf"^LLM HTTP {status_code}$"):
         llm.json("Return JSON.", "synthetic input")
 
     assert len(captured["calls"]) == 1

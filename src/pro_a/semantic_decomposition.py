@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Protocol, Sequence
 
 from .analyzer import canonicalize_text
+from .constants import STRUCTURED_JSON_THINKING_MODE
 from .llm import ChatLLM, LLMError
 from .proposition_ir import (
     COHERENCE_TYPES,
@@ -187,6 +188,8 @@ class SemanticBackend(Protocol):
 class ChatLLMSemanticBackend:
     """Configured ChatLLM adapter; it does not change extraction."""
 
+    thinking_mode = STRUCTURED_JSON_THINKING_MODE
+
     def __init__(self, llm: ChatLLM):
         self.llm = llm
 
@@ -214,7 +217,8 @@ class ChatLLMSemanticBackend:
         user = SEMANTIC_DECOMPOSITION_USER.format(
             claims_json=json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
         )
-        return self.llm.json(SEMANTIC_DECOMPOSITION_SYSTEM, user)
+        return self.llm.json(SEMANTIC_DECOMPOSITION_SYSTEM, user,
+                             thinking_mode=self.thinking_mode)
 
 
 def build_evidence_units(

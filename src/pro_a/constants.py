@@ -1,3 +1,6 @@
+STRUCTURED_JSON_REASONING_POLICY_VERSION = "structured-json-reasoning-v1"
+STRUCTURED_JSON_THINKING_MODE = "disabled"
+
 NODE_TYPES = [
     "Industry", "Segment", "Technology", "Product", "Material", "Equipment",
     "Entity", "Company", "Application", "Standard", "Policy", "Theme", "Event", "ResearchQuestion",

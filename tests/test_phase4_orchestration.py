@@ -248,6 +248,9 @@ def test_forbidden_http_semantic_failure_has_one_attempt(monkeypatch, finish_rea
     assert len(calls) == 1
     assert not any(e["event"] == "RETRY_AUTHORIZED" for e in events)
 
+    assert calls[0]["json"]["thinking"] == {"type": "disabled"}
+    assert "reasoning_effort" not in calls[0]["json"]
+
 
 def test_frozen_replay_requires_exact_inputs_and_single_consumption():
     inputs = _semantic_inputs(2)

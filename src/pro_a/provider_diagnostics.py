@@ -40,6 +40,12 @@ def _bounded_integer(value: Any, maximum: int) -> int | None:
     return value if type(value) is int and 0 <= value <= maximum else None
 
 
+def safe_reasoning_tokens(value: Any, completion_tokens: Any) -> int | None:
+    count = _bounded_integer(value, 10_000_000)
+    completion = _bounded_integer(completion_tokens, 10_000_000)
+    return None if count is not None and completion is not None and count > completion else count
+
+
 def _output_diagnostic(info: Mapping[str, Any]) -> dict[str, Any]:
     finish = info.get("finish_reason")
     kind = info.get("output_parse_kind")
@@ -54,6 +60,7 @@ def _output_diagnostic(info: Mapping[str, Any]) -> dict[str, Any]:
         "response_model": safe_identifier(info.get("response_model")),
         **{key: _bounded_integer(info.get(key), 10_000_000)
            for key in ("prompt_tokens", "completion_tokens", "total_tokens", "cached_tokens")},
+        "reasoning_tokens": safe_reasoning_tokens(info.get("reasoning_tokens"), info.get("completion_tokens")),
         "content_length": length,
         "content_sha256": content_hash if isinstance(content_hash, str) and re.fullmatch(r"[0-9a-f]{64}", content_hash) else None,
         "raw_response_syntactically_parseable": syntax if type(syntax) is bool else None,
