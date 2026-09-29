@@ -902,7 +902,7 @@ class CloudJobs:
             "latency_ms": result.latency_ms, "finish_reason": result.finish_reason,
             "usage": {"status": result.usage_status, "input_tokens": result.input_tokens,
                       "output_tokens": result.output_tokens, "total_tokens": result.total_tokens,
-                      "cached_tokens": result.cached_tokens},
+                      "cached_tokens": result.cached_tokens, "reasoning_tokens": result.reasoning_tokens},
             "model_identity_status": model_identity_status,
             "validation_status": validation_status,
             "normalized_error": terminal_error,
@@ -970,6 +970,7 @@ class CloudJobs:
                 WHERE job_id=:job_id''', {**values, "updated_at": now(), "job_id": request.job_id})
             self._event(connection, request.job_id, "PROVIDER_ATTEMPT_COMPLETED",
                         {"attempt_id": request.attempt_id, "usage_status": result.usage_status,
+                         "reasoning_tokens": result.reasoning_tokens,
                          "model_identity_status": model_status})
             self._event(connection, request.job_id, "OUTPUT_VALIDATED",
                         {"attempt_id": request.attempt_id, "status": validation_status})
@@ -1189,6 +1190,7 @@ class CloudJobs:
                 finish_reason=envelope["finish_reason"], usage_status=usage["status"],
                 input_tokens=usage.get("input_tokens"), output_tokens=usage.get("output_tokens"),
                 total_tokens=usage.get("total_tokens"), cached_tokens=usage.get("cached_tokens"),
+                reasoning_tokens=usage.get("reasoning_tokens"),
                 output=envelope["raw_provider_output"],
                 transport_diagnostic={"http_status": status},
             )
@@ -1275,6 +1277,10 @@ class CloudJobs:
                 )
                 self._event(connection, row["job_id"], "PROVIDER_OUTPUT_REJECTED",
                             {"attempt_id": request.attempt_id, "diagnostic": diagnostic})
+            self._event(connection, row["job_id"], "PROVIDER_ATTEMPT_COMPLETED",
+                        {"attempt_id": attempt["attempt_id"], "usage_status": result.usage_status,
+                         "reasoning_tokens": result.reasoning_tokens,
+                         "model_identity_status": model_status})
             self._event(connection, row["job_id"], "RECONCILED",
                         {"from": "DURABLE_RESULT_ARTIFACT", "provider_call_repeated": False})
         return True

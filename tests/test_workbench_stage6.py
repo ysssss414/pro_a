@@ -187,6 +187,7 @@ def test_source_analysis_real_adapter_projects_provider_request_id(monkeypatch):
     provider = SourceAnalysisPieceProvider(llm, provider_identity="deepseek")
     request = SimpleNamespace(
         operation_kind=SOURCE_ANALYSIS_OPERATION,
+        prompt_identity=operation_contract(SOURCE_ANALYSIS_OPERATION),
         requested_model="deepseek-flash",
         timeout_seconds=60,
         max_output_tokens=8192,
@@ -209,6 +210,7 @@ def test_semantic_real_adapter_projects_provider_request_id(monkeypatch):
     )
     request = SimpleNamespace(
         operation_kind=OPERATION_KIND,
+        prompt_identity=operation_contract(OPERATION_KIND),
         requested_model="deepseek-flash",
         timeout_seconds=60,
         max_output_tokens=8192,

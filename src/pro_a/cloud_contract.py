@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 from typing import Any, Mapping, Protocol
 
 from .analyzer import canonicalize_text
+from .constants import STRUCTURED_JSON_REASONING_POLICY_VERSION, STRUCTURED_JSON_THINKING_MODE
 from .llm import ChatLLM, LLMError
+from .provider_diagnostics import safe_reasoning_tokens
 from .prompts import SOURCE_ANALYSIS_SYSTEM, SOURCE_ANALYSIS_USER
 from .semantic_decomposition import (
     MODEL_RESULT_FIELDS,
@@ -30,8 +32,8 @@ RETRY_OWNER = "DURABLE_CLOUD_WORKER"
 RETRY_POLICY_ID = "stage6-operational-retry-v1"
 PROMPT_ID = "semantic-decomposition"
 PROMPT_VERSION = "2.1"
-ADAPTER_VERSION = "semantic-backend-adapter-v1"
-SOURCE_ANALYSIS_ADAPTER_VERSION = "source-analysis-piece-adapter-v1"
+ADAPTER_VERSION = "semantic-backend-adapter-v2"
+SOURCE_ANALYSIS_ADAPTER_VERSION = "source-analysis-piece-adapter-v2"
 USAGE_STATUSES = ("KNOWN", "UNKNOWN")
 OUTCOME_STATUSES = ("NOT_DISPATCHED", "KNOWN_FAILURE", "UNKNOWN")
 
@@ -63,6 +65,8 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
         ).hexdigest()
         return {
             "operation_kind": OPERATION_KIND,
+            "thinking_policy_version": STRUCTURED_JSON_REASONING_POLICY_VERSION,
+            "thinking_mode": STRUCTURED_JSON_THINKING_MODE,
             "provider_adapter_version": adapter_version_for_operation(operation_kind),
             "operation_schema_version": "semantic-decomposition-result-v2.1",
             "prompt_id": PROMPT_ID,
@@ -78,6 +82,8 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
         ).hexdigest()
         return {
             "operation_kind": SOURCE_ANALYSIS_OPERATION,
+            "thinking_policy_version": STRUCTURED_JSON_REASONING_POLICY_VERSION,
+            "thinking_mode": STRUCTURED_JSON_THINKING_MODE,
             "provider_adapter_version": adapter_version_for_operation(operation_kind),
             "operation_schema_version": "source-analysis-piece-v1",
             "prompt_id": "source-analysis-piece",
@@ -209,11 +215,18 @@ class CloudResult:
     cached_tokens: int | None
     output: Mapping[str, Any]
     transport_diagnostic: Mapping[str, Any] | None = None
+    reasoning_tokens: int | None = None
 
     def __post_init__(self) -> None:
         if self.usage_status not in USAGE_STATUSES:
             raise CloudContractError("INVALID_PROVIDER_RESULT")
-        values = (self.input_tokens, self.output_tokens, self.total_tokens, self.cached_tokens)
+        values = (self.input_tokens, self.output_tokens, self.total_tokens, self.cached_tokens,
+                  self.reasoning_tokens)
+        if self.reasoning_tokens is not None and (
+                type(self.reasoning_tokens) is not int
+                or safe_reasoning_tokens(self.reasoning_tokens, self.output_tokens) != self.reasoning_tokens
+                or type(self.output_tokens) is not int or self.reasoning_tokens > self.output_tokens):
+            raise CloudContractError("INVALID_PROVIDER_RESULT")
         if self.usage_status == "UNKNOWN" and any(value is not None for value in values):
             raise CloudContractError("INVALID_PROVIDER_RESULT")
         if self.usage_status == "KNOWN" and any(
@@ -230,6 +243,15 @@ class CloudProvider(Protocol):
     adapter_version: str
 
     def invoke(self, request: CloudRequest) -> CloudResult: ...
+
+
+def _require_structured_reasoning_policy(request: CloudRequest, thinking_mode: str | None) -> None:
+    expected = operation_contract(request.operation_kind)
+    if thinking_mode != STRUCTURED_JSON_THINKING_MODE or any(
+            request.prompt_identity.get(key) != expected[key]
+            for key in ("thinking_policy_version", "thinking_mode", "provider_adapter_version")):
+        raise ProviderFailure("PROVIDER_REASONING_POLICY_MISMATCH", retryable=False,
+                              external_outcome="NOT_DISPATCHED")
 
 
 class SemanticBackendProvider:
@@ -249,6 +271,8 @@ class SemanticBackendProvider:
             raise ProviderFailure("PROVIDER_OPERATION_UNSUPPORTED", retryable=False,
                                   external_outcome="NOT_DISPATCHED")
         llm = getattr(self.backend, "llm", None)
+        _require_structured_reasoning_policy(
+            request, getattr(self.backend, "thinking_mode", None))
         cfg = getattr(llm, "cfg", None)
         if cfg is not None and (
                 cfg.model != request.requested_model
@@ -289,6 +313,7 @@ class SemanticBackendProvider:
                            if known and isinstance(last.get("cached_tokens"), int) else None),
             output=output,
             transport_diagnostic=last,
+            reasoning_tokens=safe_reasoning_tokens(last.get("reasoning_tokens"), usage_values[1]) if known else None,
         )
 
 
@@ -296,6 +321,7 @@ class SourceAnalysisPieceProvider:
     """One existing Source-analysis prompt per durable provider attempt."""
 
     adapter_version = SOURCE_ANALYSIS_ADAPTER_VERSION
+    thinking_mode = STRUCTURED_JSON_THINKING_MODE
 
     def __init__(self, llm: ChatLLM, *, provider_identity: str):
         if getattr(getattr(llm, "cfg", None), "max_retries", None) != 0:
@@ -307,6 +333,7 @@ class SourceAnalysisPieceProvider:
         if request.operation_kind != SOURCE_ANALYSIS_OPERATION:
             raise ProviderFailure("PROVIDER_OPERATION_UNSUPPORTED", retryable=False,
                                   external_outcome="NOT_DISPATCHED")
+        _require_structured_reasoning_policy(request, self.thinking_mode)
         cfg = self.llm.cfg
         if (cfg.model != request.requested_model
                 or cfg.timeout_seconds != request.timeout_seconds
@@ -321,7 +348,8 @@ class SourceAnalysisPieceProvider:
         started_at = now()
         started = time.perf_counter()
         try:
-            output = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user_prompt)
+            output = self.llm.json(SOURCE_ANALYSIS_SYSTEM, user_prompt,
+                                   thinking_mode=self.thinking_mode)
         except LLMError as error:
             raise _llm_provider_failure(error, dict(self.llm.last_call_metadata or {})) from error
         metadata = dict(self.llm.last_call_metadata or {})
@@ -350,6 +378,7 @@ class SourceAnalysisPieceProvider:
                            if known and isinstance(last.get("cached_tokens"), int) else None),
             output=output,
             transport_diagnostic=last,
+            reasoning_tokens=safe_reasoning_tokens(last.get("reasoning_tokens"), usage_values[1]) if known else None,
         )
 
 
@@ -435,6 +464,7 @@ class DeterministicFakeProvider:
             output_tokens=20 if known else None,
             total_tokens=120 if known else None,
             cached_tokens=5 if known else None,
+            reasoning_tokens=0 if known else None,
             output=output,
         )
 

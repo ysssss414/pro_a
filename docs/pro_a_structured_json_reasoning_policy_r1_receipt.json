@@ -1,0 +1,262 @@
+{
+  "task": "PRO_A_STRUCTURED_JSON_REASONING_POLICY_R1",
+  "result": "PASS",
+  "baseline": "7d34055477a1997888db1c7315ab0d59becc17a0",
+  "branch": "codex/pro-a-structured-json-reasoning-policy-r1",
+  "official_contract_sources": [
+    "https://api-docs.deepseek.com/api/create-chat-completion/",
+    "https://api-docs.deepseek.com/guides/thinking_mode/"
+  ],
+  "historical_real_evidence": {
+    "source_identity_sanitized": true,
+    "run_ordinal": 4,
+    "source_piece_chars": 4828,
+    "user_prompt_chars": 7649,
+    "http_status": 200,
+    "model": "deepseek-flash",
+    "input_tokens": 6465,
+    "output_tokens": 8192,
+    "max_output_tokens": 8192,
+    "total_tokens": 14657,
+    "cached_tokens": 2432,
+    "output_parse_kind": "TRUNCATED",
+    "finish_reason": "length",
+    "content_length": 0,
+    "raw_response_syntactically_parseable": false,
+    "retryable": false,
+    "reasoning_tokens": null,
+    "reasoning_tokens_historically_retained": false,
+    "interpretation": "Reasoning-budget exhaustion motivates this policy but was not historically proved. Visible JSON capacity exhaustion was not established."
+  },
+  "policy": {
+    "version": "structured-json-reasoning-v1",
+    "SOURCE_ANALYSIS_PIECE": "disabled",
+    "SEMANTIC_DECOMPOSITION": "disabled",
+    "extraction_adapter": "source-analysis-piece-adapter-v2",
+    "semantic_adapter": "semantic-backend-adapter-v2",
+    "generic_ChatLLM_default_changed": false,
+    "reasoning_effort_sent": false,
+    "new_environment_or_operator_knob": false,
+    "frozen_surfaces": [
+      "operation_contract",
+      "prompt_json",
+      "intent_sha256",
+      "request/job identity"
+    ],
+    "mismatch_error": "PROVIDER_REASONING_POLICY_MISMATCH",
+    "mismatch_external_outcome": "NOT_DISPATCHED"
+  },
+  "telemetry": {
+    "reasoning_tokens_captured": true,
+    "integer_type_exact": true,
+    "bool_rejected": true,
+    "maximum": 10000000,
+    "bounded_by_valid_completion_tokens": true,
+    "invalid_or_missing_count": null,
+    "omission_means_zero": false,
+    "known_usage_allows_null_breakdown": true,
+    "unknown_usage_requires_all_counts_null": true,
+    "failure_durable": "existing content-free failure event diagnostic",
+    "success_durable": [
+      "private cloud result artifact usage",
+      "hash-chained PROVIDER_ATTEMPT_COMPLETED event"
+    ],
+    "artifact_crash_recovery_preserves_count": true,
+    "reasoning_tokens_in_error_fingerprint": false,
+    "reasoning_content_accessed_persisted_logged_hashed_measured": false,
+    "schema_migration": false
+  },
+  "preserved": {
+    "capacity_policy": "source-analysis-capacity-v1",
+    "extraction_cap": 5000,
+    "planner": "PHASE3E2SL6_PRECALL_PARTITION_V2",
+    "max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "max_extraction_pieces": 16,
+    "max_total_jobs": 31,
+    "source_prompt_unchanged": true,
+    "semantic_prompt_unchanged": true,
+    "parser_unchanged": true,
+    "retryability_unchanged": true,
+    "retry_ownership_unchanged": true,
+    "semantic_batching_unchanged": true,
+    "response_format": {
+      "type": "json_object"
+    },
+    "adaptive_split_added": false,
+    "four_k_fallback_added": false,
+    "stage1_window_override_used": false
+  },
+  "synthetic_e2e": {
+    "status": "PASS",
+    "source_count": 1,
+    "run_count": 1,
+    "extraction_jobs": 1,
+    "semantic_jobs": 1,
+    "real_adapter_classes": true,
+    "synthetic_boundary": "HTTP transport responses only",
+    "all_structured_requests_thinking_disabled": true,
+    "reasoning_effort_sent": false,
+    "reasoning_tokens_success": 0,
+    "state": "HUMAN_REVIEW_REQUIRED",
+    "packet_registered": true,
+    "review_decisions": 0,
+    "production_mutations": 0,
+    "external_provider_calls": 0,
+    "privacy_sentinel_scan": [
+      "Workbench tables",
+      "cloud events",
+      "private result artifacts",
+      "public job DTOs",
+      "captured logs",
+      "generated qualification receipt"
+    ],
+    "privacy_sentinel_absent": true
+  },
+  "compatibility": {
+    "baseline": "7d34055477a1997888db1c7315ab0d59becc17a0",
+    "cloud": "SEMANTIC_SURFACE_CHANGED",
+    "native": "SEMANTIC_SURFACE_CHANGED",
+    "historical_v1_normalized_to_v2": false,
+    "historical_rows_rewritten": false,
+    "compatibility_exception_added": false,
+    "unsupported_old_profile_reconstruction": "FAIL_CLOSED_WITH_ORIGINAL_IDENTITY_UNCHANGED"
+  },
+  "tests": {
+    "focused": {
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0,
+      "skip_reasons": []
+    },
+    "required_and_related_regressions": {
+      "passed": 526,
+      "failed": 0,
+      "skipped": 2,
+      "skip_reasons": [
+        {
+          "test": "tests.test_phase4_orchestration.test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+          "reason": "private frozen workflow unavailable"
+        },
+        {
+          "test": "tests.test_operational_ingestion.test_known_fixture_end_to_end_semantic_equivalence",
+          "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+        }
+      ]
+    },
+    "affected_suite_rerun": {
+      "passed": 117,
+      "failed": 0,
+      "skipped": 1,
+      "skip_reasons": [
+        {
+          "test": "tests.test_phase4_orchestration.test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+          "reason": "private frozen workflow unavailable"
+        }
+      ]
+    },
+    "qualification_method": "Complete required/related matrix followed by all focused, ChatLLM and Phase 4 tests after the wrapper keyword forwarding repair. Latest result per test; reruns are not double-counted.",
+    "initial_matrix": {
+      "passed": 524,
+      "failed": 2,
+      "skipped": 2,
+      "failures_repaired": "ExecutionLLM keyword forwarding for both semantic failure shapes"
+    },
+    "distinct_passed": 567,
+    "distinct_skipped": 2,
+    "full_repository_suite_run": false,
+    "external_requests_blocked": true,
+    "real_credential_absent_from_test_process": true,
+    "matrix_files": [
+      "tests/test_cloud_operation_adapter_binding.py",
+      "tests/test_extraction_capacity.py",
+      "tests/test_llm.py",
+      "tests/test_mcp_stage0.py",
+      "tests/test_mcp_stage3.py",
+      "tests/test_operational_ingestion.py",
+      "tests/test_per_piece_node_catalog.py",
+      "tests/test_phase3c_semantic_failure_repair.py",
+      "tests/test_phase3e2sl2_bounded_semantic_closure.py",
+      "tests/test_phase3e2sl6_precall_partition.py",
+      "tests/test_phase43_stage1_operator_scale.py",
+      "tests/test_phase43_stage71_shared_core_pending.py",
+      "tests/test_phase43_stage72a_provider_diagnostics.py",
+      "tests/test_phase43_stage72b_extraction_retry.py",
+      "tests/test_phase43_stage72c_retry_compatibility.py",
+      "tests/test_phase4_orchestration.py",
+      "tests/test_piece_local_evidence_provenance.py",
+      "tests/test_provider_output_failure_telemetry.py",
+      "tests/test_semantic_admission.py",
+      "tests/test_semantic_gold_replay.py",
+      "tests/test_workbench_stage6.py",
+      "tests/test_workbench_stage7.py"
+    ]
+  },
+  "build": {
+    "status": "PASS",
+    "packaged_python_files": 129,
+    "wheel_sha256": "168788552725b89726d9bbdc4fbcd65db2e8324fda7b016838655f5fc7a89239",
+    "source_wheel_installed_byte_match": true,
+    "operation_policy_verified": true,
+    "selected_cap": 5000,
+    "max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "mcp_tool_count": 14,
+    "protected_files_unchanged": [
+      "analyzer.py",
+      "prompts.py",
+      "parsers.py",
+      "operational_ingestion.py",
+      "phase4_orchestration.py",
+      "workbench/source_operations.py",
+      "workbench/stage1_scale.py",
+      "workbench/extraction_retry.py",
+      "workbench/retry_compatibility.py"
+    ],
+    "parser_retry_and_semantic_partition_functions_unchanged": true,
+    "isolated_pep517_build": "PASS",
+    "compileall": "PASS",
+    "pip_check": "PASS"
+  },
+  "real_state": {
+    "source_unchanged": true,
+    "runs_1_2_3_4_unchanged": true,
+    "historical_attempt_counts": [
+      0,
+      2,
+      1,
+      1
+    ],
+    "run_4_state": "FAILED / EXTRACTION_JOBS / PROVIDER_ERROR",
+    "production_unchanged": true,
+    "workbench_unchanged": true,
+    "all_workbench_table_digests_unchanged": true,
+    "stable_runtime_metadata_unchanged": true,
+    "real_provider_calls": 0,
+    "new_real_runs": 0,
+    "run_5_created": false,
+    "retry_calls": 0,
+    "production_writes": 0,
+    "real_workbench_writes": 0,
+    "review_mutations": 0,
+    "current_view_mutations": 0,
+    "production_apply": 0,
+    "historical_backfill": false
+  },
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "LIVE_NON_THINKING_VALIDATION_REQUIRED_AFTER_MERGE": true,
+  "live_success_claim": false,
+  "publication_boundary": "Draft PR only; no merge, stable activation, Tunnel restart or new real Run.",
+  "publication_privacy_scan": {
+    "status": "PASS",
+    "publication_files": 15,
+    "wheel_and_publication_members_scanned": 150,
+    "private_source_32_character_windows_whitespace_normalized": "ABSENT",
+    "reasoning_sentinel": "ABSENT",
+    "private_identifiers_filenames_paths": "ABSENT",
+    "credential_patterns": "ABSENT",
+    "public_constant_collisions_reviewed": "Existing retry policy identifier and canonical generated filename in unchanged baseline community intake module"
+  },
+  "git_diff_check": "PASS",
+  "implementation_sha": "b7ec404d8c6eaa9eec2693ca75beb238c8cdbf7c"
+}

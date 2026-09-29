@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from pro_a.cloud_contract import (ADAPTER_VERSION, DeterministicFakeProvider, ProviderFailure,
-                                  SemanticBackendProvider,
+                                  SemanticBackendProvider, operation_contract,
                                   SOURCE_ANALYSIS_OPERATION, SourceAnalysisPieceProvider)
 from pro_a.config import LLMConfig
 from pro_a.llm import ChatLLM
@@ -56,6 +56,7 @@ def adapter(monkeypatch, outcome):
                             max_retries=0, max_output_tokens=8192))
     provider = SourceAnalysisPieceProvider(llm, provider_identity="deepseek")
     request = SimpleNamespace(operation_kind=SOURCE_ANALYSIS_OPERATION,
+                              prompt_identity=operation_contract(SOURCE_ANALYSIS_OPERATION),
                               requested_model="deepseek-flash", timeout_seconds=60,
                               max_output_tokens=8192,
                               payload={"user_prompt": "Synthetic input only."}, attempt_number=1)

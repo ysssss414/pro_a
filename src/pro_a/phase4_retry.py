@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from enum import Enum
-from typing import Callable
+from typing import Callable, Literal
 from uuid import uuid4
 
 from .config import LLMConfig
@@ -38,7 +38,8 @@ class ExecutionLLM(ChatLLM):
         self.offline = offline
         self.call_id = ""
 
-    def json(self, system: str, user: str) -> dict:
+    def json(self, system: str, user: str, *,
+             thinking_mode: Literal["disabled"] | None = None) -> dict:
         self.call_id = f"CALL_{uuid4().hex.upper()}"
         self.emit({"call_id": self.call_id, "event": "CALL_STARTED",
                    "owner": "phase4.orchestration", "policy": self.policy.value,
@@ -48,7 +49,7 @@ class ExecutionLLM(ChatLLM):
             self.emit({"call_id": self.call_id, "event": "OFFLINE_CALL_BLOCKED"})
             raise LLMError("FROZEN_REPLAY_NETWORK_FORBIDDEN")
         try:
-            return super().json(system, user)
+            return super().json(system, user, thinking_mode=thinking_mode)
         finally:
             self.emit({"call_id": self.call_id, "event": "CALL_FINISHED",
                        "metadata": self.last_call_metadata,
