@@ -1,0 +1,130 @@
+{
+  "task": "INSTALLED_RUNTIME_REPOSITORY_IDENTITY_R1",
+  "stage": "CANDIDATE_QUALIFIED_RELEASE_PENDING",
+  "root_cause": "RUNTIME_GIT_METADATA_DEPENDENCY",
+  "pre_repair_main": "389399712deb9d2e1cacf41ad39e147e16b5f14b",
+  "implementation_sha": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0",
+  "initial_implementation_sha": "2134eb5319665cc38c8a5db71c5f4f989c7f2b25",
+  "candidate_qualification": {
+    "status": "PASS",
+    "source_commit": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0",
+    "wheel_sha256": "230f677e022542ced829b4ef45f7323c64c65ebbac3efec4d3801484e2294ec7",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0"
+    },
+    "packaged_identity_sha256": "b53fa0196f425cbe471a977eb313afafe358bb4dfe6e26afc355baa03fee90b2",
+    "wheel_member_count": 141,
+    "python_byte_comparison_count": 135,
+    "source_wheel_installed_python_bytes": "IDENTICAL",
+    "full_runtime_equality": true,
+    "git_unavailable": "PASS",
+    "runtime_git_calls": 0,
+    "unrelated_parent": "PASS",
+    "unrelated_parent_commit": "8bcc636036c5a89fe52c7e0c467f4128698accb3",
+    "corruptions": {
+      "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+      "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+      "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+      "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+    },
+    "installed_phase4_runtime": {
+      "repository_commit": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "installed_cloud_runtime": {
+      "git_sha": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "11",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+      "runtime_sha256": "da50df245a80be704378e1ef2d54bb75d0d97ad69e5b4523b7e303adcd6e67fa"
+    },
+    "runtime_network_calls": 0,
+    "business_databases_opened": 0
+  },
+  "dirty_tracked_pep517_build": "REFUSED_NO_WHEEL",
+  "pip_check": "PASS",
+  "compile_import": "PASS",
+  "regressions": {
+    "final_unique": {
+      "passed": 408,
+      "failed": 0,
+      "skipped": 1
+    },
+    "runs": [
+      {
+        "receipt": "identity-regression.xml",
+        "passed": 403,
+        "failed": 4,
+        "skipped": 1
+      },
+      {
+        "receipt": "identity-final-regression.xml",
+        "passed": 83,
+        "failed": 1,
+        "skipped": 0
+      },
+      {
+        "receipt": "identity-stdio-regression.xml",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "scope": [
+      "test_repository_identity",
+      "test_phase4_orchestration",
+      "test_workbench_stage6",
+      "test_workbench_stage7",
+      "test_phase43_stage0",
+      "test_phase43_stage71_shared_core_pending",
+      "test_phase43_stage72c_retry_compatibility",
+      "test_mcp_stage0",
+      "test_mcp_stage3"
+    ]
+  },
+  "historical_runtime_guards": "UNCHANGED_NO_NEW_EXCEPTION",
+  "candidate_real_state_equality": true,
+  "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+  "workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+  "artifact_inventory_sha256": "c492a2bf2ff87e0695a49bb037838afb9f74a170d46cc4e2952b50d310b61ec7",
+  "real_workbench_schema": 11,
+  "target_source_run_count": 7,
+  "global_run_count": 8,
+  "provider_calls_from_task": 0,
+  "provider_liability_from_task": 0,
+  "run8_created": false,
+  "pr96": {
+    "number": 96,
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "head": "e63608e303725db20541ff7d57fb62b584f6fa75",
+    "candidate_merge_conflicts": [
+      "tests/test_phase43_stage72c_retry_compatibility.py"
+    ],
+    "focused_integration_tests": "NOT_RUN_CONFLICT_REQUIRES_SEPARATE_AUTHORIZED_RESOLUTION"
+  },
+  "release_activation": "NOT_YET_PERFORMED",
+  "original_gates_a_to_d": "NOT_RESUMED"
+}
