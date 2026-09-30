@@ -1,0 +1,405 @@
+{
+  "task": "PRO_A_EXTRACTION_CAPACITY_R2",
+  "result": "PASS",
+  "baseline_sha": "761b7dab7a17d5eb02c08dfb324c532a00252039",
+  "implementation_sha": "15f5ba584e4d5893144ee319bf7cebb38574a14d",
+  "branch": "codex/pro-a-extraction-capacity-r2-4k",
+  "qualification_scope": "Offline planning and synthetic HTTP only; 4k is not live-proven",
+  "capacity_policy": "source-analysis-capacity-v2",
+  "hard_cap": 4000,
+  "planner": "PHASE3E2SL6_PRECALL_PARTITION_V3",
+  "historical_live_evidence": {
+    "run_5": {
+      "piece_chars": 4828,
+      "prompt_chars": 7649,
+      "thinking": "disabled",
+      "output_tokens": 8192,
+      "max_output_tokens": 8192,
+      "content_length": 23294,
+      "finish_reason": "length",
+      "output_parse_kind": "TRUNCATED",
+      "reasoning_tokens": null,
+      "reasoning_usage_status": "UNKNOWN"
+    },
+    "run_6": {
+      "piece_chars": 4828,
+      "prompt_chars": 7649,
+      "thinking": "disabled",
+      "input_tokens": 6441,
+      "output_tokens": 12000,
+      "max_output_tokens": 12000,
+      "total_tokens": 18441,
+      "cached_tokens": 6272,
+      "reasoning_tokens": null,
+      "reasoning_usage_status": "UNKNOWN",
+      "content_length": 32176,
+      "finish_reason": "length",
+      "output_parse_kind": "TRUNCATED",
+      "json_error_position": 32175
+    }
+  },
+  "supported_interpretation": "The current 4828-character first extraction piece is too large for the bounded 12000-token ceiling for this exact high-density material. R2 selects 4k for subsequent live validation; this does not imply all 5k materials fail.",
+  "real_source_offline_plan": {
+    "status": "PASS",
+    "capacity_policy": "source-analysis-capacity-v2",
+    "hard_cap": 4000,
+    "planner": "PHASE3E2SL6_PRECALL_PARTITION_V3",
+    "source_total_chars": 16823,
+    "piece_count": 5,
+    "piece_lengths": [
+      3595,
+      3783,
+      3556,
+      3791,
+      2098
+    ],
+    "prompt_lengths": [
+      6416,
+      6517,
+      6489,
+      7316,
+      4768
+    ],
+    "plan_sha256": "28c9866a828cb8b35cd6296b43bb273df499ff9e97b03394d5a8639f67ace1f7",
+    "baseline_5k_plan_sha256": "c3d1d2b2cfdc9062b4d8dc744127879cf3da15b63edf1692b923440f594f757b",
+    "piece_sha256": [
+      "e3a6907e6eb7ec94c189bd57fb5556d02a5209c655a7433b129479700cb2aeee",
+      "456f3df169ef8fd9bd10c3a22be27a9cbbb256d64802ca3d962f2d874e04cdbc",
+      "63beb0478baf8bcf80c2394749ab1e3db029752270bb4f32e5e429e50c819adb",
+      "478adbc99caff4f110ecae872532f0630315749a8b54ce07401f431a38da709f",
+      "50edfe5244f956437ab7538d094bf02cc1f3bfeb2631b61950ffd15c11e0345c"
+    ],
+    "prompt_sha256": [
+      "1fa47cfd860afa9192feefa8cd342b3a00778f94feb18ce914aff0bbde16aaf8",
+      "7a8c3be5d8404a7f81c99355c79a5654fc80107c4da92ffcf6d9e4e678f4e883",
+      "1084c63d6870352404fb917cae4be545a6ab8223fd8e8764218dc8df2319e28e",
+      "0b8ae883e67c65d6f581eca68e65c55a7a445390bca511c5fc557fc73774c1f0",
+      "be4d2ce53ebd145c6c9e8abf59842969dc5887425078b730f796532aec27398a"
+    ],
+    "coverage": {
+      "source_chars": 16823,
+      "planned_chars": 16823,
+      "ordered_exact_reconstruction": true,
+      "omitted_chars": 0,
+      "duplicated_chars": 0
+    },
+    "locator_coverage_preserved": true,
+    "node_catalog_scoping_deterministic": true,
+    "repeated_plan_identity_equal": true,
+    "baseline_plan_identity_changed": true,
+    "historical_plan_unchanged": true,
+    "model_response_consumed": false,
+    "response_time_recovery": "FORBIDDEN",
+    "max_extraction_pieces": 16,
+    "remaining_job_headroom": 26,
+    "historical_run_6_resume_guard": "PROCESSING_RUN_CONTEXT_DRIFT",
+    "native_cross_release_reason": "SEMANTIC_SURFACE_CHANGED",
+    "processing_code_and_runtime_identity_changed": true,
+    "model_configuration_unchanged": true,
+    "real_provider_calls": 0,
+    "new_real_runs": 0,
+    "live_4k_success_claimed": false
+  },
+  "operation_budget_policy": "operation-output-budget-v1",
+  "operation_budget_policy_changed": false,
+  "extraction_budget": {
+    "max_output_tokens": 12000,
+    "max_total_tokens": 20000
+  },
+  "semantic_budget": {
+    "max_output_tokens": 8192,
+    "max_total_tokens": 20000
+  },
+  "CloudProfile_base_max_output_tokens": 8192,
+  "semantic_input_budget": 11808,
+  "semantic_boundary_checks": {
+    "11808": "ACCEPTED",
+    "11809": "REJECTED"
+  },
+  "thinking_policy": "structured-json-reasoning-v1",
+  "thinking_policy_changed": false,
+  "structured_thinking": "disabled",
+  "reasoning_effort_sent": false,
+  "adapters": {
+    "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+    "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+  },
+  "adapter_versions_changed": false,
+  "prompts_changed": false,
+  "output_schema_changed": false,
+  "parser_changed": false,
+  "retryability_changed": false,
+  "adaptive_split_added": false,
+  "4k_dynamic_fallback_added": false,
+  "max_extraction_pieces_changed": false,
+  "max_extraction_pieces": 16,
+  "max_total_jobs_changed": false,
+  "max_total_jobs": 31,
+  "runtime_context_and_checkpoint_identity_tests": "PASS",
+  "historical_contexts_rewritten": false,
+  "cross_release_fail_closed": true,
+  "native_surface_reason": "SEMANTIC_SURFACE_CHANGED",
+  "cloud_adapter_surface": "UNCHANGED; native compatibility remains mandatory for full qualification",
+  "actual_historical_run_6_context_guard": "PROCESSING_RUN_CONTEXT_DRIFT",
+  "synthetic_extraction_above_8192": {
+    "status": "PASS",
+    "completion_tokens_per_extraction": 10000,
+    "finish_reason": "stop",
+    "reasoning_tokens": 0,
+    "validation": "PASS",
+    "durable_results": true
+  },
+  "synthetic_dual_adapter_e2e": {
+    "status": "PASS",
+    "state": "HUMAN_REVIEW_REQUIRED",
+    "Review_Packet_registered": true,
+    "review_decisions": 0,
+    "Production_unchanged": true,
+    "real_adapter_classes": true,
+    "provider_transport": "Synthetic HTTP"
+  },
+  "dense_job_budget": {
+    "status": "PASS",
+    "extraction_jobs": 5,
+    "semantic_jobs": 25,
+    "total_jobs": 30,
+    "limit": 31,
+    "remaining_jobs": 1,
+    "valid_claims": 200,
+    "claims_per_piece": [
+      40,
+      40,
+      40,
+      40,
+      40
+    ],
+    "extraction_response_bytes": [
+      24561,
+      24584,
+      24657,
+      24657,
+      24657
+    ]
+  },
+  "truncation_regression": {
+    "completion_tokens": 12000,
+    "finish_reason": "length",
+    "output_parse_kind": "TRUNCATED",
+    "retryable": false,
+    "post_response_split": false
+  },
+  "tests": {
+    "new_r2_focused_passed": 4,
+    "selected_capacity_passed": 21,
+    "focused_total_passed": 25,
+    "regression_passed": 595,
+    "passed": 620,
+    "skipped": 2,
+    "failed": 0,
+    "files": {
+      "tests/test_claim_attribution_semantics.py": {
+        "passed": 12,
+        "skipped": 0
+      },
+      "tests/test_cloud_operation_adapter_binding.py": {
+        "passed": 24,
+        "skipped": 0
+      },
+      "tests/test_extraction_capacity.py": {
+        "passed": 21,
+        "skipped": 0
+      },
+      "tests/test_extraction_capacity_r2.py": {
+        "passed": 4,
+        "skipped": 0
+      },
+      "tests/test_llm.py": {
+        "passed": 36,
+        "skipped": 0
+      },
+      "tests/test_mcp_stage0.py": {
+        "passed": 30,
+        "skipped": 0
+      },
+      "tests/test_mcp_stage3.py": {
+        "passed": 51,
+        "skipped": 0
+      },
+      "tests/test_operation_output_budget.py": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests/test_operational_ingestion.py": {
+        "passed": 9,
+        "skipped": 1
+      },
+      "tests/test_per_piece_node_catalog.py": {
+        "passed": 6,
+        "skipped": 0
+      },
+      "tests/test_phase3c_semantic_failure_repair.py": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests/test_phase3e2sl2_bounded_semantic_closure.py": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests/test_phase3e2sl6_precall_partition.py": {
+        "passed": 10,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage1_operator_scale.py": {
+        "passed": 14,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage71_shared_core_pending.py": {
+        "passed": 14,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72a_provider_diagnostics.py": {
+        "passed": 28,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72b_extraction_retry.py": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests/test_phase43_stage72c_retry_compatibility.py": {
+        "passed": 35,
+        "skipped": 0
+      },
+      "tests/test_phase4_orchestration.py": {
+        "passed": 40,
+        "skipped": 1
+      },
+      "tests/test_piece_local_evidence_provenance.py": {
+        "passed": 11,
+        "skipped": 0
+      },
+      "tests/test_provider_output_failure_telemetry.py": {
+        "passed": 43,
+        "skipped": 0
+      },
+      "tests/test_semantic_admission.py": {
+        "passed": 49,
+        "skipped": 0
+      },
+      "tests/test_semantic_gold_replay.py": {
+        "passed": 2,
+        "skipped": 0
+      },
+      "tests/test_structured_json_reasoning_policy.py": {
+        "passed": 41,
+        "skipped": 0
+      },
+      "tests/test_v0_2_analyzer_validation.py": {
+        "passed": 12,
+        "skipped": 0
+      },
+      "tests/test_workbench_stage6.py": {
+        "passed": 33,
+        "skipped": 0
+      },
+      "tests/test_workbench_stage7.py": {
+        "passed": 15,
+        "skipped": 0
+      }
+    },
+    "skip_details": [
+      {
+        "test": "tests.test_operational_ingestion::test_known_fixture_end_to_end_semantic_equivalence",
+        "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+      },
+      {
+        "test": "tests.test_phase4_orchestration::test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+        "reason": "private frozen workflow unavailable"
+      }
+    ],
+    "full_repository_run": false,
+    "qualification_notes": "Initial checks corrected a synthetic active-run coalescing setup, expanded the synthetic PDF from four to five pages, and distinguished unchanged cloud wire surface from changed native planning surface. Final cases pass; the dense rerun is counted once."
+  },
+  "build": {
+    "status": "PASS",
+    "packaged_python_files": 129,
+    "wheel_sha256": "703a212d8bba3bc144aa8e61d54e5a6778867d84baefdea842cc2a6bccdaccc2",
+    "source_wheel_installed_byte_match": true,
+    "operation_policy_verified": true,
+    "extraction_max_output_tokens": 12000,
+    "semantic_max_output_tokens": 8192,
+    "base_max_output_tokens": 8192,
+    "max_total_tokens": 20000,
+    "semantic_input_budget": 11808,
+    "selected_cap": 4000,
+    "mcp_tool_count": 14,
+    "protected_files_unchanged": [
+      "cloud_contract.py",
+      "workbench/cloud_jobs.py",
+      "workbench/source_operations.py",
+      "workbench/extraction_retry.py",
+      "processing_context.py",
+      "run_context.py",
+      "prompts.py",
+      "parsers.py",
+      "llm.py",
+      "provider_diagnostics.py",
+      "semantic_decomposition.py",
+      "phase4_retry.py",
+      "operational_ingestion.py",
+      "phase4_orchestration.py",
+      "workbench/stage1_scale.py",
+      "workbench/retry_compatibility.py"
+    ],
+    "existing_adapter_contract_functions_unchanged": true,
+    "reservation_failure_persistence_functions_unchanged": true,
+    "isolated_pep517": "PASS",
+    "pip_check": "PASS",
+    "compileall": "PASS"
+  },
+  "freeze_audit": {
+    "status": "PASS",
+    "only_product_file": "src/pro_a/analyzer.py",
+    "only_three_policy_constants_changed": true,
+    "prompts_schema_parser_validators_unchanged": true,
+    "retry_and_stage72c_unchanged": true,
+    "budget_reasoning_adapter_contracts_unchanged": true,
+    "source_operation_and_semantic_batching_unchanged": true,
+    "max_extraction_pieces": 16,
+    "max_total_jobs": 31,
+    "adaptive_split_added": false,
+    "schema_migration": false
+  },
+  "real_state": {
+    "Source": "UNCHANGED",
+    "historical_runs_1_to_6": "UNCHANGED",
+    "historical_attempt_counts": [
+      0,
+      2,
+      1,
+      1,
+      1,
+      1
+    ],
+    "jobs_attempts_outcomes_events": "UNCHANGED",
+    "Production": "UNCHANGED",
+    "Workbench": "UNCHANGED",
+    "stable_runtime": "UNCHANGED",
+    "before_sha256": "8111092ad8a5e0c8fe944b2c88f1c54bc924cf5c144ba74e4e813358d2d05933",
+    "after_sha256": "8111092ad8a5e0c8fe944b2c88f1c54bc924cf5c144ba74e4e813358d2d05933"
+  },
+  "historical_runs_mutated": false,
+  "real_provider_calls": 0,
+  "new_real_runs": 0,
+  "Run_7_created": false,
+  "Production_writes": 0,
+  "real_Workbench_writes": 0,
+  "Review_writes": 0,
+  "Current_View_writes": 0,
+  "Production_Apply": 0,
+  "Stage1_test_bypass": false,
+  "privacy_scan": "PASS",
+  "git_diff_check": "PASS",
+  "live_4k_success_claimed": false,
+  "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MERGE": true,
+  "LIVE_4K_12K_EXTRACTION_VALIDATION_REQUIRED_AFTER_MERGE": true
+}
