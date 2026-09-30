@@ -1,0 +1,672 @@
+{
+  "task": "SOURCE_ANALYSIS_COMPACT_WIRE_SERIES_BINDING_R1",
+  "status": "PASS",
+  "baseline": "389399712deb9d2e1cacf41ad39e147e16b5f14b",
+  "binding_contract": {
+    "binding_version": "bounded-source-analysis-series-binding-v1",
+    "provider_version": "bounded-source-analysis-segment-provider-v1",
+    "prompt_version": "bounded-source-analysis-segment-prompt-v1",
+    "response_version": "bounded-source-analysis-response-v1",
+    "series": "bounded-extraction-series-v1",
+    "segment": "bounded-extraction-segment-v1",
+    "coverage": "bounded-extraction-coverage-v1",
+    "subdivision": "bounded-extraction-subdivision-v1",
+    "evidence_binding": "source-analysis-evidence-binding-v2",
+    "wire": "source-analysis-wire-v3",
+    "expander": "source-analysis-wire-expander-v2",
+    "segment_policy": "bounded-extraction-policy-v1",
+    "budget": {
+      "initial_evidence_refs": 16,
+      "max_leaf_segments": 16,
+      "max_subdivision_depth": 4,
+      "max_provider_calls": 32,
+      "max_cumulative_output_tokens": 384000
+    },
+    "piece_hard_cap": 4000,
+    "planner": "PHASE3E2SL6_PRECALL_PARTITION_V3",
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "max_output_tokens": 12000,
+    "thinking_policy": "structured-json-reasoning-v1",
+    "thinking_mode": "disabled",
+    "system_prompt_sha256": "93384110cb104fca27e09a4e0130d88eac3a8c8ef8657f593fbd13d6c793fd4e"
+  },
+  "pass_gates": {
+    "schema12": "REQUIRED_FOR_NEW_BOUNDED_RUNS",
+    "schema13": "NOT_CREATED",
+    "one_sourcepiece_one_series": true,
+    "segment_is_not_cloud_job": true,
+    "segment_attempt_is_not_cloud_attempt": true,
+    "semantic_still_uses_cloudjobs": true,
+    "legacy_cloud_extraction_not_reinterpreted": true,
+    "provider_segment_contract": "FROZEN",
+    "provider_prompt_separate_from_native": true,
+    "Source_text_provider_prompt_duplication": false,
+    "thinking": "disabled",
+    "per_segment_output_ceiling": 12000,
+    "raw_model_content_before_wire_parse": "PASS",
+    "reasoning_content_persisted": false,
+    "prompt_artifact_before_dispatch": "PASS",
+    "deterministic_scheduler": "PASS",
+    "max_provider_calls_per_advance": 1,
+    "valid_subdivision": "PASS",
+    "truncation_overflow_subdivision": "PASS",
+    "truncated_parent_result_accepted": false,
+    "truncation_auto_retry": false,
+    "bounded_terminal_density_failure": "PASS",
+    "coverage_closure": "PASS",
+    "aggregate_wire": "PASS",
+    "canonical_expansion": "PASS",
+    "native_replay": "PASS",
+    "Claim_identity": "PASS",
+    "semantic_pipeline": "PASS",
+    "synthetic_Review_Packet": "PASS",
+    "MCP_read_only": "PASS",
+    "Stage1_logical_jobs_exclude_Segments": true,
+    "dense_logical_job_stress": "30 / 31 PASS",
+    "global_parameter_retuning_required": false,
+    "historical_runs_mutated": false,
+    "real_workbench_migrated": false,
+    "real_provider_calls": 0,
+    "new_real_runs": 0,
+    "Run_8_created": false,
+    "Production_writes": 0,
+    "real_Workbench_writes": 0,
+    "Review_mutations": 0,
+    "Current_View_writes": 0,
+    "stable_runtime_unchanged": true
+  },
+  "test_qualification": {
+    "passed": 885,
+    "skipped": 2,
+    "failed": 0,
+    "errors": 0,
+    "external_network": "FORBIDDEN",
+    "modules": {
+      "tests.test_source_analysis_series_binding": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests.test_source_analysis_series_recovery": {
+        "passed": 10,
+        "skipped": 0
+      },
+      "tests.test_bounded_extraction": {
+        "passed": 98,
+        "skipped": 0
+      },
+      "tests.test_evidence_binding": {
+        "passed": 31,
+        "skipped": 0
+      },
+      "tests.test_source_analysis_wire": {
+        "passed": 61,
+        "skipped": 0
+      },
+      "tests.test_bounded_extraction_persistence": {
+        "passed": 36,
+        "skipped": 0
+      },
+      "tests.test_bounded_extraction_recovery": {
+        "passed": 23,
+        "skipped": 0
+      },
+      "tests.test_bounded_extraction_latency": {
+        "passed": 23,
+        "skipped": 0
+      },
+      "tests.test_operational_ingestion": {
+        "passed": 9,
+        "skipped": 1
+      },
+      "tests.test_phase4_orchestration": {
+        "passed": 40,
+        "skipped": 1
+      },
+      "tests.test_phase43_stage1_operator_scale": {
+        "passed": 14,
+        "skipped": 0
+      },
+      "tests.test_phase43_stage72a_provider_diagnostics": {
+        "passed": 28,
+        "skipped": 0
+      },
+      "tests.test_phase43_stage72b_extraction_retry": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests.test_phase43_stage72c_retry_compatibility": {
+        "passed": 35,
+        "skipped": 0
+      },
+      "tests.test_cloud_operation_adapter_binding": {
+        "passed": 24,
+        "skipped": 0
+      },
+      "tests.test_provider_output_failure_telemetry": {
+        "passed": 43,
+        "skipped": 0
+      },
+      "tests.test_structured_json_reasoning_policy": {
+        "passed": 41,
+        "skipped": 0
+      },
+      "tests.test_operation_output_budget": {
+        "passed": 25,
+        "skipped": 0
+      },
+      "tests.test_extraction_capacity": {
+        "passed": 21,
+        "skipped": 0
+      },
+      "tests.test_extraction_capacity_r2": {
+        "passed": 4,
+        "skipped": 0
+      },
+      "tests.test_piece_local_evidence_provenance": {
+        "passed": 11,
+        "skipped": 0
+      },
+      "tests.test_claim_attribution_semantics": {
+        "passed": 12,
+        "skipped": 0
+      },
+      "tests.test_relation_candidate_extraction": {
+        "passed": 78,
+        "skipped": 0
+      },
+      "tests.test_semantic_admission": {
+        "passed": 49,
+        "skipped": 0
+      },
+      "tests.test_workbench_stage6": {
+        "passed": 33,
+        "skipped": 0
+      },
+      "tests.test_workbench_stage7": {
+        "passed": 15,
+        "skipped": 0
+      },
+      "tests.test_mcp_stage0": {
+        "passed": 30,
+        "skipped": 0
+      },
+      "tests.test_mcp_stage3": {
+        "passed": 51,
+        "skipped": 0
+      }
+    },
+    "full_repository_green_claimed": false,
+    "matrix_stage": "BEFORE_FINAL_FROZEN_INPUT_GUARD",
+    "final_affected_module_validation": {
+      "passed": 215,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "modules": {
+        "tests.test_source_analysis_series_binding": {
+          "passed": 17,
+          "skipped": 0
+        },
+        "tests.test_source_analysis_series_recovery": {
+          "passed": 10,
+          "skipped": 0
+        },
+        "tests.test_cloud_operation_adapter_binding": {
+          "passed": 24,
+          "skipped": 0
+        },
+        "tests.test_bounded_extraction_persistence": {
+          "passed": 36,
+          "skipped": 0
+        },
+        "tests.test_workbench_stage7": {
+          "passed": 15,
+          "skipped": 0
+        },
+        "tests.test_structured_json_reasoning_policy": {
+          "passed": 41,
+          "skipped": 0
+        },
+        "tests.test_provider_output_failure_telemetry": {
+          "passed": 43,
+          "skipped": 0
+        },
+        "tests.test_operation_output_budget": {
+          "passed": 25,
+          "skipped": 0
+        },
+        "tests.test_extraction_capacity_r2": {
+          "passed": 4,
+          "skipped": 0
+        }
+      },
+      "focused_cases_passed": 27,
+      "change": "Reject missing or tampered frozen input before recreation or provider dispatch"
+    },
+    "original_test_functions_removed": 0,
+    "parameter_matrix_sizes_preserved": true,
+    "individually_migrated_test_modules": [
+      "tests/test_bounded_extraction_persistence.py",
+      "tests/test_cloud_operation_adapter_binding.py",
+      "tests/test_extraction_capacity.py",
+      "tests/test_extraction_capacity_r2.py",
+      "tests/test_mcp_stage0.py",
+      "tests/test_mcp_stage3.py",
+      "tests/test_operation_output_budget.py",
+      "tests/test_phase43_stage1_operator_scale.py",
+      "tests/test_phase43_stage72b_extraction_retry.py",
+      "tests/test_phase43_stage72c_retry_compatibility.py",
+      "tests/test_provider_output_failure_telemetry.py",
+      "tests/test_source_analysis_wire.py",
+      "tests/test_structured_json_reasoning_policy.py",
+      "tests/test_workbench_stage7.py"
+    ]
+  },
+  "build": {
+    "compileall": "PASS",
+    "pip_check": "PASS",
+    "isolated_pep517": "PASS",
+    "isolated_install": "PASS",
+    "source_wheel_install": "PASS",
+    "python_files": 136,
+    "wheel_sha256": "5ed25048e6947d59e5fde14baf64262ebc4ac5afd93dfb2fe8a395d38fd65254"
+  },
+  "synthetic_scenarios": {
+    "one_series": {
+      "series": 1,
+      "complete_series": 1,
+      "provider_segment_calls": 3,
+      "semantic_jobs": 5,
+      "legacy_extraction_jobs": 0,
+      "overflow_events": 0,
+      "review_packets": 1,
+      "review_decisions": 0
+    },
+    "multi_piece_full_packet": {
+      "series": 3,
+      "complete_series": 3,
+      "provider_segment_calls": 13,
+      "semantic_jobs": 2,
+      "legacy_extraction_jobs": 0,
+      "overflow_events": 1,
+      "review_packets": 1,
+      "review_decisions": 0
+    },
+    "dense_accounting": {
+      "series": 5,
+      "complete_series": 5,
+      "provider_segment_calls": 14,
+      "semantic_jobs": 25,
+      "legacy_extraction_jobs": 0,
+      "overflow_events": 0,
+      "review_packets": 0,
+      "review_decisions": 0
+    },
+    "dense_200_claim_e2e": {
+      "series": 5,
+      "complete_series": 5,
+      "provider_segment_calls": 15,
+      "semantic_jobs": 25,
+      "legacy_extraction_jobs": 0,
+      "overflow_events": 0,
+      "review_packets": 1,
+      "review_decisions": 0
+    }
+  },
+  "real_source_offline": {
+    "source_id": "SRC_A26BB38BD619C3BC",
+    "metrics": [
+      {
+        "piece_ordinal": 1,
+        "piece_chars": 3595,
+        "evidence_count": 77,
+        "initial_segment_count": 5,
+        "segments": [
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9509,
+            "provider_prompt_bytes": 15593,
+            "native_prompt_chars": 6416,
+            "annotation_overhead": 3311,
+            "node_catalog_count": 6,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9509,
+            "provider_prompt_bytes": 15593,
+            "native_prompt_chars": 6416,
+            "annotation_overhead": 3311,
+            "node_catalog_count": 6,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9509,
+            "provider_prompt_bytes": 15593,
+            "native_prompt_chars": 6416,
+            "annotation_overhead": 3311,
+            "node_catalog_count": 6,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9509,
+            "provider_prompt_bytes": 15593,
+            "native_prompt_chars": 6416,
+            "annotation_overhead": 3311,
+            "node_catalog_count": 6,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 13,
+            "provider_prompt_chars": 9440,
+            "provider_prompt_bytes": 15524,
+            "native_prompt_chars": 6416,
+            "annotation_overhead": 3311,
+            "node_catalog_count": 6,
+            "source_text_occurrence_count": 1
+          }
+        ]
+      },
+      {
+        "piece_ordinal": 2,
+        "piece_chars": 3783,
+        "evidence_count": 93,
+        "initial_segment_count": 6,
+        "segments": [
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10298,
+            "provider_prompt_bytes": 16642,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10298,
+            "provider_prompt_bytes": 16642,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10298,
+            "provider_prompt_bytes": 16642,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10298,
+            "provider_prompt_bytes": 16642,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10298,
+            "provider_prompt_bytes": 16642,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 13,
+            "provider_prompt_chars": 10229,
+            "provider_prompt_bytes": 16573,
+            "native_prompt_chars": 6517,
+            "annotation_overhead": 3999,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          }
+        ]
+      },
+      {
+        "piece_ordinal": 3,
+        "piece_chars": 3556,
+        "evidence_count": 83,
+        "initial_segment_count": 6,
+        "segments": [
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9840,
+            "provider_prompt_bytes": 15718,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9840,
+            "provider_prompt_bytes": 15718,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9840,
+            "provider_prompt_bytes": 15718,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9840,
+            "provider_prompt_bytes": 15718,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 9840,
+            "provider_prompt_bytes": 15718,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 3,
+            "provider_prompt_chars": 9541,
+            "provider_prompt_bytes": 15419,
+            "native_prompt_chars": 6489,
+            "annotation_overhead": 3569,
+            "node_catalog_count": 7,
+            "source_text_occurrence_count": 1
+          }
+        ]
+      },
+      {
+        "piece_ordinal": 4,
+        "piece_chars": 3791,
+        "evidence_count": 82,
+        "initial_segment_count": 6,
+        "segments": [
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10624,
+            "provider_prompt_bytes": 16686,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10624,
+            "provider_prompt_bytes": 16686,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10624,
+            "provider_prompt_bytes": 16686,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10624,
+            "provider_prompt_bytes": 16686,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 10624,
+            "provider_prompt_bytes": 16686,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 2,
+            "provider_prompt_chars": 10302,
+            "provider_prompt_bytes": 16364,
+            "native_prompt_chars": 7316,
+            "annotation_overhead": 3526,
+            "node_catalog_count": 11,
+            "source_text_occurrence_count": 1
+          }
+        ]
+      },
+      {
+        "piece_ordinal": 5,
+        "piece_chars": 2098,
+        "evidence_count": 52,
+        "initial_segment_count": 4,
+        "segments": [
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 6786,
+            "provider_prompt_bytes": 10372,
+            "native_prompt_chars": 4768,
+            "annotation_overhead": 2236,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 6786,
+            "provider_prompt_bytes": 10372,
+            "native_prompt_chars": 4768,
+            "annotation_overhead": 2236,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 16,
+            "provider_prompt_chars": 6786,
+            "provider_prompt_bytes": 10372,
+            "native_prompt_chars": 4768,
+            "annotation_overhead": 2236,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          },
+          {
+            "assigned_evidence_count": 4,
+            "provider_prompt_chars": 6510,
+            "provider_prompt_bytes": 10096,
+            "native_prompt_chars": 4768,
+            "annotation_overhead": 2236,
+            "node_catalog_count": 5,
+            "source_text_occurrence_count": 1
+          }
+        ]
+      }
+    ],
+    "logical_series": 5,
+    "initial_segment_calls": 27,
+    "provider_calls": 0,
+    "interpretation": "STRUCTURAL_SIMULATION_ONLY; CALL_SUFFICIENCY_UNOBSERVED"
+  },
+  "stage72c": {
+    "cloud": {
+      "compatible": false,
+      "reason": "SEMANTIC_SURFACE_CHANGED",
+      "target_sha256": "c23fb558d816fe0929da86ada54efcb1d62777708fa0228c47e72ab4bd94b49b"
+    },
+    "native": {
+      "compatible": false,
+      "reason": "SEMANTIC_SURFACE_CHANGED",
+      "target_sha256": "562860e11a58376e86c66949661d2eaf9b5651f8b22070f75c16cd911f5a6e57"
+    }
+  },
+  "cost": {
+    "benchmark": {
+      "canonical": {
+        "chars": 22574,
+        "bytes": 22574
+      },
+      "foundation_wire_v2": {
+        "chars": 14758,
+        "bytes": 14758
+      },
+      "corrected_wire_v3": {
+        "chars": 16038,
+        "bytes": 16038
+      },
+      "corrected_reduction_percent": {
+        "chars": 28.95366350668911,
+        "bytes": 28.95366350668911
+      }
+    },
+    "COMPACT_WIRE_COST_TARGET": "NOT_MET"
+  },
+  "real_state": {
+    "schema": "11",
+    "source_unchanged": true,
+    "historical_runs_1_7_unchanged": true,
+    "historical_attempt_counts_1_7": [
+      0,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "production_unchanged": true,
+    "workbench_unchanged": true,
+    "stable_runtime_unchanged": true
+  },
+  "deployment": {
+    "REAL_WORKBENCH_V12_MIGRATION_REQUIRED_AFTER_MERGE": true,
+    "STABLE_RUNTIME_ACTIVATION_REQUIRED_AFTER_MIGRATION": true,
+    "LIVE_BOUNDED_EXTRACTION_RUN8_VALIDATION_REQUIRED": true
+  },
+  "privacy": {
+    "real_source_text_in_git": false,
+    "provider_prompt_content_in_git": false,
+    "raw_provider_output_in_public_evidence": false,
+    "reasoning_content_retained": false
+  },
+  "branch": "codex/pro-a-source-analysis-compact-wire-series-binding-r1",
+  "implementation_sha": "b8cd7e676eb584028804914e07652807b28a6881"
+}
