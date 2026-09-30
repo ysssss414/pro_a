@@ -89,6 +89,8 @@ def test_migration_exact_backup_preserves_every_old_row_and_production(tmp_path)
     assert migration.prepare_bounded_extraction_persistence(config)["status"] == "ALREADY_PREPARED"
     assert config.state_db.read_bytes() == after
     with Store(config).connect() as c:
+        columns = {r[1]: r[2] for r in c.execute("PRAGMA table_info(bounded_extraction_outcomes)")}
+        assert columns["latency_ms"] == "REAL"
         assert c.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
         assert not c.execute("PRAGMA foreign_key_check").fetchall()
 

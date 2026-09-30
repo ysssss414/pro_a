@@ -155,7 +155,7 @@ class BoundedExtractionStore:
                 calls.append(SegmentCallAccounting(
                     segment.segment_id, attempt["attempt_id"], outcome["provider_request_id"] if outcome else None,
                     *(outcome[f] if outcome else None for f in ("input_tokens", "output_tokens", "total_tokens", "cached_input_tokens")),
-                    None, outcome["finish_reason"] if outcome else None, outcome["artifact_sha256"] if outcome else None,
+                    outcome["latency_ms"] if outcome else None, outcome["finish_reason"] if outcome else None, outcome["artifact_sha256"] if outcome else None,
                     outcome["external_outcome"] if outcome else "UNKNOWN"))
             accepted = connection.execute("SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?", (segment.segment_id,)).fetchone()
             if accepted:
@@ -286,16 +286,24 @@ class BoundedExtractionStore:
 
     @staticmethod
     def _envelope(attempt, raw_body, *, http_status=200, provider_request_id=None, finish_reason=None,
-                  input_tokens=None, output_tokens=None, total_tokens=None, cached_input_tokens=None):
+                  input_tokens=None, output_tokens=None, total_tokens=None, cached_input_tokens=None, latency_ms=None):
         _require(type(raw_body) is bytes, "RAW_BYTES_REQUIRED")
         _require(http_status is None or type(http_status) is int and 100 <= http_status <= 599, "INVALID_HTTP_STATUS")
         _require(provider_request_id is None or isinstance(provider_request_id, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,200}", provider_request_id), "INVALID_PROVIDER_REQUEST_ID")
         _require(finish_reason in (None, "stop", "length", "error", "content_filter"), "INVALID_FINISH_REASON")
         usage = dict(input_tokens=input_tokens, output_tokens=output_tokens, total_tokens=total_tokens, cached_input_tokens=cached_input_tokens)
         _require(all(v is None or type(v) is int and v >= 0 for v in usage.values()), "INVALID_CALL_USAGE")
+        if latency_ms is not None:
+            _require(type(latency_ms) in (int, float), "INVALID_CALL_LATENCY")
+            try:
+                finite = math.isfinite(latency_ms)
+            except OverflowError:
+                finite = False
+            _require(finite and latency_ms >= 0, "INVALID_CALL_LATENCY")
         value = {"version": "bounded-private-raw-v1", "attempt_id": attempt["attempt_id"], "request_sha256": attempt["request_sha256"],
                  "raw_body_base64": base64.b64encode(raw_body).decode("ascii"), "raw_body_sha256": hashlib.sha256(raw_body).hexdigest(),
-                 "http_status": http_status, "provider_request_id": provider_request_id, "finish_reason": finish_reason, **usage}
+                 "http_status": http_status, "provider_request_id": provider_request_id, "finish_reason": finish_reason, **usage,
+                 "latency_ms": latency_ms}
         return {**value, "envelope_sha256": identity(value)}
 
     def _decode_envelope(self, attempt, content):
@@ -303,7 +311,7 @@ class BoundedExtractionStore:
             value = json.loads(content)
             body = base64.b64decode(value["raw_body_base64"], validate=True)
             expected = self._envelope(attempt, body, **{k: value[k] for k in (
-                "http_status", "provider_request_id", "finish_reason", "input_tokens", "output_tokens", "total_tokens", "cached_input_tokens")})
+                "http_status", "provider_request_id", "finish_reason", "input_tokens", "output_tokens", "total_tokens", "cached_input_tokens", "latency_ms")})
             _require(value == expected, "RAW_ENVELOPE_IDENTITY_MISMATCH")
             return value, body
         except (ValueError, KeyError, TypeError):
@@ -329,7 +337,10 @@ class BoundedExtractionStore:
             usage = dict.fromkeys(usage)
         outcome = _record(connection, "outcomes", {"attempt_id": attempt["attempt_id"], "external_outcome": external,
             "artifact_relative": path.relative_to(self.config.artifact_root.resolve()).as_posix(), "artifact_sha256": digest,
-            "provider_request_id": envelope["provider_request_id"], **usage, "finish_reason": envelope["finish_reason"],
+            "provider_request_id": envelope["provider_request_id"], **usage,
+            # Hash SQLite's REAL representation, including its positive zero.
+            "latency_ms": float(envelope["latency_ms"] or 0.0) if envelope["latency_ms"] is not None else None,
+            "finish_reason": envelope["finish_reason"],
             "classification": "INVALID_USAGE" if invalid else external, "created_at": _now()})
         actual = usage["output_tokens"] if usage["output_tokens"] is not None else 12000
         connection.execute("UPDATE bounded_extraction_series SET output_liability=output_liability-12000+?,updated_at=? WHERE series_id=?", (actual, _now(), sid))

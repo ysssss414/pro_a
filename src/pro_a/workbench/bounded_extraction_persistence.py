@@ -102,7 +102,7 @@ def _schema(connection):
         "outcomes": """attempt_id TEXT PRIMARY KEY REFERENCES bounded_extraction_dispatches(attempt_id),
             external_outcome TEXT NOT NULL, artifact_relative TEXT NOT NULL, artifact_sha256 TEXT NOT NULL,
             provider_request_id TEXT, input_tokens INTEGER, output_tokens INTEGER, total_tokens INTEGER,
-            cached_input_tokens INTEGER, finish_reason TEXT, classification TEXT NOT NULL,
+            cached_input_tokens INTEGER, latency_ms REAL, finish_reason TEXT, classification TEXT NOT NULL,
             created_at TEXT NOT NULL, record_sha256 TEXT NOT NULL""",
         "segment_results": """segment_id TEXT PRIMARY KEY REFERENCES bounded_extraction_segments(segment_id),
             attempt_id TEXT NOT NULL UNIQUE REFERENCES bounded_extraction_outcomes(attempt_id),

@@ -36,7 +36,7 @@ def test_crash_a_through_e_fresh_instance(setup, monkeypatch, window):
     with pytest.raises(RuntimeError, match="SYNTHETIC_CRASH"):
         _, aid = reserve(ledger, segment, fence=fence)
         ledger.record_dispatch(aid, "worker", fence)
-        ledger.record_outcome(aid, "worker", fence, body(ctx, catalog, series, segment)[0], finish_reason="stop", output_tokens=20)
+        ledger.record_outcome(aid, "worker", fence, body(ctx, catalog, series, segment)[0], finish_reason="stop", output_tokens=20, latency_ms=123.456)
         ledger.accept_result(aid, "worker", fence, catalog, ctx)
     monkeypatch.setattr(migration, "checkpoint", lambda name: None)
     fresh = BoundedExtractionStore(config)
@@ -58,8 +58,11 @@ def test_crash_a_through_e_fresh_instance(setup, monkeypatch, window):
         assert status == "SUCCEEDED_COMPLETE"
         assert fresh.reconcile_attempt(aid, "worker", fence, catalog, ctx) == status
         assert fresh.read(series.series_id)[3].output_token_liability == 20
+        assert fresh.read(series.series_id)[3].latency_ms == 123.456
     with Store(config).connect() as c:
         assert c.execute("SELECT COUNT(*) FROM bounded_extraction_attempts").fetchone()[0] == 1
+        outcomes = c.execute("SELECT latency_ms FROM bounded_extraction_outcomes").fetchall()
+        assert [r[0] for r in outcomes] == ([] if window in ("attempt_reserved", "dispatch_durable") else [123.456])
         assert c.execute("SELECT COUNT(*) FROM bounded_extraction_segment_results").fetchone()[0] == int(window not in ("attempt_reserved", "dispatch_durable"))
 
 
@@ -100,7 +103,7 @@ def test_crash_g_aggregate_artifact_reconciles(setup, monkeypatch):
     assert artifact.read_bytes() == before
 
 
-def test_subprocess_abrupt_exit_after_raw_fsync(setup, tmp_path):
+def test_subprocess_abrupt_exit_after_raw_fsync(setup, tmp_path, monkeypatch):
     config, ledger, ctx, catalog, series, plan = setup
     fence, aid = reserve(ledger, plan.leaves[0])
     ledger.record_dispatch(aid, "worker", fence)
@@ -122,13 +125,28 @@ for k in ("knowledge_db","state_db","artifact_root"): v["config"][k]=Path(v["con
 def crash(name):
  if name == "raw_artifact_durable": os._exit(73)
 p.checkpoint=crash
-BoundedExtractionStore(WorkbenchConfig(**v["config"])).record_outcome(v["attempt_id"],"worker",v["fence"],v["raw"].encode(),finish_reason="stop",output_tokens=33)
+BoundedExtractionStore(WorkbenchConfig(**v["config"])).record_outcome(v["attempt_id"],"worker",v["fence"],v["raw"].encode(),finish_reason="stop",output_tokens=33,latency_ms=123.456)
 '''
     child = subprocess.run([sys.executable, "-c", script, str(path)], env=os.environ.copy(), capture_output=True, timeout=30)
     assert child.returncode == 73, child.stderr.decode(errors="replace")
+    assert json.loads(ledger._path(series.series_id, aid + ".raw.json").read_bytes())["latency_ms"] == 123.456
+    with Store(config).connect() as c:
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_outcomes").fetchone()[0] == 0
+    from pro_a.workbench import bounded_extraction_store as module
+    calls = []
+    original = module.account_series_calls
+    def capture(series, plan, values):
+        calls[:] = values
+        return original(series, plan, values)
+    monkeypatch.setattr(module, "account_series_calls", capture)
     fresh = BoundedExtractionStore(config)
     assert fresh.reconcile_attempt(aid, "worker", fence, catalog, ctx) == "SUCCEEDED_COMPLETE"
-    assert fresh.read(series.series_id)[3].provider_call_count == 1
+    accounting = fresh.read(series.series_id)[3]
+    assert accounting.provider_call_count == 1 and accounting.latency_ms == 123.456
+    assert len(calls) == 1 and calls[0].latency_ms == 123.456
+    assert not fresh.record_dispatch(aid, "worker", fence)
+    with Store(config).connect() as c:
+        assert [r[0] for r in c.execute("SELECT latency_ms FROM bounded_extraction_outcomes")] == [123.456]
 
 
 def race(config, action):
