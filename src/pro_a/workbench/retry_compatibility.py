@@ -165,7 +165,7 @@ def prepare_retry_compatibility(config) -> dict[str, str]:
         raise BoundaryError("PRIVATE_SOURCE_MODE_REQUIRED")
     with Store(config).connect(operator_write=True) as connection:
         connection.execute("BEGIN IMMEDIATE")
-        if schema_version(connection) not in ("9", "10", "11"):
+        if schema_version(connection) not in ("9", "10", "11", "12"):
             raise BoundaryError("DOMAIN_SCHEMA_REQUIRED")
         from .extraction_retry import installed as retry_installed
         if not retry_installed(connection):

@@ -37,7 +37,7 @@ def queue(service, selected, limit, offset):
         review = raw["review"]
         counts = {name: 0 for name in QUEUES}
         if review["enabled"]:
-            if version in ("10", "11"):
+            if version in ("10", "11", "12"):
                 # Preserve native scale/lifecycle filtering, including schema 11 closures.
                 projection = ReviewQueueReads(service.config)
                 counts = {name: projection.page(raw["artifact_id"], queue=name, limit=1)["filtered_total"]
@@ -55,7 +55,7 @@ def queue(service, selected, limit, offset):
 
 def frozen_run(service, dto, version):
     result = r.FrozenRun(run_id=dto["run_id"])
-    if version not in ("8", "9", "10", "11"):
+    if version not in ("8", "9", "10", "11", "12"):
         return result
     with service.reviews.store.connect() as connection:
         rows = connection.execute('''SELECT processing_run_id,source_id,runtime_json

@@ -91,11 +91,12 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
     assert value["http_calls"] == []
 
 
-def test_exact_baseline_native_surface_fails_closed_while_wire_surface_is_unchanged():
+def test_capacity_and_schema12_surfaces_fail_closed_against_capacity_baseline():
     from pro_a.workbench.retry_compatibility import _execution_surface_comparison
     _execution_surface_comparison.cache_clear()
     result = _execution_surface_comparison("native", BASELINE)
     assert result["compatible"] is False and result["reason"] == "SEMANTIC_SURFACE_CHANGED"
-    # Full retry qualification also requires native compatibility; unchanged wire
-    # behavior alone cannot authorize resuming a historical extraction plan.
-    assert _execution_surface_comparison("cloud", BASELINE)["compatible"] is True
+    # Schema12 acceptance now also changes the protected cloud surface. Neither
+    # dormant persistence nor unchanged provider contracts authorize old retries.
+    cloud = _execution_surface_comparison("cloud", BASELINE)
+    assert cloud["compatible"] is False and cloud["reason"] == "SEMANTIC_SURFACE_CHANGED"

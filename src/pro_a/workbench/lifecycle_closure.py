@@ -65,8 +65,8 @@ def prepare_stage6_lifecycle(config) -> dict[str, Any]:
     receipt_path = path.with_name(path.name + ".stage43-stage6-migration.json")
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == "11":
-            return {"status": "ALREADY_PREPARED", "schema_version": "11"}
+        if version in ("11", "12"):
+            return {"status": "ALREADY_PREPARED", "schema_version": version}
         if version != "10":
             raise BoundaryError("STAGE1_SCHEMA_REQUIRED")
         _require_drain(connection)
@@ -197,7 +197,7 @@ def apply_lifecycle_closure(config, closure_path: Path, *,
     with Store(config).connect(operator_write=True) as connection:
         connection.execute("PRAGMA foreign_keys=ON")
         connection.execute("BEGIN IMMEDIATE")
-        if schema_version(connection) != "11":
+        if schema_version(connection) not in ("11", "12"):
             raise BoundaryError("STAGE6_LIFECYCLE_SCHEMA_REQUIRED")
         _require_drain(connection)
         prior = connection.execute(
@@ -264,7 +264,7 @@ def lifecycle_status(config) -> dict[str, Any]:
     """Read lifecycle closure registration and capacity without changing state."""
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version != "11":
+        if version not in ("11", "12"):
             return {"enabled": False, "schema_version": version, "closures": []}
         closures = []
         for row in connection.execute(
@@ -287,13 +287,13 @@ def lifecycle_status(config) -> dict[str, Any]:
                 "followup_governance": followup, "production_authorized": False,
             })
         from .stage1_scale import stage1_capacity
-        return {"enabled": True, "schema_version": "11", "closures": closures,
+        return {"enabled": True, "schema_version": version, "closures": closures,
                 "capacity": stage1_capacity(connection)}
 
 
 def closure_for_artifact(connection, artifact_id: str) -> dict[str, Any] | None:
     """Return only a closure bound to this validated registered artifact."""
-    if schema_version(connection) != "11":
+    if schema_version(connection) not in ("11", "12"):
         return None
     meta = connection.execute(
         "SELECT * FROM lifecycle_closure_meta WHERE artifact_id=?", (artifact_id,)
@@ -327,12 +327,12 @@ def apply_stage6_plan(config, closure_path: Path, *, expected_workbench_sha256: 
     _require_offline(path)
     with Store(config).connect() as connection:
         version = schema_version(connection)
-        if version == "11":
+        if version in ("11", "12"):
             applied = apply_lifecycle_closure(
                 config, closure_path,
                 expected_production_sha256=expected_production_sha256,
             )
-            return {"status": applied["status"], "schema_version": "11", "apply": applied}
+            return {"status": applied["status"], "schema_version": version, "apply": applied}
         _require_drain(connection)
     before = path.read_bytes()
     before_sha = hashlib.sha256(before).hexdigest()

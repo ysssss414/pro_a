@@ -411,13 +411,17 @@ def test_dense_fixture_existing_native_validation(tmp_path):
     assert all(c["quality_eligible"] for c in new["node_candidates"])
 
 
-def test_foundation_dormant_and_active_surfaces_unchanged():
+def test_foundation_dormant_and_schema12_surfaces_fail_closed():
     from pro_a.workbench.retry_compatibility import _execution_surface_comparison
     from pro_a.workbench.source_operations import MAX_STAGE1_JOBS_PER_RUN, SourceProfile
     from pro_a.cloud_contract import OPERATION_MAX_OUTPUT_TOKENS
-    baseline = "e69813cc7a9d25523ab6e5d52ebcfcf8aa03daf6"
-    assert _execution_surface_comparison("cloud", baseline)["compatible"]
-    assert _execution_surface_comparison("native", baseline)["compatible"]
+    baseline = "27fd74d31bdf48f6684a71904b10de5d391820c3"
+    # Additive schema acceptance changes the protected cloud surface. It must
+    # remain incompatible; dormant Wire support does not authorize a retry.
+    cloud = _execution_surface_comparison("cloud", baseline)
+    native = _execution_surface_comparison("native", baseline)
+    assert not cloud["compatible"] and cloud["reason"] == "SEMANTIC_SURFACE_CHANGED"
+    assert native["compatible"] and native["reason"] == "SEMANTIC_SURFACE_EXACT"
     assert MAX_STAGE1_JOBS_PER_RUN == 31
     assert SourceProfile.__dataclass_fields__["max_extraction_pieces"].default == 16
     assert OPERATION_MAX_OUTPUT_TOKENS == {"SOURCE_ANALYSIS_PIECE": 12000, "SEMANTIC_DECOMPOSITION": 8192}
