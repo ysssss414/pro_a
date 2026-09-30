@@ -38,6 +38,14 @@ _CLOUD_EXECUTION_ROOTS = {
     "workbench/source_operations.py": ("SourceOperations._advance_claimed",),
 }
 _CLOUD_EXECUTION_DEPENDENCIES = {
+    "bounded_extraction.py": None,
+    "evidence_binding.py": None,
+    "source_analysis_wire.py": None,
+    "bounded_source_analysis.py": None,
+    "processing_context.py": None,
+    "workbench/bounded_source_analysis.py": None,
+    "workbench/bounded_extraction_store.py": None,
+    "workbench/bounded_extraction_persistence.py": None,
     "cloud_contract.py": None,
     "provider_diagnostics.py": None,
     "domain_packs.py": None,
@@ -61,7 +69,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     ),
     "workbench/source_operations.py": (
         "_canonical", "_now", "_ExtractionReplay", "SourceProfile.validate",
-        "SourceOperations.__init__", "SourceOperations._event",
+        "SourceOperations.__init__", "SourceOperations.start", "SourceOperations._event",
         "SourceOperations._transition", "SourceOperations._community_bound",
         "SourceOperations._register_input", "SourceOperations._bind_job",
         "SourceOperations._jobs_for", "SourceOperations._propagate_job_state",
@@ -522,10 +530,12 @@ def _execution_surface_sources(
     target: dict[str, bytes] = {}
     for name in specification:
         repository_name = f"src/pro_a/{name}"
-        historical[name] = subprocess.check_output(
+        present = subprocess.run(["git", "cat-file", "-e", f"{historical_git_sha}:{repository_name}"],
+                                 cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Absence is a different execution surface, never a compatibility waiver.
+        historical[name] = (subprocess.check_output(
             ["git", "show", f"{historical_git_sha}:{repository_name}"], cwd=root,
-            stderr=subprocess.DEVNULL,
-        )
+            stderr=subprocess.DEVNULL) if present.returncode == 0 else b"")
         target[name] = (package / name).read_bytes()
     return historical, target
 

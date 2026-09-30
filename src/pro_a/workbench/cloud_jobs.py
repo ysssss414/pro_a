@@ -156,9 +156,15 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         package = Path(__file__).parent.parent
         names = ('domain_packs.py', 'run_context.py', 'workbench/domains.py',
                  'workbench/source_operations.py', 'workbench/cloud_jobs.py', 'workbench/artifacts.py',
-                 'workbench/extraction_retry.py')
+                 'workbench/extraction_retry.py', 'bounded_extraction.py', 'evidence_binding.py',
+                 'source_analysis_wire.py', 'bounded_source_analysis.py', 'processing_context.py',
+                 'workbench/bounded_source_analysis.py', 'workbench/bounded_extraction_store.py',
+                 'workbench/bounded_extraction_persistence.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
+    if workbench_schema_version == "12":
+        from pro_a.bounded_source_analysis import binding_contract
+        value["bounded_source_analysis"] = binding_contract()
     value["runtime_sha256"] = digest(value)
     return value
 

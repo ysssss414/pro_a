@@ -131,30 +131,22 @@ def test_semantic_token_boundary_forces_deterministic_split_and_rejects_oversize
 def test_zero_parent_source_skips_semantic_dispatch_and_stops_explicitly(tmp_path):
     case, source = setup_source(tmp_path)
     prepare_stage1_scale(case["config"])
+    from series_binding_helpers import prepare_bounded,synthetic_providers,Transport
+    prepare_bounded(case)
     run_id = start(case, source)
-    provider = DeterministicFakeProvider()
-    source_output = provider._source_analysis_output
-
-    def no_claim_output(request):
-        output = copy.deepcopy(source_output(request))
-        output["claims"] = []
-        return output
-
-    provider._source_analysis_output = no_claim_output
     result = None
-    for _ in range(3):
-        advanced = case["service"].advance_once(
+    with synthetic_providers(case,Transport(mode='empty')) as provider:
+        for _ in range(3):
+            advanced = case["service"].advance_once(
             worker_id="stage1-empty-parent-worker", provider=provider,
             processing_run_id=run_id,
         )
-        if advanced is not None:
-            result = advanced
+            if advanced is not None:
+                result = advanced
     assert result["state"] == "BLOCKED", json.dumps(result, sort_keys=True)
     assert result["error"]["code"] == "NATIVE_PACKET_FAILED"
     assert provider.call_count == 1
-    assert [job["operation_kind"] for job in result["jobs"]] == [
-        "SOURCE_ANALYSIS_PIECE"
-    ]
+    assert result['jobs']==[] and result['logical_extraction_series_count']==1
 
 
 def _node_candidate(node_type: str) -> dict:
@@ -264,15 +256,9 @@ def test_catalog_exact_first_complete_continuation_and_beyond_500_prompt_lookup(
 
 
 def _stage1_finished_case(tmp_path):
-    case, source = setup_source(tmp_path)
-    prepare_stage1_scale(case["config"])
-    run_id = start(case, source)
-    provider = DeterministicFakeProvider()
-    result = None
-    for _ in range(3):
-        result = case["service"].advance_once(
-            worker_id="stage1-test-worker", provider=provider, processing_run_id=run_id
-        )
+    from legacy_source_fixture import historical_case
+    case=historical_case(tmp_path,'review',schema='10')
+    result=case['service'].get_run(case['run_id'])
     assert result["state"] == "HUMAN_REVIEW_REQUIRED"
     return case, result
 
@@ -460,15 +446,9 @@ def test_stage1_migration_is_workbench_only_and_limits_are_frozen(tmp_path):
 
 
 def test_stage1_migration_rebuilds_existing_native_review_packets(tmp_path):
-    case, source = setup_source(tmp_path)
-    run_id = start(case, source)
-    provider = DeterministicFakeProvider()
-    run = None
-    for _ in range(3):
-        run = case["service"].advance_once(
-            worker_id="stage1-migration-worker", provider=provider,
-            processing_run_id=run_id,
-        )
+    from legacy_source_fixture import historical_case
+    case=historical_case(tmp_path,'review',schema='9')
+    run=case['service'].get_run(case['run_id'])
     assert run["state"] == "HUMAN_REVIEW_REQUIRED"
     receipt = prepare_stage1_scale(case["config"])
     assert receipt["review_projections_built"] == 1

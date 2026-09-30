@@ -15,6 +15,7 @@ from pro_a.workbench.cloud_jobs import CloudProfile
 from test_cloud_operation_adapter_binding import setup_run, advance, jobs
 from test_llm import FakeResponse, make_llm
 from test_provider_output_failure_telemetry import diagnostic
+from series_binding_helpers import rows
 
 
 BASELINE = "7d34055477a1997888db1c7315ab0d59becc17a0"
@@ -153,8 +154,8 @@ def test_structured_dual_adapter_e2e_reasoning_zero_durable_and_private(tmp_path
         payload = kwargs["json"]
         assert payload["thinking"] == {"type": "disabled"}
         assert "reasoning_effort" not in payload
-        from pro_a.prompts import SOURCE_ANALYSIS_SYSTEM
-        expected_output = 12000 if payload["messages"][0]["content"] == SOURCE_ANALYSIS_SYSTEM else 8192
+        from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_SYSTEM
+        expected_output = 12000 if payload["messages"][0]["content"] == BOUNDED_SOURCE_ANALYSIS_SYSTEM else 8192
         assert payload["model"] == "deepseek-flash" and payload["max_tokens"] == expected_output
         assert payload["response_format"] == {"type": "json_object"}
         calls.append(payload["messages"][0]["content"])
@@ -172,6 +173,10 @@ def test_structured_dual_adapter_e2e_reasoning_zero_durable_and_private(tmp_path
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_id"] and final["packet_artifact_id"]
     assert len(calls) == 2 and len(set(calls)) == 2
     assert analyzer.FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS == 4000
+    attempt=rows(value,'bounded_extraction_attempts')[0]
+    series=rows(value,'bounded_extraction_series')[0]
+    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    assert envelope['reasoning_tokens']==0 and envelope['output_tokens']==200
     for row in jobs(value):
         contract = operation_contract(row["operation_kind"])
         assert json.loads(row["prompt_json"]) == contract
@@ -198,11 +203,14 @@ def test_truncation_reasoning_count_is_durable_without_content(tmp_path, monkeyp
     monkeypatch.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(
         completion(8192, finish="length", content="", output_tokens=8192)))
     with caplog.at_level(logging.DEBUG):
-        assert advance(value)["state"] == "FAILED"
-    job = value["service"].jobs.get(jobs(value)[0]["job_id"])
-    d = job["failure_diagnostic"]
-    assert (d["output_parse_kind"], d["finish_reason"], d["completion_tokens"], d["reasoning_tokens"], d["content_length"]) == ("TRUNCATED", "length", 8192, 8192, 0)
-    assert d["retryable"] is False and job["attempt_count"] == 1
+        final=advance(value)
+    assert final['state']=='BLOCKED' and final['error']['code']=='EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY'
+    attempt=rows(value,'bounded_extraction_attempts')[0]
+    series=rows(value,'bounded_extraction_series')[0]
+    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    assert (envelope['finish_reason'],envelope['output_tokens'],envelope['reasoning_tokens'],envelope['raw_body_base64'])==('length',8192,8192,'')
+    assert final['provider_segment_attempt_count']==1 and not jobs(value)
+    assert not rows(value,'bounded_extraction_segment_results')
     assert_private_surfaces(value, caplog, tmp_path)
 
 
@@ -213,8 +221,15 @@ def test_policy_mismatch_fails_before_dispatch(tmp_path, monkeypatch, operation,
     identity = operation_contract(operation)
     identity[field] = value
     request = SimpleNamespace(operation_kind=operation, prompt_identity=identity)
+    if operation==SOURCE_ANALYSIS_OPERATION:
+        from pro_a.cloud_contract import SourceAnalysisPieceProvider
+        from pro_a.llm import ChatLLM
+        from pro_a.config import load_config
+        provider=SourceAnalysisPieceProvider(ChatLLM(load_config(setup['phase4_config']).llm),provider_identity='deepseek')
+    else:
+        provider=setup['providers'][operation]
     with pytest.raises(ProviderFailure, match="PROVIDER_REASONING_POLICY_MISMATCH") as caught:
-        setup["providers"][operation].invoke(request)
+        provider.invoke(request)
     assert caught.value.external_outcome == "NOT_DISPATCHED" and not caught.value.retryable
     assert setup["http_calls"] == []
 
@@ -251,11 +266,12 @@ def test_policy_changes_frozen_job_intent_and_old_jobs_fail_closed(tmp_path, mon
     from pro_a.workbench.extraction_retry import frozen_cloud
     from pro_a.workbench.source_operations import SourceOperationError
     value = setup_run(tmp_path, monkeypatch)
+    assert advance(value)['state']=='SEMANTIC_PROCESSING'
     row = jobs(value)[0]
     before = copy.deepcopy(row)
     monkeypatch.setattr(contract_module, "STRUCTURED_JSON_REASONING_POLICY_VERSION", "future-policy")
     new = value["service"].jobs.submit(idempotency_key="different-reasoning-policy-0001",
-        input_artifact_id=row["input_artifact_id"], operation_kind=SOURCE_ANALYSIS_OPERATION)
+        input_artifact_id=row["input_artifact_id"], operation_kind=OPERATION_KIND)
     with value["service"].store.connect() as c:
         changed = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (new["job"]["job_id"],)).fetchone())
         assert changed["intent_sha256"] != row["intent_sha256"]

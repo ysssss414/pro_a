@@ -38,7 +38,6 @@ def validate_basis(basis):
             and scope['primary_domain'] is None and scope['packs'] == []
             and scope['shared_core_contract'] == SHARED_CORE_CONTRACT, 'PROCESSING_SCOPE_INVALID')
     sha(scope['shared_core_sha256'])
-    require(scope['shared_core_sha256'] == shared_core_sha256(), 'SHARED_CORE_IDENTITY_DRIFT')
     runtime = basis['runtime']
     require(isinstance(runtime, dict) and 'runtime_sha256' in runtime and 'git_sha' in runtime)
     sha(runtime['runtime_sha256'])
@@ -76,4 +75,5 @@ def validate_context(value):
 def guard_resume(frozen, current_basis):
     validate_context(frozen)
     validate_basis(current_basis)
+    require(current_basis['processing_scope']['shared_core_sha256'] == shared_core_sha256(), 'SHARED_CORE_IDENTITY_DRIFT')
     require(frozen['resume_sha256'] == digest(current_basis), 'PROCESSING_RUN_CONTEXT_DRIFT')

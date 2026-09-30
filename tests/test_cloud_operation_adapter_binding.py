@@ -21,6 +21,8 @@ from pro_a.workbench.source_operations import (
 )
 from test_phase43_stage71_shared_core_pending import case
 from test_workbench_stage7 import TEXT, clean_pdf, upload
+from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_OPERATION as BOUNDED_OPERATION, BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION
+from series_binding_helpers import prepare_bounded, request_parts, response_content, rows as ledger_rows
 
 
 @pytest.fixture(autouse=True)
@@ -32,6 +34,7 @@ def no_network(monkeypatch):
 
 def setup_run(tmp_path, monkeypatch):
     value = case(tmp_path)
+    prepare_bounded(value)
     config_path = value["phase4_config"]
     config_path.write_text(config_path.read_text(encoding="utf-8").replace(
         'enabled = false\nmodel = "fake-semantic-v1"',
@@ -83,8 +86,8 @@ def setup_run(tmp_path, monkeypatch):
                 }],
             } for claim in claims]}
         else:
-            output = DeterministicFakeProvider._source_analysis_output(
-                SimpleNamespace(payload={"source_text": TEXT}))
+            target,source_text=request_parts(payload)
+            output=json.loads(response_content(target,source_text))
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-dual"},
             json=lambda: {"id": "offline-dual", "model": "deepseek-flash",
                           "choices": [{"finish_reason": "stop", "message": {
@@ -110,15 +113,15 @@ def jobs(value):
 
 def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
-    extraction = jobs(value)[0]
-    assert extraction["provider_adapter_version"] == SOURCE_ANALYSIS_ADAPTER_VERSION
+    assert not jobs(value)
+    assert value['providers'][BOUNDED_OPERATION].adapter_version==BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION
     assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     final = advance(value)
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_artifact_id"]
     assert final["processing_scope_mode"] == "SHARED_CORE"
     assert final["domain_assignment_status"] == "PENDING"
     rows = jobs(value)
-    assert len(rows) == 2 and len(value["http_calls"]) == 2
+    assert len(rows) == 1 and len(value["http_calls"]) == 2
     assert len({call["system"] for call in value["http_calls"]}) == 2
     for row in rows:
         contract = operation_contract(row["operation_kind"])
@@ -129,7 +132,8 @@ def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
         assert row["state"] == "SUCCEEDED" and row["sanitized_error"] is None
         assert row["validation_status"] == "PASS"
         assert json.loads(row["configuration_json"]) == value["cloud_profile"].public_identity()
-    assert len({json.loads(row["prompt_json"])["validator"] for row in rows}) == 2
+    assert ledger_rows(value,'bounded_extraction_series')[0]['state']=='SUCCEEDED_COMPLETE'
+    assert len(ledger_rows(value,'bounded_extraction_attempts'))==1
     with value["service"].store.connect() as c:
         assert c.execute("SELECT COUNT(*) FROM source_processing_runs").fetchone()[0] == 1
         assert c.execute("SELECT COUNT(*) FROM registered_packets WHERE artifact_kind='REVIEW_PACKET'").fetchone()[0] == 1
@@ -140,7 +144,7 @@ def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
         assert "synthetic-transport-only" not in artifact.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("operation", [SOURCE_ANALYSIS_OPERATION, OPERATION_KIND])
+@pytest.mark.parametrize("operation", [BOUNDED_OPERATION, OPERATION_KIND])
 @pytest.mark.parametrize("mismatch", ["other_adapter", "unknown_adapter", "provider"])
 def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch, operation, mismatch):
     value = setup_run(tmp_path, monkeypatch)
@@ -148,7 +152,7 @@ def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch,
         assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     selected = value["providers"][operation]
     if mismatch == "other_adapter":
-        selected = value["providers"][OPERATION_KIND if operation == SOURCE_ANALYSIS_OPERATION else SOURCE_ANALYSIS_OPERATION]
+        selected = value["providers"][OPERATION_KIND if operation == BOUNDED_OPERATION else BOUNDED_OPERATION]
     elif mismatch == "unknown_adapter":
         monkeypatch.setattr(selected, "adapter_version", "unknown-adapter")
     else:
@@ -159,16 +163,18 @@ def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch,
     before = len(value["http_calls"])
     result = advance(value, {operation: selected})
     assert result["state"] == "BLOCKED"
-    assert result["error"]["code"] == "PROVIDER_CONTRACT_MISMATCH"
+    assert result["error"]["code"] == ("BOUNDED_EXTRACTION_FAILED" if operation==BOUNDED_OPERATION else "PROVIDER_CONTRACT_MISMATCH")
     assert len(value["http_calls"]) == before
-    row = next(row for row in jobs(value) if row["operation_kind"] == operation)
-    assert row["attempt_count"] == 0
+    if operation==BOUNDED_OPERATION:
+        assert not ledger_rows(value,'bounded_extraction_attempts') and not jobs(value)
+    else:
+        assert jobs(value)[0]['attempt_count']==0
 
 
 def test_missing_route_has_no_fallback(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
     result = advance(value, {OPERATION_KIND: value["providers"][OPERATION_KIND]})
-    assert result["error"]["code"] == "PROVIDER_OPERATION_UNAVAILABLE"
+    assert result["error"]["code"] == "BOUNDED_EXTRACTION_FAILED"
     assert not value["http_calls"]
 
 
@@ -183,11 +189,11 @@ def test_environment_mapping_and_no_network_construction(monkeypatch):
     assert profile.accepted_model_aliases == () and config.max_retries == 2
     for operation, provider in providers.items():
         assert provider.provider_identity == "deepseek"
-        assert provider.adapter_version == adapter_version_for_operation(operation)
-        llm = provider.llm if operation == SOURCE_ANALYSIS_OPERATION else provider.backend.llm
-        assert llm.cfg.model == profile.requested_model
-        assert llm.cfg.max_retries == 0
-        assert llm.cfg.max_output_tokens == (12000 if operation == SOURCE_ANALYSIS_OPERATION else 8192)
+        assert provider.adapter_version == (BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION if operation==BOUNDED_OPERATION else adapter_version_for_operation(operation))
+        cfg=provider.cfg if operation==BOUNDED_OPERATION else provider.backend.llm.cfg
+        assert cfg.model == profile.requested_model
+        assert cfg.max_retries == 0
+        assert cfg.max_output_tokens == (12000 if operation == BOUNDED_OPERATION else 8192)
     assert profile.public_identity() == profile.public_identity()
     assert "api_key" not in json.dumps(profile.public_identity())
     with pytest.raises(CloudContractError, match="UNSUPPORTED_CLOUD_OPERATION"):
@@ -209,6 +215,7 @@ def test_operator_constructor_rejects_incompatible_config(change):
 def test_unknown_operation_and_deterministic_durable_identity(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
+    assert advance(value)['state']=='SEMANTIC_PROCESSING'
     row = jobs(value)[0]
     with pytest.raises(CloudContractError, match="UNSUPPORTED_CLOUD_OPERATION"):
         service.jobs.submit(idempotency_key="unknown-operation-0001", input_artifact_id=row["input_artifact_id"], operation_kind="UNKNOWN")
@@ -227,9 +234,10 @@ def test_unknown_operation_and_deterministic_durable_identity(tmp_path, monkeypa
 def test_frozen_identity_drift_fails_closed(tmp_path, monkeypatch, change):
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
+    assert advance(value)['state']=='SEMANTIC_PROCESSING'
     row = jobs(value)[0]
     if change in ("frozen_adapter", "frozen_model"):
-        column, changed = ("provider_adapter_version", ADAPTER_VERSION) if change == "frozen_adapter" else ("requested_model", "other-model")
+        column, changed = ("provider_adapter_version", SOURCE_ANALYSIS_ADAPTER_VERSION) if change == "frozen_adapter" else ("requested_model", "other-model")
         with service.store.connect(operator_write=True) as c:
             c.execute(f"UPDATE cloud_jobs SET {column}=? WHERE job_id=?", (changed, row["job_id"]))
     elif change == "profile_model":
@@ -249,28 +257,26 @@ def test_retry_copies_operation_adapter_and_rejects_current_substitution(tmp_pat
     value = setup_run(tmp_path, monkeypatch)
     prepare_extraction_retries(value["config"])
     service = value["service"]
-    provider = value["providers"][SOURCE_ANALYSIS_OPERATION]
-    from pro_a.cloud_contract import ProviderFailure
+    provider = value["providers"][BOUNDED_OPERATION]
+    from pro_a.bounded_source_analysis import RawSegmentResponse
     failed_requests = []
     def fail(request):
         failed_requests.append(request)
-        raise ProviderFailure("PROVIDER_ERROR", retryable=False, external_outcome="KNOWN_FAILURE")
+        return RawSegmentResponse(b'',503,finish_reason='error')
     monkeypatch.setattr(provider, "invoke", fail)
     result = advance(value)
-    assert result["state"] == "FAILED" and result["stage"] == "EXTRACTION_JOBS"
-    original = jobs(value)[0]
-    copied = service.retry_failed_extraction(value["run_id"], failed_requests[0].attempt_id,
-        retry_reason="Explicit synthetic retry", idempotency_key="operation-adapter-retry-0001")
-    with service.store.connect() as c:
-        retry_row = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (copied["job"]["job_id"],)).fetchone())
-        assert dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (original["job_id"],)).fetchone()) == original
-    for key in ("provider_adapter_version", "configuration_json", "runtime_json", "prompt_json"):
-        assert retry_row[key] == original[key]
-    assert frozen_cloud(retry_row) == value["cloud_profile"]
-    assert retry_row["provider_adapter_version"] == SOURCE_ANALYSIS_ADAPTER_VERSION
-    wrong = {SOURCE_ANALYSIS_OPERATION: value["providers"][OPERATION_KIND]}
+    assert result["state"] == "BLOCKED" and result['coverage_status']=='FAILED'
+    original=ledger_rows(value,'bounded_extraction_attempts')
+    with pytest.raises(SourceOperationError,match='BOUNDED_EXTRACTION_RETRY_OWNED_BY_SERIES'):
+        service.retry_failed_extraction(value['run_id'],original[0]['attempt_id'],
+            retry_reason='Explicit synthetic retry',idempotency_key='operation-adapter-retry-0001')
+    assert ledger_rows(value,'bounded_extraction_attempts')==original and not jobs(value)
+    new=service.start(value['source']['source_id'],idempotency_key='operation-adapter-reprocess-0001',reprocess_reason='Explicit synthetic reprocess')['run']
+    value['run_id']=new['processing_run_id']
+    advance(value)
+    wrong = {BOUNDED_OPERATION: value["providers"][OPERATION_KIND]}
     result = advance(value, wrong)
-    assert result["error"]["code"] == "PROVIDER_CONTRACT_MISMATCH"
+    assert result["error"]["code"] == "BOUNDED_EXTRACTION_FAILED"
     assert len(failed_requests) == 1
     assert not value["http_calls"]
 
@@ -280,8 +286,11 @@ def test_retry_copies_operation_adapter_and_rejects_current_substitution(tmp_pat
     (OPERATION_KIND, SOURCE_ANALYSIS_ADAPTER_VERSION),
 ])
 def test_historical_bad_frozen_adapter_cannot_be_reconstructed(tmp_path, monkeypatch, operation, wrong):
-    value = setup_run(tmp_path, monkeypatch)
-    if operation == OPERATION_KIND:
+    if operation==SOURCE_ANALYSIS_OPERATION:
+        from legacy_source_fixture import historical_case
+        value=historical_case(tmp_path)
+    else:
+        value=setup_run(tmp_path,monkeypatch)
         advance(value)
     row = next(row for row in jobs(value) if row["operation_kind"] == operation)
     historical = {**row, "provider_adapter_version": wrong}
@@ -295,22 +304,18 @@ def test_required_adapter_change_changes_new_identity(tmp_path, monkeypatch):
     from pro_a.workbench.cloud_jobs import runtime_identity
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
-    row = jobs(value)[0]
-    monkeypatch.setattr(contract, "SOURCE_ANALYSIS_ADAPTER_VERSION", "source-analysis-piece-adapter-future")
+    old=service.get_run(value['run_id'])
+    old_inputs=ledger_rows(value,'source_cloud_inputs')
+    import pro_a.bounded_source_analysis as bounded
+    monkeypatch.setattr(bounded, "BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION", "bounded-source-analysis-segment-provider-future")
     runtime_identity.cache_clear()
     try:
-        new = service.jobs.submit(idempotency_key="changed-operation-identity-0001",
-            input_artifact_id=row["input_artifact_id"], operation_kind=SOURCE_ANALYSIS_OPERATION)
-        with service.store.connect() as c:
-            changed = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (new["job"]["job_id"],)).fetchone())
-            original = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (row["job_id"],)).fetchone())
-        assert original == row
-        assert changed["provider_adapter_version"] == "source-analysis-piece-adapter-future"
-        assert changed["intent_sha256"] != row["intent_sha256"]
-        assert changed["runtime_sha256"] != row["runtime_sha256"]
-        assert changed["prompt_json"] != row["prompt_json"]
-        assert changed["prompt_sha256"] == row["prompt_sha256"]  # prompt text did not change
-        assert changed["configuration_sha256"] == row["configuration_sha256"]  # provider policy did not change
+        assert advance(value)['error']['code']=='HISTORICAL_EXTRACTION_RUNTIME_INCOMPATIBLE'
+        new=service.start(value['source']['source_id'],idempotency_key='changed-operation-identity-0001',reprocess_reason='Explicit changed bounded contract')['run']
+        assert new['runtime_identity']['bounded_source_analysis']['provider_version']=='bounded-source-analysis-segment-provider-future'
+        assert new['runtime_identity']['runtime_sha256']!=old['runtime_identity']['runtime_sha256']
+        assert ledger_rows(value,'source_cloud_inputs')==old_inputs and not value['http_calls']
+        assert operation_contract(SOURCE_ANALYSIS_OPERATION)['provider_adapter_version']==SOURCE_ANALYSIS_ADAPTER_VERSION
     finally:
         runtime_identity.cache_clear()
 
@@ -319,11 +324,7 @@ def test_compatibility_token_does_not_bypass_adapter_check(tmp_path, monkeypatch
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
     service.jobs.runtime_compatibility = object()
-    row = jobs(value)[0]
-    with service.store.connect(operator_write=True) as c:
-        c.execute("UPDATE cloud_jobs SET provider_adapter_version=? WHERE job_id=?",
-                  (ADAPTER_VERSION, row["job_id"]))
-    result = service.jobs.run_once(value["providers"][SOURCE_ANALYSIS_OPERATION],
-                                  worker_id="adapter-token-test", job_id=row["job_id"])
-    assert result["last_error"] == "PROVIDER_CONTRACT_MISMATCH"
-    assert result["attempt_count"] == 0 and not value["http_calls"]
+    monkeypatch.setattr(value['providers'][BOUNDED_OPERATION],'adapter_version',ADAPTER_VERSION)
+    result=advance(value)
+    assert result['error']['code']=='BOUNDED_EXTRACTION_FAILED'
+    assert not ledger_rows(value,'bounded_extraction_attempts') and not value['http_calls']

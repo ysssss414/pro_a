@@ -68,26 +68,27 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
         from test_llm import FakeResponse
         from test_structured_json_reasoning_policy import completion
         old.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, content="{")))
-        assert advance(value)["state"] == "FAILED"
+        assert advance(value)["state"] == "BLOCKED"
     service = value["service"]
-    before = jobs(value)
-    def input_document(row):
+    def inputs(run_id):
         with service.store.connect() as c:
-            binding = c.execute("SELECT * FROM source_cloud_inputs WHERE artifact_id=?", (row["input_artifact_id"],)).fetchone()
+            return [dict(r) for r in c.execute('SELECT * FROM source_cloud_inputs WHERE processing_run_id=? ORDER BY ordinal',(run_id,))]
+    before=inputs(value['run_id'])
+    def input_document(binding):
         return json.loads((value["config"].artifact_root / binding["artifact_relative"]).read_text(encoding="utf-8"))
     old_document = input_document(before[0])
     created = service.start(value["source"]["source_id"], idempotency_key="r2-new-capacity-synthetic-0001",
                             reprocess_reason="Synthetic selected capacity identity")["run"]
     service.advance_once(worker_id="capacity-r2", processing_run_id=created["processing_run_id"], provider=None)
-    current = jobs({**value, "run_id": created["processing_run_id"]})
+    current = inputs(created['processing_run_id'])
     new_document = input_document(current[0])
-    assert new_document["payload"]["initial_plan_sha256"] != old_document["payload"]["initial_plan_sha256"]
+    assert new_document["payload"]['native']["initial_plan_sha256"] != old_document["payload"]['native']["initial_plan_sha256"]
     for row, document in ((before[0], old_document), (current[0], new_document)):
-        assert document["payload"]["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
-        assert json.loads(row["native_checkpoint_json"])["plan_sha256"] == document["checkpoint"]["plan_sha256"]
-    assert current[0]["input_sha256"] != before[0]["input_sha256"]
-    assert current[0]["intent_sha256"] != before[0]["intent_sha256"]
-    assert jobs(value) == before and input_document(before[0]) == old_document
+        assert document["payload"]['native']["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
+        assert json.loads(row["checkpoint_json"])["plan_sha256"] == document["checkpoint"]["plan_sha256"]
+    assert current[0]["sha256"] != before[0]["sha256"]
+    assert current[0]["artifact_id"] != before[0]["artifact_id"]
+    assert inputs(value['run_id']) == before and input_document(before[0]) == old_document
     assert value["http_calls"] == []
 
 

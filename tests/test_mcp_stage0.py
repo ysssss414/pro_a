@@ -383,13 +383,11 @@ def test_job_projection_drops_raw_provider_payload(case, monkeypatch):
 
 
 def test_schema11_frozen_pending_context(tmp_path):
-    from test_phase43_stage71_shared_core_pending import case as pending_fixture
-    from test_workbench_stage7 import clean_pdf, upload
+    from legacy_source_fixture import historical_case
     from pro_a.workbench.domains import Domains
 
-    value = pending_fixture(tmp_path)
-    source = upload(value, clean_pdf(tmp_path))
-    run_id = value['service'].start(source['source_id'], idempotency_key='mcp-synthetic-pending')['run']['processing_run_id']
+    value = historical_case(tmp_path)
+    run_id=value['run_id']
     frozen = Domains(value['config']).read(run_id)
     before = hashes(value['config'])
     service = ReadService(value['config'])
