@@ -421,7 +421,7 @@ def test_foundation_dormant_and_schema12_surfaces_fail_closed():
     cloud = _execution_surface_comparison("cloud", baseline)
     native = _execution_surface_comparison("native", baseline)
     assert not cloud["compatible"] and cloud["reason"] == "SEMANTIC_SURFACE_CHANGED"
-    assert native["compatible"] and native["reason"] == "SEMANTIC_SURFACE_EXACT"
+    assert not native["compatible"] and native["reason"] == "SEMANTIC_SURFACE_CHANGED"
     assert MAX_STAGE1_JOBS_PER_RUN == 31
     assert SourceProfile.__dataclass_fields__["max_extraction_pieces"].default == 16
     assert OPERATION_MAX_OUTPUT_TOKENS == {"SOURCE_ANALYSIS_PIECE": 12000, "SEMANTIC_DECOMPOSITION": 8192}

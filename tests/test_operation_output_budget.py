@@ -18,6 +18,9 @@ from pro_a.workbench.source_operations import SourceOperationError
 from test_cloud_operation_adapter_binding import setup_run, advance, jobs
 from test_structured_json_reasoning_policy import assert_private_surfaces, completion, reasoning_sentinel
 from test_llm import FakeResponse
+from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_SYSTEM
+from series_binding_helpers import rows as ledger_rows
+from legacy_source_fixture import historical_case
 
 
 BASELINE = "232b05fbbf32c7648876ec1fb58c94e0374c3bc1"
@@ -57,6 +60,7 @@ def test_budget_only_drift_changes_configuration_context_intent_and_idempotency(
     from pro_a.processing_context import freeze_context
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
+    assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     row = jobs(value)[0]
     before = copy.deepcopy(row)
     frozen = Domains(value["config"]).read(value["run_id"])
@@ -67,12 +71,12 @@ def test_budget_only_drift_changes_configuration_context_intent_and_idempotency(
     updated = value["cloud_profile"].public_identity()
     assert updated["configuration_sha256"] != row["configuration_sha256"]
     with pytest.raises(JobError, match="IDEMPOTENCY_CONFLICT"):
-        service.jobs.submit(idempotency_key=key, input_artifact_id=row["input_artifact_id"], operation_kind=SOURCE_ANALYSIS_OPERATION)
-    created = service.jobs.submit(idempotency_key="changed-budget-policy-0001", input_artifact_id=row["input_artifact_id"], operation_kind=SOURCE_ANALYSIS_OPERATION)
+        service.jobs.submit(idempotency_key=key, input_artifact_id=row["input_artifact_id"], operation_kind=OPERATION_KIND)
+    created = service.jobs.submit(idempotency_key="changed-budget-policy-0001", input_artifact_id=row["input_artifact_id"], operation_kind=OPERATION_KIND)
     with service.store.connect() as c:
         new = dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (created["job"]["job_id"],)).fetchone())
         assert dict(c.execute("SELECT * FROM cloud_jobs WHERE job_id=?", (row["job_id"],)).fetchone()) == before
-    assert new["intent_sha256"] != row["intent_sha256"] and new["max_output_tokens"] == 12001
+    assert new["intent_sha256"] != row["intent_sha256"] and new["max_output_tokens"] == 8192
     assert new["prompt_json"] == row["prompt_json"] and new["runtime_sha256"] == row["runtime_sha256"]
     basis = copy.deepcopy(frozen["basis"])
     basis["model_configuration"] = updated
@@ -82,13 +86,12 @@ def test_budget_only_drift_changes_configuration_context_intent_and_idempotency(
 
 
 def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeypatch, caplog, record_property):
-    from pro_a.prompts import SOURCE_ANALYSIS_SYSTEM
     value = setup_run(tmp_path, monkeypatch)
     post = __import__("requests").post
     requests_seen = []
     def capture(url, **kwargs):
         payload = kwargs["json"]
-        extraction = payload["messages"][0]["content"] == SOURCE_ANALYSIS_SYSTEM
+        extraction = payload["messages"][0]["content"] == BOUNDED_SOURCE_ANALYSIS_SYSTEM
         output = 12000 if extraction else 8192
         assert payload["max_tokens"] == output
         assert payload["thinking"] == {"type": "disabled"} and "reasoning_effort" not in payload
@@ -113,6 +116,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_id"] and final["packet_artifact_id"]
     assert requests_seen == [12000, 8192]
     rows = jobs(value)
+    assert len(rows)==1 and rows[0]['operation_kind']==OPERATION_KIND
     for row in rows:
         expected = 12000 if row["operation_kind"] == SOURCE_ANALYSIS_OPERATION else 8192
         assert (row["max_output_tokens"], row["max_total_tokens"]) == (expected, 20000)
@@ -122,7 +126,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
         result = value["service"].jobs.private_result(row["job_id"])
         assert result["usage"]["reasoning_tokens"] == 0 and result["finish_reason"] == "stop"
         assert row["output_tokens"] == (10000 if expected == 12000 else 200)
-        request = next(r for r in frozen_requests if r.job_id == row["job_id"])
+        request = next(r for r in frozen_requests if hasattr(r,'job_id') and r.job_id == row["job_id"])
         assert request.max_output_tokens == request.budget_identity["max_output_tokens"] == expected
         assert request.budget_identity["max_total_tokens"] == 20000
         assert request.budget_identity["reserved_output_tokens"] == expected
@@ -130,7 +134,14 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     assert json.loads(semantic["native_checkpoint_json"])["semantic_partition"]["input_token_budget"] == 11808
     with value["service"].store.connect() as c:
         from pro_a.workbench.review_store import schema_version
-        assert schema_version(c) == "11"
+        assert schema_version(c) == "12"
+    attempt=ledger_rows(value,'bounded_extraction_attempts')[0]
+    series=ledger_rows(value,'bounded_extraction_series')[0]
+    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    assert envelope['output_tokens']==10000 and envelope['reasoning_tokens']==0
+    assert ledger_rows(value,'bounded_extraction_series')[0]['state']=='SUCCEEDED_COMPLETE'
+    bounded_request=next(r for r in frozen_requests if isinstance(r,dict))
+    assert bounded_request['request']['max_tokens']==12000
     assert_private_surfaces(value, caplog, tmp_path)
     record_property("extraction_completion_tokens", 10000)
     record_property("wire_output_budgets", "12000/8192")
@@ -144,8 +155,10 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     (SOURCE_ANALYSIS_OPERATION, "max_total_tokens", 19999), (OPERATION_KIND, "max_total_tokens", 20001),
 ])
 def test_frozen_budget_row_drift_fails_without_normalization(tmp_path, monkeypatch, operation, field, invalid):
-    value = setup_run(tmp_path, monkeypatch)
-    if operation == OPERATION_KIND:
+    if operation == SOURCE_ANALYSIS_OPERATION:
+        value=historical_case(tmp_path,deepseek=True)
+    else:
+        value = setup_run(tmp_path, monkeypatch)
         assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     row = next(j for j in jobs(value) if j["operation_kind"] == operation)
     assert frozen_cloud(row).max_output_tokens == 8192
@@ -157,7 +170,7 @@ def test_frozen_budget_row_drift_fails_without_normalization(tmp_path, monkeypat
 
 
 def test_historical_v2_8192_configuration_remains_incompatible(tmp_path, monkeypatch):
-    value = setup_run(tmp_path, monkeypatch)
+    value = historical_case(tmp_path,deepseek=True)
     row = jobs(value)[0]
     configuration = json.loads(row["configuration_json"])
     del configuration["operation_output_budget_policy_version"], configuration["operation_output_budgets"], configuration["configuration_sha256"]
@@ -189,6 +202,29 @@ def test_historical_context_is_readable_without_budget_backfill(tmp_path, monkey
 @pytest.mark.parametrize("operation", [SOURCE_ANALYSIS_OPERATION, OPERATION_KIND])
 @pytest.mark.parametrize("overrun", [0, 1])
 def test_cumulative_budget_reservation_boundary(tmp_path, monkeypatch, operation, overrun):
+    if operation==SOURCE_ANALYSIS_OPERATION:
+        from pro_a.bounded_extraction import SeriesBudget
+        from test_bounded_extraction import fixture
+        from test_bounded_extraction_persistence import reserve
+        from series_binding_helpers import case
+        from pro_a.workbench.bounded_extraction_store import BoundedExtractionStore
+        from pro_a.workbench.config import BoundaryError
+        value=case(tmp_path)
+        ctx,catalog,series,plan=fixture(1,budget=SeriesBudget(max_cumulative_output_tokens=12000))
+        ledger=BoundedExtractionStore(value['config'])
+        ledger.create(series)
+        fence,aid=reserve(ledger,plan.leaves[0])
+        ledger.record_dispatch(aid,'worker',fence)
+        ledger.record_outcome(aid,'worker',fence,b'{',finish_reason='stop',output_tokens=overrun)
+        with pytest.raises(BoundaryError):
+            ledger.accept_result(aid,'worker',fence,catalog,ctx)
+        if overrun:
+            with pytest.raises(BoundaryError,match='BUDGET'):
+                reserve(ledger,plan.leaves[0],number=2,fence=fence)
+        else:
+            reserve(ledger,plan.leaves[0],number=2,fence=fence)
+        assert ledger.read(series.series_id)[3].output_token_liability==(overrun if overrun else 12000)
+        return
     value = setup_run(tmp_path, monkeypatch)
     if operation == OPERATION_KIND:
         assert advance(value)["state"] == "SEMANTIC_PROCESSING"
@@ -208,8 +244,16 @@ def test_cumulative_budget_reservation_boundary(tmp_path, monkeypatch, operation
 @pytest.mark.parametrize("operation,bad_output", [(SOURCE_ANALYSIS_OPERATION, 8192), (OPERATION_KIND, 12000)])
 def test_provider_budget_mismatch_fails_before_dispatch(tmp_path, monkeypatch, operation, bad_output):
     value = setup_run(tmp_path, monkeypatch)
-    provider = value["providers"][operation]
-    llm = provider.llm if operation == SOURCE_ANALYSIS_OPERATION else provider.backend.llm
+    if operation==SOURCE_ANALYSIS_OPERATION:
+        from pro_a.cloud_contract import SourceAnalysisPieceProvider
+        from pro_a.config import load_config
+        from pro_a.llm import ChatLLM
+        cfg=replace(load_config(value['phase4_config']).llm,max_output_tokens=12000)
+        provider=SourceAnalysisPieceProvider(ChatLLM(cfg),provider_identity='deepseek')
+        llm=provider.llm
+    else:
+        provider = value["providers"][operation]
+        llm=provider.backend.llm
     request = SimpleNamespace(operation_kind=operation, prompt_identity=operation_contract(operation), requested_model=llm.cfg.model,
                               timeout_seconds=llm.cfg.timeout_seconds, max_output_tokens=bad_output)
     with pytest.raises(ProviderFailure) as caught:
@@ -236,16 +280,12 @@ def test_semantic_input_boundary_stays_11808(size):
 @pytest.mark.parametrize("operation", [SOURCE_ANALYSIS_OPERATION, OPERATION_KIND])
 def test_output_above_total_fails_existing_budget_gate(tmp_path, monkeypatch, operation):
     from workbench_stage6_fixture import stage6_fixture
+    from pro_a.workbench.source_operations import prepare_source_operations
     from pro_a.cloud_contract import DeterministicFakeProvider
     monkeypatch.setitem(contract.OPERATION_MAX_OUTPUT_TOKENS, operation, 20001)
-    if operation == SOURCE_ANALYSIS_OPERATION:
-        value = setup_run(tmp_path, monkeypatch)
-        assert advance(value)["state"] == "FAILED"
-        row = jobs(value)[0]
-        assert row["sanitized_error"] == "BUDGET_EXCEEDED" and row["attempt_count"] == 0
-        assert not value["http_calls"]
-        return
+    # This low-level CloudJobs unit starts no legacy SourceOperations Run.
     value = stage6_fixture(tmp_path)
+    prepare_source_operations(value['config'])
     job = value["jobs"].submit(idempotency_key="operation-insufficient-total-0001", input_artifact_id=value["artifact_id"], operation_kind=operation)
     provider = DeterministicFakeProvider()
     result = value["jobs"].run_once(provider, worker_id="budget", job_id=job["job"]["job_id"])
@@ -256,13 +296,16 @@ def test_output_above_total_fails_existing_budget_gate(tmp_path, monkeypatch, op
 def test_truncation_at_12000_retains_existing_telemetry(tmp_path, monkeypatch, caplog):
     value = setup_run(tmp_path, monkeypatch)
     monkeypatch.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, finish="length", content="{", output_tokens=12000)))
-    assert advance(value)["state"] == "FAILED"
-    row = jobs(value)[0]
-    failure = value["service"].jobs.get(row["job_id"])["failure_diagnostic"]
-    assert row["max_output_tokens"] == failure["completion_tokens"] == 12000
-    assert failure["output_parse_kind"] == "TRUNCATED" and failure["reasoning_tokens"] == 0
-    assert failure["finish_reason"] == "length" and failure["retryable"] is False
-    assert row["attempt_count"] == 1
+    assert advance(value)["state"] == "BLOCKED"
+    attempts=ledger_rows(value,'bounded_extraction_attempts')
+    assert len(attempts)==1 and not jobs(value)
+    outcome=ledger_rows(value,'bounded_extraction_outcomes')[0]
+    assert outcome['external_outcome']=='TRUNCATED' and outcome['output_tokens']==12000
+    attempt=attempts[0]
+    series=ledger_rows(value,'bounded_extraction_series')[0]
+    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    assert envelope['finish_reason']=='length' and envelope['reasoning_tokens']==0
+    assert not ledger_rows(value,'bounded_extraction_segment_results')
     assert_private_surfaces(value, caplog, tmp_path)
 
 

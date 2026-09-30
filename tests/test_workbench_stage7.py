@@ -49,21 +49,23 @@ def upload(case, path: Path, filename: str | None = None):
 
 
 def start_and_finish(case, path: Path):
+    from series_binding_helpers import prepare_bounded,synthetic_providers
+    prepare_bounded(case)
     source = upload(case, path)
     started = case["service"].start(
         source["source_id"], idempotency_key="stage7-golden-path-0001")
-    provider = DeterministicFakeProvider()
-    first = case["service"].advance_once(
-        worker_id="stage7-worker", provider=provider,
-        processing_run_id=started["run"]["processing_run_id"])
-    assert first["state"] == "EXTRACTION_PROCESSING" and provider.call_count == 0
-    second = case["service"].advance_once(
-        worker_id="stage7-worker", provider=provider,
-        processing_run_id=started["run"]["processing_run_id"])
-    assert second["state"] == "SEMANTIC_PROCESSING" and provider.call_count == 1
-    final = case["service"].advance_once(
-        worker_id="stage7-worker", provider=provider,
-        processing_run_id=started["run"]["processing_run_id"])
+    with synthetic_providers(case) as provider:
+        first = case["service"].advance_once(
+            worker_id="stage7-worker", provider=provider,
+            processing_run_id=started["run"]["processing_run_id"])
+        assert first["state"] == "EXTRACTION_PROCESSING" and provider.call_count == 0
+        second = case["service"].advance_once(
+            worker_id="stage7-worker", provider=provider,
+            processing_run_id=started["run"]["processing_run_id"])
+        assert second["state"] == "SEMANTIC_PROCESSING" and provider.call_count == 1
+        final = case["service"].advance_once(
+            worker_id="stage7-worker", provider=provider,
+            processing_run_id=started["run"]["processing_run_id"])
     return source, started, final, provider
 
 
@@ -106,6 +108,8 @@ def test_streamed_upload_hash_immutable_duplicates_and_canonical_preflight(tmp_p
 
 def test_source_list_batches_registered_source_projection(tmp_path, monkeypatch):
     case = stage7_fixture(tmp_path)
+    from series_binding_helpers import prepare_bounded
+    prepare_bounded(case)
     sources = []
     for index in range(3):
         source = upload(case, clean_pdf(tmp_path, f"source-{index}.pdf", TEXT + f" {index}."))
@@ -174,6 +178,8 @@ def test_size_boundary_blocks_before_pdf_parse_and_is_configurable(tmp_path):
 
 def test_http_upload_only_registers_and_start_is_durable_idempotent(tmp_path, monkeypatch):
     case = stage7_fixture(tmp_path)
+    from series_binding_helpers import prepare_bounded
+    prepare_bounded(case)
     monkeypatch.setenv("PRO_A_WORKBENCH_TOKEN", "t" * 40)
     app = create_app(case["config"], cloud_profile=case["cloud_profile"],
                      source_profile=case["source_profile"])
@@ -212,10 +218,12 @@ def test_golden_path_uses_durable_jobs_and_survives_restart(tmp_path):
     source, started, final, provider = start_and_finish(case, clean_pdf(tmp_path))
     assert final["state"] == "HUMAN_REVIEW_REQUIRED"
     assert final["packet_artifact_id"] and final["review"]["status"] == "DRAFT"
-    assert len(final["jobs"]) == 2 and provider.call_count == 2
+    assert len(final["jobs"]) == 1 and provider.call_count == 2
+    assert final['logical_extraction_series_count']==1 and final['logical_job_count']==2
+    assert final['provider_segment_attempt_count']==1
     assert all(job["retry_owner"] == RETRY_OWNER for job in final["jobs"])
     assert all(job["runtime_identity"]["cloud_contract_version"] == CONTRACT_VERSION for job in final["jobs"])
-    assert final["usage"]["status"] == "KNOWN" and final["usage"]["total_tokens"] == 240
+    assert final["usage"]["status"] == "KNOWN" and final["usage"]["total_tokens"] == 120
     restarted = SourceOperations(case["config"], case["source_profile"], case["cloud_profile"])
     persisted = restarted.source(source["source_id"])
     assert persisted["latest_run"]["processing_run_id"] == started["run"]["processing_run_id"]
@@ -231,6 +239,8 @@ def test_golden_path_uses_durable_jobs_and_survives_restart(tmp_path):
 
 def test_budget_failure_propagates_and_explicit_failed_reprocess_keeps_source_identity(tmp_path):
     case = stage7_fixture(tmp_path)
+    from series_binding_helpers import prepare_bounded,synthetic_providers
+    prepare_bounded(case)
     base = case["cloud_profile"]
     bounded = CloudProfile(
         base.provider, base.requested_model, base.accepted_model_aliases,
@@ -242,11 +252,11 @@ def test_budget_failure_propagates_and_explicit_failed_reprocess_keeps_source_id
                                         filename="budget.pdf", mime_type="application/pdf"))
     run = service.start(source["source_id"], idempotency_key="stage7-budget-run-0001")["run"]
     service.advance_once(worker_id="budget-worker", processing_run_id=run["processing_run_id"])
-    provider = DeterministicFakeProvider()
-    failed = service.advance_once(worker_id="budget-worker", provider=provider,
+    with synthetic_providers(case) as provider:
+        failed = service.advance_once(worker_id="budget-worker", provider=provider,
                                   processing_run_id=run["processing_run_id"])
-    assert failed["state"] == "FAILED" and failed["error"]["code"] == "BUDGET_EXCEEDED"
-    assert provider.call_count == 0
+    assert failed["state"]=='BLOCKED' and failed["error"]["code"]=='SOURCE_ORCHESTRATION_BLOCKED'
+    assert provider['SEMANTIC_DECOMPOSITION'].call_count == 0
     reprocessed = service.start(source["source_id"], idempotency_key="stage7-budget-run-0002",
                                 reprocess_reason="Explicitly changed bounded runtime after failure.")
     assert reprocessed["duplicate"] is False
@@ -256,6 +266,8 @@ def test_budget_failure_propagates_and_explicit_failed_reprocess_keeps_source_id
 
 def test_runtime_and_registered_input_drift_fail_closed_without_provider_call(tmp_path):
     case = stage7_fixture(tmp_path)
+    from series_binding_helpers import prepare_bounded,synthetic_providers
+    prepare_bounded(case)
     source = upload(case, clean_pdf(tmp_path))
     run = case["service"].start(source["source_id"], idempotency_key="stage7-drift-run-0001")["run"]
     case["service"].advance_once(worker_id="drift-worker", processing_run_id=run["processing_run_id"])
@@ -264,10 +276,10 @@ def test_runtime_and_registered_input_drift_fail_closed_without_provider_call(tm
             "SELECT artifact_relative FROM source_cloud_inputs WHERE processing_run_id=?",
             (run["processing_run_id"],)).fetchone()[0]
     (case["config"].artifact_root / relative).unlink()
-    provider = DeterministicFakeProvider()
-    blocked = case["service"].advance_once(worker_id="drift-worker", provider=provider,
+    with synthetic_providers(case) as provider:
+        blocked = case["service"].advance_once(worker_id="drift-worker", provider=provider,
                                            processing_run_id=run["processing_run_id"])
-    assert blocked["state"] == "BLOCKED" and "ARTIFACT" in blocked["error"]["code"]
+    assert blocked["state"] == "BLOCKED" and blocked['error']['code']=='BOUNDED_INPUT_ARTIFACT_MISMATCH'
     assert provider.call_count == 0
 
     other = upload(case, clean_pdf(tmp_path, "runtime.pdf", TEXT + " Runtime case."))
@@ -285,12 +297,14 @@ def test_runtime_and_registered_input_drift_fail_closed_without_provider_call(tm
 
 def test_unknown_external_outcome_projects_recovery_and_never_resubmits(tmp_path):
     case = stage7_fixture(tmp_path)
+    from series_binding_helpers import prepare_bounded,synthetic_providers,Transport
+    prepare_bounded(case)
     source = upload(case, clean_pdf(tmp_path))
     run = case["service"].start(source["source_id"], idempotency_key="stage7-recovery-case-0001")["run"]
-    provider = DeterministicFakeProvider("unknown_external_outcome")
-    case["service"].advance_once(worker_id="worker-a", provider=provider,
+    with synthetic_providers(case,Transport(mode='unknown')) as provider:
+        case["service"].advance_once(worker_id="worker-a", provider=provider,
                                  processing_run_id=run["processing_run_id"])
-    recovered = case["service"].advance_once(worker_id="worker-a", provider=provider,
+        recovered = case["service"].advance_once(worker_id="worker-a", provider=provider,
                                              processing_run_id=run["processing_run_id"])
     assert recovered["state"] == "RECOVERY_REQUIRED"
     assert recovered["error"]["manual_recovery_required"] is True
@@ -305,8 +319,12 @@ def test_unknown_external_outcome_projects_recovery_and_never_resubmits(tmp_path
 
 
 def test_review_attribution_qualification_disposable_activation_and_research(tmp_path):
-    case = stage7_fixture(tmp_path)
-    source, _, run, _ = start_and_finish(case, clean_pdf(tmp_path))
+    # Preserve the historical downstream activation/research regression. New
+    # schema12 binding is qualified through Review Packet and MCP separately.
+    from legacy_source_fixture import historical_case
+    case=historical_case(tmp_path,'review',schema='10')
+    source=case['source']
+    run=case['service'].get_run(case['run_id'])
     artifact_id = run["packet_artifact_id"]
     reviews = ReviewWorkbench(case["config"])
     identity = {"actor": "operator", "session_id": "stage7-session"}

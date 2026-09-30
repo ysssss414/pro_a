@@ -368,16 +368,9 @@ def test_scale_queue_and_frozen_processing_context(tmp_path, schema):
         from test_phase43_stage1_operator_scale import _stage1_finished_case
         value, run = _stage1_finished_case(tmp_path)
     else:
-        from test_phase43_stage71_shared_core_pending import case as pending_fixture, finish
-        from test_workbench_stage7 import clean_pdf, upload
-        value = pending_fixture(tmp_path)
-        with closing(sqlite3.connect(value['config'].knowledge_db)) as conn, conn:
-            conn.execute("INSERT INTO nodes(node_id,canonical_name,primary_type,description,status,created_at,updated_at) VALUES('NODE_PRIVATE_INTENT','Private intent company','Company','','active','2026-01-01','2026-01-01')")
-        source = upload(value, clean_pdf(tmp_path))
-        started = value['service'].start(source['source_id'], idempotency_key='mcp-stage3-pending-fixture',
-            company_material_intent={'target_company_node_id':'NODE_PRIVATE_INTENT', 'material_kind':'other',
-                'source_channel':'user_upload', 'material_date':None, 'operator_title':'Private intent title'})
-        run = finish(value, started['run']['processing_run_id'])
+        from legacy_source_fixture import historical_case
+        value=historical_case(tmp_path,'review_intent')
+        run=value['service'].get_run(value['run_id'])
     bridge = ReadService(value['config'])
     before = hashes(value['config'])
     row = bridge.list_review_queue().items[0]
