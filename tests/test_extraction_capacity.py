@@ -22,8 +22,8 @@ from stability_helpers import make_config
 from test_cloud_operation_adapter_binding import advance, jobs, setup_run
 
 
-BASELINE = "bc151f3131dd6e9343937f3c5db9ddb7ed8e748a"
-CAP = 5_000
+BASELINE = "761b7dab7a17d5eb02c08dfb324c532a00252039"
+CAP = 4_000
 
 
 @pytest.fixture(autouse=True)
@@ -106,9 +106,9 @@ def test_capacity_and_planner_versions_are_frozen_in_plan_identity(tmp_path, mon
     analyzer = Analyzer(cfg, db)
     text = "density" * 1700
     selected = assert_plan(analyzer, text, CAP)
-    assert analyzer_module.EXTRACTION_CAPACITY_POLICY_VERSION == "source-analysis-capacity-v1"
-    assert selected.artifact["planner_version"] == "PHASE3E2SL6_PRECALL_PARTITION_V2"
-    assert selected.artifact["partition_policy"]["capacity_policy_version"] == "source-analysis-capacity-v1"
+    assert analyzer_module.EXTRACTION_CAPACITY_POLICY_VERSION == "source-analysis-capacity-v2"
+    assert selected.artifact["planner_version"] == "PHASE3E2SL6_PRECALL_PARTITION_V3"
+    assert selected.artifact["partition_policy"]["capacity_policy_version"] == "source-analysis-capacity-v2"
     assert selected.artifact["partition_policy"]["frozen_acceptance_safe_max_chars"] == CAP
     monkeypatch.setattr(analyzer_module, "FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS", 10_000)
     historical_capacity = analyzer.plan_initial_extraction(
@@ -119,7 +119,7 @@ def test_capacity_and_planner_versions_are_frozen_in_plan_identity(tmp_path, mon
     old_version = analyzer.plan_initial_extraction(
         "capacity-fixture.txt", text, "deep", adaptive_retry_policy="forbid")
     assert old_version.plan_sha256 != selected.plan_sha256
-    monkeypatch.setattr(analyzer_module, "INITIAL_EXTRACTION_PLANNER_VERSION", "PHASE3E2SL6_PRECALL_PARTITION_V2")
+    monkeypatch.setattr(analyzer_module, "INITIAL_EXTRACTION_PLANNER_VERSION", "PHASE3E2SL6_PRECALL_PARTITION_V3")
     monkeypatch.setattr(analyzer_module, "EXTRACTION_CAPACITY_POLICY_VERSION", "other-policy")
     other_policy = analyzer.plan_initial_extraction(
         "capacity-fixture.txt", text, "deep", adaptive_retry_policy="forbid")
@@ -180,7 +180,7 @@ def test_capacity_changes_runtime_and_context_without_changing_config(tmp_path, 
 def dense_pdf(path):
     from reportlab.pdfgen.canvas import Canvas
     canvas = Canvas(str(path), pagesize=(612, 792))
-    for page in range(4):
+    for page in range(5):
         canvas.setFont("Helvetica", 8)
         for line in range(40):
             index = page * 40 + line + 1
@@ -201,6 +201,7 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     assert run["state"] == "EXTRACTION_PROCESSING"
     extraction = jobs(value)
     assert 1 < len(extraction) <= value["source_profile"].max_extraction_pieces == 16
+    assert len(extraction) == 5
     assert all(j["attempt_count"] == 0 for j in extraction)
     assert value["http_calls"] == []
     with service.store.connect() as c:
@@ -210,8 +211,8 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     frozen = plan_external_source_analysis(native / "engine", config_path=value["phase4_config"])
     plan = frozen["plan"]
     assert plan["partition_policy"]["effective_initial_max_chars"] == CAP
-    assert plan["partition_policy"]["capacity_policy_version"] == "source-analysis-capacity-v1"
-    assert plan["planner_version"] == "PHASE3E2SL6_PRECALL_PARTITION_V2"
+    assert plan["partition_policy"]["capacity_policy_version"] == "source-analysis-capacity-v2"
+    assert plan["planner_version"] == "PHASE3E2SL6_PRECALL_PARTITION_V3"
     assert plan["coverage"]["ordered_exact_reconstruction"]
     assert plan["piece_count"] == len(extraction)
     prompts = {}
@@ -229,6 +230,8 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     def post(_url, **kwargs):
         request = kwargs["json"]
         assert request["model"] == "deepseek-flash"
+        assert request["thinking"] == {"type": "disabled"} and "reasoning_effort" not in request
+        assert request["response_format"] == {"type": "json_object"}
         user = request["messages"][1]["content"]
         assert request["max_tokens"] == (12000 if user in prompts else 8192)
         if user in prompts:
@@ -258,7 +261,9 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
         calls.append(operation)
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-capacity"},
             json=lambda: {"model": "deepseek-flash", "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(output)}}],
-                          "usage": {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}})
+                          "usage": {"prompt_tokens": 100, "completion_tokens": 10000 if operation == SOURCE_ANALYSIS_OPERATION else 20,
+                                    "total_tokens": 10100 if operation == SOURCE_ANALYSIS_OPERATION else 120,
+                                    "completion_tokens_details": {"reasoning_tokens": 0}}})
 
     monkeypatch.setattr("pro_a.llm.requests.post", post)
     semantic = advance(value)
@@ -276,8 +281,15 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     assert all(j["max_output_tokens"] == (12000 if j["operation_kind"] == SOURCE_ANALYSIS_OPERATION else 8192)
                and j["max_total_tokens"] == 20000 for j in all_jobs)
     assert all(j["attempt_count"] == 1 for j in all_jobs)
+    for job in all_jobs:
+        result = service.jobs.private_result(job["job_id"])
+        assert result["usage"]["reasoning_tokens"] == 0 and result["finish_reason"] == "stop"
+        if job["operation_kind"] == SOURCE_ANALYSIS_OPERATION:
+            assert job["output_tokens"] == 10000
+        else:
+            assert json.loads(job["native_checkpoint_json"])["semantic_partition"]["input_token_budget"] == 11808
     assert len(calls) == len(all_jobs) and min(response_bytes) > 20_000
-    assert sum(response_claims) == 160
+    assert sum(response_claims) == 200
     persisted_plan = json.loads((native / "engine/extraction/initial_extraction_plan.json").read_text(encoding="utf-8"))
     assert persisted_plan == plan
     with service.store.connect() as c:
