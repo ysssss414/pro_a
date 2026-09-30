@@ -6,13 +6,13 @@ import json
 import os
 import platform
 import sqlite3
-import subprocess
 from dataclasses import asdict
 from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from uuid import uuid4
 
+from .repository_identity import repository_commit
 from .config import load_config
 from .operational_ingestion import run_operational_ingestion
 from .phase3f_review_completion import (
@@ -24,7 +24,6 @@ from .production_promotion import canonical_sha256, deterministic_id, production
 
 
 CONTRACT_VERSION = "phase4-execution-v1"
-ROOT = Path(__file__).resolve().parents[2]
 # Processing dependencies only: no environment dump or arbitrary package hashing.
 PROCESSING_MODULES = (
     "phase4_orchestration", "phase4_retry", "phase4_replay", "operational_ingestion",
@@ -32,7 +31,7 @@ PROCESSING_MODULES = (
     "constants", "proposition_ir", "semantic_decomposition", "semantic_admission",
     "table_claim_safety", "corpus_pilot", "gate_c_quality_hardening",
     "production_authorization", "production_promotion", "phase3f_review_completion",
-    "db", "ids", "storage", "relation_structure",
+    "db", "ids", "storage", "relation_structure", "repository_identity",
 )
 CHECKPOINTS = {"SOURCE_READY", "SEMANTIC_INPUT_READY", "SEMANTIC_COMPLETE", "REVIEW_READY"}
 
@@ -66,8 +65,7 @@ def _runtime() -> dict:
     files = {name: sha256_file(Path(__file__).with_name(name + ".py"))
              for name in PROCESSING_MODULES}
     return {
-        "repository_commit": subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        "repository_commit": repository_commit(),
         "contract_version": CONTRACT_VERSION,
         "processing_code_sha256": canonical_sha256(files),
         "python": platform.python_version(), "sqlite": sqlite3.sqlite_version,
