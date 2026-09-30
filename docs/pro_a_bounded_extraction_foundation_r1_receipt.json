@@ -1,0 +1,416 @@
+{
+  "task": "PRO_A_BOUNDED_EXTRACTION_FOUNDATION_R1",
+  "result": "PASS",
+  "dormant_only": true,
+  "baseline": "68be680831aeeb0e3e3f198fb986ac6da8bae1d3",
+  "remote_main_fetched_and_exact": true,
+  "branch": "codex/pro-a-bounded-extraction-foundation-r1",
+  "implementation_sha": "c560a6396fd4575cc360775343270597ff96ca15",
+  "evidence_commit_identity": "Commit containing this receipt; reported separately in final handoff",
+  "MULTI_SEGMENT_SERIES_RECOMMENDED": true,
+  "one_sourcepiece_one_logical_series": true,
+  "multiple_provider_segments_allowed": true,
+  "global_chunk_retuning_required_for_dense_output": false,
+  "per_segment_output_ceiling": 12000,
+  "per_segment_output_ceiling_semantics": "FROZEN",
+  "series_contract": "bounded-extraction-series-v1",
+  "segment_contract": "bounded-extraction-segment-v1",
+  "coverage_contract": "bounded-extraction-coverage-v1",
+  "subdivision_contract": "bounded-extraction-subdivision-v1",
+  "evidence_binding_contract": "source-analysis-evidence-binding-v2",
+  "dormant_wire_contract": "source-analysis-wire-v3",
+  "dormant_expander_contract": "source-analysis-wire-expander-v2",
+  "merged_v2_v1_contracts_mutated": false,
+  "evidence_binding_whole_unit": "PASS",
+  "evidence_binding_raw_subspan": "PASS",
+  "evidence_binding_normalized_subspan": "PASS",
+  "ambiguous_selector_occurrence": "PASS",
+  "model_generated_raw_offsets": false,
+  "legacy_evidence_pointer_preserved_separately": true,
+  "source_locator_not_conflated_with_pointer": true,
+  "evidence_census": {
+    "native_valid_claims": 217,
+    "mode_counts": {
+      "WHOLE_UNIT": 206,
+      "RAW_SUBSPAN": 10,
+      "NORMALIZED_SUBSPAN": 1
+    },
+    "representable": 217,
+    "pointer_equal": 217,
+    "excerpt_equal": 217,
+    "canonical_claim_equal": 217,
+    "claim_id_equal": 217,
+    "ambiguous_occurrences_verified": 2,
+    "test_outcomes": {
+      "passed": 348,
+      "skipped": 1
+    }
+  },
+  "canonical_evidence_equality": "PASS",
+  "CLAIM_ID_EQUIVALENCE": "PASS",
+  "claim_id_qualification_scope": "All 217 native-valid binding substitutions and complete dense/mixed V3 canonical goldens, including three-Segment dense-40 reconstruction",
+  "segment_coverage_closure": "PASS",
+  "series_coverage_closure": "PASS",
+  "deterministic_subdivision": "PASS",
+  "retry_subdivision_reprocess_distinct": true,
+  "bounded_termination": "PASS",
+  "termination_error": "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY",
+  "logical_job_provider_segment_distinction": "PASS",
+  "series_budget": {
+    "initial_evidence_refs": 16,
+    "max_leaf_segments": 16,
+    "max_subdivision_depth": 4,
+    "max_provider_calls": 32,
+    "max_cumulative_output_tokens": 384000
+  },
+  "series_budget_live_configured": false,
+  "aggregation": {
+    "ordering": "Source range then saved within-Segment model order",
+    "claim_refs": "Local C ordinals remapped to aggregate C ordinals",
+    "cross_segment_provider_relations": "DEFERRED_REJECT_FOREIGN_LOCAL_C_REFS",
+    "node_candidates": "Native name key, equal semantic fields first; distinct Evidence support allowed; semantic conflicts fail",
+    "metadata": "First nonempty in range order",
+    "native_aggregate_caps_retained": true
+  },
+  "size_benchmark": {
+    "canonical": {
+      "chars": 22574,
+      "bytes": 22574
+    },
+    "foundation_wire_v2": {
+      "chars": 14758,
+      "bytes": 14758
+    },
+    "corrected_wire_v3": {
+      "chars": 16038,
+      "bytes": 16038
+    },
+    "corrected_reduction_percent": {
+      "chars": 28.95366350668911,
+      "bytes": 28.95366350668911
+    }
+  },
+  "COMPACT_WIRE_COST_TARGET": "NOT_MET",
+  "cost_target_nonblocking_per_request": true,
+  "generalization_fixtures": [
+    {
+      "kind": "expert_interview",
+      "source_chars": 324,
+      "evidence_count": 24,
+      "block_count": 24,
+      "initial_segments": 2,
+      "assignment_sizes": [
+        16,
+        8
+      ]
+    },
+    {
+      "kind": "earnings_qa",
+      "source_chars": 780,
+      "evidence_count": 20,
+      "block_count": 20,
+      "initial_segments": 2,
+      "assignment_sizes": [
+        16,
+        4
+      ]
+    },
+    {
+      "kind": "dense_technical_transcript",
+      "source_chars": 1632,
+      "evidence_count": 24,
+      "block_count": 24,
+      "initial_segments": 2,
+      "assignment_sizes": [
+        16,
+        8
+      ]
+    },
+    {
+      "kind": "company_announcement",
+      "source_chars": 680,
+      "evidence_count": 20,
+      "block_count": 1,
+      "initial_segments": 2,
+      "assignment_sizes": [
+        16,
+        4
+      ]
+    },
+    {
+      "kind": "broker_report",
+      "source_chars": 730,
+      "evidence_count": 20,
+      "block_count": 10,
+      "initial_segments": 2,
+      "assignment_sizes": [
+        16,
+        4
+      ]
+    },
+    {
+      "kind": "csv_table",
+      "source_chars": 608,
+      "evidence_count": 1,
+      "block_count": 1,
+      "initial_segments": 1,
+      "assignment_sizes": [
+        1
+      ]
+    },
+    {
+      "kind": "sparse_filing",
+      "source_chars": 348,
+      "evidence_count": 12,
+      "block_count": 12,
+      "initial_segments": 1,
+      "assignment_sizes": [
+        12
+      ]
+    },
+    {
+      "kind": "chinese_english_mixed",
+      "source_chars": 1188,
+      "evidence_count": 54,
+      "block_count": 36,
+      "initial_segments": 4,
+      "assignment_sizes": [
+        16,
+        16,
+        16,
+        6
+      ]
+    }
+  ],
+  "real_source_offline_simulation": [
+    {
+      "piece_ordinal": 1,
+      "piece_chars": 3595,
+      "native_prompt_chars": 6416,
+      "evidence_count": 77,
+      "logical_jobs": 1,
+      "initial_segment_count": 5,
+      "segment_assignment_sizes": [
+        16,
+        16,
+        16,
+        16,
+        13
+      ],
+      "subdivision_needed": "UNOBSERVED_NO_PROVIDER_OUTPUT",
+      "extraction_completion": "UNOBSERVED"
+    },
+    {
+      "piece_ordinal": 2,
+      "piece_chars": 3783,
+      "native_prompt_chars": 6517,
+      "evidence_count": 93,
+      "logical_jobs": 1,
+      "initial_segment_count": 6,
+      "segment_assignment_sizes": [
+        16,
+        16,
+        16,
+        16,
+        16,
+        13
+      ],
+      "subdivision_needed": "UNOBSERVED_NO_PROVIDER_OUTPUT",
+      "extraction_completion": "UNOBSERVED"
+    },
+    {
+      "piece_ordinal": 3,
+      "piece_chars": 3556,
+      "native_prompt_chars": 6489,
+      "evidence_count": 83,
+      "logical_jobs": 1,
+      "initial_segment_count": 6,
+      "segment_assignment_sizes": [
+        16,
+        16,
+        16,
+        16,
+        16,
+        3
+      ],
+      "subdivision_needed": "UNOBSERVED_NO_PROVIDER_OUTPUT",
+      "extraction_completion": "UNOBSERVED"
+    },
+    {
+      "piece_ordinal": 4,
+      "piece_chars": 3791,
+      "native_prompt_chars": 7316,
+      "evidence_count": 82,
+      "logical_jobs": 1,
+      "initial_segment_count": 6,
+      "segment_assignment_sizes": [
+        16,
+        16,
+        16,
+        16,
+        16,
+        2
+      ],
+      "subdivision_needed": "UNOBSERVED_NO_PROVIDER_OUTPUT",
+      "extraction_completion": "UNOBSERVED"
+    },
+    {
+      "piece_ordinal": 5,
+      "piece_chars": 2098,
+      "native_prompt_chars": 4768,
+      "evidence_count": 52,
+      "logical_jobs": 1,
+      "initial_segment_count": 4,
+      "segment_assignment_sizes": [
+        16,
+        16,
+        16,
+        4
+      ],
+      "subdivision_needed": "UNOBSERVED_NO_PROVIDER_OUTPUT",
+      "extraction_completion": "UNOBSERVED"
+    }
+  ],
+  "real_source_simulation_identity_reconstruction": "PASS; detailed identity hashes retained in private qualification",
+  "real_provider_output_fit": "UNOBSERVED",
+  "preferred_persistence_architecture": "A_NEW_WORKBENCH_CHILD_SEGMENT_LEDGER_WITH_IMMUTABLE_PRIVATE_ARTIFACTS",
+  "persistence_implemented": false,
+  "db_migration_performed": false,
+  "actual_worker_crash_recovery_tested": false,
+  "synthetic_replay_reconstruction": "PASS",
+  "focused_tests": {
+    "passed": 190,
+    "modules": [
+      "test_evidence_binding",
+      "test_bounded_extraction",
+      "test_source_analysis_wire"
+    ]
+  },
+  "required_remaining_regressions": {
+    "passed": 414,
+    "modules": 13
+  },
+  "required_matrix_unique_passed": 604,
+  "independent_census_tests": {
+    "passed": 348,
+    "skipped": 1,
+    "skip": "test_operational_ingestion::test_known_fixture_end_to_end_semantic_equivalence; old frozen fixture unavailable in isolated checkout"
+  },
+  "full_repository_suite_run": false,
+  "compileall": "PASS",
+  "pip_check": "PASS",
+  "isolated_pep517_build": "PASS",
+  "source_wheel_install": {
+    "result": "PASS",
+    "python_files": 132,
+    "baseline_python_files_unchanged": 130,
+    "wheel_sha256": "9c2b2697befaa7a893523e88b96dcc64db0a5b9ce85f1b1d6cf72da4d3942096"
+  },
+  "active_surfaces": {
+    "cloud": {
+      "compatible": true,
+      "reason": "SEMANTIC_SURFACE_EXACT",
+      "semantic_surface_sha256": "66d2bf7d28fb566fe29fc2296a9abc4134d69d959c4bd4dafd45d765fd86341b"
+    },
+    "native": {
+      "compatible": true,
+      "reason": "SEMANTIC_SURFACE_EXACT",
+      "semantic_surface_sha256": "149ec6253e6d2e8fdd94f758093c95faaa332cbdf36cb4f33983504de88d9766"
+    }
+  },
+  "live_operation_contracts": {
+    "SOURCE_ANALYSIS_PIECE": {
+      "operation_kind": "SOURCE_ANALYSIS_PIECE",
+      "thinking_policy_version": "structured-json-reasoning-v1",
+      "thinking_mode": "disabled",
+      "provider_adapter_version": "source-analysis-piece-adapter-v2",
+      "operation_schema_version": "source-analysis-piece-v1",
+      "prompt_id": "source-analysis-piece",
+      "prompt_version": "phase3e2sl6",
+      "system_prompt_sha256": "cee72e35310ecff6e38a6a9021d3e3478906195e84f9491356c583e92dae5138",
+      "prompt_bundle_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+      "validator": "bounded-source-analysis-piece-v1+native-analyzer-replay"
+    },
+    "SEMANTIC_DECOMPOSITION": {
+      "operation_kind": "SEMANTIC_DECOMPOSITION",
+      "thinking_policy_version": "structured-json-reasoning-v1",
+      "thinking_mode": "disabled",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_schema_version": "semantic-decomposition-result-v2.1",
+      "prompt_id": "semantic-decomposition",
+      "prompt_version": "2.1",
+      "system_prompt_sha256": "e3e26589f1f6b3a223b64f821ab4f2749e32152395b953bf534df71e025bee54",
+      "prompt_bundle_sha256": "3d8efe46a4984188587683ae4a2cf1d1e5dd16454ce402cdc395665342eb8017",
+      "validator": "existing-proposition-ir-v2.1"
+    }
+  },
+  "live_budgets": {
+    "SOURCE_ANALYSIS_PIECE": {
+      "max_output_tokens": 12000,
+      "max_total_tokens": 20000
+    },
+    "SEMANTIC_DECOMPOSITION": {
+      "max_output_tokens": 8192,
+      "max_total_tokens": 20000
+    }
+  },
+  "active_execution_changed": false,
+  "compatibility_exception_used": false,
+  "real_provider_calls": 0,
+  "new_real_runs": 0,
+  "run_8_created": false,
+  "historical_runs_1_7": "UNCHANGED",
+  "historical_attempts_1_7": [
+    0,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "production": "UNCHANGED",
+  "workbench": "UNCHANGED",
+  "stable_runtime": "UNCHANGED",
+  "review_writes": 0,
+  "current_view_writes": 0,
+  "production_apply": 0,
+  "stage1_override_used": false,
+  "read_only_state": {
+    "snapshot": "PASS",
+    "main": "68be680831aeeb0e3e3f198fb986ac6da8bae1d3",
+    "source_unchanged": true,
+    "historical_runs_unchanged": true,
+    "historical_attempt_counts_1_7": [
+      0,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "production_unchanged": true,
+    "workbench_unchanged": true,
+    "stable_runtime_unchanged": true,
+    "tracked_files_unchanged": true
+  },
+  "new_code_test_sha256": {
+    "src/pro_a/evidence_binding.py": "9e9e4cfc76b8b05d21432a50932ff388b4db89b0992074e0de2bd5c693a7e850",
+    "src/pro_a/bounded_extraction.py": "5bea8fb43ab7c9cc56967d1aba1b85013797bf307e82c1ddffe49fd62705ae37",
+    "tests/test_evidence_binding.py": "69a1164d96a53d7f84e3427393613d98b282d498831ed2dd1d4ff33103889c4f",
+    "tests/test_bounded_extraction.py": "3347374c00aa359dc423470972debc405cd0260eedf3fbf6367cefbfdd9a19d0"
+  },
+  "private_qualification_sha256": {
+    "qualification.json": "39fbce98d07b42b7db672bc8c2f88c385406024733b19e787e97495e278a7b36",
+    "census.json": "b1fb4b360f36bb547970f60c374a197a4100d92d8b72eeebfcf1e69727ef994b",
+    "focused-final.log": "c7b45cc15e526af212dbe051c32b20c01ac9cefd0c7fea28f506b3ed1cc61c45",
+    "regressions.log": "07b5db47c8b521c124359315b719f5dc17f045f786e7e90a6022b24c142a54fd",
+    "invariants.json": "ecc3d8cf365c10d5778209665f949eadb08cd64800d81d184da6b4c2f5ee91dc",
+    "build-final.log": "e35a6affd8b5f4c02d30dc7b929f3b92c5d6ce84f94cc9c5d25f36a781d8ce77"
+  },
+  "NEXT_STAGE_1": "BOUNDED_EXTRACTION_DURABLE_PERSISTENCE_R1",
+  "NEXT_STAGE_2": "SOURCE_ANALYSIS_COMPACT_WIRE_SERIES_BINDING_R1",
+  "next_stages_implemented": false,
+  "merge_or_activation_authorized_in_this_task": false
+}
