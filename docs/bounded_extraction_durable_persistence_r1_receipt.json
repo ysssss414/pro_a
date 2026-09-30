@@ -1,0 +1,256 @@
+{
+  "task": "BOUNDED_EXTRACTION_DURABLE_PERSISTENCE_R1",
+  "result": "PASS",
+  "baseline": "27fd74d31bdf48f6684a71904b10de5d391820c3",
+  "branch": "codex/pro-a-bounded-extraction-durable-persistence-r1",
+  "implementation_sha": "ebf33f44c2fe969a4bd71151398ee531ffd72577",
+  "architecture": {
+    "multi_segment_series_recommended": true,
+    "logical_identity": "ONE_SOURCEPIECE_ONE_SERIES",
+    "segment_is_not_stage1_job": true,
+    "segment_attempt_is_not_cloud_attempt": true,
+    "retry_subdivision_reprocess_distinct": true,
+    "live_binding": false,
+    "new_runtime_imported_by_active_paths": false
+  },
+  "preserved_contracts": [
+    "bounded-extraction-series-v1",
+    "bounded-extraction-segment-v1",
+    "bounded-extraction-coverage-v1",
+    "bounded-extraction-subdivision-v1",
+    "source-analysis-evidence-binding-v2",
+    "source-analysis-wire-v3",
+    "source-analysis-wire-expander-v2"
+  ],
+  "migration": {
+    "result": "v11_to_v12 PASS",
+    "real_workbench_migrated": false,
+    "offline_and_drain_gate": "PASS",
+    "exact_backup_fsync": "PASS",
+    "rollback": "PASS",
+    "idempotence": "PASS",
+    "integrity_check": "ok",
+    "foreign_key_check": [],
+    "old_rows_unchanged_except_schema_version": true,
+    "nonempty_synthetic_history_preserved": true,
+    "historical_backfill": false,
+    "tables": [
+      "bounded_extraction_series",
+      "bounded_extraction_segments",
+      "bounded_extraction_attempts",
+      "bounded_extraction_dispatches",
+      "bounded_extraction_outcomes",
+      "bounded_extraction_segment_results",
+      "bounded_extraction_series_results",
+      "bounded_extraction_events"
+    ],
+    "receipt": "SANITIZED_IMMUTABLE"
+  },
+  "ledgers": {
+    "series": "PASS",
+    "segment": "PASS",
+    "attempt": "PASS",
+    "dispatch_intent": "PASS",
+    "outcome": "PASS",
+    "accepted_result_uniqueness": "PASS",
+    "semantic_identity_immutability": "PASS",
+    "append_only_audit": "PASS",
+    "event_hash_chain": "PASS",
+    "identity_corruption_fail_closed": "PASS",
+    "atomic_subdivision": "PASS",
+    "idempotent_subdivision": "PASS",
+    "frontier_version": "PASS",
+    "segment_fencing": "PASS",
+    "series_fencing": "PASS",
+    "stale_worker_rejection": "PASS",
+    "coverage_finalization": "PASS",
+    "final_result_uniqueness": "PASS"
+  },
+  "private_artifacts": {
+    "raw_before_parse": "PASS",
+    "exact_body_bytes": "BASE64_IN_PRIVATE_IMMUTABLE_ENVELOPE",
+    "path_safety": "PASS",
+    "write_once_hash_verification": "PASS",
+    "raw_sql_or_public_events": false,
+    "malformed_retained_not_accepted": true,
+    "truncated_retained_not_accepted": true,
+    "partial_salvage": false,
+    "valid_subdivision_response_separate_from_truncation": true,
+    "canonical_artifact_produced": false
+  },
+  "recovery": {
+    "windows": {
+      "A": "PASS_FRESH_INSTANCE",
+      "B": "PASS_FRESH_INSTANCE",
+      "C": "PASS_FRESH_INSTANCE",
+      "D": "PASS_FRESH_INSTANCE",
+      "E": "PASS_FRESH_INSTANCE",
+      "F": "PASS_FRESH_INSTANCE",
+      "G": "PASS_FRESH_INSTANCE"
+    },
+    "unknown_external_outcome": "FAIL_CLOSED",
+    "automatic_redispatch": false,
+    "subprocess_abrupt_exit": "PASS_os._exit_73_after_raw_fsync",
+    "power_loss_qualified": false,
+    "windows_directory_fsync_claimed": false
+  },
+  "concurrency": {
+    "result": "PASS",
+    "independent_connections": 2,
+    "races": [
+      "claim",
+      "reserve",
+      "dispatch",
+      "accept",
+      "subdivide",
+      "finalize"
+    ],
+    "distinct_segment_budget_race": "PASS"
+  },
+  "budget": {
+    "reservation": "ATOMIC_BEFORE_DISPATCH",
+    "max_provider_calls": 32,
+    "max_cumulative_output_tokens": 384000,
+    "per_call_output_ceiling": 12000,
+    "unknown_output_liability": 12000,
+    "call_count_invariant": "COUNT_ALL_RESERVED_ATTEMPTS",
+    "output_invariant": "SUM_KNOWN_VALID_OUTPUT_ELSE_12000",
+    "exact_and_above_boundaries": "PASS",
+    "retry_consumption": "PASS",
+    "truncated_parent_then_valid_subdivision_and_children": "PASS",
+    "cached_input_double_counted": false
+  },
+  "compatibility": {
+    "v11_existing_behavior": "PASS",
+    "v12_review_source_cloud_stage1_mcp": "PASS",
+    "schema_version_allowlists_audited": true,
+    "schema_support_source_files": 18,
+    "live_source_analysis_contract": {
+      "operation_kind": "SOURCE_ANALYSIS_PIECE",
+      "thinking_policy_version": "structured-json-reasoning-v1",
+      "thinking_mode": "disabled",
+      "provider_adapter_version": "source-analysis-piece-adapter-v2",
+      "operation_schema_version": "source-analysis-piece-v1",
+      "prompt_id": "source-analysis-piece",
+      "prompt_version": "phase3e2sl6",
+      "system_prompt_sha256": "cee72e35310ecff6e38a6a9021d3e3478906195e84f9491356c583e92dae5138",
+      "prompt_bundle_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+      "validator": "bounded-source-analysis-piece-v1+native-analyzer-replay"
+    },
+    "live_operation_output_budgets": {
+      "SOURCE_ANALYSIS_PIECE": {
+        "max_output_tokens": 12000,
+        "max_total_tokens": 20000
+      },
+      "SEMANTIC_DECOMPOSITION": {
+        "max_output_tokens": 8192,
+        "max_total_tokens": 20000
+      }
+    },
+    "max_stage1_jobs_per_run": 31,
+    "stage72c": {
+      "cloud": {
+        "compatible": false,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "baseline_surface_sha256": "66d2bf7d28fb566fe29fc2296a9abc4134d69d959c4bd4dafd45d765fd86341b",
+        "target_surface_sha256": "54ae9597e7843438347651f1912a828278792018e19c62bccbce44280c34c590"
+      },
+      "native": {
+        "compatible": true,
+        "reason": "SEMANTIC_SURFACE_EXACT",
+        "baseline_surface_sha256": "149ec6253e6d2e8fdd94f758093c95faaa332cbdf36cb4f33983504de88d9766",
+        "target_surface_sha256": "149ec6253e6d2e8fdd94f758093c95faaa332cbdf36cb4f33983504de88d9766"
+      }
+    },
+    "compatibility_exceptions_added": false
+  },
+  "qualification": {
+    "focused_passed": 59,
+    "regression_unique_tests_qualified": 689,
+    "regression_initial_passed": 686,
+    "regression_initial_failures": [
+      "test_closure_builder_is_deterministic_and_has_exact_authority_partition",
+      "test_exact_baseline_native_surface_fails_closed_while_wire_surface_is_unchanged",
+      "test_foundation_dormant_and_active_surfaces_unchanged"
+    ],
+    "targeted_rechecks_passed": 3,
+    "regression_final_unresolved_failures": 0,
+    "corrections": [
+      "Two obsolete cloud-equality assertions now require SEMANTIC_SURFACE_CHANGED; no runtime exception.",
+      "Frozen lifecycle JSON restored to exact baseline Git blob after Windows CRLF checkout conversion; no Git content change."
+    ],
+    "regression_modules": [
+      "bounded_extraction",
+      "evidence_binding",
+      "source_analysis_wire",
+      "workbench_stage6",
+      "phase43_stage1_operator_scale",
+      "phase43_stage6_lifecycle",
+      "phase43_stage72a_provider_diagnostics",
+      "phase43_stage72b_extraction_retry",
+      "phase43_stage72c_retry_compatibility",
+      "structured_json_reasoning_policy",
+      "operation_output_budget",
+      "extraction_capacity",
+      "extraction_capacity_r2",
+      "workbench_stage7",
+      "mcp_stage0",
+      "mcp_stage3",
+      "workbench_stage0",
+      "workbench_stage1",
+      "workbench_stage2",
+      "workbench_stage2_guards",
+      "workbench_stage3",
+      "workbench_stage4",
+      "workbench_stage5",
+      "workbench_stage8_operations",
+      "foundation_schema_migration",
+      "stability_migration"
+    ],
+    "external_network_guard": true,
+    "full_repository_suite_run": false,
+    "packaging": {
+      "compileall": "PASS",
+      "pip_check": "PASS",
+      "isolated_pep517": "PASS",
+      "isolated_install": "PASS",
+      "source_wheel_install": "PASS",
+      "python_files": 134,
+      "wheel_sha256": "4fa6fc6ef826fb68af72dea31c750744e0abd552d102a29d62efd3cad545fde2"
+    },
+    "git_diff_check": "PASS",
+    "privacy_scan": "PASS"
+  },
+  "real_state": {
+    "snapshot": "PASS",
+    "source_unchanged": true,
+    "historical_runs_1_7_unchanged": true,
+    "attempt_counts_1_7": [
+      0,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "workbench_schema_before": 11,
+    "workbench_schema_after": 11,
+    "workbench_byte_and_state_unchanged": true,
+    "production_unchanged": true,
+    "stable_runtime_unchanged": true,
+    "stable_python_files_verified": 129,
+    "real_provider_calls": 0,
+    "run_8_created": false,
+    "production_writes": 0,
+    "real_workbench_writes": 0
+  },
+  "delivery": {
+    "draft_pr_only": true,
+    "merge": false,
+    "activation": false,
+    "real_migration": false,
+    "REAL_WORKBENCH_V12_MIGRATION_REQUIRED_BEFORE_LIVE_BINDING": true,
+    "NEXT_STAGE": "SOURCE_ANALYSIS_COMPACT_WIRE_SERIES_BINDING_R1"
+  }
+}
