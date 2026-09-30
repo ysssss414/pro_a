@@ -117,14 +117,34 @@ publication; final bytes are hash-verified. POSIX also fsyncs the directory.
 
 The private `bounded-private-raw-v1` envelope contains exact body bytes encoded
 as base64, body/envelope hashes, attempt/request identity, HTTP status, an optional
-safe provider request ID, finish reason and usage fields. These are the complete
-transport metadata allowlist; arbitrary headers, errors and authentication values
-are not accepted. No raw body is placed in SQL, public events, MCP or Review.
+safe provider request ID, finish reason, usage fields and optional latency_ms.
+These are the complete transport metadata allowlist; arbitrary headers, errors
+and authentication values are not accepted. No raw body is placed in SQL, public
+events, MCP or Review.
 
 Required ordering is implemented as: envelope publication → flush/fsync → hash
 verification → outcome DB commit → body parse/coverage validation. A raw artifact
 without a DB row is read from its deterministic path, its envelope/body/request
 identities verified, and the same outcome registered. No provider call occurs.
+
+Schema12 outcomes include nullable `latency_ms REAL`. NULL means unavailable;
+zero is a known latency. The envelope preserves the supplied int/float or null
+before provider body parsing. Non-null latency must be finite, nonnegative and
+not bool. Option A follows existing envelope validation: invalid latency raises
+`INVALID_CALL_LATENCY` before artifact publication or outcome binding, with no
+accepted result. It does not authorize another dispatch. Negative values,
+booleans, NaN, infinities and strings are never coerced into unknown or zero.
+
+Valid latency is encoded as SQLite REAL before computing outcome record_sha256;
+integer values become floats and signed zero uses SQLite's positive zero. The
+private envelope retains the supplied numeric representation. Fresh reads verify
+the immutable outcome hash and reconstruct SegmentCallAccounting from its stored
+latency. Foundation Series accounting remains unchanged: sum when every call is
+known, otherwise null. Unknown external outcomes and invalid token usage retain
+their existing conservative output liability even when latency is known.
+Raw-only crash recovery validates and binds that exact envelope without recall.
+Concurrent identical observations reuse one outcome; a different latency causes
+ARTIFACT_CONFLICT under the same immutable artifact rule.
 
 The synthetic body protocol is exactly `{wire, dispositions}`. It exercises the
 existing Wire v3 plus the Foundation disposition contract; it is not a new live
@@ -214,7 +234,7 @@ claim that the entire repository suite ran. External provider networking is
 blocked during qualification; loopback is permitted for Windows asyncio and
 local protocol tests. All supplied provider bytes are synthetic.
 
-Qualification: 59 new focused cases passed. Of 689 selected regression cases,
+Initial qualification: 59 new focused cases passed. Of 689 selected regression cases,
 686 passed initially; the two superseded cloud-equality assertions and one
 CRLF-converted byte-frozen fixture check passed targeted rechecks after correction.
 The fixture was restored to its exact baseline Git blob without a content diff.
@@ -222,6 +242,30 @@ No unresolved failure or skipped case remains in this selected matrix. Compileal
 pip check, isolated PEP517 build, and source/wheel/isolated-install equality for
 all 134 packaged Python files passed. All 26 proposed public files passed the
 real Source excerpt/filename, credential and private-path privacy scans.
+
+The latency amendment reruns all 59 existing persistence cases and adds 23 focused
+cases. All 82 pass, including exact envelope/outcome identities, fresh Segment
+accounting, all-known Series sums, mixed-known null accounting, C/D/E recovery at
+123.456 ms, abrupt subprocess exit, immutable concurrent observations, corruption
+rejection and invalid metadata rejection. The migration test checks the REAL
+column with PRAGMA table_info. The Foundation and active execution files retain
+their pre-amendment bytes. Qualification uses disposable databases only.
+The amendment's selected regression rerun passes 383 cases across bounded
+Foundation, CloudJobs and provider telemetry, reasoning policy, schema migration,
+Stage7.2C, Wire and capacity compatibility. Compileall, pip check, isolated PEP517
+build and installation, and byte equality for all 134 packaged Python files pass
+again. All 27 public files in the amended PR pass the Source excerpt/filename,
+credential and private-path privacy scans. This does not claim a full repository
+suite run.
+
+```text
+latency_ms_durable = true
+raw_envelope_latency = true
+outcome_latency = true
+durable_segment_accounting_latency = true
+crash_reconcile_latency = PASS
+invalid_latency_fail_closed = PASS
+```
 
 `REAL_WORKBENCH_V12_MIGRATION_REQUIRED_BEFORE_LIVE_BINDING = true`
 
