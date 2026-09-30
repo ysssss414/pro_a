@@ -174,7 +174,7 @@ class ReviewWorkbench:
             source_run = (connection.execute(
                 'SELECT processing_run_id FROM source_processing_runs WHERE packet_artifact_id=?',
                 (handle,),
-            ).fetchone() if schema_version(connection) in ('8', '9', '10', '11') else None)
+            ).fetchone() if schema_version(connection) in ('8', '9', '10', '11', '12') else None)
             draft, states, audit = self._state(connection, handle, basis)
             native = [row for group in GROUPS for row in blank[group]]
             if set(states) - {row['candidate_id'] for row in native}:
@@ -272,7 +272,7 @@ class ReviewWorkbench:
             connection.execute('PRAGMA foreign_keys=ON')
             connection.execute('PRAGMA synchronous=FULL')
             connection.execute('BEGIN IMMEDIATE')
-            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10', '11'):
+            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, audit = self._state(connection, handle, basis)
             self._sealed(connection, handle, draft, blank, run, states)
@@ -347,7 +347,7 @@ class ReviewWorkbench:
             self.artifacts.read(handle)
             connection.execute('UPDATE review_drafts SET revision=?,status=?,updated_at=? WHERE artifact_id=?',
                 (revision, 'SEALED' if action == 'seal' else 'DRAFT', timestamp, handle))
-            if schema_version(connection) in ('10', '11'):
+            if schema_version(connection) in ('10', '11', '12'):
                 from .stage1_scale import Stage1ReviewProjection
                 Stage1ReviewProjection.refresh_states(
                     connection, handle, projection_candidate_ids, states,
@@ -362,7 +362,7 @@ class ReviewWorkbench:
             raise ReviewError('IMMUTABLE_FIELD_DRIFT')
         with self.store.connect() as connection:
             connection.execute('BEGIN')
-            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10', '11'):
+            if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
             draft, states, _ = self._state(connection, handle, basis)
             revision = draft['revision'] if draft else 0
