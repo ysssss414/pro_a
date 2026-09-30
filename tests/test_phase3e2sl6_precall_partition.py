@@ -146,9 +146,9 @@ def test_forbid_policy_uses_safe_preplanned_initial_partition(tmp_path: Path):
 
     plan = analyzer.plan_initial_extraction("fixture.txt", text, "deep", adaptive_retry_policy="forbid")
 
-    assert plan.effective_max_chars == FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS == 5_000
-    assert len(plan.pieces) == 5
-    assert max(len(piece.source_piece.source_text) for piece in plan.pieces) <= 5_000
+    assert plan.effective_max_chars == FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS == 4_000
+    assert len(plan.pieces) == 6
+    assert max(len(piece.source_piece.source_text) for piece in plan.pieces) <= 4_000
     assert plan.artifact["partition_policy"]["response_time_recovery"] == "FORBIDDEN"
 
 

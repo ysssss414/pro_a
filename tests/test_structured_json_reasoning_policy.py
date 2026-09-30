@@ -171,7 +171,7 @@ def test_structured_dual_adapter_e2e_reasoning_zero_durable_and_private(tmp_path
         final = advance(value)
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_id"] and final["packet_artifact_id"]
     assert len(calls) == 2 and len(set(calls)) == 2
-    assert analyzer.FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS == 5000
+    assert analyzer.FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS == 4000
     for row in jobs(value):
         contract = operation_contract(row["operation_kind"])
         assert json.loads(row["prompt_json"]) == contract
