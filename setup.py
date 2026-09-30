@@ -5,6 +5,16 @@ import runpy
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
+from setuptools.command.egg_info import egg_info
+
+
+class BuildMetadata(egg_info):
+    def finalize_options(self):
+        # The repository retains historical egg-info; builds must not edit it.
+        if self.egg_base is None:
+            self.egg_base = 'build/identity-metadata'
+            Path(self.egg_base).mkdir(parents=True, exist_ok=True)
+        super().finalize_options()
 
 
 class BuildWithRepositoryIdentity(build_py):
@@ -27,4 +37,4 @@ class BuildWithRepositoryIdentity(build_py):
                           encoding='utf-8')
 
 
-setup(cmdclass={'build_py': BuildWithRepositoryIdentity})
+setup(cmdclass={'build_py': BuildWithRepositoryIdentity, 'egg_info': BuildMetadata})

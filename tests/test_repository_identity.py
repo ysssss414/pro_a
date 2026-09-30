@@ -64,6 +64,17 @@ def test_source_checkout_exact_identity_and_runtime_shape():
     assert runtime_identity('semantic-backend-adapter-v2', workbench_schema_version='11')['git_sha'] == expected
 
 
+def test_resolver_source_bytes_remain_protected(monkeypatch):
+    from pro_a import phase4_orchestration as phase4
+    original = phase4._runtime()
+    file_hash = phase4.sha256_file
+    monkeypatch.setattr(phase4, 'sha256_file', lambda path:
+                        '0' * 64 if path.name == 'repository_identity.py' else file_hash(path))
+    changed = phase4._runtime()
+    assert changed['repository_commit'] == original['repository_commit']
+    assert changed['processing_code_sha256'] != original['processing_code_sha256']
+
+
 def test_source_ignores_cwd_and_git_environment(tmp_path, monkeypatch):
     source, _ = tracked_checkout(tmp_path / 'source')
     other, _ = tracked_checkout(tmp_path / 'other')
@@ -105,8 +116,7 @@ def test_malformed_packaged_identity_fails_closed(tmp_path, monkeypatch, corrupt
                  'repository': {**value, 'repository': 'other/repository'},
                  'fields': {**value, 'path': '/untrusted'}, 'list': []}[corruption]
         path.write_text(json.dumps(value))
-    with pytest.raises(identity.RepositoryIdentityError if module is identity else module.RepositoryIdentityError,
-                       match='REPOSITORY_IDENTITY_INVALID'):
+    with pytest.raises(module.RepositoryIdentityError, match='REPOSITORY_IDENTITY_INVALID'):
         module.repository_commit()
 
 
