@@ -1,0 +1,169 @@
+{
+  "task": "PRO_A_SOURCE_ANALYSIS_COMPACT_WIRE_FOUNDATION_R1",
+  "result": "PASS",
+  "baseline_main": "e69813cc7a9d25523ab6e5d52ebcfcf8aa03daf6",
+  "branch": "codex/pro-a-source-analysis-compact-wire-foundation-r1",
+  "implementation_sha": "7a95e18500945ad8909219373d0c3c51b084f903",
+  "wire_schema_version": "source-analysis-wire-v2",
+  "evidence_unit_version": "source-analysis-evidence-unit-v1",
+  "expander_version": "source-analysis-wire-expander-v1",
+  "evidence_units_pre_model": true,
+  "evidence_refs_piece_bound": true,
+  "evidence_refs_source_bound": true,
+  "evidence_refs_claim_independent": true,
+  "model_generated_evidence_excerpt_required": false,
+  "canonical_evidence_excerpt_preserved": true,
+  "canonical_evidence_pointer_preserved": true,
+  "canonical_SourceAnalysis_changed": false,
+  "canonical_equivalence": "PASS",
+  "canonical_equivalence_scope": "Representable complete canonical objects with exact available unit text, authoritative pointer and ordinal Claim references; all semantic values and array order identical.",
+  "existing_Analyzer_validation": "PASS",
+  "piece_provenance_preserved": true,
+  "claim_identity_and_record_equivalence": "PASS",
+  "native_rejection_equivalence": "PASS",
+  "compact_wire_size_reduction_40_claim_fixture_percent": 34.623903605918315,
+  "compact_wire_size_reduction_minimum_percent": 30,
+  "benchmark": {
+    "fixture": "R2-derived synthetic 40 Claims, authoritative PARA pointer, ordinal refs, full legacy Node values retained",
+    "claim_count": 40,
+    "units": 40,
+    "serialization": "minified UTF-8 JSON ensure_ascii=False sort_keys=True",
+    "sizes": {
+      "canonical": {
+        "chars": 22574,
+        "bytes": 22574
+      },
+      "sparse_projection_only": {
+        "chars": 18715,
+        "bytes": 18715
+      },
+      "compact_wire": {
+        "chars": 14758,
+        "bytes": 14758
+      },
+      "expanded_canonical": {
+        "chars": 22574,
+        "bytes": 22574
+      },
+      "reduction_chars_pct": 34.623903605918315
+    },
+    "savings_decomposition": {
+      "claim_ref_derivation": {
+        "chars": 711,
+        "bytes": 711
+      },
+      "evidence_excerpt_and_pointer_reference": {
+        "chars": 3913,
+        "bytes": 3913
+      },
+      "node_sparse_variants_and_refs": {
+        "chars": 217,
+        "bytes": 217
+      },
+      "other_defaults_root_and_version_overhead": {
+        "chars": 2975,
+        "bytes": 2975
+      }
+    },
+    "token_estimates": null,
+    "canonical_exact_equal": true
+  },
+  "new_provider_calls": 0,
+  "real_provider_calls": 0,
+  "REAL_PROVIDER_CALLS": 0,
+  "new_cloud_operation_kinds": 0,
+  "foundation_added_cloud_jobs": 0,
+  "max_total_jobs_changed": false,
+  "max_extraction_pieces": 16,
+  "max_stage1_jobs_per_run": 31,
+  "live_prompt_changed": false,
+  "live_adapter_changed": false,
+  "live_operation_contract_changed": false,
+  "live_execution_changed": false,
+  "LIVE_PROVIDER_WIRE_UNCHANGED": true,
+  "live_operation_contract": {
+    "operation_kind": "SOURCE_ANALYSIS_PIECE",
+    "thinking_policy_version": "structured-json-reasoning-v1",
+    "thinking_mode": "disabled",
+    "provider_adapter_version": "source-analysis-piece-adapter-v2",
+    "operation_schema_version": "source-analysis-piece-v1",
+    "prompt_id": "source-analysis-piece",
+    "prompt_version": "phase3e2sl6",
+    "system_prompt_sha256": "cee72e35310ecff6e38a6a9021d3e3478906195e84f9491356c583e92dae5138",
+    "prompt_bundle_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+    "validator": "bounded-source-analysis-piece-v1+native-analyzer-replay"
+  },
+  "active_surfaces": {
+    "cloud": {
+      "compatible": true,
+      "reason": "SEMANTIC_SURFACE_EXACT",
+      "semantic_surface_sha256": "66d2bf7d28fb566fe29fc2296a9abc4134d69d959c4bd4dafd45d765fd86341b"
+    },
+    "native": {
+      "compatible": true,
+      "reason": "SEMANTIC_SURFACE_EXACT",
+      "semantic_surface_sha256": "149ec6253e6d2e8fdd94f758093c95faaa332cbdf36cb4f33983504de88d9766"
+    }
+  },
+  "repository_metadata_changed_by_commits": true,
+  "source_unchanged": true,
+  "historical_runs_mutated": false,
+  "historical_runs_1_7_attempt_counts": [
+    0,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "new_real_runs": 0,
+  "Run_8_created": false,
+  "RUN_8_CREATED": false,
+  "Production_writes": 0,
+  "Workbench_writes": 0,
+  "Production_unchanged": true,
+  "Workbench_unchanged": true,
+  "review_mutations": 0,
+  "current_view_mutations": 0,
+  "production_apply": 0,
+  "stage1_bypass": false,
+  "stable_runtime_activated": false,
+  "stable_runtime_unchanged": true,
+  "tests": {
+    "focused": {
+      "passed": 61
+    },
+    "requested_regressions": {
+      "passed": 445,
+      "skipped": 1
+    },
+    "skip": {
+      "test": "test_operational_ingestion.py::test_known_fixture_end_to_end_semantic_equivalence",
+      "reason": "Frozen Phase 3C/3D replay artifacts unavailable"
+    },
+    "full_repository_green_claimed": false
+  },
+  "build": {
+    "compileall_src_tests": "PASS",
+    "pip_check": "PASS",
+    "isolated_pep517_wheel": "PASS",
+    "result": "PASS",
+    "source_wheel_installed_equal": true,
+    "python_file_count": 130,
+    "baseline_python_files_unchanged": 129,
+    "wheel_sha256": "a5247dac9bd8f6a362c48291d83994b3f73cd9b104a7e344f622d0e2393b9047",
+    "installation": "isolated pip --target; stable runtime untouched"
+  },
+  "privacy": {
+    "result": "PASS",
+    "private_source_content_in_git": false,
+    "credentials_in_git": false,
+    "private_paths_in_git": false
+  },
+  "git_diff_check": "PASS",
+  "token_estimates": null,
+  "live_token_fit_qualified": false,
+  "architecture_review_report_sha256": "760c2fd4941b8b8ee82e12a62b56d84dd8f4bdeffbd3fbb4cccde85015b422a8",
+  "NEXT_STAGE_IF_PASS": "SOURCE_ANALYSIS_COMPACT_WIRE_LIVE_BINDING_R1"
+}
