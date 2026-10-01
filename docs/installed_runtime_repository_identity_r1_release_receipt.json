@@ -1,0 +1,649 @@
+{
+  "task": "INSTALLED_RUNTIME_REPOSITORY_IDENTITY_R1",
+  "status": "PASS",
+  "observed_at_utc": "2026-10-01T00:03:41.778924+00:00",
+  "root_cause": "RUNTIME_GIT_METADATA_DEPENDENCY",
+  "pre_repair_main": "389399712deb9d2e1cacf41ad39e147e16b5f14b",
+  "implementation_sha": "eb94e42bf6f4baeeabac0949f8cf4e278ca3c1b0",
+  "evidence_sha": "cc717bb4f130f6601766d0d1f957f75f9408bcc3",
+  "evidence_sha_scope": "candidate evidence commit included in repair merge; final release evidence commit reported in handoff",
+  "repair_pr": {
+    "number": 97,
+    "url": "https://github.com/ysssss414/pro_a/pull/97",
+    "head": "cc717bb4f130f6601766d0d1f957f75f9408bcc3",
+    "base": "389399712deb9d2e1cacf41ad39e147e16b5f14b",
+    "initially_draft": true,
+    "state": "MERGED",
+    "convention": "merge commit",
+    "merged_at": "2026-09-30T23:45:49Z",
+    "merge_sha": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "ci": "NO_STATUS_CHECKS_PRESENT_LOCAL_QUALIFICATION_RECORDED"
+  },
+  "final_remote_main": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+  "premerge_exact_head_qualification": {
+    "status": "PASS",
+    "source_commit": "cc717bb4f130f6601766d0d1f957f75f9408bcc3",
+    "wheel_sha256": "f49d0543db9489febe7d88207b785c2c58c905d0ba02dab4c763f056893b6074",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "cc717bb4f130f6601766d0d1f957f75f9408bcc3"
+    },
+    "packaged_identity_sha256": "233f0ef1178c235efe87128b6947fb49b4ae1e808fa289018436b4ebd86b3f61",
+    "wheel_member_count": 141,
+    "python_byte_comparison_count": 135,
+    "source_wheel_installed_python_bytes": "IDENTICAL",
+    "full_runtime_equality": true,
+    "git_unavailable": "PASS",
+    "runtime_git_calls": 0,
+    "unrelated_parent": "PASS",
+    "unrelated_parent_commit": "26ace2f07fed93a5b74edfe52bd91c4aa19861b3",
+    "corruptions": {
+      "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+      "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+      "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+      "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+    },
+    "installed_phase4_runtime": {
+      "repository_commit": "cc717bb4f130f6601766d0d1f957f75f9408bcc3",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "installed_cloud_runtime": {
+      "git_sha": "cc717bb4f130f6601766d0d1f957f75f9408bcc3",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "11",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+      "runtime_sha256": "07939e2e64f8f584e5644d7d6acafa722c8b468d22e1f8f2d76651038c5f0e4f"
+    },
+    "runtime_network_calls": 0,
+    "business_databases_opened": 0
+  },
+  "merged_main_artifact_qualification": {
+    "status": "PASS",
+    "source_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "wheel_sha256": "e9b50070865f862b62259c7b128eea689788e97cea33029cbb7e3a07ee67fcaa",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0"
+    },
+    "packaged_identity_sha256": "cf6772bad67dc3504ecd18012a93b4497a3a68eb72bd947e77029b86321ab500",
+    "wheel_member_count": 141,
+    "python_byte_comparison_count": 135,
+    "source_wheel_installed_python_bytes": "IDENTICAL",
+    "full_runtime_equality": true,
+    "git_unavailable": "PASS",
+    "runtime_git_calls": 0,
+    "unrelated_parent": "PASS",
+    "unrelated_parent_commit": "604fcecd486391a86e7e021fef2d74be49f350fe",
+    "corruptions": {
+      "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+      "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+      "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+      "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+    },
+    "installed_phase4_runtime": {
+      "repository_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "installed_cloud_runtime": {
+      "git_sha": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "11",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+      "runtime_sha256": "7d364037d463a923948c0efe5087568a03e4be2d8a7021c9c8d57f31bff0ed29"
+    },
+    "runtime_network_calls": 0,
+    "business_databases_opened": 0
+  },
+  "wheel_sha256": "e9b50070865f862b62259c7b128eea689788e97cea33029cbb7e3a07ee67fcaa",
+  "packaged_build_identity": {
+    "contract_version": "pro-a-build-repository-identity-v1",
+    "repository": "ysssss414/pro_a",
+    "repository_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0"
+  },
+  "packaged_build_identity_sha256": "cf6772bad67dc3504ecd18012a93b4497a3a68eb72bd947e77029b86321ab500",
+  "real_installed_runtime": {
+    "status": "PASS",
+    "source_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "wheel_sha256": "e9b50070865f862b62259c7b128eea689788e97cea33029cbb7e3a07ee67fcaa",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0"
+    },
+    "packaged_identity_sha256": "cf6772bad67dc3504ecd18012a93b4497a3a68eb72bd947e77029b86321ab500",
+    "python_byte_comparison_count": 135,
+    "installed_wheel_python_bytes": "IDENTICAL",
+    "phase4_runtime": {
+      "repository_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "cloud_runtime": {
+      "git_sha": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "11",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+      "runtime_sha256": "7d364037d463a923948c0efe5087568a03e4be2d8a7021c9c8d57f31bff0ed29"
+    },
+    "runtime_git_calls": 0,
+    "runtime_network_calls": 0,
+    "git_unavailable": "PASS",
+    "imported_real_stable_installation": true,
+    "non_editable_installation": true,
+    "dependencies_unchanged": true,
+    "protected_files_unchanged": true,
+    "secret_stat_unchanged": true,
+    "secret_content_read_or_hashed": false
+  },
+  "regressions": {
+    "final_unique": {
+      "passed": 408,
+      "failed": 0,
+      "skipped": 1
+    },
+    "runs": [
+      {
+        "receipt": "identity-regression.xml",
+        "passed": 403,
+        "failed": 4,
+        "skipped": 1
+      },
+      {
+        "receipt": "identity-final-regression.xml",
+        "passed": 83,
+        "failed": 1,
+        "skipped": 0
+      },
+      {
+        "receipt": "identity-stdio-regression.xml",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "scope": [
+      "test_repository_identity",
+      "test_phase4_orchestration",
+      "test_workbench_stage6",
+      "test_workbench_stage7",
+      "test_phase43_stage0",
+      "test_phase43_stage71_shared_core_pending",
+      "test_phase43_stage72c_retry_compatibility",
+      "test_mcp_stage0",
+      "test_mcp_stage3"
+    ]
+  },
+  "dirty_release_build": "REFUSED_NO_WHEEL",
+  "historical_drift_protection": "UNCHANGED_NO_NEW_COMPATIBILITY_EXCEPTION_NO_FROZEN_REWRITE",
+  "pip_check": "PASS",
+  "compile_import": "PASS",
+  "stable_activation": {
+    "status": "PASS",
+    "source_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "clean_stop": true,
+    "only_pro_a_reinstalled": true,
+    "rollback_available": true,
+    "rollback_executed": false,
+    "original_gates_resumed": false,
+    "wheel_sha256": "e9b50070865f862b62259c7b128eea689788e97cea33029cbb7e3a07ee67fcaa",
+    "process_running": true,
+    "protected_files_unchanged": true,
+    "dependencies_unchanged": true,
+    "real_installed_identity": "PASS",
+    "real_read_only_mcp": "PASS"
+  },
+  "activation_attempts": {
+    "count": 2,
+    "first": {
+      "status": "STOP",
+      "source_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+      "clean_stop": true,
+      "only_pro_a_reinstalled": true,
+      "rollback_available": true,
+      "rollback_executed": true,
+      "original_gates_resumed": false,
+      "failure": "REAL_INSTALLED_READ_ONLY_MCP_FAILED",
+      "rollback_install_succeeded": true,
+      "rollback_runtime_running": true
+    },
+    "first_failure": "Research-context read rejected by existing payload boundary; same READ_BOUNDARY_VIOLATION reproduced on original and independent merged-main wheels.",
+    "rollback_after_first_attempt_full_snapshot_equals_pre": true,
+    "final": "PASS_REQUIRED_READS_AND_BASELINE_FAIL_CLOSED_VERIFIED"
+  },
+  "rollback": {
+    "status": "PASS",
+    "rollback_label": "installed-identity-7c0a06a0",
+    "previous_source_commit": "e69813cc7a9d25523ab6e5d52ebcfcf8aa03daf6",
+    "previous_wheel_sha256": "218007fb0fa37d2783da31a5378e579ee7db6196973ff84c5faab1ef4845472c",
+    "previous_wheel_installed_python_bytes": "IDENTICAL",
+    "previous_python_file_count": 129,
+    "backup_file_count": 272,
+    "backup_manifest_sha256": "84c40b1fe8edd7176cb4a6f06138cc3b15f36c0275539fd83fd99833573c7c2b",
+    "distribution_metadata_saved": true,
+    "installed_package_saved": true,
+    "dependency_state_saved": true,
+    "protected_hashes": {
+      "runtime-settings.json": "013bae51fdbe94c37ac6936d5c82c6b05928be92d260be1131d7e5654b001bc6",
+      "requirements.lock.txt": "82d8be4a956fcdaf738c5881f1c74cbc9bc59ee0cf43047a139c566184e9c888",
+      "wheel-sha256.json": "00c85d220965f5e09394086979fff3286c478c7851b6e22b5e33243671e2b1ee",
+      "start-pro-a-mcp.ps1": "c9f0d24ef5a3cd1b9ab6b1c46b68cdf063578a81b40a9669767e3c561844fb88",
+      "start-pro-a-mcp.cmd": "87797be11145e22f034ca17697b4d0384a9ae7e2c7adad828000af825aaf437f",
+      "stop-pro-a-mcp.ps1": "a4e7f9b39c082ea648ec63a3b481963f5bebcce5220e11e8a13e058f17db5c6d",
+      "stop-pro-a-mcp.cmd": "4481b66c6b7abd0bb70e199b524842c0853b4df6dbd6ea0215869601dd4bb530",
+      "status-pro-a-mcp.ps1": "c6a0acc1e8821985dfa15c17e92e15df41b6c13f2398595c1f6a5d08d3d937e7",
+      "status-pro-a-mcp.cmd": "e6cb2ad7081b2e4adc83d8f59687b585e2f4061de9150b1ae2db9d9a65e477b2",
+      "private_workbench_config": "0354bb40b7cb15679064656053f737e884a68d77b982908941982ea80bd79331"
+    },
+    "secret_content_read_or_hashed": false,
+    "cached_wheel_is_older_than_current_release": true,
+    "cached_wheel_sha256": "db38223ec714576a41c5666202940f9c9c99463a377971d2c5954548c8e7ef82"
+  },
+  "real_mcp": {
+    "transport": "installed_package_guarded_stdio",
+    "tool_count": 14,
+    "inventory": [
+      "pro_a_health",
+      "search_companies",
+      "get_company",
+      "list_company_materials",
+      "get_current_view",
+      "get_current_view_history",
+      "get_node_evidence",
+      "get_source",
+      "get_processing_run",
+      "get_review_packet",
+      "get_company_research_context",
+      "list_review_queue",
+      "get_review_context",
+      "get_review_item_context"
+    ],
+    "discovery_sha256": "dceb6c5820e16960eb23f7b02cd107d1244212e7c546a34fe6365dcab6463f49",
+    "existing_11_sha256": "89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc",
+    "existing_11_compatible": true,
+    "calls": [
+      {
+        "tool": "pro_a_health",
+        "status": "PASS"
+      },
+      {
+        "tool": "search_companies",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_current_view",
+        "status": "PASS"
+      },
+      {
+        "tool": "get_company_research_context",
+        "status": "BASELINE_FAIL_CLOSED_VERIFIED",
+        "error_codes": [
+          "READ_BOUNDARY_VIOLATION"
+        ]
+      },
+      {
+        "tool": "list_review_queue",
+        "status": "PASS"
+      }
+    ],
+    "health": {
+      "service": "pro_a",
+      "contract_version": "pro-a-mcp-stage3-v1",
+      "pro_a_version": "0.5.1",
+      "production_readable": true,
+      "workbench_readable": true,
+      "workbench_schema_version": "11",
+      "read_only": true,
+      "capabilities": [
+        "pro_a_health",
+        "search_companies",
+        "get_company",
+        "list_company_materials",
+        "get_current_view",
+        "get_current_view_history",
+        "get_node_evidence",
+        "get_source",
+        "get_processing_run",
+        "get_review_packet",
+        "get_company_research_context",
+        "list_review_queue",
+        "get_review_context",
+        "get_review_item_context"
+      ]
+    },
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 21,
+    "baseline_limitations": {
+      "get_company_research_context": "READ_BOUNDARY_VIOLATION"
+    },
+    "research_context_success_claimed": false,
+    "review_queue_items": 0,
+    "connected_app_health": {
+      "status": "PASS",
+      "transport": "connected_pro_a_app",
+      "health": {
+        "service": "pro_a",
+        "contract_version": "pro-a-mcp-stage3-v1",
+        "pro_a_version": "0.5.1",
+        "production_readable": true,
+        "workbench_readable": true,
+        "workbench_schema_version": "11",
+        "read_only": true,
+        "capabilities": [
+          "pro_a_health",
+          "search_companies",
+          "get_company",
+          "list_company_materials",
+          "get_current_view",
+          "get_current_view_history",
+          "get_node_evidence",
+          "get_source",
+          "get_processing_run",
+          "get_review_packet",
+          "get_company_research_context",
+          "list_review_queue",
+          "get_review_context",
+          "get_review_item_context"
+        ]
+      }
+    }
+  },
+  "native_health": {
+    "checked_at_utc": "2026-09-30T23:57:10.4298479Z",
+    "process_running": true,
+    "healthy": true,
+    "ready": true,
+    "polling_status": "ok",
+    "polling_state": "polling",
+    "consecutive_failures": 0,
+    "last_success": "2026-09-30T23:56:51.2562821Z",
+    "summary_state": "unknown",
+    "summary_reason": "no live admin UI system snapshot",
+    "mcp_telemetry_state": "not_observed"
+  },
+  "real_state_audit": {
+    "pre_post_business_state_equality": true,
+    "compared_components": [
+      "production",
+      "workbench",
+      "artifact_root",
+      "source_files",
+      "config_sha256",
+      "settings_sha256"
+    ],
+    "dependencies_unchanged": true,
+    "installed_distribution_count_unchanged": 60,
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "production_schema_sha256": "a9ea9463f1a0f60464f124b63eba56ca417a437a0bfce4852f6a9ad9073f3a27",
+    "workbench_schema_sha256": "e1c95e141cd11d44db8961c9dcd9321e0bb8d7c728969d87044aadfbc590c1fb",
+    "production_table_rows_sha256": "d0e92d8def0aff1feb1b62ff52d5f1a479622ffb199cfb57cc4c3f085ab44402",
+    "workbench_table_rows_sha256": "3d14459d8f6e6618e9e14d86439b7f9de9d183b3d3640acc51a00270f584b7d2",
+    "workbench_schema": 11,
+    "integrity": {
+      "production": [
+        "ok"
+      ],
+      "workbench": [
+        "ok"
+      ]
+    },
+    "foreign_key_violations": 0,
+    "no_database_sidecars": true,
+    "target_source_run_count": 7,
+    "global_run_count": 8,
+    "runs_1_to_7_unchanged": true,
+    "frozen_runs": [
+      {
+        "processing_run_id": "SOURCE_RUN_252C8E6E885D49D99C1A37DAB039E08E",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "BLOCKED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "89a61b985606321add98a59d5b93cb88d13aa8149c5938f368b694329a6a9b03",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-29T07:21:27.641229+00:00",
+        "updated_at": "2026-09-29T07:22:26.241764+00:00",
+        "attempt_count": 0,
+        "job_count": 2
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_A97FFCA5AA5041358E90E2D0963BCD51",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "4e2d2287d4342249f4e1a6d7debf04cc2c28952da1401cd4dca55ab05af9aae0",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-29T08:29:35.668906+00:00",
+        "updated_at": "2026-09-29T08:31:33.098447+00:00",
+        "attempt_count": 2,
+        "job_count": 2
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_E11574A0C7D544EE9485C7DD45F1A22F",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "a29108e438e5fa521f739c4158395500b4a01f972fbe84a5bf4300a5079c3ac4",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-29T09:44:59.817414+00:00",
+        "updated_at": "2026-09-29T09:46:17.608467+00:00",
+        "attempt_count": 1,
+        "job_count": 2
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "7feb460778771d4cc1da812a89ba8a67059abfe438980fd4a350106b371385a8",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-29T11:13:09.941053+00:00",
+        "updated_at": "2026-09-29T11:14:57.722801+00:00",
+        "attempt_count": 1,
+        "job_count": 4
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "bcbd4c7f75e4e1e688da51da265556241b9acf8a5d4ec25311e1d7c3640fafa9",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-29T12:52:51.489859+00:00",
+        "updated_at": "2026-09-29T12:55:08.146772+00:00",
+        "attempt_count": 1,
+        "job_count": 4
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "3ca26c8f3cd99a2b4fe66b38c1607fc0a42461a83fa28705d04405c1006b7355",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-30T01:16:18.714590+00:00",
+        "updated_at": "2026-09-30T01:19:31.037656+00:00",
+        "attempt_count": 1,
+        "job_count": 4
+      },
+      {
+        "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "state": "FAILED",
+        "stage": "EXTRACTION_JOBS",
+        "runtime_sha256": "f45480798951906839efcecf7db6f28b078e666173144fdb1d28703d87550d39",
+        "packet_id": null,
+        "packet_artifact_id": null,
+        "created_at": "2026-09-30T02:22:08.100733+00:00",
+        "updated_at": "2026-09-30T02:24:02.037033+00:00",
+        "attempt_count": 1,
+        "job_count": 5
+      }
+    ],
+    "current_view_count": 3,
+    "current_view_rows_sha256": "b12f39299746f8c8872a1100b6bf2d78e7ad7273e2e66414b78403fd03f03ae8",
+    "review_decisions": {
+      "count": 0,
+      "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "columns": [
+        "artifact_id",
+        "candidate_id",
+        "state_json"
+      ]
+    },
+    "review_audit": {
+      "count": 0,
+      "rows_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "columns": [
+        "event_id",
+        "artifact_id",
+        "revision",
+        "operation_id",
+        "candidate_id",
+        "event_type",
+        "old_json",
+        "new_json",
+        "actor",
+        "session_id",
+        "reviewer",
+        "reason",
+        "created_at"
+      ]
+    },
+    "historical_provider_attempts": 8,
+    "historical_provider_dispatches": 8,
+    "historical_provider_outcomes": 8,
+    "source_files": [
+      {
+        "source_id": "SRC_C70218574FB158D7",
+        "frozen_source_hash_matches": true
+      },
+      {
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "frozen_source_hash_matches": true
+      }
+    ],
+    "artifact_inventory": {
+      "identity_sha256": "4e6b6901b31f0697af819b215c00399f9b3ac047c3e9d1aa1c4ab5f32a109c82",
+      "files": 36,
+      "inventory_sha256": "c492a2bf2ff87e0695a49bb037838afb9f74a170d46cc4e2952b50d310b61ec7"
+    },
+    "only_expected_stable_files_metadata_identity_changed": true
+  },
+  "provider_calls": 0,
+  "provider_liability": 0,
+  "run8_created": false,
+  "migration_performed": false,
+  "live_bounded_extraction_performed": false,
+  "production_current_view_review_writes": 0,
+  "pr96": {
+    "number": 96,
+    "url": "https://github.com/ysssss414/pro_a/pull/96",
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "modified": false,
+    "head": "e63608e303725db20541ff7d57fb62b584f6fa75",
+    "github_reported_base_ref_oid": "389399712deb9d2e1cacf41ad39e147e16b5f14b",
+    "current_remote_main": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "head_is_not_descendant_of_repair_main": true,
+    "github_mergeable": "CONFLICTING",
+    "github_merge_state": "DIRTY",
+    "read_only_merge_tree": "f7b9f5b787ee396cce9f50c1cace22a5861abb9f",
+    "conflicts": [
+      "tests/test_phase43_stage72c_retry_compatibility.py"
+    ],
+    "production_source_conflicts": [],
+    "natural_nonconflicting_tree_inherits_repaired_identity": true,
+    "inherited_blobs": {
+      "setup.py": "942be0c9cbfcaded45cf55e0141a01ec502560f1",
+      "src/pro_a/repository_identity.py": "e78e1b226a2287fd849c8871d030264eaffaa192",
+      "src/pro_a/phase4_orchestration.py": "341f1d93598d5dda42961f678d012d91064da0ac"
+    },
+    "integrated_tests": "NOT_RUN_UNRESOLVED_TEST_CONFLICT",
+    "minimal_delta_requalification": [
+      "Resolve only the Stage7.2C test-fixture conflict in a separately authorized PR 96 update; preserve the new identity tests and fail-closed native dependency checks. Pin a new candidate head and repair-main base.",
+      "On the resolved candidate tree rerun test_repository_identity, test_phase4_orchestration, test_workbench_stage7, test_phase43_stage72c_retry_compatibility, test_mcp_stage0 and test_mcp_stage3. Include processing-context/cloud/native runtime guard coverage and reject historical resume drift without any new exception.",
+      "Rerun test_source_analysis_series_binding and test_source_analysis_series_recovery, plus directly shared test_cloud_operation_adapter_binding, test_bounded_extraction_persistence and test_phase43_stage72b_extraction_retry. Use disposable fixtures and synthetic HTTP; no provider call or real migration.",
+      "Rebuild a clean isolated PEP 517 wheel from the new exact candidate head; independently install it and repeat inventory/raw Python byte comparisons, RECORD identity integrity, no-Git/unrelated-parent resolution and full source/installed phase4/cloud equality. Recompute processing/context/native/cloud hashes and do not reuse the old PR 96 artifact or receipt.",
+      "When a separate task resumes Gate A, repeat exact head/base/diff and current stable identity/health plus real schema11/target Runs 1\u20137/Production/Current View/review/provider-history/Run 8 absence snapshots. Do not infer permission for Gates B\u2013D, migration or Run 8 from this receipt."
+    ]
+  },
+  "original_release_gates_a_to_d_started": false,
+  "INSTALLED_RUNTIME_REPOSITORY_IDENTITY_R1": "PASS",
+  "STABLE_INSTALLED_REPOSITORY_IDENTITY": "VERIFIED",
+  "REAL_WORKBENCH_SCHEMA": 11,
+  "PROVIDER_CALLS": 0,
+  "RUN8_CREATED": false,
+  "PR96_MERGED": false,
+  "RESUME_SOURCE_ANALYSIS_COMPACT_WIRE_RELEASE_ACTIVATION_GATE_A": true
+}
