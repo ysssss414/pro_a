@@ -129,8 +129,7 @@ def test_semantic_token_boundary_forces_deterministic_split_and_rejects_oversize
 
 
 def test_zero_parent_source_skips_semantic_dispatch_and_stops_explicitly(tmp_path):
-    case, source = setup_source(tmp_path)
-    prepare_stage1_scale(case["config"])
+    case, source = setup_source(tmp_path, legacy=True)
     from series_binding_helpers import prepare_bounded,synthetic_providers,Transport
     prepare_bounded(case)
     run_id = start(case, source)
@@ -146,7 +145,9 @@ def test_zero_parent_source_skips_semantic_dispatch_and_stops_explicitly(tmp_pat
     assert result["state"] == "BLOCKED", json.dumps(result, sort_keys=True)
     assert result["error"]["code"] == "NATIVE_PACKET_FAILED"
     assert provider.call_count == 1
-    assert result['jobs']==[] and result['logical_extraction_series_count']==1
+    assert len(result['jobs']) == result['logical_job_count'] == 1
+    assert result['jobs'][0]['operation_kind'] == 'SOURCE_ANALYSIS_PIECE'
+    assert result['extraction_execution_mode'] == 'WHOLE_PIECE_COMPACT'
 
 
 def _node_candidate(node_type: str) -> dict:

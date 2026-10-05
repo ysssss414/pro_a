@@ -21,7 +21,8 @@ from pro_a.workbench.source_operations import (
 )
 from test_phase43_stage71_shared_core_pending import case
 from test_workbench_stage7 import TEXT, clean_pdf, upload
-from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_OPERATION as BOUNDED_OPERATION, BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION
+from pro_a.cloud_contract import SOURCE_ANALYSIS_OPERATION as WHOLE_PIECE_OPERATION
+from pro_a.whole_piece_compact import ADAPTER_VERSION as WHOLE_PIECE_ADAPTER_VERSION
 from series_binding_helpers import prepare_bounded, request_parts, response_content, rows as ledger_rows
 
 
@@ -87,7 +88,10 @@ def setup_run(tmp_path, monkeypatch):
             } for claim in claims]}
         else:
             target,source_text=request_parts(payload)
+            import re
+            target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', source_text)
             output=json.loads(response_content(target,source_text))
+            del output['dispositions']
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-dual"},
             json=lambda: {"id": "offline-dual", "model": "deepseek-flash",
                           "choices": [{"finish_reason": "stop", "message": {
@@ -113,15 +117,15 @@ def jobs(value):
 
 def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
-    assert not jobs(value)
-    assert value['providers'][BOUNDED_OPERATION].adapter_version==BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION
+    assert len(jobs(value)) == 1
+    assert value['providers'][WHOLE_PIECE_OPERATION].adapter_version==WHOLE_PIECE_ADAPTER_VERSION
     assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     final = advance(value)
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_artifact_id"]
     assert final["processing_scope_mode"] == "SHARED_CORE"
     assert final["domain_assignment_status"] == "PENDING"
     rows = jobs(value)
-    assert len(rows) == 1 and len(value["http_calls"]) == 2
+    assert len(rows) == 2 and len(value["http_calls"]) == 2
     assert len({call["system"] for call in value["http_calls"]}) == 2
     for row in rows:
         contract = operation_contract(row["operation_kind"])
@@ -132,8 +136,8 @@ def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
         assert row["state"] == "SUCCEEDED" and row["sanitized_error"] is None
         assert row["validation_status"] == "PASS"
         assert json.loads(row["configuration_json"]) == value["cloud_profile"].public_identity()
-    assert ledger_rows(value,'bounded_extraction_series')[0]['state']=='SUCCEEDED_COMPLETE'
-    assert len(ledger_rows(value,'bounded_extraction_attempts'))==1
+    assert not ledger_rows(value,'bounded_extraction_series')
+    assert not ledger_rows(value,'bounded_extraction_attempts')
     with value["service"].store.connect() as c:
         assert c.execute("SELECT COUNT(*) FROM source_processing_runs").fetchone()[0] == 1
         assert c.execute("SELECT COUNT(*) FROM registered_packets WHERE artifact_kind='REVIEW_PACKET'").fetchone()[0] == 1
@@ -144,7 +148,7 @@ def test_single_run_dual_real_adapters_to_review_packet(tmp_path, monkeypatch):
         assert "synthetic-transport-only" not in artifact.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("operation", [BOUNDED_OPERATION, OPERATION_KIND])
+@pytest.mark.parametrize("operation", [WHOLE_PIECE_OPERATION, OPERATION_KIND])
 @pytest.mark.parametrize("mismatch", ["other_adapter", "unknown_adapter", "provider"])
 def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch, operation, mismatch):
     value = setup_run(tmp_path, monkeypatch)
@@ -152,7 +156,7 @@ def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch,
         assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     selected = value["providers"][operation]
     if mismatch == "other_adapter":
-        selected = value["providers"][OPERATION_KIND if operation == BOUNDED_OPERATION else BOUNDED_OPERATION]
+        selected = value["providers"][OPERATION_KIND if operation == WHOLE_PIECE_OPERATION else WHOLE_PIECE_OPERATION]
     elif mismatch == "unknown_adapter":
         monkeypatch.setattr(selected, "adapter_version", "unknown-adapter")
     else:
@@ -163,18 +167,15 @@ def test_wrong_adapter_or_provider_rejected_before_invoke(tmp_path, monkeypatch,
     before = len(value["http_calls"])
     result = advance(value, {operation: selected})
     assert result["state"] == "BLOCKED"
-    assert result["error"]["code"] == ("BOUNDED_EXTRACTION_FAILED" if operation==BOUNDED_OPERATION else "PROVIDER_CONTRACT_MISMATCH")
+    assert result["error"]["code"] == "PROVIDER_CONTRACT_MISMATCH"
     assert len(value["http_calls"]) == before
-    if operation==BOUNDED_OPERATION:
-        assert not ledger_rows(value,'bounded_extraction_attempts') and not jobs(value)
-    else:
-        assert jobs(value)[0]['attempt_count']==0
+    assert next(j for j in jobs(value) if j['operation_kind'] == operation)['attempt_count'] == 0
 
 
 def test_missing_route_has_no_fallback(tmp_path, monkeypatch):
     value = setup_run(tmp_path, monkeypatch)
     result = advance(value, {OPERATION_KIND: value["providers"][OPERATION_KIND]})
-    assert result["error"]["code"] == "BOUNDED_EXTRACTION_FAILED"
+    assert result["error"]["code"] == "PROVIDER_OPERATION_UNAVAILABLE"
     assert not value["http_calls"]
 
 
@@ -189,11 +190,11 @@ def test_environment_mapping_and_no_network_construction(monkeypatch):
     assert profile.accepted_model_aliases == () and config.max_retries == 2
     for operation, provider in providers.items():
         assert provider.provider_identity == "deepseek"
-        assert provider.adapter_version == (BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION if operation==BOUNDED_OPERATION else adapter_version_for_operation(operation))
-        cfg=provider.cfg if operation==BOUNDED_OPERATION else provider.backend.llm.cfg
+        assert provider.adapter_version == (WHOLE_PIECE_ADAPTER_VERSION if operation==WHOLE_PIECE_OPERATION else adapter_version_for_operation(operation))
+        cfg=provider.cfg if operation==WHOLE_PIECE_OPERATION else provider.backend.llm.cfg
         assert cfg.model == profile.requested_model
         assert cfg.max_retries == 0
-        assert cfg.max_output_tokens == (12000 if operation == BOUNDED_OPERATION else 8192)
+        assert cfg.max_output_tokens == (12000 if operation == WHOLE_PIECE_OPERATION else 8192)
     assert profile.public_identity() == profile.public_identity()
     assert "api_key" not in json.dumps(profile.public_identity())
     with pytest.raises(CloudContractError, match="UNSUPPORTED_CLOUD_OPERATION"):
@@ -257,26 +258,26 @@ def test_retry_copies_operation_adapter_and_rejects_current_substitution(tmp_pat
     value = setup_run(tmp_path, monkeypatch)
     prepare_extraction_retries(value["config"])
     service = value["service"]
-    provider = value["providers"][BOUNDED_OPERATION]
-    from pro_a.bounded_source_analysis import RawSegmentResponse
+    provider = value["providers"][WHOLE_PIECE_OPERATION]
+    from pro_a.cloud_contract import ProviderFailure
     failed_requests = []
     def fail(request):
         failed_requests.append(request)
-        return RawSegmentResponse(b'',503,finish_reason='error')
+        raise ProviderFailure('PROVIDER_ERROR', retryable=False, external_outcome='KNOWN_FAILURE')
     monkeypatch.setattr(provider, "invoke", fail)
     result = advance(value)
-    assert result["state"] == "BLOCKED" and result['coverage_status']=='FAILED'
-    original=ledger_rows(value,'bounded_extraction_attempts')
-    with pytest.raises(SourceOperationError,match='BOUNDED_EXTRACTION_RETRY_OWNED_BY_SERIES'):
+    assert result["state"] == "FAILED"
+    original=ledger_rows(value,'cloud_attempts')
+    with pytest.raises(SourceOperationError,match='WHOLE_PIECE_REPROCESS_REQUIRED'):
         service.retry_failed_extraction(value['run_id'],original[0]['attempt_id'],
             retry_reason='Explicit synthetic retry',idempotency_key='operation-adapter-retry-0001')
-    assert ledger_rows(value,'bounded_extraction_attempts')==original and not jobs(value)
+    assert ledger_rows(value,'cloud_attempts') == original and len(jobs(value)) == 1
     new=service.start(value['source']['source_id'],idempotency_key='operation-adapter-reprocess-0001',reprocess_reason='Explicit synthetic reprocess')['run']
     value['run_id']=new['processing_run_id']
     advance(value)
-    wrong = {BOUNDED_OPERATION: value["providers"][OPERATION_KIND]}
+    wrong = {WHOLE_PIECE_OPERATION: value["providers"][OPERATION_KIND]}
     result = advance(value, wrong)
-    assert result["error"]["code"] == "BOUNDED_EXTRACTION_FAILED"
+    assert result["error"]["code"] == "PROVIDER_CONTRACT_MISMATCH"
     assert len(failed_requests) == 1
     assert not value["http_calls"]
 
@@ -306,13 +307,13 @@ def test_required_adapter_change_changes_new_identity(tmp_path, monkeypatch):
     service = value["service"]
     old=service.get_run(value['run_id'])
     old_inputs=ledger_rows(value,'source_cloud_inputs')
-    import pro_a.bounded_source_analysis as bounded
-    monkeypatch.setattr(bounded, "BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION", "bounded-source-analysis-segment-provider-future")
+    import pro_a.whole_piece_compact as whole
+    monkeypatch.setattr(whole, "ADAPTER_VERSION", "whole-piece-provider-future")
     runtime_identity.cache_clear()
     try:
         assert advance(value)['error']['code']=='HISTORICAL_EXTRACTION_RUNTIME_INCOMPATIBLE'
         new=service.start(value['source']['source_id'],idempotency_key='changed-operation-identity-0001',reprocess_reason='Explicit changed bounded contract')['run']
-        assert new['runtime_identity']['bounded_source_analysis']['provider_version']=='bounded-source-analysis-segment-provider-future'
+        assert new['runtime_identity']['whole_piece_compact']['adapter_version']=='whole-piece-provider-future'
         assert new['runtime_identity']['runtime_sha256']!=old['runtime_identity']['runtime_sha256']
         assert ledger_rows(value,'source_cloud_inputs')==old_inputs and not value['http_calls']
         assert operation_contract(SOURCE_ANALYSIS_OPERATION)['provider_adapter_version']==SOURCE_ANALYSIS_ADAPTER_VERSION
@@ -324,7 +325,7 @@ def test_compatibility_token_does_not_bypass_adapter_check(tmp_path, monkeypatch
     value = setup_run(tmp_path, monkeypatch)
     service = value["service"]
     service.jobs.runtime_compatibility = object()
-    monkeypatch.setattr(value['providers'][BOUNDED_OPERATION],'adapter_version',ADAPTER_VERSION)
+    monkeypatch.setattr(value['providers'][WHOLE_PIECE_OPERATION],'adapter_version',ADAPTER_VERSION)
     result=advance(value)
-    assert result['error']['code']=='BOUNDED_EXTRACTION_FAILED'
+    assert result['error']['code']=='PROVIDER_CONTRACT_MISMATCH'
     assert not ledger_rows(value,'bounded_extraction_attempts') and not value['http_calls']

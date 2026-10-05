@@ -1,4 +1,4 @@
-"""Synthetic HTTP through the real bounded adapter; no external providers."""
+"""Synthetic HTTP through the whole-piece compact adapter; no external providers."""
 from copy import deepcopy
 from dataclasses import replace
 import json
@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import requests
 
-from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_OPERATION, BoundedSourceAnalysisSegmentProvider
 from pro_a.cloud_contract import DeterministicFakeProvider
 from pro_a.config import LLMConfig
 from pro_a.workbench.bounded_extraction_persistence import prepare_bounded_extraction_persistence
@@ -36,15 +35,25 @@ def prepare_bounded(value):
 class SyntheticProviders(dict):
     @property
     def call_count(self):
-        return len(self[BOUNDED_SOURCE_ANALYSIS_OPERATION].transport.calls)+self['SEMANTIC_DECOMPOSITION'].call_count
+        return len(self['SOURCE_ANALYSIS_PIECE'].transport.calls)+self['SEMANTIC_DECOMPOSITION'].call_count
 
 
 @contextmanager
 def synthetic_providers(value,transport=None):
+    from pro_a.whole_piece_compact import WholePieceCompactProvider
+    class SyntheticWholePiece(WholePieceCompactProvider):
+        provider_identity = 'DETERMINISTIC_FAKE'
+        adapter_version = 'deterministic-fake-v1'
+
+        def invoke(self, request):
+            real = WholePieceCompactProvider(self.cfg, transport=self.transport)
+            response = real.invoke(replace(request, provider='deepseek', requested_model='deepseek-flash'))
+            return replace(response, provider=request.provider, requested_model=request.requested_model,
+                           provider_reported_model=request.requested_model)
     with patch.dict(os.environ,{'PROA_SYNTHETIC_BOUNDED_KEY':'synthetic-fixture'}):
         cfg=LLMConfig(enabled=True,api_key_env='PROA_SYNTHETIC_BOUNDED_KEY',model='deepseek-flash',
                       max_retries=0,max_output_tokens=12000,timeout_seconds=value['cloud_profile'].timeout_seconds)
-        yield SyntheticProviders({BOUNDED_SOURCE_ANALYSIS_OPERATION:BoundedSourceAnalysisSegmentProvider(cfg,transport=transport or Transport()),
+        yield SyntheticProviders({'SOURCE_ANALYSIS_PIECE':SyntheticWholePiece(cfg,transport=transport or Transport()),
                                   'SEMANTIC_DECOMPOSITION':DeterministicFakeProvider()})
 
 
@@ -75,6 +84,9 @@ class Transport:
         if self.callback:
             self.callback(json)
         target, source = request_parts(json)
+        whole = 'assigned_evidence_refs' not in target
+        if whole:
+            target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', source)
         mode = self.mode(target, len(self.calls)) if callable(self.mode) else self.mode
         if mode == 'unknown':
             raise requests.ReadTimeout('SYNTHETIC_UNTRUSTED_EXCEPTION')
@@ -96,6 +108,10 @@ class Transport:
             for disposition in value['dispositions']:
                 disposition['disposition']='NO_INDEPENDENT_CLAIM'
             content=__import__('json').dumps(value,ensure_ascii=False)
+        if whole:
+            value = __import__('json').loads(content)
+            del value['dispositions']
+            content = __import__('json').dumps(value, ensure_ascii=False)
         return Response(content)
 
 
@@ -128,74 +144,12 @@ def response_content(target, source, *, subdivision=False):
     return json.dumps(value, ensure_ascii=False)
 
 
-def providers(value, monkeypatch, transport=None, semantic=None):
-    monkeypatch.setenv('PROA_SYNTHETIC_BOUNDED_KEY', 'synthetic-fixture')
-    cfg = LLMConfig(enabled=True, api_key_env='PROA_SYNTHETIC_BOUNDED_KEY', model='deepseek-flash',
-                    max_retries=0, max_output_tokens=12000, timeout_seconds=value['cloud_profile'].timeout_seconds)
-    transport = transport or Transport()
-    bounded = BoundedSourceAnalysisSegmentProvider(cfg, transport=transport)
-    return {BOUNDED_SOURCE_ANALYSIS_OPERATION:bounded, 'SEMANTIC_DECOMPOSITION':semantic or DeterministicFakeProvider()}, transport
-
-
-def real_providers(value,monkeypatch,transport=None):
-    from pro_a.config import load_config
-    from pro_a.workbench.cloud_jobs import CloudProfile
-    from pro_a.workbench.source_operations import build_source_providers
-    from pro_a.semantic_decomposition import SEMANTIC_DECOMPOSITION_USER
-    path=value['phase4_config']
-    path.write_text(path.read_text(encoding='utf-8').replace('enabled = false\nmodel = "fake-semantic-v1"',
-                    'enabled = true\nmodel = "deepseek-flash"'),encoding='utf-8')
-    value['cloud_profile']=CloudProfile('deepseek','deepseek-flash')
-    value['service']=SourceOperations(value['config'],value['source_profile'],value['cloud_profile'])
-    monkeypatch.setenv('PROA_LLM_API_KEY','synthetic-fixture')
-    result=build_source_providers(load_config(path).llm,value['cloud_profile'])
-    transport=transport or Transport()
-    result[BOUNDED_SOURCE_ANALYSIS_OPERATION].transport=transport
-    semantic_calls=[]
-    def semantic_post(endpoint,*,json,headers,timeout):
-        semantic_calls.append(deepcopy(json))
-        assert json['max_tokens']==8192 and json['thinking']=={'type':'disabled'}
-        assert 'reasoning_effort' not in json
-        prefix,suffix=SEMANTIC_DECOMPOSITION_USER.split('{claims_json}')
-        user=json['messages'][1]['content']
-        claims=__import__('json').loads(user[len(prefix):len(user)-len(suffix) if suffix else None])
-        output={'claims':[{'parent_claim_id':c['parent_claim_id'],'ir_status':'VALID',
-                  'units':[{'predicate_family':'measurement','modality':'actual','nature':c['assigned_nature'] or 'fact',
-                      'support_evidence_unit_ids':[c['evidence_units'][0]['evidence_unit_id']],
-                      'coherence_key':'k1','coherence_type':'INDEPENDENT','time_scope':'unspecified'}]} for c in claims]}
-        return Response(__import__('json').dumps(output))
-    monkeypatch.setattr('requests.post',semantic_post)
-    value['semantic_http_calls']=semantic_calls
-    return result,transport
-
 
 def start(value, tmp_path, *, count=33):
     source = upload(value, clean_pdf(tmp_path, text=text(count)))
     run = value['service'].start(source['source_id'], idempotency_key='series-binding-synthetic-0001')['run']
     return source, run['processing_run_id']
 
-
-def advance(value, run_id, provider, *, restart=False):
-    if restart:
-        value['service'] = SourceOperations(value['config'], value['source_profile'], value['cloud_profile'])
-        if provider:
-            old = provider[BOUNDED_SOURCE_ANALYSIS_OPERATION]
-            provider = {**provider, BOUNDED_SOURCE_ANALYSIS_OPERATION:
-                        BoundedSourceAnalysisSegmentProvider(old.cfg, transport=old.transport)}
-    transport = provider[BOUNDED_SOURCE_ANALYSIS_OPERATION].transport if provider else None
-    before = len(transport.calls) if isinstance(transport, Transport) else 0
-    result = value['service'].advance_once(worker_id='synthetic-worker', provider=provider, processing_run_id=run_id)
-    if isinstance(transport, Transport):
-        assert len(transport.calls) - before <= 1
-    return result
-
-
-def finish(value, run_id, provider, *, restart=False, limit=100):
-    for _ in range(limit):
-        result = advance(value, run_id, provider, restart=restart)
-        if result['state'] in ('HUMAN_REVIEW_REQUIRED','FAILED','BLOCKED','RECOVERY_REQUIRED'):
-            return result
-    raise AssertionError('SYNTHETIC_WORKFLOW_DID_NOT_TERMINATE')
 
 
 def rows(value, table):

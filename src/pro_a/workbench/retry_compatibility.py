@@ -42,6 +42,8 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "evidence_binding.py": None,
     "source_analysis_wire.py": None,
     "bounded_source_analysis.py": None,
+    "whole_piece_compact.py": None,
+    "workbench/whole_piece_raw.py": None,
     "processing_context.py": None,
     "workbench/bounded_source_analysis.py": None,
     "workbench/bounded_extraction_store.py": None,

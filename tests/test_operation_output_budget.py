@@ -18,7 +18,7 @@ from pro_a.workbench.source_operations import SourceOperationError
 from test_cloud_operation_adapter_binding import setup_run, advance, jobs
 from test_structured_json_reasoning_policy import assert_private_surfaces, completion, reasoning_sentinel
 from test_llm import FakeResponse
-from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_SYSTEM
+from pro_a.whole_piece_compact import SYSTEM as WHOLE_PIECE_SYSTEM
 from series_binding_helpers import rows as ledger_rows
 from legacy_source_fixture import historical_case
 
@@ -91,7 +91,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     requests_seen = []
     def capture(url, **kwargs):
         payload = kwargs["json"]
-        extraction = payload["messages"][0]["content"] == BOUNDED_SOURCE_ANALYSIS_SYSTEM
+        extraction = payload["messages"][0]["content"] == WHOLE_PIECE_SYSTEM
         output = 12000 if extraction else 8192
         assert payload["max_tokens"] == output
         assert payload["thinking"] == {"type": "disabled"} and "reasoning_effort" not in payload
@@ -116,7 +116,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_id"] and final["packet_artifact_id"]
     assert requests_seen == [12000, 8192]
     rows = jobs(value)
-    assert len(rows)==1 and rows[0]['operation_kind']==OPERATION_KIND
+    assert len(rows)==2
     for row in rows:
         expected = 12000 if row["operation_kind"] == SOURCE_ANALYSIS_OPERATION else 8192
         assert (row["max_output_tokens"], row["max_total_tokens"]) == (expected, 20000)
@@ -135,13 +135,11 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     with value["service"].store.connect() as c:
         from pro_a.workbench.review_store import schema_version
         assert schema_version(c) == "12"
-    attempt=ledger_rows(value,'bounded_extraction_attempts')[0]
-    series=ledger_rows(value,'bounded_extraction_series')[0]
-    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    envelope=json.loads(next(value['config'].artifact_root.glob('cloud-results/*/*.raw.json')).read_bytes())['result']
     assert envelope['output_tokens']==10000 and envelope['reasoning_tokens']==0
-    assert ledger_rows(value,'bounded_extraction_series')[0]['state']=='SUCCEEDED_COMPLETE'
-    bounded_request=next(r for r in frozen_requests if isinstance(r,dict))
-    assert bounded_request['request']['max_tokens']==12000
+    assert not ledger_rows(value,'bounded_extraction_series')
+    whole_request=next(r for r in frozen_requests if r.operation_kind==SOURCE_ANALYSIS_OPERATION)
+    assert whole_request.max_output_tokens==12000
     assert_private_surfaces(value, caplog, tmp_path)
     record_property("extraction_completion_tokens", 10000)
     record_property("wire_output_budgets", "12000/8192")
@@ -296,14 +294,12 @@ def test_output_above_total_fails_existing_budget_gate(tmp_path, monkeypatch, op
 def test_truncation_at_12000_retains_existing_telemetry(tmp_path, monkeypatch, caplog):
     value = setup_run(tmp_path, monkeypatch)
     monkeypatch.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, finish="length", content="{", output_tokens=12000)))
-    assert advance(value)["state"] == "BLOCKED"
-    attempts=ledger_rows(value,'bounded_extraction_attempts')
-    assert len(attempts)==1 and not jobs(value)
-    outcome=ledger_rows(value,'bounded_extraction_outcomes')[0]
-    assert outcome['external_outcome']=='TRUNCATED' and outcome['output_tokens']==12000
-    attempt=attempts[0]
-    series=ledger_rows(value,'bounded_extraction_series')[0]
-    envelope=json.loads(value['service'].bounded.ledger._path(series['series_id'],attempt['attempt_id']+'.raw.json').read_bytes())
+    assert advance(value)["state"] == "FAILED"
+    attempts=ledger_rows(value,'cloud_attempts')
+    assert len(attempts)==1 and len(jobs(value))==1
+    outcome=ledger_rows(value,'cloud_attempt_outcomes')[0]
+    assert outcome['sanitized_error']=='WHOLE_PIECE_COMPACT_OUTPUT_LIMIT' and outcome['output_tokens']==12000
+    envelope=json.loads(next(value['config'].artifact_root.glob('cloud-results/*/*.raw.json')).read_bytes())['result']
     assert envelope['finish_reason']=='length' and envelope['reasoning_tokens']==0
     assert not ledger_rows(value,'bounded_extraction_segment_results')
     assert_private_surfaces(value, caplog, tmp_path)

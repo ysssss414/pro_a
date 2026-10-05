@@ -218,12 +218,12 @@ def test_golden_path_uses_durable_jobs_and_survives_restart(tmp_path):
     source, started, final, provider = start_and_finish(case, clean_pdf(tmp_path))
     assert final["state"] == "HUMAN_REVIEW_REQUIRED"
     assert final["packet_artifact_id"] and final["review"]["status"] == "DRAFT"
-    assert len(final["jobs"]) == 1 and provider.call_count == 2
-    assert final['logical_extraction_series_count']==1 and final['logical_job_count']==2
-    assert final['provider_segment_attempt_count']==1
+    assert len(final["jobs"]) == 2 and provider.call_count == 2
+    assert final['extraction_execution_mode']=='WHOLE_PIECE_COMPACT' and final['logical_job_count']==2
+    assert all(job['attempt_count']==1 for job in final['jobs'])
     assert all(job["retry_owner"] == RETRY_OWNER for job in final["jobs"])
     assert all(job["runtime_identity"]["cloud_contract_version"] == CONTRACT_VERSION for job in final["jobs"])
-    assert final["usage"]["status"] == "KNOWN" and final["usage"]["total_tokens"] == 120
+    assert final["usage"]["status"] == "KNOWN" and final["usage"]["total_tokens"] == 270
     restarted = SourceOperations(case["config"], case["source_profile"], case["cloud_profile"])
     persisted = restarted.source(source["source_id"])
     assert persisted["latest_run"]["processing_run_id"] == started["run"]["processing_run_id"]
@@ -255,7 +255,7 @@ def test_budget_failure_propagates_and_explicit_failed_reprocess_keeps_source_id
     with synthetic_providers(case) as provider:
         failed = service.advance_once(worker_id="budget-worker", provider=provider,
                                   processing_run_id=run["processing_run_id"])
-    assert failed["state"]=='BLOCKED' and failed["error"]["code"]=='SOURCE_ORCHESTRATION_BLOCKED'
+    assert failed["state"]=='FAILED' and failed["error"]["code"]=='BUDGET_EXCEEDED'
     assert provider['SEMANTIC_DECOMPOSITION'].call_count == 0
     reprocessed = service.start(source["source_id"], idempotency_key="stage7-budget-run-0002",
                                 reprocess_reason="Explicitly changed bounded runtime after failure.")
@@ -279,7 +279,7 @@ def test_runtime_and_registered_input_drift_fail_closed_without_provider_call(tm
     with synthetic_providers(case) as provider:
         blocked = case["service"].advance_once(worker_id="drift-worker", provider=provider,
                                            processing_run_id=run["processing_run_id"])
-    assert blocked["state"] == "BLOCKED" and blocked['error']['code']=='BOUNDED_INPUT_ARTIFACT_MISMATCH'
+    assert blocked["state"] == "BLOCKED" and blocked['error']['code']=='WHOLE_PIECE_INPUT_ARTIFACT_MISMATCH'
     assert provider.call_count == 0
 
     other = upload(case, clean_pdf(tmp_path, "runtime.pdf", TEXT + " Runtime case."))

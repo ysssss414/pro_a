@@ -70,12 +70,12 @@ def test_overflow_requires_durable_capacity_evidence(setup,invalid):
 def test_active_runtime_closure_and_historical_surfaces():
     from pro_a.workbench.cloud_jobs import runtime_identity
     from pro_a.workbench.retry_compatibility import _execution_surface_comparison, _CLOUD_EXECUTION_SURFACE
-    from pro_a.bounded_source_analysis import binding_contract
+    from pro_a.whole_piece_compact import contract
     value=runtime_identity('semantic-backend-adapter-v2',workbench_schema_version='12')
-    assert value['bounded_source_analysis']==binding_contract()
+    assert value['whole_piece_compact']==contract() and 'bounded_source_analysis' not in value
     for name in ('bounded_extraction.py','evidence_binding.py','source_analysis_wire.py',
                  'bounded_source_analysis.py','workbench/bounded_source_analysis.py',
-                 'workbench/bounded_extraction_store.py'):
+                 'workbench/bounded_extraction_store.py', 'whole_piece_compact.py', 'workbench/whole_piece_raw.py'):
         assert name in _CLOUD_EXECUTION_SURFACE
     for kind in ('cloud','native'):
         result=_execution_surface_comparison(kind,'389399712deb9d2e1cacf41ad39e147e16b5f14b')

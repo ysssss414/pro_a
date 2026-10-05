@@ -80,14 +80,23 @@ def frozen_cloud(row):
         if canonical(profile.public_identity()) != row['configuration_json']:
             raise ValueError()
         budget = budget_for_operation(row['operation_kind'], profile.max_total_tokens)
+        prompt = json.loads(row['prompt_json'])
+        whole_piece = prompt.get('operation_schema_version') == 'whole-piece-compact-source-analysis-response-v1'
         for field in fields(CloudProfile):
             if field.name == 'provider_adapter_version':
-                if row[field.name] != profile.adapter_for_operation(row['operation_kind']):
+                expected_adapter = profile.adapter_for_operation(row['operation_kind'])
+                if (row['operation_kind'] == 'SOURCE_ANALYSIS_PIECE'
+                        and profile.provider != 'DETERMINISTIC_FAKE'
+                        and prompt.get('operation_schema_version') == 'source-analysis-piece-v1'):
+                    expected_adapter = 'source-analysis-piece-adapter-v2'
+                if row[field.name] != expected_adapter:
                     raise ValueError()
                 continue
             stored = (json.loads(row['accepted_model_aliases_json'])
                       if field.name == 'accepted_model_aliases' else row[field.name])
             expected = budget[field.name] if field.name in budget else value[field.name]
+            if whole_piece and field.name in ('max_calls', 'max_attempts'):
+                expected = 1
             if stored != expected:
                 raise ValueError()
         if (row['retry_owner'] != value['retry_owner']

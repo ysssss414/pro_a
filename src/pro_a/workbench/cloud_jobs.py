@@ -59,6 +59,7 @@ FAULT_POINTS = (
     "before_claim", "after_claim", "after_dispatch_intent", "before_network_call",
     "after_provider_response", "before_result_artifact_durable",
     "after_result_artifact_durable", "before_terminal_update", "after_terminal_update",
+    "before_raw_artifact_durable", "after_raw_artifact_before_event_commit", "after_raw_artifact_durable",
 )
 
 
@@ -159,12 +160,13 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'workbench/extraction_retry.py', 'bounded_extraction.py', 'evidence_binding.py',
                  'source_analysis_wire.py', 'bounded_source_analysis.py', 'processing_context.py',
                  'workbench/bounded_source_analysis.py', 'workbench/bounded_extraction_store.py',
-                 'workbench/bounded_extraction_persistence.py')
+                 'workbench/bounded_extraction_persistence.py', 'whole_piece_compact.py',
+                 'workbench/whole_piece_raw.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     if workbench_schema_version == "12":
-        from pro_a.bounded_source_analysis import binding_contract
-        value["bounded_source_analysis"] = binding_contract()
+        from pro_a.whole_piece_compact import contract
+        value["whole_piece_compact"] = contract()
     value["runtime_sha256"] = digest(value)
     return value
 
@@ -469,8 +471,10 @@ class CloudJobs:
                 canonical(operation), prompt_sha, canonical(configuration), configuration["configuration_sha256"],
                 canonical(checkpoint), self.profile.provider, self.profile.requested_model,
                 canonical(list(self.profile.accepted_model_aliases)), self.profile.adapter_for_operation(operation_kind),
-                self.profile.timeout_seconds, budget["max_output_tokens"], self.profile.max_calls,
-                self.profile.max_attempts, budget["max_total_tokens"], RETRY_OWNER, RETRY_POLICY_ID,
+                self.profile.timeout_seconds, budget["max_output_tokens"],
+                1 if operation_kind == "SOURCE_ANALYSIS_PIECE" else self.profile.max_calls,
+                1 if operation_kind == "SOURCE_ANALYSIS_PIECE" else self.profile.max_attempts,
+                budget["max_total_tokens"], RETRY_OWNER, RETRY_POLICY_ID,
                 "QUEUED", "QUEUED", created, created,
             ))
             self._event(connection, job_id, "JOB_CREATED", {
@@ -845,7 +849,8 @@ class CloudJobs:
                             {"code": "UNKNOWN_EXTERNAL_OUTCOME", "automatic_retry": False})
                 return False
             from .extraction_retry import for_job
-            retry = (for_job(connection, job_id) is None and failure.retryable
+            retry = (row["operation_kind"] != "SOURCE_ANALYSIS_PIECE"
+                     and for_job(connection, job_id) is None and failure.retryable
                      and row["attempt_count"] < min(row["max_attempts"], row["max_calls"]))
             if retry:
                 connection.execute('''UPDATE cloud_jobs SET phase='CLAIMED',sanitized_error=?,
@@ -957,7 +962,7 @@ class CloudJobs:
             if not existing:
                 connection.execute('''INSERT INTO cloud_job_results VALUES(?,?,?,?,?,?,?,?)''',
                                    (result_id, request.job_id, request.attempt_id, relative, sha,
-                                    validation_status, digest({"validator": "existing-proposition-ir-v2.1",
+                                    validation_status, digest({"validator": request.prompt_identity["validator"],
                                                                "status": validation_status}), now()))
                 connection.execute('''INSERT INTO cloud_attempt_outcomes(attempt_id,outcome,external_outcome,
                     provider_reported_model,provider_request_id,usage_status,input_tokens,output_tokens,
@@ -1115,6 +1120,16 @@ class CloudJobs:
                 job_row = connection.execute("SELECT * FROM cloud_jobs WHERE job_id=?",
                                              (current_job,)).fetchone()
                 aliases = set(json.loads(job_row["accepted_model_aliases_json"]))
+            from . import whole_piece_raw
+            whole_piece = whole_piece_raw.enabled(request.prompt_identity)
+            if whole_piece:
+                self._fault(fault_at, "before_raw_artifact_durable")
+                with self.store.connect(operator_write=True) as connection:
+                    connection.execute("BEGIN IMMEDIATE")
+                    self._owned(connection, current_job, worker_id, fence)
+                    result = whole_piece_raw.persist(self, connection, request, result)
+                    self._fault(fault_at, "after_raw_artifact_before_event_commit")
+                self._fault(fault_at, "after_raw_artifact_durable")
             if result.provider != request.provider or result.requested_model != request.requested_model:
                 model_status, terminal_error = "MISMATCH", "PROVIDER_IDENTITY_MISMATCH"
             elif result.provider_reported_model == request.requested_model:
@@ -1125,7 +1140,10 @@ class CloudJobs:
                 model_status, terminal_error = "MISMATCH", "MODEL_IDENTITY_MISMATCH"
             normalized = None
             validation_status = "NOT_RUN"
-            if terminal_error is None:
+            if whole_piece:
+                result, normalized, validation_status, model_status, terminal_error = whole_piece_raw.evaluate(
+                    request, result, aliases)
+            elif terminal_error is None:
                 try:
                     normalized = validate_output(request, result.output)
                     validation_status = "PASS"
@@ -1152,9 +1170,33 @@ class CloudJobs:
         ).fetchone()
         if attempt is None:
             return False
+        from . import whole_piece_raw
+        whole_piece = whole_piece_raw.enabled(json.loads(row["prompt_json"]))
+        raw_evaluation = None
+        if whole_piece:
+            identity = json.loads(attempt["request_identity_json"])
+            request = CloudRequest(
+                job_id=row["job_id"], attempt_id=attempt["attempt_id"], attempt_number=attempt["attempt_number"],
+                operation_kind=row["operation_kind"], input_artifact_id=row["input_artifact_id"],
+                input_sha256=row["input_sha256"], source_id=row["source_id"],
+                runtime_identity=json.loads(row["runtime_json"]), schema_version=identity["schema_version"],
+                provider=row["provider"], requested_model=row["requested_model"],
+                prompt_identity=json.loads(row["prompt_json"]), configuration_identity=json.loads(row["configuration_json"]),
+                timeout_seconds=row["timeout_seconds"], max_output_tokens=row["max_output_tokens"],
+                retry_policy_id=row["retry_policy_id"], budget_identity=identity["budget_identity"], payload=self._input_payload(row))
+            if request.public_identity() != identity or request.request_sha256 != attempt["request_sha256"]:
+                raise JobError("WHOLE_PIECE_REQUEST_BINDING_MISMATCH")
+            raw = whole_piece_raw.restore(self, connection, request)
+            if raw is not None:
+                raw_evaluation = whole_piece_raw.evaluate(request, raw, set(json.loads(row["accepted_model_aliases_json"])))
+                result, normalized, status, model, error = raw_evaluation
+                self._write_result_artifact(request, self._durable_result(request, result, model),
+                                            status, normalized, model, error)
         path, relative = self._artifact_path(row["job_id"], attempt["attempt_id"], create=False)
         if not path.exists():
             return False
+        if whole_piece and raw_evaluation is None:
+            raise JobError("WHOLE_PIECE_RAW_ARTIFACT_MISSING")
         try:
             content = path.read_bytes()
             envelope = json.loads(content)
@@ -1221,7 +1263,9 @@ class CloudJobs:
                 model_status, terminal_error = "MISMATCH", "MODEL_IDENTITY_MISMATCH"
             normalized = None
             validation_status = "NOT_RUN"
-            if terminal_error is None:
+            if whole_piece:
+                _, normalized, validation_status, model_status, terminal_error = raw_evaluation
+            elif terminal_error is None:
                 if (envelope["raw_provider_output"] is None
                         and envelope["validation_status"] == "FAIL"
                         and envelope["normalized_error"] == "OUTPUT_VALIDATION_FAILED"):
@@ -1256,7 +1300,7 @@ class CloudJobs:
         if not existing:
             connection.execute("INSERT INTO cloud_job_results VALUES(?,?,?,?,?,?,?,?)", (
                 result_id, row["job_id"], attempt["attempt_id"], relative, sha,
-                validation_status, digest({"validator": "existing-proposition-ir-v2.1",
+                validation_status, digest({"validator": request.prompt_identity["validator"],
                                            "status": validation_status}), now(),
             ))
             connection.execute('''INSERT INTO cloud_attempt_outcomes(attempt_id,outcome,external_outcome,

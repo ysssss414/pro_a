@@ -12,6 +12,7 @@ from .analyzer import _MARKDOWN_ESCAPABLE, canonicalize_text
 from .source_analysis_wire import SourceEvidenceCatalog, SourcePieceContext, build_source_evidence_catalog
 
 SOURCE_ANALYSIS_EVIDENCE_BINDING_VERSION = "source-analysis-evidence-binding-v2"
+EVIDENCE_MODES = ("WHOLE_UNIT", "RAW_SUBSPAN", "NORMALIZED_SUBSPAN")
 EVIDENCE_SELECTION_FIELDS = frozenset(("evidence_ref", "evidence_selector", "evidence_occurrence", "evidence_mode", "evidence_pointer"))
 
 
@@ -102,7 +103,7 @@ def resolve_evidence_binding_v2(selection: dict, catalog: SourceEvidenceCatalog,
     selector = selection.get("evidence_selector")
     occurrence = selection.get("evidence_occurrence")
     requested = selection.get("evidence_mode")
-    if requested is not None and requested not in ("WHOLE_UNIT", "RAW_SUBSPAN", "NORMALIZED_SUBSPAN"):
+    if requested is not None and requested not in EVIDENCE_MODES:
         raise EvidenceBindingError("INVALID_EVIDENCE_MODE")
     if "evidence_occurrence" in selection and (type(occurrence) is not int or occurrence <= 0):
         raise EvidenceBindingError("INVALID_EVIDENCE_OCCURRENCE")
