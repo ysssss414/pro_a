@@ -9,7 +9,7 @@ from pro_a.workbench.bounded_extraction_store import BoundedExtractionStore
 from pro_a.workbench.bounded_source_analysis import BoundedSourceAnalysisRunner
 from pro_a.workbench.source_operations import SourceOperations
 from pro_a.workbench.store import Store
-from series_binding_helpers import case, providers, start, advance, finish, Transport
+from historical_bounded_fixture import historical_bounded_case
 
 
 def snapshot(config):
@@ -24,18 +24,10 @@ def forbidden(*args, **kwargs):
 
 @pytest.mark.parametrize('state', ['planned', 'partial', 'subdivided', 'complete', 'failed', 'unknown'])
 def test_bounded_projection_matches_native_without_actions(tmp_path, monkeypatch, state):
-    value = case(tmp_path)
-    mode = {'subdivided': 'truncated', 'failed': 'malformed', 'unknown': 'unknown'}.get(state)
-    provider, transport = providers(value, monkeypatch, Transport(mode=mode))
-    source, run_id = start(value, tmp_path)
-    advance(value, run_id, provider)
-    if state == 'complete':
-        finish(value, run_id, provider)
-    elif state != 'planned':
-        advance(value, run_id, provider)
+    value = historical_bounded_case(tmp_path, state)
+    source, run_id = value['source'], value['run_id']
     expected = value['service'].get_run(run_id)
     before = snapshot(value['config'])
-    calls = len(transport.calls)
     connect = Store.connect
 
     def readonly(store, *, operator_write=False):
@@ -54,7 +46,6 @@ def test_bounded_projection_matches_native_without_actions(tmp_path, monkeypatch
     assert projected == bridge._run_projection(expected)
     assert bridge.get_source(source['source_id']).latest_run == projected
     assert snapshot(value['config']) == before
-    assert len(transport.calls) == calls
     bounded = bridge.operations.bounded
     for obj in (bounded, bounded.ledger, bounded.ledger.store):
         assert type(obj).__bases__ == (object,)
@@ -66,11 +57,8 @@ def test_bounded_projection_matches_native_without_actions(tmp_path, monkeypatch
 
 @pytest.mark.parametrize('tamper', ['event', 'artifact'])
 def test_bounded_read_rejects_tampering_without_repair(tmp_path, monkeypatch, tamper):
-    value = case(tmp_path)
-    provider, _ = providers(value, monkeypatch)
-    source, run_id = start(value, tmp_path)
-    advance(value, run_id, provider)
-    advance(value, run_id, provider)
+    value = historical_bounded_case(tmp_path, 'partial')
+    source, run_id = value['source'], value['run_id']
     if tamper == 'event':
         with Store(value['config']).connect(operator_write=True) as connection:
             # Corrupt the disposable fixture after removing its append-only trigger.

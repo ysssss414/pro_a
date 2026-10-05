@@ -70,8 +70,9 @@ def test_api_invalid_reason_matrix_has_no_writes(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize('reason', VALID_REASONS, ids=['english', 'chinese', 'mixed', 'digits', 'punctuation', 'fullwidth', 'space-emoji', 'max-length'])
-def test_valid_unicode_reason_preserved(tmp_path, monkeypatch, reason):
+def test_valid_unicode_reason_reaches_runtime_guard_without_writes(tmp_path, monkeypatch, reason):
     value = failed(tmp_path)
+    before = retry_state(value)
     monkeypatch.setenv('PRO_A_WORKBENCH_TOKEN', 's' * 40)
     app = create_app(value['config'], cloud_profile=value['cloud_profile'], source_profile=value['source_profile'])
     path = PREFIX + f"/source-operations/runs/{value['run_id']}/attempts/{value['attempt_id']}/retry"
@@ -80,12 +81,10 @@ def test_valid_unicode_reason_preserved(tmp_path, monkeypatch, reason):
                            headers={'origin': value['config'].origin}).json()['csrf_token']
         response = client.post(path, json={'retry_reason': reason, 'idempotency_key': 'stage72b-r1-valid-reason'},
                                headers={'origin': value['config'].origin, 'x-csrf-token': csrf})
-        assert response.status_code == 200
-        accepted = response.json()
-    assert accepted['retry']['retry_reason'] == reason
-    duplicate = retry(value, key='stage72b-r1-valid-reason', reason=reason)
-    assert duplicate['duplicate'] and duplicate['retry'] == accepted['retry']
-    with Store(value['config']).connect() as connection:
-        assert connection.execute('SELECT retry_reason FROM extraction_retries').fetchone()[0] == reason
-        assert connection.execute('SELECT count(*) FROM source_processing_runs').fetchone()[0] == 1
-        assert connection.execute('SELECT count(*) FROM cloud_attempt_dispatches').fetchone()[0] == 1  # Original fake failure only.
+        assert response.status_code == 409
+        assert response.json() == {'detail': 'RETRY_RUNTIME_INCOMPATIBLE'}
+    # Valid Unicode passes reason validation, but cannot authorize execution
+    # across the old verbose/bounded and whole-piece runtime surfaces.
+    with pytest.raises(SourceOperationError, match='^RETRY_RUNTIME_INCOMPATIBLE$'):
+        retry(value, key='stage72b-r1-valid-reason', reason=reason)
+    assert retry_state(value) == before

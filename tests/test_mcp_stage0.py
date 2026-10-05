@@ -4,6 +4,7 @@ from dataclasses import replace
 import asyncio
 import hashlib
 import json
+from pathlib import Path
 import shutil
 import socket
 import sqlite3
@@ -412,7 +413,8 @@ def write_config(case, tmp_path):
 def test_stdio_transport(case, tmp_path):
     config = write_config(case, tmp_path)
     async def exercise():
-        target = StdioServerParameters(command=sys.executable, args=['-m', 'pro_a.mcp.server', '--config', str(config)])
+        target = StdioServerParameters(command=sys.executable, args=['-m', 'pro_a.mcp.server', '--config', str(config)],
+                                       env={'PYTHONPATH': str(Path(__file__).resolve().parents[1] / 'src')})
         async with Client(target) as client:
             assert len((await client.list_tools()).tools) == len(TOOLS)
             result = await client.call_tool('pro_a_health')

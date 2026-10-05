@@ -31,7 +31,7 @@ def test_selected_policy_tuple_and_unchanged_operation_contracts(monkeypatch):
     identity = profile.public_identity()
     assert identity["operation_output_budget_policy_version"] == "operation-output-budget-v1"
     for operation, output, adapter in (
-        ("SOURCE_ANALYSIS_PIECE", 12000, "source-analysis-piece-adapter-v2"),
+        ("SOURCE_ANALYSIS_PIECE", 12000, "whole-piece-compact-source-analysis-adapter-v1"),
         ("SEMANTIC_DECOMPOSITION", 8192, "semantic-backend-adapter-v2"),
     ):
         assert identity["operation_output_budgets"][operation] == {"max_output_tokens": output, "max_total_tokens": 20000}
@@ -68,7 +68,7 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
         from test_llm import FakeResponse
         from test_structured_json_reasoning_policy import completion
         old.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, content="{")))
-        assert advance(value)["state"] == "BLOCKED"
+        assert advance(value)["state"] == "FAILED"
     service = value["service"]
     def inputs(run_id):
         with service.store.connect() as c:
@@ -82,9 +82,9 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
     service.advance_once(worker_id="capacity-r2", processing_run_id=created["processing_run_id"], provider=None)
     current = inputs(created['processing_run_id'])
     new_document = input_document(current[0])
-    assert new_document["payload"]['native']["initial_plan_sha256"] != old_document["payload"]['native']["initial_plan_sha256"]
+    assert new_document["payload"]["initial_plan_sha256"] != old_document["payload"]["initial_plan_sha256"]
     for row, document in ((before[0], old_document), (current[0], new_document)):
-        assert document["payload"]['native']["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
+        assert document["payload"]["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
         assert json.loads(row["checkpoint_json"])["plan_sha256"] == document["checkpoint"]["plan_sha256"]
     assert current[0]["sha256"] != before[0]["sha256"]
     assert current[0]["artifact_id"] != before[0]["artifact_id"]

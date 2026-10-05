@@ -33,7 +33,7 @@ RETRY_POLICY_ID = "stage6-operational-retry-v1"
 PROMPT_ID = "semantic-decomposition"
 PROMPT_VERSION = "2.1"
 ADAPTER_VERSION = "semantic-backend-adapter-v2"
-SOURCE_ANALYSIS_ADAPTER_VERSION = "source-analysis-piece-adapter-v2"
+SOURCE_ANALYSIS_ADAPTER_VERSION = "whole-piece-compact-source-analysis-adapter-v1"
 USAGE_STATUSES = ("KNOWN", "UNKNOWN")
 OUTCOME_STATUSES = ("NOT_DISPATCHED", "KNOWN_FAILURE", "UNKNOWN")
 
@@ -89,21 +89,22 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
             "validator": "existing-proposition-ir-v2.1",
         }
     if operation_kind == SOURCE_ANALYSIS_OPERATION:
-        system_sha = hashlib.sha256(SOURCE_ANALYSIS_SYSTEM.encode("utf-8")).hexdigest()
+        from .whole_piece_compact import SYSTEM, RESPONSE_VERSION, PROMPT_VERSION as WHOLE_PIECE_PROMPT_VERSION
+        system_sha = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()
         combined = hashlib.sha256(
-            (SOURCE_ANALYSIS_SYSTEM + "\0" + SOURCE_ANALYSIS_USER).encode("utf-8")
+            (SYSTEM + "\0" + WHOLE_PIECE_PROMPT_VERSION).encode("utf-8")
         ).hexdigest()
         return {
             "operation_kind": SOURCE_ANALYSIS_OPERATION,
             "thinking_policy_version": STRUCTURED_JSON_REASONING_POLICY_VERSION,
             "thinking_mode": STRUCTURED_JSON_THINKING_MODE,
             "provider_adapter_version": adapter_version_for_operation(operation_kind),
-            "operation_schema_version": "source-analysis-piece-v1",
-            "prompt_id": "source-analysis-piece",
-            "prompt_version": "phase3e2sl6",
+            "operation_schema_version": RESPONSE_VERSION,
+            "prompt_id": "whole-piece-compact-source-analysis",
+            "prompt_version": WHOLE_PIECE_PROMPT_VERSION,
             "system_prompt_sha256": system_sha,
             "prompt_bundle_sha256": combined,
-            "validator": "bounded-source-analysis-piece-v1+native-analyzer-replay",
+            "validator": "source-analysis-wire-v3+evidence-binding-v2+native-analyzer-replay",
         }
     raise CloudContractError("UNSUPPORTED_CLOUD_OPERATION", 422)
 
@@ -226,7 +227,7 @@ class CloudResult:
     output_tokens: int | None
     total_tokens: int | None
     cached_tokens: int | None
-    output: Mapping[str, Any]
+    output: Mapping[str, Any] | str
     transport_diagnostic: Mapping[str, Any] | None = None
     reasoning_tokens: int | None = None
 
@@ -333,7 +334,7 @@ class SemanticBackendProvider:
 class SourceAnalysisPieceProvider:
     """One existing Source-analysis prompt per durable provider attempt."""
 
-    adapter_version = SOURCE_ANALYSIS_ADAPTER_VERSION
+    adapter_version = "source-analysis-piece-adapter-v2"
     thinking_mode = STRUCTURED_JSON_THINKING_MODE
 
     def __init__(self, llm: ChatLLM, *, provider_identity: str):

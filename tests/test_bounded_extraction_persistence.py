@@ -269,8 +269,9 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
     from pro_a.workbench.review_workbench import ReviewWorkbench
     from pro_a.workbench.domains import prepare_domains
     from pro_a.mcp.service import ReadService
-    case, source = setup_source(tmp_path)
+    case, source = setup_source(tmp_path, legacy=True)
     config = case["config"]
+    prepare_domains(config)
     prepare_stage1_scale(config)
     prepare_stage6_lifecycle(config)
     production = config.knowledge_db.read_bytes()
@@ -283,7 +284,7 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
     with synthetic_providers(case) as provider:
         for _ in range(4):
             final = case["service"].advance_once(worker_id="synthetic", provider=provider, processing_run_id=run)
-            if final["state"] == "HUMAN_REVIEW_REQUIRED":
+            if final is None or final["state"] in ("HUMAN_REVIEW_REQUIRED", "BLOCKED", "FAILED", "RECOVERY_REQUIRED"):
                 break
     assert final["state"] == "HUMAN_REVIEW_REQUIRED", final
     assert provider.call_count == 2
@@ -298,9 +299,9 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
     assert lifecycle_status(config)["schema_version"] == "12"
     with Store(config).connect() as c:
         assert stage1_capacity(c)["native_pending_rows"] > 0
-        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series").fetchone()[0] == 1
-        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series_results").fetchone()[0] == 1
-        assert c.execute("SELECT COUNT(*) FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone()[0] == 0
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series").fetchone()[0] == 0
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series_results").fetchone()[0] == 0
+        assert c.execute("SELECT COUNT(*) FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone()[0] == 1
     assert runtime_identity("source-analysis-piece-adapter-v2", workbench_schema_version="12")["workbench_schema_version"] == "12"
     assert config.state_db.read_bytes() == before and config.knowledge_db.read_bytes() == production
 

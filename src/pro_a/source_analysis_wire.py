@@ -20,6 +20,8 @@ from .parsers import SOURCE_MARKER
 SOURCE_ANALYSIS_WIRE_SCHEMA_VERSION = "source-analysis-wire-v2"
 SOURCE_ANALYSIS_EVIDENCE_UNIT_VERSION = "source-analysis-evidence-unit-v1"
 SOURCE_ANALYSIS_WIRE_EXPANDER_VERSION = "source-analysis-wire-expander-v1"
+NODE_MATCH_ROLES = ("primary", "related")
+SOURCE_REFERENCE_RELATION_TYPES = ("references", "updates", "derived_from")
 
 
 class SourceAnalysisWireError(ValueError):
@@ -183,7 +185,7 @@ def _confidence(value: Any, path: str) -> None:
         _fail(path, "finite confidence in 0..1 required")
 
 
-def _enum(value: Any, choices: list[str] | set[str], path: str) -> None:
+def _enum(value: Any, choices: list[str] | set[str] | tuple[str, ...], path: str) -> None:
     if not isinstance(value, str) or value not in choices:
         _fail(path, "unsupported enum")
 
@@ -278,7 +280,7 @@ def validate_source_analysis_wire_v2(wire: Any, catalog: SourceEvidenceCatalog,
     for match in items("node_matches"):
         _object(match, "node_match", {"node_id", "role", "confidence", "evidence_ref"}, {"reason"})
         node_ids([match["node_id"]], "node_match.node_id")
-        _enum(match["role"], {"primary", "related"}, "node_match.role")
+        _enum(match["role"], NODE_MATCH_ROLES, "node_match.role")
         _confidence(match["confidence"], "node_match.confidence")
         _string(match.get("reason", ""), "node_match.reason")
         evidence(match["evidence_ref"], "node_match.evidence_ref")
@@ -315,7 +317,7 @@ def validate_source_analysis_wire_v2(wire: Any, catalog: SourceEvidenceCatalog,
     for reference in items("source_references"):
         _object(reference, "source_reference", {"title", "relation_type"}, {"note"})
         _string(reference["title"], "source_reference.title", nonempty=True)
-        _enum(reference["relation_type"], {"references", "updates", "derived_from"}, "source_reference.relation_type")
+        _enum(reference["relation_type"], SOURCE_REFERENCE_RELATION_TYPES, "source_reference.relation_type")
         _string(reference.get("note", ""), "source_reference.note")
 
 
