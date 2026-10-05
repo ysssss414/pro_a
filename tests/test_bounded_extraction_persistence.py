@@ -253,6 +253,8 @@ def test_migration_rejects_active_existing_work(tmp_path, cloud):
     run = start(case, source)
     if cloud:
         case["service"].advance_once(worker_id="synthetic", provider=DeterministicFakeProvider(), processing_run_id=run)
+        # In-flight work must block even after its owning Run becomes terminal.
+        assert case["service"].jobs._claim("synthetic-cloud", None, 180) is not None
         case["service"]._transition(run, "BLOCKED", "SYNTHETIC_STOP")
     before = config.state_db.read_bytes()
     with pytest.raises(BoundaryError, match="REQUIRES_DRAIN"):
