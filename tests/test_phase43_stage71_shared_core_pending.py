@@ -1,4 +1,4 @@
-"""Stage 7.1 pending-domain processing on disposable schema 11 fixtures."""
+"""Stage 7.1 pending-domain processing on disposable bounded schema12 fixtures."""
 from __future__ import annotations
 
 import asyncio
@@ -15,6 +15,7 @@ from pro_a.workbench.config import BoundaryError
 from pro_a.workbench.api import PREFIX, create_app
 from pro_a.workbench.domains import Domains, prepare_domains
 from pro_a.workbench.lifecycle_closure import prepare_stage6_lifecycle
+from pro_a.workbench.bounded_extraction_persistence import prepare_bounded_extraction_persistence
 from pro_a.workbench.review_workbench import ReviewWorkbench
 from pro_a.workbench.source_operations import SourceOperationError
 from pro_a.workbench.stage1_scale import Stage1ReviewProjection, prepare_stage1_scale, stage1_capacity
@@ -22,6 +23,7 @@ from pro_a.workbench.store import Store
 from test_phase43_stage7_community import COMPANY, bundle
 from test_workbench_stage7 import clean_pdf, upload
 from workbench_stage7_fixture import stage7_fixture
+from series_binding_helpers import synthetic_providers
 
 
 def case(tmp_path):
@@ -29,14 +31,15 @@ def case(tmp_path):
     prepare_domains(value['config'])
     prepare_stage1_scale(value['config'])
     prepare_stage6_lifecycle(value['config'])
+    prepare_bounded_extraction_persistence(value['config'])
     return value
 
 
 def finish(value, run_id):
-    provider = DeterministicFakeProvider()
-    for _ in range(3):
-        result = value['service'].advance_once(worker_id='stage71-fake', provider=provider,
-                                               processing_run_id=run_id)
+    with synthetic_providers(value) as provider:
+        for _ in range(3):
+            result = value['service'].advance_once(worker_id='stage71-fake', provider=provider,
+                                                   processing_run_id=run_id)
     assert result['state'] == 'HUMAN_REVIEW_REQUIRED'
     assert provider.call_count == 2
     return result
@@ -111,10 +114,11 @@ def test_community_pending_without_registered_domain(tmp_path):
     value = case(tmp_path)
     with sqlite3.connect(value['config'].knowledge_db) as connection:
         connection.execute("INSERT INTO nodes(node_id,canonical_name,primary_type,description,status,created_at,updated_at) "
-                           "VALUES(?, 'Synthetic Company', 'Company', 'Synthetic', 'active', '2026-09-23', '2026-09-23')",
+                           "VALUES(?, 'Synthetic Target Company', 'Company', 'Synthetic', 'active', '2026-09-23', '2026-09-23')",
                            (COMPANY,))
     from pro_a.community_material import import_bundle, preview
-    raw = bundle()
+    # The bounded double's candidate must be explicitly named in Source evidence.
+    raw = bundle(evidence='Synthetic Company reported 2026 capacity growth of 20 percent.')
     summary = preview(value['config'], raw, COMPANY)
     assert summary['processing_scope'] == {'mode': 'SHARED_CORE_PENDING', 'domain_assignment_status': 'PENDING'}
     with Store(value['config']).connect() as connection:
@@ -161,12 +165,36 @@ def test_community_http_preview_and_import_without_domain_header(tmp_path, monke
         assert imported.json()['run']['processing_scope_mode'] == 'SHARED_CORE'
 
 
+@pytest.mark.parametrize('version', ['10', '11', '12'])
+def test_community_domains_read_is_schema12_additive_and_never_writes(tmp_path, monkeypatch, version):
+    value = case(tmp_path)
+    with Store(value['config']).connect(operator_write=True) as connection:
+        connection.execute("UPDATE workbench_meta SET value=? WHERE key='schema_version'", (version,))
+    monkeypatch.setenv('PRO_A_WORKBENCH_TOKEN', 's' * 40)
+    app = create_app(value['config'], cloud_profile=value['cloud_profile'], source_profile=value['source_profile'])
+    before = value['config'].state_db.read_bytes()
+    production = value['config'].knowledge_db.read_bytes()
+    with TestClient(app, base_url='http://127.0.0.1:8000', client=('127.0.0.1', 1)) as client:
+        client.post(PREFIX + '/session', json={'token': 's' * 40}, headers={'origin': value['config'].origin})
+        response = client.get(PREFIX + '/source-operations/community-domains')
+        if version == '10':
+            assert response.status_code == 409
+            assert response.json()['detail'] == 'COMMUNITY_SCHEMA11_REQUIRED'
+        else:
+            assert response.status_code == 200 and response.json()['items'] == []
+    assert value['config'].state_db.read_bytes() == before
+    assert value['config'].knowledge_db.read_bytes() == production
+
+
 def test_v2_allows_shaped_non_network_provider_but_v1_stays_blocked(tmp_path):
     value = case(tmp_path)
     source = upload(value, clean_pdf(tmp_path))
     run_id = value['service'].start(source['source_id'], idempotency_key='stage71-provider-0001')['run']['processing_run_id']
     fake = DeterministicFakeProvider()
-    first = value['service'].advance_once(worker_id='stage71-provider', provider=fake, processing_run_id=run_id)
+    with synthetic_providers(value) as provider:
+        for _ in range(2):
+            first = value['service'].advance_once(worker_id='stage71-provider', provider=provider, processing_run_id=run_id)
+    semantic = next(job for job in first['jobs'] if job['operation_kind']=='SEMANTIC_DECOMPOSITION')
 
     class ShapedProvider:
         provider_identity = fake.provider_identity
@@ -176,7 +204,7 @@ def test_v2_allows_shaped_non_network_provider_but_v1_stays_blocked(tmp_path):
             return fake.invoke(request)
 
     result = value['service'].jobs.run_once(ShapedProvider(), worker_id='stage71-provider',
-                                            job_id=first['jobs'][0]['job_id'])
+                                            job_id=semantic['job_id'])
     assert result['status'] == 'SUCCEEDED'
     assert fake.call_count == 1
     pack = Domains(value['config']).register(Path(__file__).resolve().parents[1] / 'domains/ai_hardware')
@@ -185,8 +213,11 @@ def test_v2_allows_shaped_non_network_provider_but_v1_stays_blocked(tmp_path):
                                    actor='operator', reason='Explicit Domain', expected_revision=0)
     assigned = value['service'].start(assigned_source['source_id'],
                                        idempotency_key='stage71-provider-v1-0001')['run']['processing_run_id']
-    queued = value['service'].advance_once(worker_id='stage71-provider', provider=fake, processing_run_id=assigned)
+    with synthetic_providers(value) as provider:
+        for _ in range(2):
+            queued = value['service'].advance_once(worker_id='stage71-provider', provider=provider, processing_run_id=assigned)
+    semantic = next(job for job in queued['jobs'] if job['operation_kind']=='SEMANTIC_DECOMPOSITION')
     blocked = value['service'].jobs.run_once(ShapedProvider(), worker_id='stage71-provider',
-                                             job_id=queued['jobs'][0]['job_id'])
+                                             job_id=semantic['job_id'])
     assert blocked['status'] != 'SUCCEEDED'
     assert 'DOMAIN_ACTIVATION_REQUIRED' in str(blocked)
