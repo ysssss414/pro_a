@@ -1,0 +1,1060 @@
+{
+  "task": "TERMINAL_RUN_ORPHANED_QUEUED_JOB_MIGRATION_R1",
+  "status": "CANDIDATE_QUALIFIED",
+  "root_cause": "GLOBAL_CLOUD_JOB_STATE_DRAIN_GUARD",
+  "base_main": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+  "implementation": "63fcb2df8a838561aded1f41f8e5dc03d47f731f",
+  "real_job_audit": {
+    "schema": "11",
+    "queued_jobs": [
+      {
+        "job_id": "JOB_0692A5D03A094AD6BB72999EF7038FE1",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T09:45:21.524158+00:00",
+        "updated_at": "2026-09-29T09:45:21.524158+00:00",
+        "runtime_sha256": "a29108e438e5fa521f739c4158395500b4a01f972fbe84a5bf4300a5079c3ac4",
+        "configuration_sha256": "a6c840c73ebacdef7588ec1bd5b2a71ccdfdc1a3b1204c25c825efdb8a7f8fd9",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "f2052ee91d60afc23b932041aa1160c12a5655b772c5e4ccc88d942c27b35de2",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_E11574A0C7D544EE9485C7DD45F1A22F",
+            "ordinal": 2,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_65eb3cb377a1a5afdaa3d425751bf89b",
+            "job_id": "JOB_0692A5D03A094AD6BB72999EF7038FE1"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_E11574A0C7D544EE9485C7DD45F1A22F",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T09:46:17.608480+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "331685565f940dea4cd162d0c751a31c82fc5f4478974e5325bc1471a074e717"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_397A00D8256944C08F2F6A03B5D89CA0",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T12:53:41.465228+00:00",
+        "updated_at": "2026-09-29T12:53:41.465228+00:00",
+        "runtime_sha256": "bcbd4c7f75e4e1e688da51da265556241b9acf8a5d4ec25311e1d7c3640fafa9",
+        "configuration_sha256": "c3b7c855ddde99f7071d43d4560547ca3cf6947f68331abcedde50efd47be4a3",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "aa1d281d6255009a329cddb14d96afa531b47fc3e4a49271395a03824849b272",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "ordinal": 3,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_53d93d3cb33fb46574e0e44ff9d7fe05",
+            "job_id": "JOB_397A00D8256944C08F2F6A03B5D89CA0"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T12:55:08.146808+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "e1c54397e7ab3e710e82cc905342d93dd716505ef159edc5e2e780e999d419d1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_3F78291E67F14EE1839E4F8CE94001E9",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T02:22:35.597224+00:00",
+        "updated_at": "2026-09-30T02:22:35.597224+00:00",
+        "runtime_sha256": "f45480798951906839efcecf7db6f28b078e666173144fdb1d28703d87550d39",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "0366f7c7194f1ebbbd231643d2b4bbe3ecc4e2943b2c40f6addcca3e0b116306",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "ordinal": 4,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_156767186f41a62f22f88b44fb970ef1",
+            "job_id": "JOB_3F78291E67F14EE1839E4F8CE94001E9"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T02:24:02.037046+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "51b51ff1d631c4327dc8a1f9ec430f5b7ef35bf8f8f6b615324b61063087f7c6"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_40A3C34601E54460875BB2D0BCE5F846",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T11:13:49.346071+00:00",
+        "updated_at": "2026-09-29T11:13:49.346071+00:00",
+        "runtime_sha256": "7feb460778771d4cc1da812a89ba8a67059abfe438980fd4a350106b371385a8",
+        "configuration_sha256": "a6c840c73ebacdef7588ec1bd5b2a71ccdfdc1a3b1204c25c825efdb8a7f8fd9",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "5d1c3692875c4c4f88b60ad352341d5ffd33a53c72afcf6b97a4ac45b381819f",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "ordinal": 2,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_d308e01845ccc6245fd332d49af6e925",
+            "job_id": "JOB_40A3C34601E54460875BB2D0BCE5F846"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T11:14:57.722829+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "b9770904f148078635a811645202c76ee85d3967f4aeee54d7a89b76973df4f2"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_4EAC0D906A9145D1A9C72E03ACEA65DA",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T11:13:49.572796+00:00",
+        "updated_at": "2026-09-29T11:13:49.572796+00:00",
+        "runtime_sha256": "7feb460778771d4cc1da812a89ba8a67059abfe438980fd4a350106b371385a8",
+        "configuration_sha256": "a6c840c73ebacdef7588ec1bd5b2a71ccdfdc1a3b1204c25c825efdb8a7f8fd9",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "60ffdc85da200e0d6767fede1e132592b83ed37a11497c33c4f285dbb032bb39",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "ordinal": 3,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_42aca44eafbe3f8f58914e314f7f36c9",
+            "job_id": "JOB_4EAC0D906A9145D1A9C72E03ACEA65DA"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T11:14:57.722829+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "b9770904f148078635a811645202c76ee85d3967f4aeee54d7a89b76973df4f2"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_6342A220100E4F06BD555D405844F300",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T01:16:47.247379+00:00",
+        "updated_at": "2026-09-30T01:16:47.247379+00:00",
+        "runtime_sha256": "3ca26c8f3cd99a2b4fe66b38c1607fc0a42461a83fa28705d04405c1006b7355",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "57f6f918a635891fddbf605cb499b1dd1089c8aad7ecda02b1c3686668b4740b",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "ordinal": 3,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_73c0b7f66693ea079d34199bab04133a",
+            "job_id": "JOB_6342A220100E4F06BD555D405844F300"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T01:19:31.037670+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "a90594c6e26433b62404c23caa208ffc1cd666d55b2db9b223c1d50716bf7ff1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_7B93D19EFEF14DD38A66542B50D2B3ED",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T12:53:41.258626+00:00",
+        "updated_at": "2026-09-29T12:53:41.258626+00:00",
+        "runtime_sha256": "bcbd4c7f75e4e1e688da51da265556241b9acf8a5d4ec25311e1d7c3640fafa9",
+        "configuration_sha256": "c3b7c855ddde99f7071d43d4560547ca3cf6947f68331abcedde50efd47be4a3",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "5d91733b2a69a7304d4e1ed31de829ac122319aaa054de0e603ea3bd20651f81",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "ordinal": 2,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_6c0e3fdc355490e5cd41bf7fa4a18e56",
+            "job_id": "JOB_7B93D19EFEF14DD38A66542B50D2B3ED"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T12:55:08.146808+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "e1c54397e7ab3e710e82cc905342d93dd716505ef159edc5e2e780e999d419d1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_A82526750F514D0B806C9B1B21DD8E62",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T02:22:35.507771+00:00",
+        "updated_at": "2026-09-30T02:22:35.507771+00:00",
+        "runtime_sha256": "f45480798951906839efcecf7db6f28b078e666173144fdb1d28703d87550d39",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "c257598cae691c7c2d4570c4cb8671fdb8c065ef19259d1838d20e17f1595a15",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "ordinal": 3,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_70447d304cb45f2a4143189664bb8d14",
+            "job_id": "JOB_A82526750F514D0B806C9B1B21DD8E62"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T02:24:02.037046+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "51b51ff1d631c4327dc8a1f9ec430f5b7ef35bf8f8f6b615324b61063087f7c6"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_BAD20F2B067C40E29C11270BD1592099",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T02:22:35.691430+00:00",
+        "updated_at": "2026-09-30T02:22:35.691430+00:00",
+        "runtime_sha256": "f45480798951906839efcecf7db6f28b078e666173144fdb1d28703d87550d39",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "11a170e428981a273ec6f806645fa65808fd17d4fe38af1c0d52f2cdcfad7048",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "ordinal": 5,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_a4a9820fce924a9bfb69b0e36a0c12c5",
+            "job_id": "JOB_BAD20F2B067C40E29C11270BD1592099"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T02:24:02.037046+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "51b51ff1d631c4327dc8a1f9ec430f5b7ef35bf8f8f6b615324b61063087f7c6"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_C54A412A1E404602A8DDF88DBFA8408A",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T12:53:41.687974+00:00",
+        "updated_at": "2026-09-29T12:53:41.687974+00:00",
+        "runtime_sha256": "bcbd4c7f75e4e1e688da51da265556241b9acf8a5d4ec25311e1d7c3640fafa9",
+        "configuration_sha256": "c3b7c855ddde99f7071d43d4560547ca3cf6947f68331abcedde50efd47be4a3",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "7e32ccf2976e049d36043beb825a7297c06bc0d6998fabe4f28e3a1b7f31e88d",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "ordinal": 4,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_210f0ce376c00bad579a69acd8d704cb",
+            "job_id": "JOB_C54A412A1E404602A8DDF88DBFA8408A"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_35B8B59152D14992B1F3DC5A6C1A8229",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T12:55:08.146808+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "e1c54397e7ab3e710e82cc905342d93dd716505ef159edc5e2e780e999d419d1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_C6141DA29B1140C996F9CC4FE612B090",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T01:16:47.144007+00:00",
+        "updated_at": "2026-09-30T01:16:47.144007+00:00",
+        "runtime_sha256": "3ca26c8f3cd99a2b4fe66b38c1607fc0a42461a83fa28705d04405c1006b7355",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "9fe2ea8e3f09091f0605afa27b17288f115f50bbcd40e783c54bc9d6f4be2f6c",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "ordinal": 2,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_53557f997cc25f27ee3d60248d20ff66",
+            "job_id": "JOB_C6141DA29B1140C996F9CC4FE612B090"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T01:19:31.037670+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "a90594c6e26433b62404c23caa208ffc1cd666d55b2db9b223c1d50716bf7ff1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_D1664169C548442CB67B9B00E154C56D",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-29T11:13:49.828576+00:00",
+        "updated_at": "2026-09-29T11:13:49.828576+00:00",
+        "runtime_sha256": "7feb460778771d4cc1da812a89ba8a67059abfe438980fd4a350106b371385a8",
+        "configuration_sha256": "a6c840c73ebacdef7588ec1bd5b2a71ccdfdc1a3b1204c25c825efdb8a7f8fd9",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "8278e99865338c9f10ffb86a2770dede382b84608fac7cce21fa5f271ed0a015",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "ordinal": 4,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_75f75459317077015a13c40d009bbfb4",
+            "job_id": "JOB_D1664169C548442CB67B9B00E154C56D"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_CE3899E2C96646859ADB7D9BA4630137",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-29T11:14:57.722829+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "b9770904f148078635a811645202c76ee85d3967f4aeee54d7a89b76973df4f2"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_F68AFB9FB4CB4B71A846135F243814D2",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T02:22:35.416152+00:00",
+        "updated_at": "2026-09-30T02:22:35.416152+00:00",
+        "runtime_sha256": "f45480798951906839efcecf7db6f28b078e666173144fdb1d28703d87550d39",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "8bc5d9dc018fb8d7e92ec0827c301e16253b387c2d13a7d04a669c09d7621a65",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "ordinal": 2,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_d203c43b9bd6142823fe4468465c3f59",
+            "job_id": "JOB_F68AFB9FB4CB4B71A846135F243814D2"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_3F01B32229A8491DBB9C71C9330A3223",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T02:24:02.037046+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "51b51ff1d631c4327dc8a1f9ec430f5b7ef35bf8f8f6b615324b61063087f7c6"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      },
+      {
+        "job_id": "JOB_FA7A55DDC26A4BE395CB86A4E151DF90",
+        "source_id": "SRC_A26BB38BD619C3BC",
+        "operation_kind": "SOURCE_ANALYSIS_PIECE",
+        "state": "QUEUED",
+        "phase": "QUEUED",
+        "attempt_count": 0,
+        "reserved_calls": 0,
+        "reserved_tokens": 0,
+        "fence": 0,
+        "lease_owner": null,
+        "lease_expires_at": null,
+        "started_at": null,
+        "ended_at": null,
+        "created_at": "2026-09-30T01:16:47.347300+00:00",
+        "updated_at": "2026-09-30T01:16:47.347300+00:00",
+        "runtime_sha256": "3ca26c8f3cd99a2b4fe66b38c1607fc0a42461a83fa28705d04405c1006b7355",
+        "configuration_sha256": "635f459d82e8cfba01be38ba8a23c6119b1158e727d598c45eeb0c6f074470b2",
+        "prompt_sha256": "c26e18fbd364ff975836b6a5b0c6d4df2fc575a5de8a3335ec2df9fa81908a2b",
+        "job_row_sha256": "cefaee8d556ac5aa91f140915dae3163f56980d44b2496e210867b9a1f8fd7c6",
+        "attempt_rows": 0,
+        "dispatch_rows": 0,
+        "outcome_rows": 0,
+        "result_rows": 0,
+        "binding_count": 1,
+        "bindings": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "ordinal": 4,
+            "operation_kind": "SOURCE_ANALYSIS_PIECE",
+            "cloud_input_artifact_id": "ART_ecb4a5099cb59605e98a00a2292067d9",
+            "job_id": "JOB_FA7A55DDC26A4BE395CB86A4E151DF90"
+          }
+        ],
+        "parents": [
+          {
+            "processing_run_id": "SOURCE_RUN_4B9055FDFB3246CE9635B688A2BD9FCD",
+            "source_id": "SRC_A26BB38BD619C3BC",
+            "state": "FAILED",
+            "stage": "EXTRACTION_JOBS",
+            "ended_at": "2026-09-30T01:19:31.037670+00:00",
+            "lease_owner": null,
+            "lease_expires_at": null,
+            "manual_recovery_required": 0,
+            "retry_safe": 0,
+            "row_sha256": "a90594c6e26433b62404c23caa208ffc1cd666d55b2db9b223c1d50716bf7ff1"
+          }
+        ],
+        "retry_created_rows": 0,
+        "retry_root_rows": 0,
+        "job_event_types": [
+          "JOB_CREATED",
+          "QUEUED"
+        ],
+        "source_operations_selectable_now": false,
+        "classification": "TERMINAL_RUN_UNREACHABLE_QUEUED_HISTORY",
+        "accepted_retry_intent": false,
+        "reprocess_resumes_existing_run": false
+      }
+    ],
+    "queued_count": 14,
+    "extraction_retry_rows_total": 0,
+    "job_columns": [
+      "job_id",
+      "input_artifact_id",
+      "input_sha256",
+      "source_id",
+      "operation_kind",
+      "intent_sha256",
+      "runtime_json",
+      "runtime_sha256",
+      "prompt_json",
+      "prompt_sha256",
+      "configuration_json",
+      "configuration_sha256",
+      "native_checkpoint_json",
+      "provider",
+      "requested_model",
+      "accepted_model_aliases_json",
+      "provider_adapter_version",
+      "timeout_seconds",
+      "max_output_tokens",
+      "max_calls",
+      "max_attempts",
+      "max_total_tokens",
+      "retry_owner",
+      "retry_policy_id",
+      "state",
+      "phase",
+      "attempt_count",
+      "fence",
+      "lease_owner",
+      "lease_expires_at",
+      "reserved_calls",
+      "reserved_tokens",
+      "usage_status",
+      "input_tokens",
+      "output_tokens",
+      "total_tokens",
+      "cached_tokens",
+      "model_identity_status",
+      "provider_reported_model",
+      "provider_request_id",
+      "result_artifact_id",
+      "validation_status",
+      "sanitized_error",
+      "created_at",
+      "started_at",
+      "ended_at",
+      "updated_at"
+    ]
+  },
+  "replica": {
+    "status": "PASS",
+    "classification": {
+      "active_run_count": 0,
+      "active_job_count": 0,
+      "terminal_unreachable_queued_count": 14,
+      "terminal_unreachable_queued_job_ids": [
+        "JOB_0692A5D03A094AD6BB72999EF7038FE1",
+        "JOB_397A00D8256944C08F2F6A03B5D89CA0",
+        "JOB_3F78291E67F14EE1839E4F8CE94001E9",
+        "JOB_40A3C34601E54460875BB2D0BCE5F846",
+        "JOB_4EAC0D906A9145D1A9C72E03ACEA65DA",
+        "JOB_6342A220100E4F06BD555D405844F300",
+        "JOB_7B93D19EFEF14DD38A66542B50D2B3ED",
+        "JOB_A82526750F514D0B806C9B1B21DD8E62",
+        "JOB_BAD20F2B067C40E29C11270BD1592099",
+        "JOB_C54A412A1E404602A8DDF88DBFA8408A",
+        "JOB_C6141DA29B1140C996F9CC4FE612B090",
+        "JOB_D1664169C548442CB67B9B00E154C56D",
+        "JOB_F68AFB9FB4CB4B71A846135F243814D2",
+        "JOB_FA7A55DDC26A4BE395CB86A4E151DF90"
+      ],
+      "broken_foreign_keys": false
+    },
+    "copy_schema_before": 11,
+    "copy_schema_after": 12,
+    "original_workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "exact_backup_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "copy_after_sha256": "56c78458950f57833398c3678ebf0af5dfb0c934c7d25e8ffcb03ccfb6273852",
+    "old_table_count": 44,
+    "added_empty_tables": [
+      "bounded_extraction_series",
+      "bounded_extraction_segments",
+      "bounded_extraction_attempts",
+      "bounded_extraction_dispatches",
+      "bounded_extraction_outcomes",
+      "bounded_extraction_segment_results",
+      "bounded_extraction_series_results",
+      "bounded_extraction_events"
+    ],
+    "all_old_rows_preserved_except_schema_version": true,
+    "all_old_schema_objects_preserved": true,
+    "normal_scheduler_global_and_all_terminal_run_probes": 9,
+    "strict_operational_guard": "STILL_BLOCKS",
+    "idempotence": "PASS",
+    "historical_job_rows_mutated": 0,
+    "historical_runs_mutated": 0,
+    "real_workbench_unchanged": true,
+    "production_unchanged": true,
+    "artifact_corpus_unchanged": true,
+    "provider_calls": 0,
+    "provider_liability_created": 0,
+    "sqlite_noncopy_write_connections": 0,
+    "binding_note": "Exact copy retains original metadata; existing production/artifact validation is read-only."
+  },
+  "wheel": {
+    "status": "PASS",
+    "source_commit": "63fcb2df8a838561aded1f41f8e5dc03d47f731f",
+    "wheel_sha256": "5da86ff1f80b456a94e096363f6417d196f1ca6fd278561186dd1ba880d9a8b5",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "63fcb2df8a838561aded1f41f8e5dc03d47f731f"
+    },
+    "packaged_identity_sha256": "51e72592ca1e4cb660107db1fbaf9a86fce806e3ae7e4608b044d31e3a11eb7e",
+    "wheel_member_count": 141,
+    "python_byte_comparison_count": 135,
+    "source_wheel_installed_python_bytes": "IDENTICAL",
+    "full_runtime_equality": true,
+    "git_unavailable": "PASS",
+    "runtime_git_calls": 0,
+    "unrelated_parent": "PASS",
+    "unrelated_parent_commit": "ce311d2e37cd9d6b01b92f604e98c5dae7545dd9",
+    "corruptions": {
+      "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+      "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+      "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+      "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+    },
+    "installed_phase4_runtime": {
+      "repository_commit": "63fcb2df8a838561aded1f41f8e5dc03d47f731f",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "installed_cloud_runtime": {
+      "git_sha": "63fcb2df8a838561aded1f41f8e5dc03d47f731f",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "11",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+      "runtime_sha256": "3488dfce765bd5240c0e1c338b67823c27d433e261d14299d29e710c9013de6d"
+    },
+    "runtime_network_calls": 0,
+    "business_databases_opened": 0
+  },
+  "tests": {
+    "focused": {
+      "tests": 32,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "related_initial": {
+      "tests": 469,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    "affected_rerun": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_unique_selected_cases_qualified": 469,
+    "focused_subset": 32,
+    "other_related_cases": 437,
+    "initial_failure_explanations": [
+      "Windows autocrlf changed canonical closure fixture LF to CRLF; restored Git blob bytes, no fixture blob change.",
+      "Old active-work fixture used pristine QUEUED plus BLOCKED parent; now claims RUNNING lease before parent ends. Assertion remains REQUIRES_DRAIN."
+    ],
+    "full_repository_test_run": false
+  },
+  "compileall": "PASS",
+  "pip_check": "PASS",
+  "privacy_review": "PASS",
+  "strict_operational_files_unchanged": [
+    "src/pro_a/workbench/lifecycle_closure.py",
+    "src/pro_a/workbench/domains.py",
+    "src/pro_a/workbench/stage1_scale.py",
+    "src/pro_a/workbench/cloud_jobs.py",
+    "src/pro_a/workbench/source_operations.py"
+  ],
+  "shared_guard_callers_before_repair": [
+    "prepare_stage6_lifecycle (two checks)",
+    "apply_lifecycle_closure",
+    "apply_stage6_plan",
+    "bounded_extraction_persistence._drained"
+  ],
+  "scheduler_boundary": "Normal PRIVATE SourceOperations dispatch excludes terminal runs. Low-level CloudJobs claiming has no parent-state check and is unchanged. Standalone fake CloudJob CLI is DEMO-only; API has no CloudJob worker endpoint.",
+  "retry_boundary": "Any retry lineage or accepted retry event blocks waiver. Accepted retry makes parent active; reprocess creates a different Run/jobs. Current durable retry rows=0.",
+  "real_migration_executed": false,
+  "stable_runtime_mutated": false,
+  "historical_job_rows_mutated": 0,
+  "historical_runs_mutated": 0,
+  "provider_calls": 0,
+  "provider_liability": 0,
+  "run8_created": false,
+  "github_ci": "NOT_PRESENT / NOT_RUN",
+  "qualification_artifact_sha256": {
+    "focused.xml": "87e16a20e7eebebf79cda43f723592e369939c031784b36abb2fb18efdbe57b6",
+    "regression.xml": "14aabec110e67ce0ef7bf2462c6e934ba4fb6061a4bca98d9e5d2159aca5bf35",
+    "rerun.xml": "9295b35d20137085fb4e6ebd33c5c31f35653d948c9f0a77b3e9664c8be2d48f"
+  }
+}

@@ -10,7 +10,6 @@ import uuid
 
 from pro_a.bounded_extraction import ExtractionSegment, ExtractionSeries
 from .config import BoundaryError, checked_path
-from .lifecycle_closure import _require_drain
 from .review_store import schema_version
 from .store import Store
 
@@ -128,8 +127,63 @@ def _schema(connection):
         BEGIN SELECT RAISE(ABORT,'RESULT_ATTEMPT_MISMATCH'); END""")
 
 
+def migration_drain_report(connection):
+    """Read-only offline eligibility; never changes the operational drain contract.
+
+    SourceOperations excludes ended terminal runs before choosing their jobs.
+    Only pristine, uniquely bound Source jobs may survive as queued history.
+    Low-level CloudJobs claiming remains unchanged; this is not a worker filter.
+    """
+    existing = {r[0] for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    retry_guard = ""
+    if "extraction_retries" in existing:
+        retry_guard = """AND NOT EXISTS(SELECT 1 FROM extraction_retries x
+            WHERE x.processing_run_id=r.processing_run_id OR x.job_id=j.job_id OR x.root_job_id=j.job_id)"""
+    safe = tuple(r[0] for r in connection.execute("""
+        SELECT j.job_id FROM cloud_jobs j
+        JOIN source_processing_jobs b ON b.job_id=j.job_id
+        JOIN source_processing_runs r ON r.processing_run_id=b.processing_run_id
+        JOIN source_cloud_inputs i ON i.artifact_id=b.cloud_input_artifact_id
+        JOIN registered_packets p ON p.artifact_id=i.artifact_id
+        WHERE j.state='QUEUED' AND j.phase='QUEUED'
+          AND (SELECT count(*) FROM source_processing_jobs WHERE job_id=j.job_id)=1
+          AND r.state IN ('FAILED','BLOCKED','HUMAN_REVIEW_REQUIRED')
+          AND r.ended_at IS NOT NULL AND r.lease_owner IS NULL AND r.lease_expires_at IS NULL
+          AND r.manual_recovery_required=0
+          AND j.source_id=r.source_id AND j.runtime_sha256=r.runtime_sha256
+          AND b.operation_kind=j.operation_kind AND i.operation_kind=j.operation_kind
+          AND i.processing_run_id=r.processing_run_id AND i.source_id=r.source_id
+          AND i.ordinal=b.ordinal AND j.input_artifact_id=i.artifact_id
+          AND j.input_sha256=i.sha256 AND p.packet_sha256=i.sha256
+          AND j.attempt_count=0 AND j.reserved_calls=0 AND j.reserved_tokens=0 AND j.fence=0
+          AND j.lease_owner IS NULL AND j.lease_expires_at IS NULL
+          AND j.started_at IS NULL AND j.ended_at IS NULL AND j.result_artifact_id IS NULL
+          AND j.provider_request_id IS NULL AND j.provider_reported_model IS NULL
+          AND j.input_tokens IS NULL AND j.output_tokens IS NULL AND j.total_tokens IS NULL
+          AND j.cached_tokens IS NULL AND j.validation_status='NOT_RUN'
+          AND NOT EXISTS(SELECT 1 FROM cloud_attempts a WHERE a.job_id=j.job_id)
+          AND NOT EXISTS(SELECT 1 FROM cloud_job_results v WHERE v.job_id=j.job_id)
+          AND NOT EXISTS(SELECT 1 FROM cloud_job_events e WHERE e.job_id=j.job_id
+                         AND e.event_type NOT IN ('JOB_CREATED','QUEUED'))
+          AND NOT EXISTS(SELECT 1 FROM source_processing_events e
+                         WHERE e.processing_run_id=r.processing_run_id
+                         AND e.event_type='EXPLICIT_EXTRACTION_RETRY_ACCEPTED')
+        """ + retry_guard + " ORDER BY j.job_id"))
+    active_runs = connection.execute("""SELECT count(*) FROM source_processing_runs
+        WHERE state NOT IN ('HUMAN_REVIEW_REQUIRED','FAILED','BLOCKED','RECOVERY_REQUIRED')""").fetchone()[0]
+    queued_or_running = connection.execute(
+        "SELECT count(*) FROM cloud_jobs WHERE state IN ('QUEUED','RUNNING','RECOVERY_REQUIRED')"
+    ).fetchone()[0]
+    broken = bool(connection.execute("PRAGMA foreign_key_check").fetchone())
+    return {"active_run_count": active_runs, "active_job_count": queued_or_running - len(safe),
+            "terminal_unreachable_queued_count": len(safe), "terminal_unreachable_queued_job_ids": safe,
+            "broken_foreign_keys": broken}
+
+
 def _drained(connection):
-    _require_drain(connection)
+    report = migration_drain_report(connection)
+    if report["active_run_count"] or report["active_job_count"] or report["broken_foreign_keys"]:
+        raise BoundaryError("BOUNDED_MIGRATION_REQUIRES_DRAIN")
     existing = {r[0] for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     if PREFIX + "series" in existing and connection.execute(
         "SELECT 1 FROM bounded_extraction_series WHERE state NOT IN ('SUCCEEDED_COMPLETE','FAILED') LIMIT 1"
