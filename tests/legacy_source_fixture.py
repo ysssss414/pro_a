@@ -68,12 +68,12 @@ class Failure:
                     'provider_request_id':'req-stage72b-503'})
 if sys.argv[2] in ('review','review_intent'):
  for _ in range(2):service.advance_once(worker_id='legacy-fixture',processing_run_id=run_id,provider=DeterministicFakeProvider())
-else:service.advance_once(worker_id='legacy-fixture',processing_run_id=run_id,provider=Failure())
-if sys.argv[2]=='lineage':
+elif sys.argv[2]!='queued':service.advance_once(worker_id='legacy-fixture',processing_run_id=run_id,provider=Failure())
+if sys.argv[2] in ('lineage','live_retry'):
  with service.store.connect() as c:
   first=c.execute('SELECT attempt_id FROM cloud_attempts').fetchone()[0]
  service.retry_failed_extraction(run_id,first,retry_reason='Explicit synthetic legacy lineage',idempotency_key='legacy-lineage-fixture-0001')
- service.advance_once(worker_id='legacy-fixture',processing_run_id=run_id,provider=Failure())
+ if sys.argv[2]=='lineage':service.advance_once(worker_id='legacy-fixture',processing_run_id=run_id,provider=Failure())
 qualification=None
 if sys.argv[2]=='qualified':
  from pro_a.workbench.retry_compatibility import prepare_retry_compatibility,assess_retry_compatibility
@@ -83,9 +83,9 @@ if sys.argv[2]=='qualified':
  assert qualification['status']=='QUALIFIED'
 with service.store.connect() as c:
  job=dict(c.execute("SELECT * FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone())
- attempt=dict(c.execute('SELECT * FROM cloud_attempts WHERE job_id=?',(job['job_id'],)).fetchone())
+ attempt=c.execute('SELECT * FROM cloud_attempts WHERE job_id=?',(job['job_id'],)).fetchone()
 result={'config':asdict(value['config']),'source':source,'run_id':run_id,'qualification':qualification,
-        'job_id':job['job_id'],'attempt_id':attempt['attempt_id'],
+        'job_id':job['job_id'],'attempt_id':attempt['attempt_id'] if attempt else None,
         'phase4_config':str(value['phase4_config'])}
 Path(sys.argv[1],'history.json').write_text(json.dumps(result,default=str),encoding='utf-8')
 '''

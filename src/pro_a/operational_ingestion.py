@@ -5,7 +5,6 @@ import hashlib
 import json
 import re
 import shutil
-import subprocess
 import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass, replace
@@ -17,6 +16,7 @@ from typing import Any, Callable, Mapping, Sequence
 from . import analyzer as analyzer_module
 from .analyzer import Analyzer
 from .config import AppConfig, LLMConfig, load_config
+from .repository_identity import RepositoryIdentityError, repository_commit
 from .corpus_pilot import (
     BUNDLE_DOCUMENT_TYPE,
     _build_review_draft,
@@ -145,15 +145,8 @@ def _load_json(path: Path) -> dict[str, Any]:
 
 def _git_head(repo: Path) -> str:
     try:
-        return subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=repo,
-            check=True,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError) as exc:
+        return repository_commit()
+    except RepositoryIdentityError as exc:
         raise OperationalIngestionError("REPOSITORY_COMMIT_UNAVAILABLE") from exc
 
 

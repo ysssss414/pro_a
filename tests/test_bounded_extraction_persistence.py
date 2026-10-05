@@ -247,7 +247,9 @@ def test_migration_rejects_active_existing_work(tmp_path, cloud):
     config = case["config"]
     with Store(config).connect(operator_write=True) as c:
         if cloud:
-            c.execute("UPDATE cloud_jobs SET state='QUEUED',phase='READY' WHERE job_id=?",(case['job_id'],))
+            # In-flight work still blocks after its owning historical Run ends.
+            c.execute("UPDATE cloud_jobs SET state='RUNNING',phase='CLAIMED',fence=1,"
+                      "lease_owner='synthetic-cloud',lease_expires_at='2099-01-01' WHERE job_id=?",(case['job_id'],))
         else:
             c.execute("UPDATE source_processing_runs SET state='QUEUED' WHERE processing_run_id=?",(case['run_id'],))
     before = config.state_db.read_bytes()

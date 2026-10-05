@@ -9,6 +9,7 @@ src/pro_a/migrations/foundation_0_2_3_relation_native.sql -text
 
 # Keep the accepted v0.4.0 canonical runtime byte identities on every platform.
 src/pro_a/phase4_orchestration.py -text
+src/pro_a/repository_identity.py -text
 src/pro_a/phase4_retry.py -text
 src/pro_a/phase4_replay.py -text
 src/pro_a/phase4_source_audit.py -text
