@@ -1,0 +1,430 @@
+{
+  "task": "TERMINAL_RUN_ORPHANED_QUEUED_JOB_MIGRATION_R1",
+  "status": "PASS",
+  "PR96_DELTA_REQUALIFICATION": "PASS",
+  "ROOT_CAUSE": "GLOBAL_CLOUD_JOB_STATE_DRAIN_GUARD",
+  "REAL_HISTORICAL_QUEUED_JOBS_CLASSIFIED": 14,
+  "HISTORICAL_JOB_ROWS_MUTATED": 0,
+  "HISTORICAL_RUNS_MUTATED": 0,
+  "PROVIDER_CALLS": 0,
+  "PROVIDER_LIABILITY": 0,
+  "REAL_WORKBENCH_SCHEMA": 11,
+  "REAL_MIGRATION_EXECUTED": false,
+  "STABLE_RUNTIME_MUTATED": false,
+  "RUN8_CREATED": false,
+  "RESUME_PR96_RECONCILIATION": true,
+  "repair": {
+    "implementation": "63fcb2df8a838561aded1f41f8e5dc03d47f731f",
+    "evidence_and_audited_pr_head": "a51170ff7e9bcfea2539c3771cad30132a760790",
+    "pr": 98,
+    "url": "https://github.com/ysssss414/pro_a/pull/98",
+    "merge_and_exact_main": "9106307ff867af2a53186f5424bb88cec0b73f74",
+    "focused_passed": 32,
+    "other_related_cases_qualified": 437,
+    "unique_selected_cases": 469,
+    "initial_run": {
+      "tests": 469,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0
+    },
+    "affected_rerun": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "pr_head_wheel": {
+      "status": "PASS",
+      "source_commit": "a51170ff7e9bcfea2539c3771cad30132a760790",
+      "wheel_sha256": "898bbbe8c37ef2c2b983c9dddf8742c7eb5c6bf12642ad8a35725fada9e60f98",
+      "packaged_identity": {
+        "contract_version": "pro-a-build-repository-identity-v1",
+        "repository": "ysssss414/pro_a",
+        "repository_commit": "a51170ff7e9bcfea2539c3771cad30132a760790"
+      },
+      "packaged_identity_sha256": "7115fcefdc9dc69877031b3f566d23b7bb9c4299eaad0e361a76b9377edde644",
+      "wheel_member_count": 141,
+      "python_byte_comparison_count": 135,
+      "source_wheel_installed_python_bytes": "IDENTICAL",
+      "full_runtime_equality": true,
+      "git_unavailable": "PASS",
+      "runtime_git_calls": 0,
+      "unrelated_parent": "PASS",
+      "unrelated_parent_commit": "7a8c0e14018a1cdb1983b44b26e44ed69d78439e",
+      "corruptions": {
+        "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+        "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+        "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+        "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+        "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+        "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+      },
+      "installed_phase4_runtime": {
+        "repository_commit": "a51170ff7e9bcfea2539c3771cad30132a760790",
+        "contract_version": "phase4-execution-v1",
+        "processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+        "python": "3.13.14",
+        "sqlite": "3.50.4",
+        "packages": {
+          "pypdf": "6.19.0",
+          "pymupdf": "1.28.2",
+          "pymupdf-layout": "1.28.2",
+          "requests": "2.34.2"
+        }
+      },
+      "installed_cloud_runtime": {
+        "git_sha": "a51170ff7e9bcfea2539c3771cad30132a760790",
+        "phase4_contract_version": "phase4-execution-v1",
+        "phase4_processing_code_sha256": "cfd6e95cf37563f1a8fff774d09d2839f11284404f111b1e3e1835f82ad9519b",
+        "cloud_contract_version": "cloud-inference-v1",
+        "workbench_schema_version": "11",
+        "provider_adapter_version": "semantic-backend-adapter-v2",
+        "operation_adapter_versions": {
+          "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+          "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+        },
+        "domain_contract_version": "run-domain-context-v1",
+        "domain_code_sha256": "f63d51318366fc36c9a798f5a0b83dce941a3b1fde2cf19fab86cd610e8ffd4d",
+        "runtime_sha256": "d4c868d56f670b8db06fa67337e451398bc2424aed83e5ab57bfb1eeadb6477a"
+      },
+      "runtime_network_calls": 0,
+      "business_databases_opened": 0
+    }
+  },
+  "reconciliation": {
+    "original_implementation": "b8cd7e676eb584028804914e07652807b28a6881",
+    "original_evidence": "e63608e303725db20541ff7d57fb62b584f6fa75",
+    "merge": "93e90cfb6ba250d9a28309f1a73099ae0d691ca2",
+    "merge_parents": [
+      "e63608e303725db20541ff7d57fb62b584f6fa75",
+      "9106307ff867af2a53186f5424bb88cec0b73f74"
+    ],
+    "qualified_code_head": "91caa2d63e140f63ab65e38e1ca36562c61a451f",
+    "abandoned_merge": "bd8fda2e5e85ff0de8cf24443214fe6d965189be",
+    "abandoned_merge_pushed": false,
+    "history_rewritten": false,
+    "pr96_merged": false,
+    "conflicts": [
+      "tests/test_bounded_extraction_persistence.py",
+      "tests/test_phase43_stage72c_retry_compatibility.py"
+    ],
+    "fixture_adaptation": "Pristine queued/live-retry history generated only in frozen legacy runtime; active migration fixture holds a RUNNING lease. Existing test functions/decorators retained.",
+    "stage71_adaptation": "Live cases use schema12 bounded synthetic providers; community evidence names the synthetic candidate. Domain/provider and low-trust/history assertions retained.",
+    "additional_read_only_fix": "community_material.available_domains accepts schema11/12 instead of only11; three API cases assert schema10 rejection and zero DB writes. No worker/scheduling guard changes."
+  },
+  "delta": {
+    "qualified_unique_cases": {
+      "tests": 584,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "passed": 583,
+    "executed_production_code_head": "f374b3dd73afab42697a4803791946f99791f8ce",
+    "final_code_commit_only_restores_original_pr96_test_assertion": true,
+    "production_bytes_unchanged_since_executed_code": true,
+    "selected_modules": [
+      "tests.test_bounded_extraction",
+      "tests.test_bounded_extraction_persistence",
+      "tests.test_bounded_extraction_recovery",
+      "tests.test_cloud_operation_adapter_binding",
+      "tests.test_extraction_capacity",
+      "tests.test_extraction_capacity_r2",
+      "tests.test_mcp_stage0",
+      "tests.test_mcp_stage3",
+      "tests.test_operation_output_budget",
+      "tests.test_phase43_stage71_shared_core_pending",
+      "tests.test_phase43_stage72b_extraction_retry",
+      "tests.test_phase43_stage72c_retry_compatibility",
+      "tests.test_phase4_orchestration",
+      "tests.test_repository_identity",
+      "tests.test_source_analysis_series_binding",
+      "tests.test_source_analysis_series_recovery",
+      "tests.test_source_analysis_wire",
+      "tests.test_terminal_run_queued_migration",
+      "tests.test_workbench_stage7"
+    ],
+    "existing_skips": [
+      {
+        "name": "test_full_frozen_engine_replay_equivalence_and_zero_production_writes",
+        "reason": "private frozen workflow unavailable"
+      }
+    ],
+    "initial_stopped_run": {
+      "tests": 380,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 1
+    },
+    "second_stopped_run": {
+      "tests": 438,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 1
+    },
+    "completion_and_affected_rerun": {
+      "tests": 163,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "coverage": "All collected node IDs covered; latest result per node passes or retains the existing private-workflow skip. This is segmented qualification, not one all-green full matrix run.",
+    "second_failure_resolution": "Restore original PR96 SEMANTIC_SURFACE_CHANGED assertion for native historical output telemetry. Missing historical modules are represented as changed surfaces, not CalledProcessError. Runtime rejection remains strict and production code is unchanged by this resolution.",
+    "stage71_focused": {
+      "tests": 17,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "new_frozen_fixture_probes": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "full_repository_run": false,
+    "github_ci": "NOT_PRESENT / NOT_RUN"
+  },
+  "candidate_wheel": {
+    "status": "PASS",
+    "source_commit": "91caa2d63e140f63ab65e38e1ca36562c61a451f",
+    "wheel_sha256": "05d91ae51b4116142e9c4c5f57c86604060e95f559552988c2a4a65d7f468913",
+    "packaged_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "91caa2d63e140f63ab65e38e1ca36562c61a451f"
+    },
+    "packaged_identity_sha256": "d3a4b5053fdba722e6671fbc748f1ee9df70fa00ac36ba6b4271ace09cf0c9d1",
+    "wheel_member_count": 143,
+    "python_byte_comparison_count": 137,
+    "source_wheel_installed_python_bytes": "IDENTICAL",
+    "full_runtime_equality": true,
+    "git_unavailable": "PASS",
+    "runtime_git_calls": 0,
+    "unrelated_parent": "PASS",
+    "unrelated_parent_commit": "8280f12a9d4af54e33089fe1dace439a21a87039",
+    "corruptions": {
+      "missing": "REPOSITORY_IDENTITY_UNAVAILABLE",
+      "corrupted_json": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_version": "REPOSITORY_IDENTITY_INVALID",
+      "wrong_repository": "REPOSITORY_IDENTITY_INVALID",
+      "invalid_commit": "REPOSITORY_IDENTITY_INVALID",
+      "valid_commit_tampering": "REPOSITORY_IDENTITY_INTEGRITY"
+    },
+    "installed_phase4_runtime": {
+      "repository_commit": "91caa2d63e140f63ab65e38e1ca36562c61a451f",
+      "contract_version": "phase4-execution-v1",
+      "processing_code_sha256": "bf54923ddcb5c2c7171c1c0e2b54e787fd3120c617924d7054543acc90cbf04a",
+      "python": "3.13.14",
+      "sqlite": "3.50.4",
+      "packages": {
+        "pypdf": "6.19.0",
+        "pymupdf": "1.28.2",
+        "pymupdf-layout": "1.28.2",
+        "requests": "2.34.2"
+      }
+    },
+    "installed_cloud_runtime": {
+      "git_sha": "91caa2d63e140f63ab65e38e1ca36562c61a451f",
+      "phase4_contract_version": "phase4-execution-v1",
+      "phase4_processing_code_sha256": "bf54923ddcb5c2c7171c1c0e2b54e787fd3120c617924d7054543acc90cbf04a",
+      "cloud_contract_version": "cloud-inference-v1",
+      "workbench_schema_version": "12",
+      "provider_adapter_version": "semantic-backend-adapter-v2",
+      "operation_adapter_versions": {
+        "SOURCE_ANALYSIS_PIECE": "source-analysis-piece-adapter-v2",
+        "SEMANTIC_DECOMPOSITION": "semantic-backend-adapter-v2"
+      },
+      "domain_contract_version": "run-domain-context-v1",
+      "domain_code_sha256": "f6fc93c817103c21094964aaf3c9fa7fb8625acdf7faef91459af14644695ccb",
+      "bounded_source_analysis": {
+        "binding_version": "bounded-source-analysis-series-binding-v1",
+        "provider_version": "bounded-source-analysis-segment-provider-v1",
+        "prompt_version": "bounded-source-analysis-segment-prompt-v1",
+        "response_version": "bounded-source-analysis-response-v1",
+        "series": "bounded-extraction-series-v1",
+        "segment": "bounded-extraction-segment-v1",
+        "coverage": "bounded-extraction-coverage-v1",
+        "subdivision": "bounded-extraction-subdivision-v1",
+        "evidence_binding": "source-analysis-evidence-binding-v2",
+        "wire": "source-analysis-wire-v3",
+        "expander": "source-analysis-wire-expander-v2",
+        "segment_policy": "bounded-extraction-policy-v1",
+        "budget": {
+          "initial_evidence_refs": 16,
+          "max_leaf_segments": 16,
+          "max_subdivision_depth": 4,
+          "max_provider_calls": 32,
+          "max_cumulative_output_tokens": 384000
+        },
+        "piece_hard_cap": 4000,
+        "planner": "PHASE3E2SL6_PRECALL_PARTITION_V3",
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "max_output_tokens": 12000,
+        "thinking_policy": "structured-json-reasoning-v1",
+        "thinking_mode": "disabled",
+        "system_prompt_sha256": "93384110cb104fca27e09a4e0130d88eac3a8c8ef8657f593fbd13d6c793fd4e"
+      },
+      "runtime_sha256": "99a4fd37e508efe4f8541c06192b48034ace8e3d9e7c8f9124bc59789ed2819d"
+    },
+    "runtime_network_calls": 0,
+    "business_databases_opened": 0
+  },
+  "real_topology_copy": {
+    "status": "PASS",
+    "classification": {
+      "active_run_count": 0,
+      "active_job_count": 0,
+      "terminal_unreachable_queued_count": 14,
+      "terminal_unreachable_queued_job_ids": [
+        "JOB_0692A5D03A094AD6BB72999EF7038FE1",
+        "JOB_397A00D8256944C08F2F6A03B5D89CA0",
+        "JOB_3F78291E67F14EE1839E4F8CE94001E9",
+        "JOB_40A3C34601E54460875BB2D0BCE5F846",
+        "JOB_4EAC0D906A9145D1A9C72E03ACEA65DA",
+        "JOB_6342A220100E4F06BD555D405844F300",
+        "JOB_7B93D19EFEF14DD38A66542B50D2B3ED",
+        "JOB_A82526750F514D0B806C9B1B21DD8E62",
+        "JOB_BAD20F2B067C40E29C11270BD1592099",
+        "JOB_C54A412A1E404602A8DDF88DBFA8408A",
+        "JOB_C6141DA29B1140C996F9CC4FE612B090",
+        "JOB_D1664169C548442CB67B9B00E154C56D",
+        "JOB_F68AFB9FB4CB4B71A846135F243814D2",
+        "JOB_FA7A55DDC26A4BE395CB86A4E151DF90"
+      ],
+      "broken_foreign_keys": false
+    },
+    "copy_schema_before": 11,
+    "copy_schema_after": 12,
+    "original_workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "exact_backup_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "copy_after_sha256": "56c78458950f57833398c3678ebf0af5dfb0c934c7d25e8ffcb03ccfb6273852",
+    "old_table_count": 44,
+    "added_empty_tables": [
+      "bounded_extraction_series",
+      "bounded_extraction_segments",
+      "bounded_extraction_attempts",
+      "bounded_extraction_dispatches",
+      "bounded_extraction_outcomes",
+      "bounded_extraction_segment_results",
+      "bounded_extraction_series_results",
+      "bounded_extraction_events"
+    ],
+    "all_old_rows_preserved_except_schema_version": true,
+    "all_old_schema_objects_preserved": true,
+    "normal_scheduler_global_and_all_terminal_run_probes": 9,
+    "strict_operational_guard": "STILL_BLOCKS",
+    "idempotence": "PASS",
+    "historical_job_rows_mutated": 0,
+    "historical_runs_mutated": 0,
+    "real_workbench_unchanged": true,
+    "production_unchanged": true,
+    "artifact_corpus_unchanged": true,
+    "provider_calls": 0,
+    "provider_liability_created": 0,
+    "sqlite_noncopy_write_connections": 0,
+    "binding_note": "Exact copy retains original metadata; existing production/artifact validation is read-only."
+  },
+  "real_topology_source_copy": {
+    "status": "PASS",
+    "classification": {
+      "active_run_count": 0,
+      "active_job_count": 0,
+      "terminal_unreachable_queued_count": 14,
+      "terminal_unreachable_queued_job_ids": [
+        "JOB_0692A5D03A094AD6BB72999EF7038FE1",
+        "JOB_397A00D8256944C08F2F6A03B5D89CA0",
+        "JOB_3F78291E67F14EE1839E4F8CE94001E9",
+        "JOB_40A3C34601E54460875BB2D0BCE5F846",
+        "JOB_4EAC0D906A9145D1A9C72E03ACEA65DA",
+        "JOB_6342A220100E4F06BD555D405844F300",
+        "JOB_7B93D19EFEF14DD38A66542B50D2B3ED",
+        "JOB_A82526750F514D0B806C9B1B21DD8E62",
+        "JOB_BAD20F2B067C40E29C11270BD1592099",
+        "JOB_C54A412A1E404602A8DDF88DBFA8408A",
+        "JOB_C6141DA29B1140C996F9CC4FE612B090",
+        "JOB_D1664169C548442CB67B9B00E154C56D",
+        "JOB_F68AFB9FB4CB4B71A846135F243814D2",
+        "JOB_FA7A55DDC26A4BE395CB86A4E151DF90"
+      ],
+      "broken_foreign_keys": false
+    },
+    "copy_schema_before": 11,
+    "copy_schema_after": 12,
+    "original_workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "exact_backup_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "copy_after_sha256": "56c78458950f57833398c3678ebf0af5dfb0c934c7d25e8ffcb03ccfb6273852",
+    "old_table_count": 44,
+    "added_empty_tables": [
+      "bounded_extraction_series",
+      "bounded_extraction_segments",
+      "bounded_extraction_attempts",
+      "bounded_extraction_dispatches",
+      "bounded_extraction_outcomes",
+      "bounded_extraction_segment_results",
+      "bounded_extraction_series_results",
+      "bounded_extraction_events"
+    ],
+    "all_old_rows_preserved_except_schema_version": true,
+    "all_old_schema_objects_preserved": true,
+    "normal_scheduler_global_and_all_terminal_run_probes": 9,
+    "strict_operational_guard": "STILL_BLOCKS",
+    "idempotence": "PASS",
+    "historical_job_rows_mutated": 0,
+    "historical_runs_mutated": 0,
+    "real_workbench_unchanged": true,
+    "production_unchanged": true,
+    "artifact_corpus_unchanged": true,
+    "provider_calls": 0,
+    "provider_liability_created": 0,
+    "sqlite_noncopy_write_connections": 0,
+    "binding_note": "Exact copy retains original metadata; existing production/artifact validation is read-only."
+  },
+  "real_state": {
+    "stable_commit": "7c0a06a0850f3b7a3f0eba80becc9185e91b10c0",
+    "full_snapshot_sha256": "eaeeaa475069f97e4510b3740c4a5530f3052831d0f4ff867b3eda4417459aae",
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "workbench_sha256": "0114861af73d616f1a732ee0f16252514052bfc59c997f3480fc3c4ec411da8d",
+    "target_runs": 7,
+    "global_runs": 8,
+    "current_views_written": 0,
+    "production_written": 0,
+    "artifact_inventory_unchanged": true,
+    "research_context": "READ_BOUNDARY_VIOLATION (UNCHANGED)"
+  },
+  "real_end_snapshot": "EXACTLY_IDENTICAL_TO_START",
+  "stable_end_active_wheel_raw_byte_comparison": {
+    "status": "PASS",
+    "python_files": 135,
+    "metadata_bytes": "IDENTICAL"
+  },
+  "stable_read_only_mcp": {
+    "status": "PASS",
+    "tool_count": 14,
+    "counters": {
+      "production_writes": 0,
+      "workbench_writes": 0,
+      "provider_calls": 0,
+      "retry_calls": 0,
+      "reprocess_calls": 0,
+      "review_mutation_calls": 0,
+      "advertised_mutation_tools": 0
+    },
+    "readonly_connections": 21,
+    "connected_app_health": "UNAVAILABLE: tunnel_client_not_seen; no service restart/configuration change"
+  },
+  "compileall": "PASS",
+  "pip_check": "PASS",
+  "privacy_diff_review": "PASS",
+  "gate_A": "NOT_ENTERED",
+  "next_scope": "Separate original release activation Gate A; do not merge PR96, migrate real DB, activate stable or create Run8 in this repair task.",
+  "raw_result_sha256": {
+    "delta-initial.xml": "24d996c52b78f186cd662d7aeb848b7a0f6f43e66cb7c68083d352d2749c2d4d",
+    "delta-second.xml": "822613d3e51e74d88daac6ce33e64d0c139b36af417cb75df25ba696ee2e8983",
+    "delta-completion.xml": "7ca9ca6af190b7e414cd416743915fe59ba3dd12bf53fd375fcfa9251a15b579",
+    "delta-collected.txt": "bcb139313c9e802ee244ce1b5ec6edc5febdc2ecd5d5c82811a26d0aaee2be9a",
+    "stage71-r4.xml": "c04131b837980256a1d57cb0eb44cbf1cb45c0c4311cb23f215b25c65175ee5e"
+  }
+}

@@ -22,6 +22,7 @@ from pro_a.bounded_extraction import (
     initial_extraction_plan, subdivide_extraction_plan,
 )
 from pro_a.evidence_binding import identity
+from pro_a.provider_diagnostics import safe_identifier
 from . import bounded_extraction_persistence as persistence
 from .bounded_extraction_persistence import JSON_FIELDS, PREFIX, canonical, write_once
 from .config import BoundaryError, checked_path
@@ -286,7 +287,8 @@ class BoundedExtractionStore:
 
     @staticmethod
     def _envelope(attempt, raw_body, *, http_status=200, provider_request_id=None, finish_reason=None,
-                  input_tokens=None, output_tokens=None, total_tokens=None, cached_input_tokens=None, latency_ms=None):
+                  input_tokens=None, output_tokens=None, total_tokens=None, cached_input_tokens=None, latency_ms=None,
+                  provider_reported_model=None, reasoning_tokens=None):
         _require(type(raw_body) is bytes, "RAW_BYTES_REQUIRED")
         _require(http_status is None or type(http_status) is int and 100 <= http_status <= 599, "INVALID_HTTP_STATUS")
         _require(provider_request_id is None or isinstance(provider_request_id, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,200}", provider_request_id), "INVALID_PROVIDER_REQUEST_ID")
@@ -300,18 +302,25 @@ class BoundedExtractionStore:
             except OverflowError:
                 finite = False
             _require(finite and latency_ms >= 0, "INVALID_CALL_LATENCY")
+        _require(provider_reported_model is None or safe_identifier(provider_reported_model) == provider_reported_model,
+                 "INVALID_PROVIDER_MODEL")
+        _require(reasoning_tokens is None or type(reasoning_tokens) is int and reasoning_tokens >= 0,
+                 "INVALID_REASONING_TOKENS")
         value = {"version": "bounded-private-raw-v1", "attempt_id": attempt["attempt_id"], "request_sha256": attempt["request_sha256"],
                  "raw_body_base64": base64.b64encode(raw_body).decode("ascii"), "raw_body_sha256": hashlib.sha256(raw_body).hexdigest(),
                  "http_status": http_status, "provider_request_id": provider_request_id, "finish_reason": finish_reason, **usage,
-                 "latency_ms": latency_ms}
+                 "latency_ms": latency_ms,
+                 **{k: v for k, v in {"provider_reported_model": provider_reported_model, "reasoning_tokens": reasoning_tokens}.items() if v is not None}}
         return {**value, "envelope_sha256": identity(value)}
 
     def _decode_envelope(self, attempt, content):
         try:
             value = json.loads(content)
             body = base64.b64decode(value["raw_body_base64"], validate=True)
-            expected = self._envelope(attempt, body, **{k: value[k] for k in (
-                "http_status", "provider_request_id", "finish_reason", "input_tokens", "output_tokens", "total_tokens", "cached_input_tokens", "latency_ms")})
+            metadata = {k: value[k] for k in (
+                "http_status", "provider_request_id", "finish_reason", "input_tokens", "output_tokens", "total_tokens", "cached_input_tokens", "latency_ms")}
+            metadata.update({k: value[k] for k in ("provider_reported_model", "reasoning_tokens") if k in value})
+            expected = self._envelope(attempt, body, **metadata)
             _require(value == expected, "RAW_ENVELOPE_IDENTITY_MISMATCH")
             return value, body
         except (ValueError, KeyError, TypeError):
@@ -390,6 +399,8 @@ class BoundedExtractionStore:
                     dispositions = tuple(EvidenceDisposition(**v) for v in document["dispositions"])
                     segment = next(s for s in plan.segments if s.segment_id == row["segment_id"])
                     result = create_segment_wire_result(series, segment, document["wire"], dispositions, catalog, context)
+                    if any(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions):
+                        _require(not document["wire"]["claims"] and all(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions), "INVALID_SEGMENT_RESPONSE")
                 except (ValueError, TypeError, KeyError, UnicodeError):
                     failure = "INVALID_SEGMENT_RESPONSE"
             if failure:
@@ -456,18 +467,76 @@ class BoundedExtractionStore:
             _require(series_row["state"] == "OPEN" and series_row["frontier_version"] == expected_frontier_version, "STALE_FRONTIER")
             accepted = connection.execute("SELECT result_type FROM bounded_extraction_segment_results WHERE segment_id=?", (segment_id,)).fetchone()
             _require(row["state"] == "SUBDIVISION_REQUIRED" and accepted and accepted[0] == "SUBDIVISION_REQUIRED", "VALID_SUBDIVISION_RESULT_REQUIRED")
-            changed = subdivide_extraction_plan(series, plan, segment_id)
-            children = tuple(s for s in changed.segments if s.parent_segment_id == segment_id)
-            for child in children:
-                _insert_model(connection, "segments", child, "PLANNED")
-                persistence.checkpoint("subdivision_child_inserted")
-            connection.execute("UPDATE bounded_extraction_segments SET state='SUPERSEDED_BY_CHILDREN',updated_at=? WHERE segment_id=?", (_now(), segment_id))
-            persistence.checkpoint("subdivision_parent_superseded")
-            connection.execute("UPDATE bounded_extraction_series SET frontier_version=frontier_version+1,updated_at=? WHERE series_id=?", (_now(), series.series_id))
-            _event(connection, series.series_id, "SEGMENT_SUPERSEDED", segment_id=segment_id)
-            _event(connection, series.series_id, "CHILD_SEGMENTS_CREATED", segment_ids=[s.segment_id for s in children])
+            children = self._subdivision(connection, series, plan, segment_id)
         persistence.checkpoint("subdivision_committed")
         return children
+
+    @staticmethod
+    def _subdivision(connection, series, plan, segment_id):
+        changed = subdivide_extraction_plan(series, plan, segment_id)
+        children = tuple(s for s in changed.segments if s.parent_segment_id == segment_id)
+        for child in children:
+            _insert_model(connection, "segments", child, "PLANNED")
+            persistence.checkpoint("subdivision_child_inserted")
+        connection.execute("UPDATE bounded_extraction_segments SET state='SUPERSEDED_BY_CHILDREN',updated_at=? WHERE segment_id=?", (_now(), segment_id))
+        persistence.checkpoint("subdivision_parent_superseded")
+        connection.execute("UPDATE bounded_extraction_series SET frontier_version=frontier_version+1,updated_at=? WHERE series_id=?", (_now(), series.series_id))
+        _event(connection, series.series_id, "SEGMENT_SUPERSEDED", segment_id=segment_id)
+        _event(connection, series.series_id, "CHILD_SEGMENTS_CREATED", segment_ids=[s.segment_id for s in children])
+        return children
+
+    def subdivide_after_truncation(self, segment_id, owner, fence, *, expected_frontier_version):
+        with self._connection(True) as connection:
+            row, (series, plan, series_row, _) = self._segment_row(connection, segment_id)
+            self._owned(row, owner, fence)
+            latest = connection.execute("SELECT * FROM bounded_extraction_attempts WHERE segment_id=? ORDER BY attempt_number DESC LIMIT 1", (segment_id,)).fetchone()
+            _require(latest is not None, "DURABLE_TRUNCATION_REQUIRED")
+            outcome = connection.execute("SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?", (latest["attempt_id"],)).fetchone()
+            _require(outcome and outcome["external_outcome"] == "TRUNCATED" and outcome["finish_reason"] == "length", "DURABLE_TRUNCATION_REQUIRED")
+            envelope, _ = self._decode_envelope(latest, self._read_artifact(series.series_id, latest["attempt_id"] + ".raw.json", outcome))
+            _require(envelope["finish_reason"] == "length" and not connection.execute("SELECT 1 FROM bounded_extraction_segment_results WHERE segment_id=?", (segment_id,)).fetchone(), "TRUNCATION_RESULT_CONFLICT")
+            if row["state"] == "SUPERSEDED_BY_CHILDREN":
+                events = connection.execute("SELECT body_json FROM bounded_extraction_events WHERE series_id=? AND event_type='SEGMENT_OVERFLOW_SUBDIVIDED'", (series.series_id,))
+                _require(any(json.loads(e[0])["attempt_id"] == latest["attempt_id"] for e in events), "DURABLE_TRUNCATION_REQUIRED")
+                return tuple(s for s in plan.segments if s.parent_segment_id == segment_id)
+            _require(series_row["state"] == "OPEN" and series_row["frontier_version"] == expected_frontier_version, "STALE_FRONTIER")
+            _require(segment_id in {s.segment_id for s in plan.leaves}, "SEGMENT_NOT_ACTIVE_LEAF")
+            _require(series_row["provider_call_reservations"] + 2 <= series.budget.max_provider_calls
+                     and series_row["output_liability"] + 24000 <= series.budget.max_cumulative_output_tokens,
+                     "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY")
+            children = self._subdivision(connection, series, plan, segment_id)
+            _event(connection, series.series_id, "SEGMENT_OVERFLOW_SUBDIVIDED", segment_id=segment_id,
+                   attempt_id=latest["attempt_id"], outcome_record_sha256=outcome["record_sha256"],
+                   child_segment_ids=[s.segment_id for s in children], frontier_version=expected_frontier_version+1)
+        persistence.checkpoint("subdivision_committed")
+        return children
+
+    def fail_series(self, series_id, owner, fence, code):
+        _require(isinstance(code, str) and re.fullmatch(r"[A-Z][A-Z0-9_]+", code), "INVALID_FAILURE_CODE")
+        with self._connection(True) as connection:
+            _, _, row, _ = self._load(connection, series_id)
+            self._owned(row, owner, fence)
+            if row["state"] == "FAILED":
+                return
+            _require(row["state"] == "OPEN", "SERIES_NOT_FAILABLE")
+            connection.execute("UPDATE bounded_extraction_segments SET state='FAILED',updated_at=? WHERE series_id=? AND state NOT IN ('SUCCEEDED_COMPLETE','SUPERSEDED_BY_CHILDREN')", (_now(), series_id))
+            connection.execute("UPDATE bounded_extraction_series SET state='FAILED',updated_at=? WHERE series_id=?", (_now(), series_id))
+            _event(connection, series_id, "SERIES_FAILED", code=code)
+
+    def release(self, series_id, owner, *, series_fence, segment_id=None, segment_fence=None):
+        with self._connection(True) as connection:
+            for table, key, value, fence in (("series", "series_id", series_id, series_fence),
+                                           ("segments", "segment_id", segment_id, segment_fence)):
+                if value is not None:
+                    connection.execute(f"UPDATE {PREFIX+table} SET lease_owner=NULL,lease_expires_at=NULL WHERE {key}=? AND lease_owner=? AND fence=?", (value, owner, fence))
+
+    def aggregate(self, series_id):
+        with self._connection() as connection:
+            _, _, row, _ = self._load(connection, series_id)
+            _require(row["state"] == "SUCCEEDED_COMPLETE", "SERIES_COVERAGE_INCOMPLETE")
+            final = connection.execute("SELECT * FROM bounded_extraction_series_results WHERE series_id=?", (series_id,)).fetchone()
+            _require(final is not None, "DURABLE_SERIES_RESULT_REQUIRED")
+            return json.loads(self._read_artifact(series_id, "aggregate.json", final))
 
     def _final_result(self, series, plan, connection, row):
         _verified(row)

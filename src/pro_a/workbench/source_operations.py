@@ -80,10 +80,11 @@ class SourceProfile:
 def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str, Any]:
     """Construct the qualified operator worker adapters without reading credentials.
 
-    CloudJobs owns the frozen call budgets and retry policy. Only the in-memory
-    transport configuration is derived; the operator's private config is unchanged.
+    Semantic CloudJobs and the bounded extraction ledger own their respective
+    budgets and attempts. The derived transports preserve the private config file.
     """
-    from pro_a.cloud_contract import SourceAnalysisPieceProvider, SemanticBackendProvider
+    from pro_a.cloud_contract import SemanticBackendProvider
+    from pro_a.bounded_source_analysis import BOUNDED_SOURCE_ANALYSIS_OPERATION, BoundedSourceAnalysisSegmentProvider
     from pro_a.llm import ChatLLM
     from pro_a.semantic_decomposition import ChatLLMSemanticBackend
 
@@ -100,10 +101,8 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
     effective = replace(llm_config, timeout_seconds=cloud_profile.timeout_seconds,
                         max_retries=0)
     return {
-        SOURCE_ANALYSIS_OPERATION: SourceAnalysisPieceProvider(
-            ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
-                SOURCE_ANALYSIS_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"])),
-            provider_identity=cloud_profile.provider),
+        BOUNDED_SOURCE_ANALYSIS_OPERATION: BoundedSourceAnalysisSegmentProvider(
+            replace(effective, max_output_tokens=12000)),
         SEMANTIC_OPERATION: SemanticBackendProvider(
             ChatLLMSemanticBackend(ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
                 SEMANTIC_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"]))),
@@ -297,6 +296,8 @@ class SourceOperations:
         self.jobs = CloudJobs(
             config, cloud_profile, runtime_compatibility=runtime_compatibility,
         )
+        from .bounded_source_analysis import BoundedSourceAnalysisRunner
+        self.bounded = BoundedSourceAnalysisRunner(self)
         with self.store.connect() as connection:
             if schema_version(connection) not in ("8", "9", "10", "11", "12"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
@@ -465,6 +466,8 @@ class SourceOperations:
         domains = Domains(self.config)
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
+            if schema_version(connection) != "12":
+                raise SourceOperationError("BOUNDED_SCHEMA_REQUIRED")
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
                                         (source_id,)).fetchone()
             if source is None:
@@ -707,6 +710,8 @@ class SourceOperations:
 
     def retry_failed_extraction(self, run_id: str, failed_attempt_id: str, *,
                                 retry_reason: str, idempotency_key: str) -> dict[str, Any]:
+        if self.get_run(run_id)["runtime_identity"].get("bounded_source_analysis"):
+            raise SourceOperationError("BOUNDED_EXTRACTION_RETRY_OWNED_BY_SERIES")
         from .extraction_retry import retry_failed_extraction
         return retry_failed_extraction(self, run_id, failed_attempt_id,
                                        retry_reason=retry_reason, idempotency_key=idempotency_key)
@@ -965,6 +970,11 @@ class SourceOperations:
         with self.store.connect() as connection:
             row = connection.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?",
                                      (run_id,)).fetchone()
+            from pro_a.bounded_source_analysis import binding_contract
+            if json.loads(row["runtime_json"]).get("bounded_source_analysis") != binding_contract():
+                raise SourceOperationError("HISTORICAL_EXTRACTION_RUNTIME_INCOMPATIBLE")
+            if schema_version(connection) != "12":
+                raise SourceOperationError("BOUNDED_SCHEMA_REQUIRED")
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
                                         (row["source_id"],)).fetchone()
             from pro_a.company_material_intent import read_bound
@@ -1014,7 +1024,7 @@ class SourceOperations:
             phase4 = load_config(self.profile.phase4_config_path)
             native_root = Path(result["execution_root"])
             relative = native_root.relative_to(phase4.root.resolve()).as_posix()
-            self._transition(run_id, "EXTRACTION_PROCESSING", "EXTRACTION_JOBS",
+            self._transition(run_id, "EXTRACTION_PROCESSING", "BOUNDED_EXTRACTION",
                              values={"native_execution_id": result["execution_id"],
                                      "native_root_relative": relative})
             plan = plan_external_source_analysis(native_root / "engine",
@@ -1027,21 +1037,24 @@ class SourceOperations:
             checkpoint = {"native_state": "SOURCE_READY", "execution_id": result["execution_id"],
                           "run_id": plan["run_id"], "plan_sha256": plan["plan"]["initial_extraction_plan_sha256"],
                           "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
-            for ordinal, piece in enumerate(plan["pieces"], 1):
-                artifact = self._register_input(current, SOURCE_ANALYSIS_OPERATION, ordinal,
-                                                piece, checkpoint)
-                self._bind_job(run_id, SOURCE_ANALYSIS_OPERATION, ordinal, artifact)
+            self.bounded.bind(current, plan, checkpoint)
             return self.get_run(run_id)
 
         if row["state"] == "EXTRACTION_PROCESSING":
-            jobs = self._run_pending_jobs(self._jobs_for(run_id, SOURCE_ANALYSIS_OPERATION),
-                                          provider, worker_id)
-            if self._propagate_job_state(run_id, jobs, "EXTRACTION_JOBS"):
-                return self.get_run(run_id)
-            if not jobs or any(job["status"] != "SUCCEEDED" for job in jobs):
-                return self.get_run(run_id)
-            replay = self._extraction_replay(jobs)
             native_root = self._native_root(row)
+            plan = plan_external_source_analysis(native_root / "engine", config_path=self.profile.phase4_config_path)
+            checkpoint = {"native_state": "SOURCE_READY", "execution_id": row["native_execution_id"],
+                          "run_id": plan["run_id"], "plan_sha256": plan["plan"]["initial_extraction_plan_sha256"],
+                          "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
+            self.bounded.bind(self.get_run(run_id), plan, checkpoint)
+            with self.store.connect() as connection:
+                from .stage1_scale import stage1_capacity
+                capacity = stage1_capacity(connection)
+            if provider is not None and (capacity["wip_state"] == "HARD_STOP" or capacity["unprojected_review_packets"] or capacity["intake_paused"]):
+                return self.get_run(run_id)
+            if not self.bounded.advance(self.get_run(run_id), provider, worker_id):
+                return self.get_run(run_id)
+            replay = self.bounded.replay(self.get_run(run_id), load_config(self.profile.phase4_config_path).llm)
             result = resume_execution(
                 native_root, execution_id=row["native_execution_id"],
                 config_path=self.profile.phase4_config_path,
@@ -1070,8 +1083,8 @@ class SourceOperations:
                 )
             except (SemanticDecompositionError, ValueError) as error:
                 raise SourceOperationError(str(error)) from None
-            extraction_jobs = self._jobs_for(run_id, SOURCE_ANALYSIS_OPERATION)
-            if len(extraction_jobs) + len(batches) > MAX_STAGE1_JOBS_PER_RUN:
+            extraction_series = self.get_run(run_id)["logical_extraction_series_count"]
+            if extraction_series + len(batches) > MAX_STAGE1_JOBS_PER_RUN:
                 raise SourceOperationError("SOURCE_JOB_BUDGET_EXCEEDED")
             current = self.get_run(run_id)
             partition_identity = canonical_sha256({
@@ -1192,6 +1205,9 @@ class SourceOperations:
             "jobs": jobs, "created_at": row["created_at"], "updated_at": row["updated_at"],
             "ended_at": row["ended_at"],
         }
+        if result["runtime_identity"].get("bounded_source_analysis"):
+            result.update(self.bounded.projection(connection, run_id))
+            result["logical_job_count"] = result["logical_extraction_series_count"] + len(jobs)
         context = Domains(self.config).read(run_id, connection=connection)
         from .extraction_retry import installed
         result['extraction_retries'] = ([dict(item) for item in connection.execute(
@@ -1274,6 +1290,8 @@ class SourceOperations:
                              if usage_status == "KNOWN" else None),
             "attempts": sum(job["attempt_count"] for job in detailed_jobs),
         }
+        if result.get('extraction_execution_mode')=='BOUNDED_SERIES_V1':
+            result['usage_scope']='SEMANTIC_CLOUD_JOBS'
         result["lineage"] = [
             {"kind": "SOURCE", "id": result["source_id"]},
             *([{"kind": "KNOWLEDGE_COMMUNITY_BUNDLE", "id": result["community_provenance"]["bundle_sha256"]}]

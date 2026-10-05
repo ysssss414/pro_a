@@ -36,20 +36,8 @@ def release_drift(monkeypatch, value, *, cloud_semantic=None, native_semantic=No
     import pro_a.workbench.cloud_jobs as cloud_jobs
     import pro_a.workbench.retry_compatibility as compatibility
 
-    # These jobs were created by the current source, including uncommitted repair
-    # work. Model a metadata-only release of that exact synthetic execution
-    # surface, not a release of the older repository HEAD.
-    package = compatibility.Path(compatibility.__file__).resolve().parent.parent
-    frozen_sources = {
-        name: (package / name).read_bytes()
-        for specification in (compatibility._CLOUD_EXECUTION_SURFACE,
-                              compatibility._NATIVE_EXECUTION_SURFACE)
-        for name in specification
-    }
-    def synthetic_sources(_historical_git_sha, specification):
-        return ({name: frozen_sources[name] for name in specification},
-                {name: (package / name).read_bytes() for name in specification})
-    monkeypatch.setattr(compatibility, '_execution_surface_sources', synthetic_sources)
+    # Alter release metadata only. Historical sources remain the actual baseline;
+    # metadata cannot make the changed bounded execution surface compatible.
     compatibility._execution_surface_comparison.cache_clear()
     target_cloud = value['service'].jobs.current_runtime()
     target_cloud = dict(target_cloud)
@@ -84,20 +72,20 @@ def qualify(value, *, persist=True):
 
 
 def test_exact_runtime_qualification_is_append_only_and_does_not_mutate_history(tmp_path):
-    value = failed(tmp_path)
+    from legacy_source_fixture import historical_case
+    value=historical_case(tmp_path,'qualified')
     before = original_rows(value)
     assert prepare_retry_compatibility(value['config']) == {
-        'status': 'PREPARED', 'extension': 'extraction-retry-cross-release-v1',
+        'status': 'ALREADY_PREPARED', 'extension': 'extraction-retry-cross-release-v1',
     }
     result = qualify(value)
-    assert result['status'] == 'QUALIFIED' and result['blockers'] == []
-    assert all(item['result'] == 'PASS' for item in result['dimensions'].values())
-    assert result['record']['failed_attempt_id'] == value['attempt_id']
-    assert result['record']['failed_job_id'] == value['job_id']
+    assert result['status']=='BLOCKED'
+    assert 'BLOCKED_EXECUTION_CONTRACT_CHANGED' in result['blockers']
+    assert value['qualification']['record']['failed_attempt_id']==value['attempt_id']
+    assert value['qualification']['record']['failed_job_id']==value['job_id']
     assert original_rows(value) == before
     duplicate = qualify(value)
-    assert duplicate['status'] == 'QUALIFIED' and duplicate['duplicate'] is True
-    assert duplicate['record'] == result['record']
+    assert duplicate['status']=='BLOCKED' and duplicate['blockers']==result['blockers']
     with Store(value['config']).connect(operator_write=True) as connection:
         assert connection.execute(
             'SELECT count(*) FROM retry_compatibility_qualifications'
@@ -117,18 +105,15 @@ def test_metadata_only_release_drift_qualifies_and_reaches_human_review(
     prepare_retry_compatibility(value['config'])
     target_cloud, _ = release_drift(monkeypatch, value, broad_code_drift=True)
     result = qualify(value)
-    assert result['status'] == 'QUALIFIED'
+    assert result['status'] == 'BLOCKED'
     comparison = result['evidence']['cloud_runtime']
-    assert comparison['semantic_differences'] == []
+    assert comparison['semantic_differences']
     assert comparison['metadata_only_differences'] == ['git_sha', 'runtime_sha256']
-    assert comparison['surface_equivalent_differences'] == [
-        'domain_code_sha256', 'phase4_processing_code_sha256',
-    ]
-    assert result['evidence']['cloud_execution_surface']['compatible'] is True
-    assert result['evidence']['native_execution_surface']['compatible'] is True
-    assert result['record']['target_runtime_sha256'] == target_cloud['runtime_sha256']
-    accepted = retry(value)
-    assert accepted['retry']['attempt_number'] == 2
+    assert comparison['surface_equivalent_differences']==[]
+    assert result['evidence']['cloud_execution_surface']['compatible'] is False
+    assert result['evidence']['native_execution_surface']['compatible'] is False
+    with pytest.raises(SourceOperationError,match='RETRY_RUNTIME_INCOMPATIBLE'):
+        retry(value)
     provider = DeterministicFakeProvider()
     first = value['service'].advance_once(
         worker_id='stage72c-compatible', processing_run_id=value['run_id'], provider=provider,
@@ -136,9 +121,7 @@ def test_metadata_only_release_drift_qualifies_and_reaches_human_review(
     final = value['service'].advance_once(
         worker_id='stage72c-compatible', processing_run_id=value['run_id'], provider=provider,
     )
-    assert first['state'] == 'SEMANTIC_PROCESSING'
-    assert final['state'] == 'HUMAN_REVIEW_REQUIRED'
-    assert provider.call_count == 2
+    assert first is None and final is None and provider.call_count==0
     assert original_rows(value) == before
 
 
@@ -314,21 +297,18 @@ def test_operation_adapter_repair_is_not_compatible_with_pre_binding_release():
     for kind, specification in (
             ('cloud', compatibility._CLOUD_EXECUTION_SURFACE),
             ('native', compatibility._NATIVE_EXECUTION_SURFACE)):
-        # Compare the frozen binding releases' own surfaces. Neither contained
-        # the installed-runtime provenance helper introduced by this repair.
+        # Compare these frozen releases' own surfaces. Neither contained the
+        # repository identity helper now protected in the current native surface.
         specification = {name: functions for name, functions in specification.items()
                          if name != 'repository_identity.py'}
-        historical = {
-            name: subprocess.check_output(
-                ['git', 'show', f'{baseline}:src/pro_a/{name}'], cwd=root,
-            )
-            for name in specification
-        }
+        def source_at(commit,name):
+            ref=f'{commit}:src/pro_a/{name}'
+            exists=subprocess.run(['git','cat-file','-e',ref],cwd=root,capture_output=True).returncode==0
+            return subprocess.check_output(['git','show',ref],cwd=root) if exists else b''
+        historical={name:source_at(baseline,name) for name in specification}
         # This assertion concerns the binding repair itself, not later changes
         # to the live checkout's LLM or persistence execution surface.
-        target = {name: subprocess.check_output(
-            ['git', 'show', f'{binding_release}:src/pro_a/{name}'], cwd=root,
-        ) for name in specification}
+        target={name:source_at(binding_release,name) for name in specification}
         if kind == 'cloud':
             # The old profile lacks the operation-binding dependency. Its
             # execution surface must fail closed, never normalize to this repair.
@@ -346,8 +326,7 @@ def test_output_telemetry_repair_changes_execution_surface(kind):
 
     result = _execution_surface_comparison(kind, '5eb9d6bedd97a615a5ef56e143840e17aa8ba6ad')
     assert result['compatible'] is False
-    assert result['reason'] == ('SEMANTIC_SURFACE_CHANGED' if kind == 'cloud' else
-                               'EXECUTION_SURFACE_UNAVAILABLE:CalledProcessError')
+    assert result['reason'] == 'SEMANTIC_SURFACE_CHANGED'
 
 
 def test_unrepresented_helper_dependency_fails_closed():
@@ -503,10 +482,17 @@ def test_shared_core_or_native_checkpoint_drift_fails_closed(tmp_path, monkeypat
 
 
 def test_record_is_non_transferable_and_evidence_hash_is_verified(tmp_path):
-    value = failed(tmp_path)
-    prepare_retry_compatibility(value['config'])
-    result = qualify(value)
+    from legacy_source_fixture import historical_case
+    value=historical_case(tmp_path,'qualified')
+    result=value['qualification']
     record = dict(result['record'])
+    with pytest.raises(RetryCompatibilityError,match='STALE'):
+        _validate_record(record)
+    # Unit-test the evidence digest after rebinding only the fixture's contract.
+    # This derived record is never stored or used as execution authorization.
+    from pro_a.workbench.retry_compatibility import compatibility_contract_sha256,_record_body
+    record['target_contract_sha256']=compatibility_contract_sha256()
+    record['record_sha256']=digest(_record_body(record))
     record['evidence_sha256'] = '0' * 64
     with pytest.raises(RetryCompatibilityError, match='EVIDENCE_MISMATCH'):
         _validate_record(record)
@@ -537,10 +523,9 @@ def test_record_is_non_transferable_and_evidence_hash_is_verified(tmp_path):
 
 
 def test_stale_qualification_after_contract_change_is_not_used(tmp_path, monkeypatch):
-    value = failed(tmp_path)
-    prepare_retry_compatibility(value['config'])
-    release_drift(monkeypatch, value)
-    assert qualify(value)['status'] == 'QUALIFIED'
+    from legacy_source_fixture import historical_case
+    value=historical_case(tmp_path,'qualified')
+    assert qualify(value)['status']=='BLOCKED'
     monkeypatch.setattr(
         'pro_a.workbench.retry_compatibility.compatibility_contract_sha256',
         lambda: '0' * 64,

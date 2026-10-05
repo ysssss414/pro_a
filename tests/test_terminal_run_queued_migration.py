@@ -11,19 +11,14 @@ from pro_a.workbench.stage1_scale import prepare_stage1_scale
 from pro_a.workbench.store import Store
 from test_bounded_extraction_persistence import no_network, rows
 from test_phase43_stage6_lifecycle import _schema11
-from test_phase43_stage72b_extraction_retry import failed, retry
-from test_workbench_stage7 import clean_pdf, upload
+from legacy_source_fixture import historical_case
 
 
 def queued(tmp_path, parent="FAILED"):
-    case, _ = _schema11(tmp_path)
-    source = upload(case, clean_pdf(tmp_path))
+    # New bounded runtime rejects schema11 intake; seed only in frozen baseline.
+    case = historical_case(tmp_path, state="queued")
     service = case["service"]
-    run = service.start(source["source_id"], idempotency_key="migration-queued-fixture-0001")["run"]
-    run_id = run["processing_run_id"]
-    first = service.advance_once(worker_id="migration-fixture", processing_run_id=run_id)
-    assert first["state"] == "EXTRACTION_PROCESSING", first
-    job_id = first["jobs"][0]["job_id"]
+    run_id, job_id = case["run_id"], case["job_id"]
     if parent != "EXTRACTION_PROCESSING":
         service._transition(run_id, parent, "EXTRACTION_JOBS")
     return case, run_id, job_id
@@ -157,8 +152,7 @@ def test_unbound_queue_blocks(tmp_path):
 
 
 def test_live_accepted_retry_blocks_even_if_parent_later_marked_failed(tmp_path):
-    case = failed(tmp_path)
-    retry(case)
+    case = historical_case(tmp_path, state="live_retry")
     case["service"]._transition(case["run_id"], "FAILED", "EXTRACTION_JOBS")
     assert report(case["config"])["terminal_unreachable_queued_count"] == 0
     blocked(case["config"])

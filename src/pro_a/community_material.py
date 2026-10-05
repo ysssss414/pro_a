@@ -320,7 +320,7 @@ def preview(config: Any, data: bytes, company_id: str) -> dict[str, Any]:
 
 def available_domains(service: Any) -> list[dict[str, str]]:
     with service.store.connect() as connection:
-        if schema_version(connection) != "11":
+        if schema_version(connection) not in ("11", "12"):
             _fail("COMMUNITY_SCHEMA11_REQUIRED", 409)
         return [dict(row) for row in connection.execute(
             "SELECT domain_id,version,sha256 FROM domain_pack_registry ORDER BY domain_id,version"

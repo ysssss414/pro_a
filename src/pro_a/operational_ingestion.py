@@ -464,6 +464,8 @@ def plan_external_source_analysis(
                 analyzer_module.SOURCE_ANALYSIS_SYSTEM.encode("utf-8")
             ).hexdigest(),
             "initial_plan_sha256": plan.plan_sha256,
+            "source_piece": asdict(piece.source_piece),
+            "scoped_node_catalog": copy.deepcopy(list(piece.scoped_node_catalog)),
         } for piece in plan.pieces],
     }
 

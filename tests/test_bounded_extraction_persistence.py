@@ -242,20 +242,16 @@ def test_raw_immutable_and_path_guard(setup):
 
 @pytest.mark.parametrize("cloud", [False, True])
 def test_migration_rejects_active_existing_work(tmp_path, cloud):
-    from test_phase43_stage0 import setup_source, start
-    from pro_a.workbench.stage1_scale import prepare_stage1_scale
-    from pro_a.workbench.lifecycle_closure import prepare_stage6_lifecycle
-    from pro_a.cloud_contract import DeterministicFakeProvider
-    case, source = setup_source(tmp_path)
+    from legacy_source_fixture import historical_case
+    case=historical_case(tmp_path)
     config = case["config"]
-    prepare_stage1_scale(config)
-    prepare_stage6_lifecycle(config)
-    run = start(case, source)
-    if cloud:
-        case["service"].advance_once(worker_id="synthetic", provider=DeterministicFakeProvider(), processing_run_id=run)
-        # In-flight work must block even after its owning Run becomes terminal.
-        assert case["service"].jobs._claim("synthetic-cloud", None, 180) is not None
-        case["service"]._transition(run, "BLOCKED", "SYNTHETIC_STOP")
+    with Store(config).connect(operator_write=True) as c:
+        if cloud:
+            # In-flight work still blocks after its owning historical Run ends.
+            c.execute("UPDATE cloud_jobs SET state='RUNNING',phase='CLAIMED',fence=1,"
+                      "lease_owner='synthetic-cloud',lease_expires_at='2099-01-01' WHERE job_id=?",(case['job_id'],))
+        else:
+            c.execute("UPDATE source_processing_runs SET state='QUEUED' WHERE processing_run_id=?",(case['run_id'],))
     before = config.state_db.read_bytes()
     with pytest.raises(BoundaryError, match="REQUIRES_DRAIN"):
         migration.prepare_bounded_extraction_persistence(config)
@@ -283,11 +279,12 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
         assert prepare(config) == {"status": "ALREADY_PREPARED", "schema_version": "12"}
     case["service"] = SourceOperations(config, case["source_profile"], case["cloud_profile"])
     run = start(case, source)
-    provider = DeterministicFakeProvider()
-    for _ in range(4):
-        final = case["service"].advance_once(worker_id="synthetic", provider=provider, processing_run_id=run)
-        if final["state"] == "HUMAN_REVIEW_REQUIRED":
-            break
+    from series_binding_helpers import synthetic_providers
+    with synthetic_providers(case) as provider:
+        for _ in range(4):
+            final = case["service"].advance_once(worker_id="synthetic", provider=provider, processing_run_id=run)
+            if final["state"] == "HUMAN_REVIEW_REQUIRED":
+                break
     assert final["state"] == "HUMAN_REVIEW_REQUIRED", final
     assert provider.call_count == 2
     handle = final["packet_artifact_id"]
@@ -301,27 +298,19 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
     assert lifecycle_status(config)["schema_version"] == "12"
     with Store(config).connect() as c:
         assert stage1_capacity(c)["native_pending_rows"] > 0
-        assert all(c.execute("SELECT COUNT(*) FROM " + table).fetchone()[0] == 0 for table in migration.TABLES)
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series").fetchone()[0] == 1
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series_results").fetchone()[0] == 1
+        assert c.execute("SELECT COUNT(*) FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone()[0] == 0
     assert runtime_identity("source-analysis-piece-adapter-v2", workbench_schema_version="12")["workbench_schema_version"] == "12"
     assert config.state_db.read_bytes() == before and config.knowledge_db.read_bytes() == production
 
 
 def test_nonempty_v11_history_migrates_without_backfill(tmp_path):
-    from test_phase43_stage0 import setup_source, start
-    from pro_a.cloud_contract import DeterministicFakeProvider
-    from pro_a.workbench.stage1_scale import prepare_stage1_scale
-    from pro_a.workbench.lifecycle_closure import prepare_stage6_lifecycle
-    case, source = setup_source(tmp_path)
+    from legacy_source_fixture import historical_case
+    case=historical_case(tmp_path,'review')
     config = case["config"]
-    prepare_stage1_scale(config)
-    prepare_stage6_lifecycle(config)
-    run = start(case, source)
-    provider = DeterministicFakeProvider()
-    for _ in range(4):
-        final = case["service"].advance_once(worker_id="synthetic", provider=provider, processing_run_id=run)
-        if final["state"] == "HUMAN_REVIEW_REQUIRED":
-            break
-    assert final["state"] == "HUMAN_REVIEW_REQUIRED" and provider.call_count == 2
+    final=case['service'].get_run(case['run_id'])
+    assert final["state"] == "HUMAN_REVIEW_REQUIRED"
     before = rows(config)
     assert len(before["source_processing_runs"]) == 1 and len(before["cloud_attempts"]) == 2
     migration.prepare_bounded_extraction_persistence(config)
