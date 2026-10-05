@@ -1,0 +1,409 @@
+{
+  "phase": "SOURCE_ANALYSIS_WHOLE_PIECE_COMPACT_FIRST_R1",
+  "baseline_main": "6e1135c4371a6a3d1b6a491a433576b3eda9efbe",
+  "branch": "codex/pro-a-whole-piece-compact-first-r1",
+  "implementation_sha": "59624d9e0113b907e0619c2de82b6097db7bf25b",
+  "publication_binding": "The Draft PR body and final publication receipt bind this evidence commit and PR head; a committed document cannot contain its own future commit hash.",
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS"
+  },
+  "schema": {
+    "before": 12,
+    "after": 12,
+    "migration": false,
+    "raw_storage": "private artifact plus append-only WHOLE_PIECE_RAW_DURABLE event"
+  },
+  "qualification": {
+    "tests": 825,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 825,
+    "junit_sha256": "e1fc60733fc01c3107b25d0aa285a6fa5549d9b62654a00b26f63ab9cb28fdb3",
+    "log_sha256": "5ad6874dbb8d89fdac8907397d0eedb6935e2204e0af7e33c74aeebb5e667d9f",
+    "test_files": [
+      "tests.test_bounded_extraction",
+      "tests.test_bounded_extraction_persistence",
+      "tests.test_bounded_extraction_recovery",
+      "tests.test_cloud_operation_adapter_binding",
+      "tests.test_evidence_binding",
+      "tests.test_extraction_capacity",
+      "tests.test_extraction_capacity_r2",
+      "tests.test_mcp_bounded_reads",
+      "tests.test_mcp_stage0",
+      "tests.test_mcp_stage3",
+      "tests.test_operation_output_budget",
+      "tests.test_phase43_stage1_operator_scale",
+      "tests.test_phase43_stage72a_provider_diagnostics",
+      "tests.test_phase43_stage72b_extraction_retry",
+      "tests.test_phase43_stage72b_unicode_reason",
+      "tests.test_phase43_stage72c_retry_compatibility",
+      "tests.test_proposition_ir",
+      "tests.test_provider_output_failure_telemetry",
+      "tests.test_repository_identity",
+      "tests.test_semantic_admission",
+      "tests.test_source_analysis_series_binding",
+      "tests.test_source_analysis_series_recovery",
+      "tests.test_source_analysis_wire",
+      "tests.test_v0_2_analyzer_validation",
+      "tests.test_whole_piece_compact",
+      "tests.test_whole_piece_execution",
+      "tests.test_workbench_stage6",
+      "tests.test_workbench_stage7"
+    ],
+    "scope": "required offline/synthetic qualification scope; not the entire repository test suite"
+  },
+  "build": {
+    "implementation_sha": "59624d9e0113b907e0619c2de82b6097db7bf25b",
+    "wheel_sha256": "30825c9a4b9d52173755d49fecc04a9c860e59c8381fa9e7390d6dfccea30def",
+    "isolated_pep517_build": "PASS",
+    "pip_check": "No broken requirements found.",
+    "compileall_source_and_install": "PASS",
+    "python_files_byte_equal": 139,
+    "source_wheel_install_equal": true,
+    "installed_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "59624d9e0113b907e0619c2de82b6097db7bf25b"
+    },
+    "no_git_runtime": "PASS",
+    "contract": {
+      "response_version": "whole-piece-compact-source-analysis-response-v1",
+      "prompt_version": "whole-piece-compact-source-analysis-prompt-v1",
+      "adapter_version": "whole-piece-compact-source-analysis-adapter-v1",
+      "wire": "source-analysis-wire-v3",
+      "evidence_binding": "source-analysis-evidence-binding-v2",
+      "expander": "source-analysis-wire-expander-v2",
+      "max_output_tokens": 12000,
+      "automatic_extraction_retry": false,
+      "system_prompt_sha256": "bea966b172cc5d8777f60be43f20a11c767262c7204c0c29b749a4c407904328"
+    },
+    "source_operation": {
+      "operation_kind": "SOURCE_ANALYSIS_PIECE",
+      "thinking_policy_version": "structured-json-reasoning-v1",
+      "thinking_mode": "disabled",
+      "provider_adapter_version": "whole-piece-compact-source-analysis-adapter-v1",
+      "operation_schema_version": "whole-piece-compact-source-analysis-response-v1",
+      "prompt_id": "whole-piece-compact-source-analysis",
+      "prompt_version": "whole-piece-compact-source-analysis-prompt-v1",
+      "system_prompt_sha256": "bea966b172cc5d8777f60be43f20a11c767262c7204c0c29b749a4c407904328",
+      "prompt_bundle_sha256": "4b42156f30e7d9a48c03b4add027a37e256d1a0a02be6545e03f26bf0efda1e5",
+      "validator": "source-analysis-wire-v3+evidence-binding-v2+native-analyzer-replay"
+    },
+    "python": "3.13.14",
+    "pro_a_version": "0.5.1"
+  },
+  "privacy": {
+    "status": "PASS",
+    "changed_files_scanned": 28,
+    "private_source_windows_checked": 501,
+    "real_state_unchanged": true,
+    "scanned_files_sha256": {
+      "src/pro_a/cloud_contract.py": "5bc188b26972e5b3bb7f6b0101d917dda34bfaada3efd9e7952c2019eab637ee",
+      "src/pro_a/evidence_binding.py": "010662f77b0614bfacf3cf01c7f60d94c50c8811f84b44d3d66d7df2811743cb",
+      "src/pro_a/source_analysis_wire.py": "b220804b5a47e6874a67a97a14718d64f7a727028c5900d4179f602689e6f75e",
+      "src/pro_a/whole_piece_compact.py": "c6ae139f62f937dee25c3460df3255fe198bb8197b6edeb3091fe86eaa8ce9fb",
+      "src/pro_a/workbench/cloud_jobs.py": "0e344a2f228cfeb73a370b1d3ee224eb24c7a247aed0274f379d5ca326ecb2d5",
+      "src/pro_a/workbench/extraction_retry.py": "7ba55669a98e60d5380cc4e711a48f6ca510aba3940960d5c20696ceb3f14b3c",
+      "src/pro_a/workbench/retry_compatibility.py": "0e975104346836761359731849262d31314a1fe28105f5c1712cc6cb367860fd",
+      "src/pro_a/workbench/source_operations.py": "edd8be6f62ea28bc2e83cb577a4c41b4431cde035955943398f295c7cc120044",
+      "src/pro_a/workbench/whole_piece_raw.py": "21e472b69ec85f7dcfbb7fdf419f55a40e1346a7fe65be63f0b8e462566b34c9",
+      "tests/historical_bounded_fixture.py": "719b71f1bb6c71e003401639d316ab557b8fe2a44c85a80761571e12efba9830",
+      "tests/series_binding_helpers.py": "b4ed6588220ed426a7edbf8840fdb3d3320b8a987c20b993648226c81e3c36db",
+      "tests/test_bounded_extraction_persistence.py": "4822d5064fe039dfd0138f61bf563b17971bba959f9e2a648ff1a77083015710",
+      "tests/test_cloud_operation_adapter_binding.py": "a9062955d680dbbcf549f6552e083de0e3a3e678181753b62c9c12c7d3df6b64",
+      "tests/test_extraction_capacity.py": "369ad1565e0944685716bd6f87664c8a011415d3e18da087c9d0f817863396f8",
+      "tests/test_extraction_capacity_r2.py": "193dad713b58c000b80f39a994bd12a4a33ba5d7c810c7854880ab3e9929dd40",
+      "tests/test_mcp_bounded_reads.py": "212a393cb0897580fcb5f2125deadb8fb06cdd603392f25fdb2841922cd97936",
+      "tests/test_mcp_stage0.py": "84df8a6c939a155a32c8304fc73b5a585edc7c028200177b89a287cd16bf1347",
+      "tests/test_operation_output_budget.py": "00c813b308825051805e258e5a46a214a92f43ebc5e6109aeef06e614ace4199",
+      "tests/test_phase43_stage1_operator_scale.py": "05aa2ca8fa7b59a140ac2ecdef7b7b9cf6bc72224e9fe93ae2b5f49e01730be7",
+      "tests/test_phase43_stage72b_extraction_retry.py": "8d2d10b45780c6011ab16fbd7481992233f5d2f07fbe1ba4376870c5a746bd42",
+      "tests/test_phase43_stage72b_unicode_reason.py": "1bf45c6a1ca4bd7d67dd9a59b642f2531fd091d643c2e9d8ec97b5bb3e033554",
+      "tests/test_provider_output_failure_telemetry.py": "a38f4376c4d85440ce1fbd482b65961cf13a6e6710101c96509a3e6973993c0c",
+      "tests/test_source_analysis_series_binding.py": "300ca1092818f8fb80d7fe6814985fc823b127796940fe68296eb0544096186c",
+      "tests/test_source_analysis_series_recovery.py": "0306bb2daf52526d327347cdc8edd4c60263ab4b277a0b2c93a9aec99bf06cda",
+      "tests/test_source_analysis_wire.py": "2631365a7c71042f2ec7a1e720aae67f57cd36dc039f2ae401e1fd15be209f90",
+      "tests/test_whole_piece_compact.py": "08a45830e3c1ada6de7d027604b5658684c9782727e5ad0875697a168900c868",
+      "tests/test_whole_piece_execution.py": "41a772718aca7ed03fc21cb5fbf4f1856b199b265c387c52fab318ab9e65729e",
+      "tests/test_workbench_stage7.py": "dcf275c1231b5d7104fe9e3cfc477c9bf2582abb7fcd14db5e875f21c2ff155d"
+    }
+  },
+  "real_source_offline": {
+    "provider_calls": 0,
+    "real_state_unchanged": true,
+    "pieces": [
+      {
+        "ordinal": 1,
+        "source_chars": 3595,
+        "evidence_count": 77,
+        "scoped_nodes": 6,
+        "whole_piece_prompt": {
+          "chars": 16883,
+          "utf8_bytes": 29349
+        },
+        "old_initial_calls": 5,
+        "old_prompts": [
+          {
+            "chars": 16892,
+            "utf8_bytes": 29388
+          },
+          {
+            "chars": 16892,
+            "utf8_bytes": 29388
+          },
+          {
+            "chars": 16892,
+            "utf8_bytes": 29388
+          },
+          {
+            "chars": 16892,
+            "utf8_bytes": 29388
+          },
+          {
+            "chars": 16823,
+            "utf8_bytes": 29319
+          }
+        ]
+      },
+      {
+        "ordinal": 2,
+        "source_chars": 3783,
+        "evidence_count": 93,
+        "scoped_nodes": 5,
+        "whole_piece_prompt": {
+          "chars": 17672,
+          "utf8_bytes": 30398
+        },
+        "old_initial_calls": 6,
+        "old_prompts": [
+          {
+            "chars": 17681,
+            "utf8_bytes": 30437
+          },
+          {
+            "chars": 17681,
+            "utf8_bytes": 30437
+          },
+          {
+            "chars": 17681,
+            "utf8_bytes": 30437
+          },
+          {
+            "chars": 17681,
+            "utf8_bytes": 30437
+          },
+          {
+            "chars": 17681,
+            "utf8_bytes": 30437
+          },
+          {
+            "chars": 17612,
+            "utf8_bytes": 30368
+          }
+        ]
+      },
+      {
+        "ordinal": 3,
+        "source_chars": 3556,
+        "evidence_count": 83,
+        "scoped_nodes": 7,
+        "whole_piece_prompt": {
+          "chars": 17214,
+          "utf8_bytes": 29474
+        },
+        "old_initial_calls": 6,
+        "old_prompts": [
+          {
+            "chars": 17223,
+            "utf8_bytes": 29513
+          },
+          {
+            "chars": 17223,
+            "utf8_bytes": 29513
+          },
+          {
+            "chars": 17223,
+            "utf8_bytes": 29513
+          },
+          {
+            "chars": 17223,
+            "utf8_bytes": 29513
+          },
+          {
+            "chars": 17223,
+            "utf8_bytes": 29513
+          },
+          {
+            "chars": 16924,
+            "utf8_bytes": 29214
+          }
+        ]
+      },
+      {
+        "ordinal": 4,
+        "source_chars": 3791,
+        "evidence_count": 82,
+        "scoped_nodes": 11,
+        "whole_piece_prompt": {
+          "chars": 17998,
+          "utf8_bytes": 30442
+        },
+        "old_initial_calls": 6,
+        "old_prompts": [
+          {
+            "chars": 18007,
+            "utf8_bytes": 30481
+          },
+          {
+            "chars": 18007,
+            "utf8_bytes": 30481
+          },
+          {
+            "chars": 18007,
+            "utf8_bytes": 30481
+          },
+          {
+            "chars": 18007,
+            "utf8_bytes": 30481
+          },
+          {
+            "chars": 18007,
+            "utf8_bytes": 30481
+          },
+          {
+            "chars": 17685,
+            "utf8_bytes": 30159
+          }
+        ]
+      },
+      {
+        "ordinal": 5,
+        "source_chars": 2098,
+        "evidence_count": 52,
+        "scoped_nodes": 5,
+        "whole_piece_prompt": {
+          "chars": 14160,
+          "utf8_bytes": 24128
+        },
+        "old_initial_calls": 4,
+        "old_prompts": [
+          {
+            "chars": 14169,
+            "utf8_bytes": 24167
+          },
+          {
+            "chars": 14169,
+            "utf8_bytes": 24167
+          },
+          {
+            "chars": 14169,
+            "utf8_bytes": 24167
+          },
+          {
+            "chars": 13893,
+            "utf8_bytes": 23891
+          }
+        ]
+      }
+    ],
+    "schema": "12",
+    "workbench_sha256": "5d0b0defb8e09814bb5b533629249be33c243229896b144cb22f7d384c2261fc",
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "counts": {
+      "source_runs": 8,
+      "queued_jobs": 14
+    },
+    "run8_outcomes": [
+      {
+        "finish_reason": "stop",
+        "output_tokens": 6685,
+        "latency_ms": 18129.276400024537,
+        "external_outcome": "SUCCEEDED"
+      }
+    ],
+    "old_extraction_calls": 27,
+    "new_extraction_calls": 5,
+    "output_fit": "UNKNOWN_UNTIL_LIVE"
+  },
+  "safety_snapshot_sha256": "d386d4108dd4b4e6efe74a95c88d0ec17b21e996fd67dc4171c1894ef3ccb31e",
+  "response_size_benchmark": {
+    "fixture": "synthetic_dense_40_claims",
+    "canonical": {
+      "chars": 22574,
+      "utf8_bytes": 22574
+    },
+    "whole_piece_compact": {
+      "chars": 16047,
+      "utf8_bytes": 16047
+    },
+    "legacy_segment_response_total": {
+      "chars": 20086,
+      "utf8_bytes": 20086
+    },
+    "legacy_segment_responses": [
+      {
+        "chars": 7880,
+        "utf8_bytes": 7880
+      },
+      {
+        "chars": 7887,
+        "utf8_bytes": 7887
+      },
+      {
+        "chars": 4319,
+        "utf8_bytes": 4319
+      }
+    ],
+    "token_estimates": null,
+    "live_output_fit": "UNKNOWN_UNTIL_LIVE",
+    "reduction_pct": {
+      "chars": 28.9138,
+      "utf8_bytes": 28.9138
+    }
+  },
+  "stable": {
+    "source_commit": "6e1135c4371a6a3d1b6a491a433576b3eda9efbe",
+    "wheel_sha256": "61035a5823abf425b5dc1001d314822c35fb11c2a5996ec414da104e66e15f62",
+    "unchanged": true,
+    "candidate_activated": false
+  },
+  "diagnostic_prs": {
+    "100": {
+      "draft": true,
+      "merged": false,
+      "head": "2bddb930af0e993bee39e7cd6cf5598f3e2b295c"
+    },
+    "101": {
+      "draft": true,
+      "merged": false,
+      "head": "c38e49d44a1354acb40efd636842b3ab95315e74"
+    }
+  },
+  "flags": {
+    "SOURCE_ANALYSIS_WHOLE_PIECE_COMPACT_FIRST_R1": "PASS",
+    "RECOMMENDED_DIRECTION": "WHOLE_PIECE_COMPACT_FIRST",
+    "NEW_RUN_EXTRACTION_MODE": "WHOLE_PIECE_COMPACT",
+    "RETURN_TO_FULL_SOURCEPIECE_SEMANTIC_CONTEXT": true,
+    "EVIDENCE_SEGMENT_SEMANTIC_BOUNDARY": "deprecated",
+    "16_REF_SEMANTIC_BOUNDARY": "deprecated",
+    "CONTEXT_DEPENDENCY_GRAPH": "auxiliary_only_or_deferred",
+    "DETERMINISTIC_EVIDENCE_BINDING": "preserved",
+    "WHOLE_PIECE_CANONICAL_EQUIVALENCE": "PASS",
+    "RAW_BEFORE_PARSE_DURABILITY": "PASS",
+    "AUTOMATIC_EXTRACTION_RETRY": false,
+    "HISTORICAL_BOUNDED_RUNS_READABLE": true,
+    "RUN8_MUTATED": false,
+    "REAL_PROVIDER_CALLS": 0,
+    "RUN9_CREATED": false,
+    "PRODUCTION_WRITES": 0,
+    "CURRENT_VIEW_WRITES": 0,
+    "OUTPUT_DECOMPOSITION_REQUIRED": "UNKNOWN_UNTIL_LIVE",
+    "12000_NOT_PROVEN_AS_OPTIMAL_HARD_LIMIT": true,
+    "NEXT_STAGE": "WHOLE_PIECE_COMPACT_RELEASE_AND_LIVE_RUN9_VALIDATION"
+  }
+}
