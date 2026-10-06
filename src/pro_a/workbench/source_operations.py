@@ -933,6 +933,16 @@ class SourceOperations:
         Domains(self.config).bind_packet(run["processing_run_id"], registered["artifact_id"])
         return registered
 
+    def resume_bounded_extraction_only(self, run_id: str, *, worker_id: str,
+                                       idempotency_key: str, max_new_calls: int,
+                                       provider: Any = None) -> dict[str, Any]:
+        """Explicit frozen-frontier execution; never plans or registers Semantic work."""
+        from .bounded_resume import resume_bounded_extraction_only
+        return resume_bounded_extraction_only(
+            self, run_id, worker_id=worker_id, idempotency_key=idempotency_key,
+            max_new_calls=max_new_calls, provider=provider,
+        )
+
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
                      lease_seconds: int = 180) -> dict[str, Any] | None:

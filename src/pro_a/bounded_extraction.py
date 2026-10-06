@@ -204,8 +204,9 @@ def _plan(series: ExtractionSeries, plan: ExtractionPlan) -> None:
     by_id = {s.segment_id: s for s in plan.segments}
     if len(by_id) != len(plan.segments) or len(set(plan.superseded_segment_ids)) != len(plan.superseded_segment_ids):
         raise BoundedExtractionError("DUPLICATE_SEGMENT_IDENTITY")
-    roots = initial_extraction_plan(series).segments
-    if tuple(s for s in plan.segments if s.parent_segment_id is None) != roots:
+    roots = tuple(s for s in plan.segments if s.parent_segment_id is None)
+    root_count = (len(series.eligible_evidence_refs) + series.budget.initial_evidence_refs - 1) // series.budget.initial_evidence_refs
+    if len(roots) != root_count or tuple(s.stable_path for s in roots) != tuple((i,) for i in range(root_count)):
         raise BoundedExtractionError("INVALID_INITIAL_ASSIGNMENT")
     expected_superseded = set()
     for parent in plan.segments:

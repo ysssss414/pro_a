@@ -144,7 +144,7 @@ class BoundedSourceAnalysisRunner:
                     "FAILED" if any(r["state"] == "FAILED" for r in series) else
                     "RECOVERY_REQUIRED" if any(r["state"] == "RECOVERY_REQUIRED" for r in series) else "PENDING"}
 
-    def advance(self, run, provider, owner):
+    def advance(self, run, provider, owner, *, allow_new_subdivision=True):
         from .source_operations import SourceOperationError
         owner = "worker_" + hashlib.sha256(owner.encode()).hexdigest()[:24]
         bindings = self.inputs(run)
@@ -187,7 +187,8 @@ class BoundedSourceAnalysisRunner:
                     attempt = c.execute("SELECT * FROM bounded_extraction_attempts WHERE segment_id=? ORDER BY attempt_number DESC LIMIT 1", (segment.segment_id,)).fetchone()
                     dispatched = attempt and c.execute("SELECT 1 FROM bounded_extraction_dispatches WHERE attempt_id=?", (attempt["attempt_id"],)).fetchone()
                 if dispatched:
-                    self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context)
+                    self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context,
+                                  allow_new_subdivision=allow_new_subdivision)
                 elif provider is not None:
                     selected = provider.get(self.operation) if isinstance(provider, Mapping) else provider
                     _require(isinstance(selected, self.provider_type) and selected.available,
@@ -213,12 +214,14 @@ class BoundedSourceAnalysisRunner:
                         response = selected.invoke(payload)
                     except Exception:
                         # No exception text or response excerpts cross this boundary.
-                        self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context)
+                        self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context,
+                                      allow_new_subdivision=allow_new_subdivision)
                     else:
                         metadata = asdict(response)
                         raw = metadata.pop("content")
                         self.ledger.record_outcome(attempt["attempt_id"], owner, fence, raw, **metadata)
-                        self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context)
+                        self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context,
+                                      allow_new_subdivision=allow_new_subdivision)
                 else:
                     return False
             _, plan, sr, _ = self.ledger.read(series.series_id)
@@ -255,7 +258,7 @@ class BoundedSourceAnalysisRunner:
                 finally:
                     self.ledger.release(series.series_id,owner,series_fence=fence)
 
-    def _observe(self, attempt_id, segment, owner, fence, catalog, context):
+    def _observe(self, attempt_id, segment, owner, fence, catalog, context, *, allow_new_subdivision=True):
         try:
             status = self.ledger.reconcile_attempt(attempt_id, owner, fence, catalog, context)
             _require(status != "UNKNOWN_EXTERNAL_OUTCOME", "UNKNOWN_EXTERNAL_OUTCOME")
@@ -269,8 +272,10 @@ class BoundedSourceAnalysisRunner:
             outcome = c.execute("SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?", (attempt_id,)).fetchone()
             state = c.execute("SELECT state FROM bounded_extraction_segments WHERE segment_id=?", (segment.segment_id,)).fetchone()[0]
         if outcome and outcome["external_outcome"] == "TRUNCATED":
+            _require(allow_new_subdivision, "BOUNDED_TRUNCATION_STOP")
             self.ledger.subdivide_after_truncation(segment.segment_id, owner, fence, expected_frontier_version=sr["frontier_version"])
         elif state == "SUBDIVISION_REQUIRED":
+            _require(allow_new_subdivision, "BOUNDED_SUBDIVISION_FORBIDDEN")
             _require(sr["provider_call_reservations"] + 2 <= self.ledger.read(segment.series_id)[0].budget.max_provider_calls
                      and sr["output_liability"] + 24000 <= self.ledger.read(segment.series_id)[0].budget.max_cumulative_output_tokens,
                      "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY")
