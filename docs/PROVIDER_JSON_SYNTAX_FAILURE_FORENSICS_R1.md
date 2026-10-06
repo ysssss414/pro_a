@@ -292,6 +292,8 @@ RETRY_CANDIDATE = true
 RETRY_EXECUTED = false
 FOCUSED_TESTS = 13 passed
 RELATED_REGRESSION = 886 passed; 1 pre-existing baseline exception
+PR = https://github.com/ysssss414/pro_a/pull/106
+PR_STATE = DRAFT
 NEXT_STAGE = MALFORMED_PROVIDER_JSON_SAME_RUN_RETRY_QUALIFICATION_R1
 ```
 

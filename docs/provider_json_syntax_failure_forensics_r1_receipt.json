@@ -188,7 +188,7 @@
     "private_source_content_committed": false,
     "private_artifact_path_committed": false
   },
-  "PR": null,
-  "PR_STATE": "PENDING_DRAFT_CREATION",
+  "PR": "https://github.com/ysssss414/pro_a/pull/106",
+  "PR_STATE": "DRAFT",
   "NEXT_STAGE": "MALFORMED_PROVIDER_JSON_SAME_RUN_RETRY_QUALIFICATION_R1"
 }
