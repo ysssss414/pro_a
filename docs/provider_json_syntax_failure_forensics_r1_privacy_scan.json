@@ -1,0 +1,32 @@
+{
+  "stage": "PROVIDER_JSON_SYNTAX_FAILURE_FORENSICS_R1",
+  "scan": "PUBLIC_DELIVERABLE_PRIVACY_SCAN",
+  "status": "PASS",
+  "date_local": "2026-10-06",
+  "scope": [
+    "src/pro_a/provider_json_forensics.py",
+    "tests/test_provider_json_syntax_forensics.py",
+    "docs/PROVIDER_JSON_SYNTAX_FAILURE_FORENSICS_R1.md",
+    "docs/provider_json_syntax_failure_forensics_r1_receipt.json",
+    "docs/provider_json_syntax_failure_forensics_r1_privacy_scan.json"
+  ],
+  "checks": {
+    "credential_pattern_hits": 0,
+    "absolute_or_private_path_pattern_hits": 0,
+    "raw_provider_output_present": false,
+    "private_source_content_present": false,
+    "private_artifact_path_present": false,
+    "absolute_operator_path_present": false,
+    "credential_or_authorization_material_present": false,
+    "bounded_excerpt_is_structurally_sanitized": true,
+    "synthetic_test_payload_only": true
+  },
+  "allowed_public_metadata": [
+    "opaque run, series, piece, segment and attempt identifiers",
+    "provider request identifier and model name",
+    "SHA-256 identities, lengths, offsets, token counts and timings",
+    "public schema and tool field names",
+    "redacted punctuation-only structural shapes"
+  ],
+  "forbidden_material_committed": false
+}
