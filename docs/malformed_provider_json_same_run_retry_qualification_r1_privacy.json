@@ -1,0 +1,23 @@
+{
+  "stage": "MALFORMED_PROVIDER_JSON_SAME_RUN_RETRY_QUALIFICATION_R1",
+  "status": "PASS",
+  "date_local": "2026-10-06",
+  "scope": "implementation commit plus qualification report and receipts",
+  "tracked_private_raw_included": false,
+  "tracked_private_source_content_included": false,
+  "tracked_local_absolute_paths_included": false,
+  "tracked_credentials_included": false,
+  "tracked_real_run_identifiers_included": false,
+  "synthetic_only_provider_execution": true,
+  "real_provider_calls": 0,
+  "real_state_writes": 0,
+  "production_writes": 0,
+  "current_view_writes": 0,
+  "review_actions": 0,
+  "scan_result": {
+    "credential_pattern_matches": 0,
+    "real_run_or_attempt_identifier_matches": 0,
+    "private_raw_hash_prefix_matches": 0,
+    "local_operator_path_matches": 0
+  }
+}
