@@ -46,6 +46,14 @@ class BoundedExtractionReplay:
 
 
 class BoundedSourceAnalysisRunner:
+    binding_version = BOUNDED_SOURCE_ANALYSIS_BINDING_VERSION
+    provider_version = BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION
+    operation = BOUNDED_SOURCE_ANALYSIS_OPERATION
+    provider_type = BoundedSourceAnalysisSegmentProvider
+    mode = 'BOUNDED_SERIES_V1'
+    piece_input = staticmethod(piece_input)
+    restore_input = staticmethod(restore_input)
+    segment_payload = staticmethod(segment_payload)
     def __init__(self, service):
         self.service = service
         self.ledger = BoundedExtractionStore(service.config)
@@ -64,11 +72,11 @@ class BoundedSourceAnalysisRunner:
                     raise SourceOperationError('BOUNDED_INPUT_ARTIFACT_MISMATCH') from None
                 if hashlib.sha256(content).hexdigest()!=prior['sha256']:
                     raise SourceOperationError('BOUNDED_INPUT_ARTIFACT_MISMATCH')
-            value = piece_input(native, run["source_sha256"], run_id, ordinal)
+            value = self.piece_input(native, run["source_sha256"], run_id, ordinal)
             artifact = self.service._register_input(run, "SOURCE_ANALYSIS_PIECE", ordinal, value,
-                {**checkpoint, "bounded_binding_version": BOUNDED_SOURCE_ANALYSIS_BINDING_VERSION,
+                {**checkpoint, "bounded_binding_version": self.binding_version,
                  "piece_count": len(plan["pieces"]), "series_id": value["series_id"]})
-            context, catalog, series = restore_input(value, run["source_sha256"], run_id, ordinal)
+            context, catalog, series = self.restore_input(value, run["source_sha256"], run_id, ordinal)
             self.ledger.create(series)
             event = {"ordinal": ordinal, "cloud_input_artifact_id": artifact,
                      "source_piece_id": context.piece.piece_id, "series_id": series.series_id,
@@ -102,7 +110,7 @@ class BoundedSourceAnalysisRunner:
             _require(document["processing_run_id"] == run_id and document["source_id"] == run["source_id"]
                      and document["source_sha256"] == run["source_sha256"] and document["payload_sha256"] == identity(value)
                      and canonical(document["checkpoint"]) == row["checkpoint_json"], "BOUNDED_INPUT_ARTIFACT_MISMATCH")
-            context, catalog, series = restore_input(value, run["source_sha256"], run_id, ordinal)
+            context, catalog, series = self.restore_input(value, run["source_sha256"], run_id, ordinal)
             expected = {"ordinal": ordinal, "cloud_input_artifact_id": row["artifact_id"],
                         "source_piece_id": context.piece.piece_id, "series_id": series.series_id,
                         "series_sha256": series.series_sha256, "initial_plan_sha256": value["native"]["initial_plan_sha256"]}
@@ -181,15 +189,15 @@ class BoundedSourceAnalysisRunner:
                 if dispatched:
                     self._observe(attempt["attempt_id"], segment, owner, fence, catalog, context)
                 elif provider is not None:
-                    selected = provider.get(BOUNDED_SOURCE_ANALYSIS_OPERATION) if isinstance(provider, Mapping) else provider
-                    _require(isinstance(selected, BoundedSourceAnalysisSegmentProvider) and selected.available,
+                    selected = provider.get(self.operation) if isinstance(provider, Mapping) else provider
+                    _require(isinstance(selected, self.provider_type) and selected.available,
                              "BOUNDED_PROVIDER_UNAVAILABLE")
                     _require(selected.provider_identity == "deepseek"
-                             and selected.adapter_version == BOUNDED_SOURCE_ANALYSIS_PROVIDER_VERSION,
+                             and selected.adapter_version == self.provider_version,
                              "BOUNDED_PROVIDER_CONTRACT_MISMATCH")
                     configuration = selected.configuration()
                     _require(configuration["timeout_seconds"] == self.service.jobs.profile.timeout_seconds, "BOUNDED_PROVIDER_CONFIGURATION_MISMATCH")
-                    payload = segment_payload(value, context, catalog, series, segment)
+                    payload = self.segment_payload(value, context, catalog, series, segment)
                     with self.ledger._connection(True) as c:
                         segment_row, _ = self.ledger._segment_row(c, segment.segment_id)
                         self.ledger._owned(segment_row, owner, fence)
@@ -222,6 +230,9 @@ class BoundedSourceAnalysisRunner:
                 return False
             code = "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY" if str(error) in (
                 "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY", "SERIES_BUDGET_EXCEEDED") else "BOUNDED_EXTRACTION_FAILED"
+            if self.mode == 'WHOLE_PIECE_OUTPUT_DECOMPOSITION' and str(error) in (
+                    'SOURCE_METADATA_CONFLICT', 'NODE_CANDIDATE_CONFLICT', 'OUTPUT_OWNERSHIP_VIOLATION'):
+                code = str(error)
             self.ledger.fail_series(series.series_id, owner, sf, code)
             self._terminate_pending(bindings,owner)
             raise SourceOperationError(code) from None
@@ -269,7 +280,7 @@ class BoundedSourceAnalysisRunner:
             _require(key not in responses, "BOUNDED_NATIVE_PROMPT_MISMATCH")
             responses[key] = expand_source_analysis_wire_v3(aggregate["wire"], catalog, context)
             usage = self.ledger.read(series.series_id)[3]
-            metadata[key] = {"execution_mode": "BOUNDED_SERIES_V1", "series_id": series.series_id,
+            metadata[key] = {"execution_mode": self.mode, "series_id": series.series_id,
                 "attempts_used": usage.provider_call_count, "max_attempts": series.budget.max_provider_calls,
                 "attempts": [{"prompt_tokens": usage.input_tokens, "completion_tokens": usage.output_tokens,
                               "total_tokens": usage.total_tokens, "cached_tokens": usage.cached_tokens,

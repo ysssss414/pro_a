@@ -68,7 +68,7 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
         from test_llm import FakeResponse
         from test_structured_json_reasoning_policy import completion
         old.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, content="{")))
-        assert advance(value)["state"] == "FAILED"
+        assert advance(value)["state"] == "BLOCKED"
     service = value["service"]
     def inputs(run_id):
         with service.store.connect() as c:
@@ -82,9 +82,9 @@ def test_new_plan_flows_into_inputs_and_job_checkpoints_without_rewriting_old_ro
     service.advance_once(worker_id="capacity-r2", processing_run_id=created["processing_run_id"], provider=None)
     current = inputs(created['processing_run_id'])
     new_document = input_document(current[0])
-    assert new_document["payload"]["initial_plan_sha256"] != old_document["payload"]["initial_plan_sha256"]
+    assert new_document["payload"]["native"]["initial_plan_sha256"] != old_document["payload"]["native"]["initial_plan_sha256"]
     for row, document in ((before[0], old_document), (current[0], new_document)):
-        assert document["payload"]["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
+        assert document["payload"]["native"]["initial_plan_sha256"] == document["checkpoint"]["plan_sha256"]
         assert json.loads(row["checkpoint_json"])["plan_sha256"] == document["checkpoint"]["plan_sha256"]
     assert current[0]["sha256"] != before[0]["sha256"]
     assert current[0]["artifact_id"] != before[0]["artifact_id"]

@@ -72,6 +72,10 @@ def adapter_version_for_operation(operation_kind: str) -> str:
 
 
 def operation_contract(operation_kind: str) -> dict[str, Any]:
+    if operation_kind == 'WHOLE_PIECE_OUTPUT_BATCH':
+        from .output_decomposition import contract, SYSTEM, PROMPT_VERSION as OUTPUT_PROMPT_VERSION, PROVIDER_VERSION
+        return {**contract(), 'operation_kind': operation_kind, 'provider_adapter_version': PROVIDER_VERSION,
+                'prompt_bundle_sha256': hashlib.sha256((SYSTEM + '\0' + OUTPUT_PROMPT_VERSION + '\0' + contract()['tool_schema_sha256']).encode()).hexdigest()}
     if operation_kind == OPERATION_KIND:
         combined = hashlib.sha256(
             (SEMANTIC_DECOMPOSITION_SYSTEM + "\0" + SEMANTIC_DECOMPOSITION_USER).encode("utf-8")
@@ -250,7 +254,8 @@ class CloudResult:
             raise CloudContractError("INVALID_PROVIDER_RESULT")
         if any(value is not None and value < 0 for value in values):
             raise CloudContractError("INVALID_PROVIDER_RESULT")
-        if self.operation_kind not in OPERATION_KINDS or self.attempt_number < 1:
+        # Output batches share the unparsed transport result DTO, not CloudJobs.
+        if self.operation_kind not in (*OPERATION_KINDS, 'WHOLE_PIECE_OUTPUT_BATCH') or self.attempt_number < 1:
             raise CloudContractError("INVALID_PROVIDER_RESULT")
 
 

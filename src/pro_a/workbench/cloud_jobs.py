@@ -161,12 +161,13 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'source_analysis_wire.py', 'bounded_source_analysis.py', 'processing_context.py',
                  'workbench/bounded_source_analysis.py', 'workbench/bounded_extraction_store.py',
                  'workbench/bounded_extraction_persistence.py', 'whole_piece_compact.py',
-                 'workbench/whole_piece_raw.py', 'source_analysis_provider_record.py')
+                 'workbench/whole_piece_raw.py', 'source_analysis_provider_record.py',
+                 'output_decomposition.py', 'workbench/output_decomposition.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     if workbench_schema_version == "12":
-        from pro_a.whole_piece_compact import contract
-        value["whole_piece_compact"] = contract()
+        from pro_a.output_decomposition import contract
+        value["whole_piece_output_decomposition"] = contract()
     value["runtime_sha256"] = digest(value)
     return value
 

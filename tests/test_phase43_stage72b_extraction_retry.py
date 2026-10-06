@@ -203,7 +203,7 @@ def test_retry_and_reprocess_are_separate(tmp_path):
     prepare_bounded_extraction_persistence(value['config'])
     new = value['service'].start(value['source']['source_id'], idempotency_key='stage72b-reprocess-command', reprocess_reason='Explicit reprocess')['run']
     assert new['processing_run_id'] != value['run_id']
-    assert new['runtime_identity']['whole_piece_compact']
+    assert new['runtime_identity']['whole_piece_output_decomposition']
 
 
 def test_schema_additive_idempotent_and_lineage_append_only(tmp_path):

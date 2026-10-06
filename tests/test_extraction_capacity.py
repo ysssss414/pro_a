@@ -200,10 +200,10 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     service = value["service"]
     run = service.get_run(value["run_id"])
     assert run["state"] == "EXTRACTION_PROCESSING"
-    extraction = [j for j in jobs(value) if j['operation_kind'] == SOURCE_ANALYSIS_OPERATION]
+    extraction = ledger_rows(value,'bounded_extraction_series')
     assert 1 < len(extraction) <= value["source_profile"].max_extraction_pieces == 16
     assert len(extraction) == 5
-    assert not ledger_rows(value,'cloud_attempts') and len(jobs(value)) == 5
+    assert not ledger_rows(value,'bounded_extraction_attempts') and len(jobs(value)) == 0
     assert value["http_calls"] == []
     with service.store.connect() as c:
         row = c.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?", (value["run_id"],)).fetchone()
@@ -219,7 +219,7 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     prompts = {}
     for item in inputs:
         doc = json.loads((value["config"].artifact_root / item["artifact_relative"]).read_text(encoding="utf-8"))
-        payload = doc["payload"]
+        payload = doc["payload"]["native"]
         assert len(payload["source_text"]) <= CAP
         assert payload["initial_plan_sha256"] == doc["checkpoint"]["plan_sha256"] == plan["initial_extraction_plan_sha256"]
         prompts[payload["user_prompt"]] = payload["source_text"]
@@ -233,7 +233,7 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
         assert request["model"] == "deepseek-flash"
         assert request["thinking"] == {"type": "disabled"} and "reasoning_effort" not in request
         user = request["messages"][1]["content"]
-        from pro_a.whole_piece_compact import SYSTEM
+        from pro_a.output_decomposition import SYSTEM
         is_extraction=request['messages'][0]['content']==SYSTEM
         assert request["max_tokens"] == (12000 if is_extraction else 8192)
         if is_extraction:
@@ -242,7 +242,6 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
             import re
             target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', annotated)
             output=json.loads(response_content(target,annotated))
-            del output['dispositions']
             response_claims.append(len(output['wire']['claims']))
             response_bytes.append(len(json.dumps(output).encode()))
             operation = SOURCE_ANALYSIS_OPERATION
@@ -263,7 +262,8 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
         if is_extraction:
             from series_binding_helpers import ToolResponse
             from lexical_record_helpers import from_wire
-            return ToolResponse(json.dumps(from_wire(output['wire'])), output=10000)
+            from series_binding_helpers import batch_record
+            return ToolResponse(json.dumps(batch_record(output,target)), output=10000)
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-capacity"},
             json=lambda: {"model": "deepseek-flash", "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(output)}}],
                           "usage": {"prompt_tokens": 100, "completion_tokens": 10000 if is_extraction else 20,
@@ -284,7 +284,7 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     assert final["state"] == "HUMAN_REVIEW_REQUIRED", final.get("error")
     assert final["packet_artifact_id"] and final["packet_id"]
     all_jobs = jobs(value)
-    assert len(all_jobs) <= MAX_STAGE1_JOBS_PER_RUN
+    assert len(all_jobs) + len(extraction) <= MAX_STAGE1_JOBS_PER_RUN
     assert all(j["state"] == "SUCCEEDED" and j["validation_status"] == "PASS" for j in all_jobs)
     assert all(j["provider_adapter_version"] == adapter_version_for_operation(j["operation_kind"])
                for j in all_jobs)
@@ -300,9 +300,11 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
         else:
             assert json.loads(job["native_checkpoint_json"])["semantic_partition"]["input_token_budget"] == 11808
     assert len(calls) == len(all_jobs)+len(ledger_rows(value,'bounded_extraction_attempts'))
-    assert len(response_bytes)==len(extraction)
-    canonical_sizes=[len(json.dumps(service.jobs.private_result(job['job_id'])['normalized_output']['response']).encode())
-                     for job in extraction]
+    assert len(response_bytes)==len(ledger_rows(value,'bounded_extraction_attempts'))
+    from pro_a.bounded_extraction import expand_source_analysis_wire_v3
+    canonical_sizes=[len(json.dumps(expand_source_analysis_wire_v3(
+        service.output_batches.ledger.aggregate(series.series_id)['wire'], catalog, context)).encode())
+        for _,context,catalog,series in service.output_batches.inputs(final)]
     assert min(canonical_sizes)>20_000
     assert sum(response_claims) == 200
     persisted_plan = json.loads((native / "engine/extraction/initial_extraction_plan.json").read_text(encoding="utf-8"))
