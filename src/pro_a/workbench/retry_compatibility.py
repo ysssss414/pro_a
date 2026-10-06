@@ -127,6 +127,10 @@ _EXECUTION_SURFACE_EXCLUSIONS = {
             "Target-only evidence validator and authorization token; exact call-site plumbing is "
             "normalized below and the validator remains bound by the target contract digest."
         ),
+        "workbench/bounded_resume.py": (
+            "Target-only explicit operator boundary. It reuses the unchanged full-run "
+            "execution defaults; its complete source is bound by the target contract digest."
+        ),
     },
     "native": {},
 }
@@ -148,6 +152,7 @@ _INTEGRATION_FILES = (
     "workbench/domains.py",
     "workbench/source_operations.py",
     "workbench/extraction_retry.py",
+    "workbench/bounded_resume.py",
     "workbench/retry_compatibility.py",
 )
 _CONTRACT_FILES = tuple(sorted(
@@ -361,6 +366,19 @@ if identity["runtime"] != _runtime():
 }
 
 _FULL_SURFACE_STATEMENT_REPLACEMENTS = {
+    "bounded_extraction.py": ((
+        '''
+roots = tuple(s for s in plan.segments if s.parent_segment_id is None)
+root_count = (len(series.eligible_evidence_refs) + series.budget.initial_evidence_refs - 1) // series.budget.initial_evidence_refs
+if len(roots) != root_count or tuple(s.stable_path for s in roots) != tuple((i,) for i in range(root_count)):
+    raise BoundedExtractionError("INVALID_INITIAL_ASSIGNMENT")
+''',
+        '''
+roots = initial_extraction_plan(series).segments
+if tuple(s for s in plan.segments if s.parent_segment_id is None) != roots:
+    raise BoundedExtractionError("INVALID_INITIAL_ASSIGNMENT")
+''',
+    ),),
     "workbench/bounded_source_analysis.py": ((
         '''
 from .extraction_retry import bounded_attempt_for_dispatch
@@ -545,6 +563,27 @@ def _ast_sha256(content: bytes, selectors: tuple[str, ...] | None, *, name: str 
     ast.fix_missing_locations(tree)
     _validate_dependency_closure(tree, name, selectors)
     if selectors is None:
+        if name == 'workbench/bounded_source_analysis.py':
+            # Normalize only the opt-in subdivision argument whose full-run default
+            # remains True, plus its exact plumbing and narrower-mode guards.
+            runner = next((node for node in tree.body if isinstance(node,ast.ClassDef)
+                           and node.name == 'BoundedSourceAnalysisRunner'),None)
+            functions = [node for node in getattr(runner,'body',()) if isinstance(node,ast.FunctionDef)
+                         and node.name in ('advance','_observe')]
+            for function in functions:
+                matches = [i for i,arg in enumerate(function.args.kwonlyargs)
+                           if arg.arg == 'allow_new_subdivision'
+                           and isinstance(function.args.kw_defaults[i],ast.Constant)
+                           and function.args.kw_defaults[i].value is True]
+                for i in reversed(matches):
+                    del function.args.kwonlyargs[i]; del function.args.kw_defaults[i]
+                for call in (item for item in ast.walk(function) if isinstance(item,ast.Call)):
+                    if _call_name(call) == '_observe':
+                        call.keywords = [kw for kw in call.keywords if not (kw.arg == 'allow_new_subdivision'
+                                         and isinstance(kw.value,ast.Name) and kw.value.id == 'allow_new_subdivision')]
+            for observe in (function for function in functions if function.name == '_observe'):
+                for code in ('BOUNDED_TRUNCATION_STOP','BOUNDED_SUBDIVISION_FORBIDDEN'):
+                    _replace_exact_statements(observe,f'_require(allow_new_subdivision, "{code}")','')
         for before, after in _FULL_SURFACE_STATEMENT_REPLACEMENTS.get(name, ()):
             _replace_exact_statements(tree, before, after)
     selected = tree if selectors is None else {
@@ -1123,7 +1162,8 @@ def load_qualification(connection, *, run_id: str, failed_attempt_id: str,
 
 
 def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: str,
-                                       *, persist: bool = False) -> dict[str, Any]:
+                                       *, persist: bool = False,
+                                       bounded_only_resume: bool = False) -> dict[str, Any]:
     """Qualify one malformed-JSON bounded Attempt against the target release."""
     from pro_a.evidence_binding import identity
     from .bounded_extraction_store import BoundedExtractionStore, _event
@@ -1202,13 +1242,39 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                     for item in failed)
             and results_absent
         )
+        if bounded_only_resume:
+            from .bounded_resume import COMPLETE, contract as boundary_contract
+            from .extraction_retry import _bounded_retry_events
+            retries = [r for r in _bounded_retry_events(connection,run_id=run_id)
+                       if r['retry_of_attempt_id'] == failed_attempt_id]
+            accepted = connection.execute('SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?',(segment_id,)).fetchone()
+            no_semantic = not connection.execute('SELECT 1 FROM source_processing_jobs WHERE processing_run_id=?',(run_id,)).fetchone()
+            scope_ok = (
+                chain_ok and run['state']=='EXTRACTION_PROCESSING'
+                and run['stage'] in ('WHOLE_PIECE_OUTPUT_DECOMPOSITION',COMPLETE)
+                and run['lease_owner'] is None and attempt['series_run_id']==run_id
+                and attempt['series_state'] in ('OPEN','SUCCEEDED_COMPLETE')
+                and attempt['segment_state']=='SUCCEEDED_COMPLETE' and attempt['attempt_number']==1
+                and latest is not None and latest['attempt_number']==2
+                and len(retries)==1 and retries[0]['retry_number']==1
+                and retries[0]['retry_reason_code']=='MALFORMED_PROVIDER_JSON'
+                and retries[0]['new_attempt_id']==latest['attempt_id']
+                and accepted is not None and accepted['result_type']=='COMPLETE'
+                and accepted['attempt_id']==latest['attempt_id'] and no_semantic
+                and outcome is not None and outcome['external_outcome']=='SUCCEEDED'
+                and outcome['classification']=='SUCCEEDED' and outcome['finish_reason']=='tool_calls'
+                and any(item.get('attempt_id')==failed_attempt_id and item.get('classification')=='INVALID_SEGMENT_RESPONSE' for item in failed)
+            )
+            results_absent = no_semantic
+            evidence['bounded_only_resume_boundary'] = boundary_contract()
         dimensions["historical_failed_scope"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if scope_ok else "FAIL",
             "Run, Series, Segment, Attempt, outcome and terminal failure are exactly bound.",
         )
         dimensions["no_downstream_semantic_work"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if results_absent else "FAIL",
-            "No accepted target-Batch result, Series aggregate or semantic Job exists.",
+            ("No Semantic Job exists; the uniquely accepted retry result is preserved."
+             if bounded_only_resume else "No accepted target-Batch result, Series aggregate or semantic Job exists."),
         )
         if not scope_ok:
             return _blocked(["BLOCKED_HISTORICAL_SCOPE_INELIGIBLE"], dimensions, evidence)
