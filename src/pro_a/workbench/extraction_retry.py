@@ -81,7 +81,9 @@ def frozen_cloud(row):
             raise ValueError()
         budget = budget_for_operation(row['operation_kind'], profile.max_total_tokens)
         prompt = json.loads(row['prompt_json'])
-        whole_piece = prompt.get('operation_schema_version') == 'whole-piece-compact-source-analysis-response-v1'
+        from ..whole_piece_compact import RESPONSE_VERSION
+        whole_piece = prompt.get('operation_schema_version') in (
+            'whole-piece-compact-source-analysis-response-v1', RESPONSE_VERSION)
         for field in fields(CloudProfile):
             if field.name == 'provider_adapter_version':
                 expected_adapter = profile.adapter_for_operation(row['operation_kind'])

@@ -6,6 +6,7 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
+from lexical_record_helpers import from_wire
 
 from pro_a.bounded_extraction import expand_source_analysis_wire_v3
 from pro_a.source_analysis_wire import build_source_evidence_catalog
@@ -34,16 +35,17 @@ def payload_for(ctx):
 def test_prompt_validator_exact_enum_parity(role):
     from pro_a.whole_piece_compact import SYSTEM, ENUM_TABLE, parse
     from pro_a.source_analysis_wire import NODE_MATCH_ROLES
-    assert tuple(json.loads(SYSTEM[SYSTEM.rfind('\n') + 1:])['node_matches[].role']) == NODE_MATCH_ROLES
+    from pro_a.source_analysis_provider_record import record_schema
+    assert set(record_schema()['properties']['node_matches']['items']['properties']['role']['enum']) == set(NODE_MATCH_ROLES)
     assert ENUM_TABLE['node_matches[].role'] is NODE_MATCH_ROLES
     ctx, catalog, raw = mixed_fixture()
     wire = wire3(raw, catalog)
     wire['node_matches'][0]['role'] = role
     if role in NODE_MATCH_ROLES:
-        assert parse(json.dumps({'wire': wire}), payload_for(ctx))['node_matches'][0]['role'] == role
+        assert parse(json.dumps(from_wire(wire)), payload_for(ctx))['node_matches'][0]['role'] == role
     else:
-        with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_COMPACT_RESPONSE'):
-            parse(json.dumps({'wire': wire}), payload_for(ctx))
+        with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_LEXICAL_RESPONSE'):
+            parse(json.dumps(from_wire(wire)), payload_for(ctx))
 
 
 def test_whole_piece_render_and_strict_envelope():
@@ -56,9 +58,9 @@ def test_whole_piece_render_and_strict_envelope():
         assert '[' + unit.evidence_ref + ']' + unit.exact_text in user
     assert 'assigned_evidence_refs' not in user and 'dispositions' not in user
     assert request['max_tokens'] == 12000
-    assert parse(json.dumps({'wire': wire3(raw, catalog)}), payload) == raw
+    assert parse(json.dumps(from_wire(wire3(raw, catalog))), payload) == raw
     for content in ['{', '{"wire":{},"wire":{}}', '{"wire":{},"dispositions":[]}', '{"wire":NaN}']:
-        with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_COMPACT_RESPONSE'):
+        with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_LEXICAL_RESPONSE'):
             parse(content, payload)
 
 
@@ -83,8 +85,8 @@ def test_whole_piece_rejects_invalid_provenance(change):
         with pytest.raises(ValueError):
             expand_source_analysis_wire_v3(wire, replace(catalog, units=catalog.units[:-1]), ctx)
         return
-    with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_COMPACT_RESPONSE'):
-        parse(json.dumps({'wire': wire}), payload)
+    with pytest.raises(ValueError, match='INVALID_WHOLE_PIECE_LEXICAL_RESPONSE'):
+        parse(json.dumps(from_wire(wire)), payload)
 
 
 @pytest.mark.parametrize('selector,mode,occurrence,expected', [
@@ -101,11 +103,14 @@ def test_whole_piece_selector_contract(selector, mode, occurrence, expected):
     wire['claims'][0].update(evidence_selector=selector, evidence_mode=mode)
     if occurrence is not None:
         wire['claims'][0]['evidence_occurrence'] = occurrence
+    record = from_wire(wire)
+    if occurrence is None:
+        del record['claims'][0]['evidence']['occurrence']
     if expected is None:
         with pytest.raises(ValueError):
-            parse(json.dumps({'wire': wire}), payload_for(ctx))
+            parse(json.dumps(record), payload_for(ctx))
     else:
-        assert parse(json.dumps({'wire': wire}), payload_for(ctx))['claims'][0]['evidence_excerpt'] == expected
+        assert parse(json.dumps(record), payload_for(ctx))['claims'][0]['evidence_excerpt'] == expected
 
 
 def test_whole_piece_ambiguity_does_not_require_dependency_graph():
@@ -114,7 +119,7 @@ def test_whole_piece_ambiguity_does_not_require_dependency_graph():
     catalog = build_source_evidence_catalog(ctx)
     raw = empty_canonical()
     raw['claims'] = [canonical_claim('青松公司现有产能为100台。', catalog.units[-1])]
-    assert parse(json.dumps({'wire': wire3(raw, catalog)}), payload_for(ctx)) == raw
+    assert parse(json.dumps(from_wire(wire3(raw, catalog))), payload_for(ctx)) == raw
     assert '青松公司与白杨公司' in render(payload_for(ctx))['messages'][1]['content']
     # This proves provenance/representation only, not the model's antecedent choice.
     assert set(raw) == {'source_metadata', 'claims', 'node_matches', 'node_candidates', 'relation_candidates', 'source_references'}

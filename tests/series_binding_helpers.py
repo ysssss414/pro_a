@@ -75,25 +75,34 @@ class Response:
         return self.value
 
 
+class ToolResponse(Response):
+    def __init__(self, content, finish='tool_calls', output=50, reasoning=None):
+        from pro_a.source_analysis_provider_record import TOOL_NAME
+        super().__init__(None, finish, output, reasoning)
+        self.value['choices'][0]['message'].update(role='assistant', tool_calls=[{
+            'type': 'function', 'function': {'name': TOOL_NAME, 'arguments': content}}])
+
+
 class Transport:
     def __init__(self, *, mode=None, callback=None):
         self.mode, self.callback, self.calls = mode, callback, []
 
-    def __call__(self, endpoint, *, json, headers, timeout):
+    def __call__(self, endpoint, *, json, headers, timeout, allow_redirects=False):
         self.calls.append(deepcopy(json))
         if self.callback:
             self.callback(json)
         target, source = request_parts(json)
         whole = 'assigned_evidence_refs' not in target
+        response_type = ToolResponse if whole else Response
         if whole:
             target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', source)
         mode = self.mode(target, len(self.calls)) if callable(self.mode) else self.mode
         if mode == 'unknown':
             raise requests.ReadTimeout('SYNTHETIC_UNTRUSTED_EXCEPTION')
         if mode == 'truncated':
-            return Response('{"wire":{"claims":[', 'length', 12000)
+            return response_type('{"wire":{"claims":[', 'length', 12000)
         if mode == 'malformed':
-            return Response('SYNTHETIC_MALFORMED_PRIVATE_CONTENT')
+            return response_type('SYNTHETIC_MALFORMED_PRIVATE_CONTENT')
         content=response_content(target, source, subdivision=mode=='subdivide')
         if mode=='sparse':
             value=__import__('json').loads(content)
@@ -110,9 +119,9 @@ class Transport:
             content=__import__('json').dumps(value,ensure_ascii=False)
         if whole:
             value = __import__('json').loads(content)
-            del value['dispositions']
-            content = __import__('json').dumps(value, ensure_ascii=False)
-        return Response(content)
+            from lexical_record_helpers import from_wire
+            content = __import__('json').dumps(from_wire(value['wire']), ensure_ascii=False)
+        return response_type(content)
 
 
 def request_parts(request):

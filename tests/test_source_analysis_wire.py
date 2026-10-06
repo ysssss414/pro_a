@@ -425,5 +425,5 @@ def test_foundation_dormant_and_schema12_surfaces_fail_closed():
     assert MAX_STAGE1_JOBS_PER_RUN == 31
     assert SourceProfile.__dataclass_fields__["max_extraction_pieces"].default == 16
     assert OPERATION_MAX_OUTPUT_TOKENS == {"SOURCE_ANALYSIS_PIECE": 12000, "SEMANTIC_DECOMPOSITION": 8192}
-    assert operation_contract("SOURCE_ANALYSIS_PIECE")["provider_adapter_version"] == "whole-piece-compact-source-analysis-adapter-v1"
-    assert operation_contract("SOURCE_ANALYSIS_PIECE")["prompt_version"] == "whole-piece-compact-source-analysis-prompt-v1"
+    assert operation_contract("SOURCE_ANALYSIS_PIECE")["provider_adapter_version"] == "whole-piece-lexical-tool-source-analysis-adapter-v1"
+    assert operation_contract("SOURCE_ANALYSIS_PIECE")["prompt_version"] == "whole-piece-lexical-tool-source-analysis-prompt-v1"

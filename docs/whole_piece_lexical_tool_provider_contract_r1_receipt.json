@@ -1,0 +1,437 @@
+{
+  "stage": "WHOLE_PIECE_LEXICAL_TOOL_PROVIDER_CONTRACT_R1",
+  "status": "PASS",
+  "baseline_sha": "43939a077174dabb0357488418cc3c00bb93ff8d",
+  "implementation_sha": "eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1",
+  "evidence_commit": "bb697740f456ced74239e202237b495c5bf72b96",
+  "gates": {
+    "A": "PASS",
+    "B": "PASS",
+    "C": "PASS",
+    "D": "PASS",
+    "E": "PASS"
+  },
+  "checks": {
+    "FULL_OBJECT_FAMILY_COVERAGE": "PASS",
+    "EVENT_VARIANT": "PASS",
+    "THEME_VARIANT": "PASS",
+    "RESEARCH_QUESTION_VARIANT": "PASS",
+    "PRESERVED_FIELDS_EQUIVALENCE": "PASS",
+    "LEXICAL_BOOLEAN": "PASS",
+    "LEXICAL_CONFIDENCE": "PASS",
+    "LEXICAL_OCCURRENCE": "PASS",
+    "STRUCTURED_JSON": "PASS",
+    "FIXED_EVIDENCE_SELECTION": "PASS",
+    "PROVIDER_RECORD_TO_WIRE": "PASS",
+    "WHOLE_PIECE_CANONICAL_EQUIVALENCE": "PASS",
+    "NATIVE_REJECTION_EQUIVALENCE": "PASS",
+    "PERMANENT_CLAIM_IDENTITY": "PASS",
+    "RAW_BEFORE_PARSE_DURABILITY": "PASS",
+    "PROVIDER_EXECUTION_MODE": "DEEPSEEK_STRICT_TOOL_LEXICAL",
+    "STRICT_TOOL_ROLE": "FORMAT_COMPLIANCE_ASSIST",
+    "AUTHORITATIVE_VALIDATOR": "LOCAL",
+    "PROVIDER_RECORD_VERSION": "whole-piece-source-analysis-provider-record-v1",
+    "TOOL_SCHEMA_VERSION": "whole-piece-source-analysis-tool-schema-v1",
+    "WIRE": "source-analysis-wire-v3",
+    "EVIDENCE_BINDING": "source-analysis-evidence-binding-v2",
+    "AUTOMATIC_EXTRACTION_RETRY": false,
+    "SCHEMA": 12,
+    "RUN9_MUTATED": false,
+    "REAL_PROVIDER_CALLS": 0,
+    "RUN10_CREATED": false,
+    "PRODUCTION_WRITES": 0,
+    "CURRENT_VIEW_WRITES": 0,
+    "REVIEW_ACTIONS": 0,
+    "WIRE_FOUNDATION_RELAXED": false,
+    "EVIDENCE_BINDING_RELAXED": false,
+    "ANALYZER_RELAXED": false,
+    "OUTPUT_DECOMPOSITION_REQUIRED": "UNKNOWN_UNTIL_LIVE",
+    "NEXT_STAGE": "LEXICAL_TOOL_RELEASE_AND_LIVE_RUN10_VALIDATION",
+    "AUTHORIZATION_REQUIRED_FOR_LIVE_RUN10": true
+  },
+  "identities": {
+    "response_version": "whole-piece-lexical-tool-source-analysis-response-v1",
+    "prompt_version": "whole-piece-lexical-tool-source-analysis-prompt-v1",
+    "adapter_version": "whole-piece-lexical-tool-source-analysis-adapter-v1",
+    "provider_execution_mode": "DEEPSEEK_STRICT_TOOL_LEXICAL",
+    "provider_record_version": "whole-piece-source-analysis-provider-record-v1",
+    "tool_schema_version": "whole-piece-source-analysis-tool-schema-v1",
+    "tool_schema_sha256": "856f89d68245c80fd7be720a026f7ad27d4a9004cf41c77385d270532c61a5ef",
+    "tool_name": "emit_source_analysis",
+    "tool_strict": true,
+    "provider_endpoint": "https://api.deepseek.com/beta/chat/completions",
+    "strict_tool_role": "FORMAT_COMPLIANCE_ASSIST",
+    "authoritative_validator": "LOCAL",
+    "wire": "source-analysis-wire-v3",
+    "evidence_binding": "source-analysis-evidence-binding-v2",
+    "expander": "source-analysis-wire-expander-v2",
+    "max_output_tokens": 12000,
+    "automatic_extraction_retry": false,
+    "system_prompt_sha256": "df96d5b823b7b4151e0883f408ac9c3cb2cde06589b9b19cd82daa86bc8d5266",
+    "prompt_bundle_sha256": "600197408fd7ef56b5f80431df40af1ea0fbad76913d38baeea56186d9f7f1a8"
+  },
+  "tests": {
+    "unique_passed": 1152,
+    "failed": 0,
+    "skipped": 0,
+    "full_repository_suite_run": false,
+    "scope_counts": {
+      "tests.test_cloud_operation_adapter_binding": 24,
+      "tests.test_evidence_binding": 31,
+      "tests.test_extraction_capacity": 21,
+      "tests.test_extraction_capacity_r2": 4,
+      "tests.test_lexical_tool_adapter": 19,
+      "tests.test_lexical_tool_qualification": 46,
+      "tests.test_mcp_bounded_reads": 8,
+      "tests.test_mcp_stage0": 30,
+      "tests.test_mcp_stage3": 51,
+      "tests.test_operation_output_budget": 25,
+      "tests.test_phase43_stage1_operator_scale": 14,
+      "tests.test_phase43_stage72a_provider_diagnostics": 28,
+      "tests.test_phase43_stage72b_extraction_retry": 25,
+      "tests.test_phase43_stage72b_unicode_reason": 10,
+      "tests.test_phase43_stage72c_retry_compatibility": 35,
+      "tests.test_provider_output_failure_telemetry": 43,
+      "tests.test_provider_record_json.StructuredTests": 25,
+      "tests.test_repository_identity": 19,
+      "tests.test_semantic_admission": 49,
+      "tests.test_source_analysis_provider_record": 467,
+      "tests.test_source_analysis_wire": 61,
+      "tests.test_v0_2_analyzer_validation": 12,
+      "tests.test_whole_piece_compact": 33,
+      "tests.test_whole_piece_execution": 24,
+      "tests.test_workbench_stage6": 33,
+      "tests.test_workbench_stage7": 15
+    },
+    "batches": [
+      {
+        "batch": "final-pure",
+        "passed": 713,
+        "failed": 0,
+        "junit_sha256": "26904366e74075eeb95e1dcc14dcf4fcf2e3efb0d1564e55771728230ae5a6f3"
+      },
+      {
+        "batch": "fixes",
+        "passed": 120,
+        "failed": 0,
+        "junit_sha256": "36cf2b2c3648c1684d443e9173ed0e425efad663dc37fe2428220c1729086468"
+      },
+      {
+        "batch": "final-compat",
+        "passed": 84,
+        "failed": 0,
+        "junit_sha256": "9db3221440f3561613edb77351e73351d9246c3673b3a73d2f0377baf66b4611"
+      },
+      {
+        "batch": "final-reads",
+        "passed": 138,
+        "failed": 0,
+        "junit_sha256": "f656fcc47d38b401281e43e6ad9c6be6bbcdb8319730179797a805613d5ddce7"
+      },
+      {
+        "batch": "final-durable",
+        "passed": 143,
+        "failed": 0,
+        "junit_sha256": "ce3877db8c54a13e988fe73b2b840344c60d1093bc04d624aebf43d5dae92aeb"
+      }
+    ],
+    "duplicate_executions": 46,
+    "network_policy": "External sockets blocked; Windows asyncio loopback only. Provider responses synthetic."
+  },
+  "build": {
+    "status": "PASS",
+    "implementation_sha": "eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1",
+    "wheel_sha256": "437c63ed021a614170ee466d9d8f78f4a238518673002b4b64bfeb103812481c",
+    "isolated_pep517_wheel": "PASS",
+    "compileall": "PASS",
+    "pip_check": "No broken requirements found.",
+    "source_wheel_install_python_files": 140,
+    "source_wheel_install_equal": true,
+    "installed_repository_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1"
+    },
+    "no_git_runtime": "PASS",
+    "pro_a_version": "0.5.1",
+    "python": "3.13.14",
+    "provider_calls": 0
+  },
+  "privacy": {
+    "status": "PASS",
+    "files_scanned": 24,
+    "private_needles_checked": 501,
+    "provider_calls": 0,
+    "real_state_changed": false
+  },
+  "git_diff_check": "PASS",
+  "frozen_capability_evidence": {
+    "responses_json_schema": "NOT_QUALIFIED",
+    "strict_full_schema": "NOT_TRUSTED",
+    "lexical_record_probe": "PASS",
+    "lexical_probe_historical_calls": 6,
+    "lexical_probe_historical_offline_tests": 226,
+    "all_three_frozen_probe_trees_unchanged": true
+  },
+  "safety": {
+    "remote_main": "43939a077174dabb0357488418cc3c00bb93ff8d",
+    "stable": "43939a077174dabb0357488418cc3c00bb93ff8d",
+    "schema": 12,
+    "run9_state": "BLOCKED",
+    "run10_exists": false,
+    "historical_queued_jobs": 14,
+    "run9_queued_jobs": 4,
+    "historical_runs_readable": 9,
+    "run9_lifetime_provider_calls": 1,
+    "workbench_sha256": "280cc73c93fc1358f8db4697995633c12055a2119d485dbe7264377ef1326a99",
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "current_view_files_sha256": "9e91fbec818c499b8a5c2bc8d7e3e50fa55aa2ba00172a5a23969c213a80daa8",
+    "artifacts_sha256": "a51390964f7fb7f089c380612abe2a661d1d4ff43200735f3dbed4477b05ed11",
+    "stable_metadata_sha256": "806b2e83ca1d00f15b3618582aea94ef5b8e67f3f466f07010f2082afbd80b68"
+  },
+  "historical_read_projection_equality": true,
+  "resume_surface": {
+    "run8": {
+      "reason": "SEMANTIC_SURFACE_CHANGED",
+      "compatible": false
+    },
+    "run9": {
+      "reason": "SEMANTIC_SURFACE_CHANGED",
+      "compatible": false
+    }
+  },
+  "source_request_audit": {
+    "provider_calls": 0,
+    "system_prompt_v1": {
+      "chars": 8463,
+      "utf8_bytes": 14845
+    },
+    "system_prompt_new": {
+      "chars": 6828,
+      "utf8_bytes": 13480
+    },
+    "system_prompt_delta": {
+      "chars": -1635,
+      "utf8_bytes": -1365
+    },
+    "pieces": [
+      {
+        "piece": 1,
+        "source_chars": 3595,
+        "evidence_count": 77,
+        "node_count": 6,
+        "request": {
+          "chars": 24028,
+          "utf8_bytes": 36788
+        },
+        "messages": {
+          "chars": 15771,
+          "utf8_bytes": 28507
+        },
+        "tool_schema": {
+          "chars": 7474,
+          "utf8_bytes": 7474
+        },
+        "prompt_delta_vs_v1": {
+          "chars": -1112,
+          "utf8_bytes": -842
+        },
+        "request_delta_vs_v1": {
+          "chars": 6454,
+          "utf8_bytes": 6748
+        }
+      },
+      {
+        "piece": 2,
+        "source_chars": 3783,
+        "evidence_count": 93,
+        "node_count": 5,
+        "request": {
+          "chars": 24800,
+          "utf8_bytes": 37820
+        },
+        "messages": {
+          "chars": 16560,
+          "utf8_bytes": 29556
+        },
+        "tool_schema": {
+          "chars": 7474,
+          "utf8_bytes": 7474
+        },
+        "prompt_delta_vs_v1": {
+          "chars": -1112,
+          "utf8_bytes": -842
+        },
+        "request_delta_vs_v1": {
+          "chars": 6454,
+          "utf8_bytes": 6748
+        }
+      },
+      {
+        "piece": 3,
+        "source_chars": 3556,
+        "evidence_count": 83,
+        "node_count": 7,
+        "request": {
+          "chars": 24376,
+          "utf8_bytes": 36930
+        },
+        "messages": {
+          "chars": 16102,
+          "utf8_bytes": 28632
+        },
+        "tool_schema": {
+          "chars": 7474,
+          "utf8_bytes": 7474
+        },
+        "prompt_delta_vs_v1": {
+          "chars": -1112,
+          "utf8_bytes": -842
+        },
+        "request_delta_vs_v1": {
+          "chars": 6454,
+          "utf8_bytes": 6748
+        }
+      },
+      {
+        "piece": 4,
+        "source_chars": 3791,
+        "evidence_count": 82,
+        "node_count": 11,
+        "request": {
+          "chars": 25232,
+          "utf8_bytes": 37970
+        },
+        "messages": {
+          "chars": 16886,
+          "utf8_bytes": 29600
+        },
+        "tool_schema": {
+          "chars": 7474,
+          "utf8_bytes": 7474
+        },
+        "prompt_delta_vs_v1": {
+          "chars": -1112,
+          "utf8_bytes": -842
+        },
+        "request_delta_vs_v1": {
+          "chars": 6454,
+          "utf8_bytes": 6748
+        }
+      },
+      {
+        "piece": 5,
+        "source_chars": 2098,
+        "evidence_count": 52,
+        "node_count": 5,
+        "request": {
+          "chars": 21234,
+          "utf8_bytes": 31496
+        },
+        "messages": {
+          "chars": 13048,
+          "utf8_bytes": 23286
+        },
+        "tool_schema": {
+          "chars": 7474,
+          "utf8_bytes": 7474
+        },
+        "prompt_delta_vs_v1": {
+          "chars": -1112,
+          "utf8_bytes": -842
+        },
+        "request_delta_vs_v1": {
+          "chars": 6454,
+          "utf8_bytes": 6748
+        }
+      }
+    ]
+  },
+  "output_benchmark": {
+    "serialization": "sort_keys=true, ensure_ascii=false, compact separators; Wire object without outer envelope",
+    "benchmarks": [
+      {
+        "fixture": "dense_40_claims",
+        "claims": 40,
+        "candidates": 1,
+        "compact_wire_v3": {
+          "chars": 16038,
+          "utf8_bytes": 16038
+        },
+        "lexical_tool_arguments": {
+          "chars": 23058,
+          "utf8_bytes": 23058
+        },
+        "canonical_verbose": {
+          "chars": 22574,
+          "utf8_bytes": 22574
+        },
+        "lexical_delta_percent_vs_compact_wire_v3": {
+          "chars": 43.771,
+          "utf8_bytes": 43.771
+        },
+        "lexical_delta_percent_vs_canonical_verbose": {
+          "chars": 2.1441,
+          "utf8_bytes": 2.1441
+        }
+      },
+      {
+        "fixture": "mixed_all_variants",
+        "claims": 4,
+        "candidates": 4,
+        "compact_wire_v3": {
+          "chars": 2753,
+          "utf8_bytes": 3353
+        },
+        "lexical_tool_arguments": {
+          "chars": 6534,
+          "utf8_bytes": 7134
+        },
+        "canonical_verbose": {
+          "chars": 3964,
+          "utf8_bytes": 4806
+        },
+        "lexical_delta_percent_vs_compact_wire_v3": {
+          "chars": 137.3411,
+          "utf8_bytes": 112.7647
+        },
+        "lexical_delta_percent_vs_canonical_verbose": {
+          "chars": 64.8335,
+          "utf8_bytes": 48.4395
+        }
+      },
+      {
+        "fixture": "dense_100_claim_limit",
+        "claims": 100,
+        "candidates": 1,
+        "compact_wire_v3": {
+          "chars": 39004,
+          "utf8_bytes": 39004
+        },
+        "lexical_tool_arguments": {
+          "chars": 55384,
+          "utf8_bytes": 55384
+        },
+        "canonical_verbose": {
+          "chars": 54947,
+          "utf8_bytes": 54947
+        },
+        "lexical_delta_percent_vs_compact_wire_v3": {
+          "chars": 41.9957,
+          "utf8_bytes": 41.9957
+        },
+        "lexical_delta_percent_vs_canonical_verbose": {
+          "chars": 0.7953,
+          "utf8_bytes": 0.7953
+        }
+      }
+    ],
+    "provider_calls": 0,
+    "token_estimates": null,
+    "production_max_output_tokens": 12000,
+    "array_limit_100_preserved": true,
+    "output_decomposition_required": "UNKNOWN_UNTIL_LIVE",
+    "capacity_conclusion": "All-required fields materially enlarge sparse Wire output. Character/byte counts cannot establish live token fit; no ceiling or architecture change."
+  },
+  "evidence_payload_sha256": "254d7cd0bfe054f1dd7ccc8620a0f98583292b42b7330a0cb298ddd2fd8cfbb3"
+}

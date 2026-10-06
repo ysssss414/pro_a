@@ -31,7 +31,7 @@ def test_selected_policy_tuple_and_unchanged_operation_contracts(monkeypatch):
     identity = profile.public_identity()
     assert identity["operation_output_budget_policy_version"] == "operation-output-budget-v1"
     for operation, output, adapter in (
-        ("SOURCE_ANALYSIS_PIECE", 12000, "whole-piece-compact-source-analysis-adapter-v1"),
+        ("SOURCE_ANALYSIS_PIECE", 12000, "whole-piece-lexical-tool-source-analysis-adapter-v1"),
         ("SEMANTIC_DECOMPOSITION", 8192, "semantic-backend-adapter-v2"),
     ):
         assert identity["operation_output_budgets"][operation] == {"max_output_tokens": output, "max_total_tokens": 20000}

@@ -26,9 +26,10 @@ def fail_run(tmp_path, monkeypatch, content, reason, usage, *, model="deepseek-f
     def post(*args, **kwargs):
         calls.append(1)
         assert kwargs['json']['max_tokens'] == 12000
-        assert kwargs['json']['response_format'] == {'type': 'json_object'}
+        assert kwargs['json']['tools'][0]['function']['strict'] is True
         return Response({'model': model, 'choices': [{'finish_reason': reason,
-                        'message': {'content': content}}], 'usage': usage},
+                        'message': {'role': 'assistant', 'content': None, 'tool_calls': [{'type': 'function',
+                            'function': {'name': 'emit_source_analysis', 'arguments': content}}]}}], 'usage': usage},
                         headers={'content-type': 'application/json', 'x-request-id': 'req-synthetic'})
     monkeypatch.setattr('pro_a.llm.requests.post', post)
     final = advance(value)
@@ -81,7 +82,7 @@ def test_durable_output_failure_classes(tmp_path, monkeypatch, reason, content, 
     assert (outcome['input_tokens'], outcome['output_tokens'],
             outcome['total_tokens'], outcome['cached_tokens']) == (100, 50, 150, 20)
     assert job['raw_envelope']['provider_reported_model'] == 'deepseek-flash'
-    assert outcome['finish_reason'] in ('stop','length','content_filter','UNKNOWN')
+    assert outcome['finish_reason'] in ('stop','tool_calls','length','content_filter','UNKNOWN')
     assert outcome['external_outcome'] == 'KNOWN_SUCCESS'
     assert outcome['latency_ms'] >= 0
     assert list(value['config'].artifact_root.glob('cloud-results/*/*.raw.json'))

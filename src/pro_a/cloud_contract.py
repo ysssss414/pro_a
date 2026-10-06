@@ -33,7 +33,7 @@ RETRY_POLICY_ID = "stage6-operational-retry-v1"
 PROMPT_ID = "semantic-decomposition"
 PROMPT_VERSION = "2.1"
 ADAPTER_VERSION = "semantic-backend-adapter-v2"
-SOURCE_ANALYSIS_ADAPTER_VERSION = "whole-piece-compact-source-analysis-adapter-v1"
+SOURCE_ANALYSIS_ADAPTER_VERSION = "whole-piece-lexical-tool-source-analysis-adapter-v1"
 USAGE_STATUSES = ("KNOWN", "UNKNOWN")
 OUTCOME_STATUSES = ("NOT_DISPATCHED", "KNOWN_FAILURE", "UNKNOWN")
 
@@ -89,10 +89,10 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
             "validator": "existing-proposition-ir-v2.1",
         }
     if operation_kind == SOURCE_ANALYSIS_OPERATION:
-        from .whole_piece_compact import SYSTEM, RESPONSE_VERSION, PROMPT_VERSION as WHOLE_PIECE_PROMPT_VERSION
+        from .whole_piece_compact import SYSTEM, RESPONSE_VERSION, contract, PROMPT_VERSION as WHOLE_PIECE_PROMPT_VERSION
         system_sha = hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest()
         combined = hashlib.sha256(
-            (SYSTEM + "\0" + WHOLE_PIECE_PROMPT_VERSION).encode("utf-8")
+            (SYSTEM + "\0" + WHOLE_PIECE_PROMPT_VERSION + "\0" + contract()["tool_schema_sha256"]).encode("utf-8")
         ).hexdigest()
         return {
             "operation_kind": SOURCE_ANALYSIS_OPERATION,
@@ -100,11 +100,13 @@ def operation_contract(operation_kind: str) -> dict[str, Any]:
             "thinking_mode": STRUCTURED_JSON_THINKING_MODE,
             "provider_adapter_version": adapter_version_for_operation(operation_kind),
             "operation_schema_version": RESPONSE_VERSION,
-            "prompt_id": "whole-piece-compact-source-analysis",
+            "prompt_id": "whole-piece-lexical-tool-source-analysis",
+            **{k: v for k, v in contract().items() if k.startswith("tool_") or k in
+               ("provider_record_version", "provider_execution_mode", "provider_endpoint")},
             "prompt_version": WHOLE_PIECE_PROMPT_VERSION,
             "system_prompt_sha256": system_sha,
             "prompt_bundle_sha256": combined,
-            "validator": "source-analysis-wire-v3+evidence-binding-v2+native-analyzer-replay",
+            "validator": "lexical-provider-record-v1+source-analysis-wire-v3+evidence-binding-v2+native-analyzer-replay",
         }
     raise CloudContractError("UNSUPPORTED_CLOUD_OPERATION", 422)
 
