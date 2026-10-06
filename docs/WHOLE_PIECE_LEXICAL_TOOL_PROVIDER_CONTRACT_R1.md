@@ -111,6 +111,9 @@ and both execution surfaces are incompatible with the new runtime.
 Gates A–E: **PASS**. Baseline/stable remains
 `43939a077174dabb0357488418cc3c00bb93ff8d`; implementation commit is
 `eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1`.
+The qualification evidence commit is
+`bb697740f456ced74239e202237b495c5bf72b96`; a subsequent documentation-only
+commit pins that immutable evidence identity in this report and the receipt.
 
 The scoped regression suites passed **1152 unique tests**, with zero failures
 or skips. The five final batches ran 713, 120, 84, 138 and 143 tests, including

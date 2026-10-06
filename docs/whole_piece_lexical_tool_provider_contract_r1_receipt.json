@@ -3,7 +3,7 @@
   "status": "PASS",
   "baseline_sha": "43939a077174dabb0357488418cc3c00bb93ff8d",
   "implementation_sha": "eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1",
-  "evidence_commit": "Resolved from the commit containing this receipt; reported with the Draft PR head.",
+  "evidence_commit": "bb697740f456ced74239e202237b495c5bf72b96",
   "gates": {
     "A": "PASS",
     "B": "PASS",
@@ -433,5 +433,5 @@
     "output_decomposition_required": "UNKNOWN_UNTIL_LIVE",
     "capacity_conclusion": "All-required fields materially enlarge sparse Wire output. Character/byte counts cannot establish live token fit; no ceiling or architecture change."
   },
-  "evidence_payload_sha256": "9ac023aa3fbff6db40c84738a38d70e81de002ce364575fe2ae0f807e7721a21"
+  "evidence_payload_sha256": "254d7cd0bfe054f1dd7ccc8620a0f98583292b42b7330a0cb298ddd2fd8cfbb3"
 }
