@@ -29,6 +29,7 @@ from .store import Store
 
 CONTRACT_VERSION = "extraction-retry-cross-release-v1"
 TABLE = "retry_compatibility_qualifications"
+_BOUNDED_QUALIFICATION_EVENT = "BOUNDED_RETRY_COMPATIBILITY_QUALIFIED"
 _CLOUD_METADATA_FIELDS = frozenset(("git_sha", "runtime_sha256"))
 _NATIVE_METADATA_FIELDS = frozenset(("repository_commit",))
 _CLOUD_SURFACE_FIELDS = frozenset(("domain_code_sha256", "phase4_processing_code_sha256"))
@@ -359,6 +360,53 @@ if identity["runtime"] != _runtime():
     ),),
 }
 
+_FULL_SURFACE_STATEMENT_REPLACEMENTS = {
+    "workbench/bounded_source_analysis.py": ((
+        '''
+from .extraction_retry import bounded_attempt_for_dispatch
+attempt = bounded_attempt_for_dispatch(
+    self.ledger, segment.segment_id, owner, fence,
+    payload_sha256=sha,
+    configuration_sha256=identity(configuration),
+)
+''',
+        '''
+attempt = self.ledger.reserve_attempt(
+    segment.segment_id, owner, fence, attempt_number=1,
+    payload_sha256=sha,
+    configuration_sha256=identity(configuration),
+)
+''',
+    ),),
+    "workbench/bounded_extraction_store.py": ((
+        '''
+if existing:
+    _require(existing["attempt_id"] == attempt_id, "SEGMENT_ALREADY_ACCEPTED")
+    target = ("SUCCEEDED_COMPLETE" if existing["result_type"] == "COMPLETE"
+              else "SUBDIVISION_REQUIRED")
+    if row["state"] not in (target, "SUPERSEDED_BY_CHILDREN"):
+        _require(row["state"] in ("RUNNING", "RECOVERY_REQUIRED"),
+                 "INVALID_SEGMENT_TRANSITION")
+        connection.execute(
+            "UPDATE bounded_extraction_segments SET state=?,updated_at=? "
+            "WHERE segment_id=?", (target, _now(), row["segment_id"]),
+        )
+        _event(
+            connection, row["series_id"],
+            "SEGMENT_COMPLETED" if target == "SUCCEEDED_COMPLETE"
+            else "SEGMENT_SUBDIVISION_REQUIRED",
+            segment_id=row["segment_id"],
+        )
+    return dict(existing)
+''',
+        '''
+if existing:
+    _require(existing["attempt_id"] == attempt_id, "SEGMENT_ALREADY_ACCEPTED")
+    return dict(existing)
+''',
+    ),),
+}
+
 
 def _call_name(call: ast.Call) -> str | None:
     if isinstance(call.func, ast.Name):
@@ -496,6 +544,9 @@ def _ast_sha256(content: bytes, selectors: tuple[str, ...] | None, *, name: str 
     tree = _RemoveDocstrings().visit(ast.parse(content.decode("utf-8")))
     ast.fix_missing_locations(tree)
     _validate_dependency_closure(tree, name, selectors)
+    if selectors is None:
+        for before, after in _FULL_SURFACE_STATEMENT_REPLACEMENTS.get(name, ()):
+            _replace_exact_statements(tree, before, after)
     selected = tree if selectors is None else {
         selector: ast.dump(
             _normalize_compatibility_plumbing(name, selector, _selected_node(tree, selector)),
@@ -1067,5 +1118,422 @@ def load_qualification(connection, *, run_id: str, failed_attempt_id: str,
     if (evidence.get("processing_run_id") != run_id or evidence.get("source_id") != source_id
             or evidence.get("failed_attempt_id") != failed_attempt_id
             or evidence.get("failed_job_id") != failed_job_id):
+        raise RetryCompatibilityError("RETRY_COMPATIBILITY_SCOPE_MISMATCH")
+    return token
+
+
+def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: str,
+                                       *, persist: bool = False) -> dict[str, Any]:
+    """Qualify one malformed-JSON bounded Attempt against the target release."""
+    from pro_a.evidence_binding import identity
+    from .bounded_extraction_store import BoundedExtractionStore, _event
+    from .cloud_jobs import runtime_identity
+    from .extraction_retry import (
+        _json_syntax_diagnostic, bounded_frozen_components,
+    )
+    from .source_operations import SourceOperations, build_source_providers
+
+    dimensions: dict[str, Any] = {}
+    evidence: dict[str, Any] = {}
+    blockers: list[str] = []
+    ledger = BoundedExtractionStore(config)
+    with Store(config).connect() as connection:
+        if schema_version(connection) != "12":
+            return _blocked(["BLOCKED_BOUNDED_SCHEMA_REQUIRED"], dimensions, evidence)
+        run = connection.execute(
+            "SELECT * FROM source_processing_runs WHERE processing_run_id=?", (run_id,),
+        ).fetchone()
+        attempt = connection.execute(
+            "SELECT a.*,g.series_id,g.state AS segment_state,s.state AS series_state,"
+            "s.processing_run_id AS series_run_id FROM bounded_extraction_attempts a "
+            "JOIN bounded_extraction_segments g ON g.segment_id=a.segment_id "
+            "JOIN bounded_extraction_series s ON s.series_id=g.series_id "
+            "WHERE a.attempt_id=?", (failed_attempt_id,),
+        ).fetchone()
+        if run is None or attempt is None:
+            return _blocked(["BLOCKED_HISTORICAL_SCOPE_UNAVAILABLE"], dimensions, evidence)
+        series_id, segment_id = attempt["series_id"], attempt["segment_id"]
+        try:
+            series, plan, _, _ = ledger._load(connection, series_id)
+            segment = next(item for item in plan.segments if item.segment_id == segment_id)
+            chain_ok = True
+        except Exception:
+            series = plan = segment = None
+            chain_ok = False
+        outcome = connection.execute(
+            "SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?",
+            (failed_attempt_id,),
+        ).fetchone()
+        latest = connection.execute(
+            "SELECT attempt_id,attempt_number FROM bounded_extraction_attempts "
+            "WHERE segment_id=? ORDER BY attempt_number DESC LIMIT 1", (segment_id,),
+        ).fetchone()
+        failed = [json.loads(row[0]) for row in connection.execute(
+            "SELECT body_json FROM bounded_extraction_events WHERE series_id=? "
+            "AND event_type='SEGMENT_FAILED' ORDER BY sequence", (series_id,),
+        )]
+        results_absent = not any((
+            connection.execute(
+                "SELECT 1 FROM bounded_extraction_segment_results WHERE segment_id=?",
+                (segment_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT 1 FROM bounded_extraction_series_results WHERE series_id=?",
+                (series_id,),
+            ).fetchone(),
+            connection.execute(
+                "SELECT 1 FROM source_processing_jobs WHERE processing_run_id=?", (run_id,),
+            ).fetchone(),
+        ))
+        scope_ok = (
+            chain_ok and run["state"] == "BLOCKED" and run["stage"] == "ORCHESTRATION"
+            and run["error_code"] == "BOUNDED_EXTRACTION_FAILED"
+            and run["lease_owner"] is None and attempt["series_run_id"] == run_id
+            and attempt["series_state"] == "FAILED" and attempt["segment_state"] == "FAILED"
+            and attempt["attempt_number"] == 1 and latest is not None
+            and latest["attempt_id"] == failed_attempt_id and outcome is not None
+            and outcome["external_outcome"] == "SUCCEEDED"
+            and outcome["classification"] == "SUCCEEDED"
+            and outcome["finish_reason"] == "tool_calls"
+            and type(outcome["output_tokens"]) is int
+            and segment is not None and outcome["output_tokens"] < segment.max_output_tokens
+            and any(item.get("attempt_id") == failed_attempt_id
+                    and item.get("classification") == "INVALID_SEGMENT_RESPONSE"
+                    for item in failed)
+            and results_absent
+        )
+        dimensions["historical_failed_scope"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if scope_ok else "FAIL",
+            "Run, Series, Segment, Attempt, outcome and terminal failure are exactly bound.",
+        )
+        dimensions["no_downstream_semantic_work"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if results_absent else "FAIL",
+            "No accepted target-Batch result, Series aggregate or semantic Job exists.",
+        )
+        if not scope_ok:
+            return _blocked(["BLOCKED_HISTORICAL_SCOPE_INELIGIBLE"], dimensions, evidence)
+
+        try:
+            source_profile, cloud_profile, frozen, source = bounded_frozen_components(
+                config, connection, run,
+            )
+            worker = SourceOperations(config, source_profile, cloud_profile)
+            source_ok = checked_path(
+                config.artifact_root / source["storage_relative"]
+            ).is_file()
+        except Exception:
+            source_profile = cloud_profile = frozen = source = worker = None
+            source_ok = False
+        dimensions["source_identity"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if source_ok else "FAIL",
+            "Frozen Source identity, bytes, local Phase4 path and model configuration are exact.",
+        )
+        dimensions["frozen_effective_configuration"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if source_ok else "FAIL",
+            "The original digest-guarded SourceProfile and CloudProfile remain reconstructible.",
+        )
+        if not source_ok:
+            blockers.append("BLOCKED_FROZEN_CONFIG_UNRECOVERABLE")
+
+        diagnostic = None
+        raw_ok = False
+        if outcome is not None:
+            try:
+                content = ledger._read_artifact(
+                    series_id, failed_attempt_id + ".raw.json", outcome,
+                )
+                envelope, body = ledger._decode_envelope(attempt, content)
+                diagnostic = _json_syntax_diagnostic(body)
+                raw_ok = (
+                    envelope["http_status"] == 200 and diagnostic is not None
+                    and hashlib.sha256(content).hexdigest() == outcome["artifact_sha256"]
+                )
+            except Exception:
+                raw_ok = False
+        dimensions["immutable_provider_raw"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if raw_ok else "FAIL",
+            "The immutable raw envelope is hash-bound and HTTP 200.",
+        )
+        dimensions["malformed_json_syntax_only"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if diagnostic is not None else "FAIL",
+            "Strict UTF-8 decoding succeeds and json.loads fails with JSONDecodeError.",
+        )
+        if not raw_ok:
+            blockers.append("BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
+
+        input_ok = prompt_ok = provider_ok = False
+        if worker is not None:
+            try:
+                bindings = worker.output_batches.inputs(worker.get_run(run_id))
+                matches = [item for item in bindings if item[3].series_id == series_id]
+                if len(matches) != 1:
+                    raise ValueError()
+                value, context, catalog, bound_series = matches[0]
+                binding = next(
+                    json.loads(row[0]) for row in connection.execute(
+                        "SELECT event_json FROM source_processing_events "
+                        "WHERE processing_run_id=? AND event_type='BOUNDED_EXTRACTION_SERIES_BOUND'",
+                        (run_id,),
+                    ) if json.loads(row[0]).get("series_id") == series_id
+                )
+                source_input = connection.execute(
+                    "SELECT * FROM source_cloud_inputs WHERE artifact_id=?",
+                    (binding["cloud_input_artifact_id"],),
+                ).fetchone()
+                input_content = worker.artifacts.resolve(
+                    source_input["artifact_relative"],
+                ).read_bytes()
+                input_ok = (
+                    hashlib.sha256(input_content).hexdigest() == source_input["sha256"]
+                    and bound_series == series and context.piece.piece_id == binding["source_piece_id"]
+                    and binding["series_sha256"] == series.series_sha256
+                )
+                payload = worker.output_batches.segment_payload(
+                    value, context, catalog, series, segment,
+                )
+                prompt_content = canonical(payload).encode("utf-8")
+                prompt_path = ledger._path(series_id, segment_id + ".prompt.json")
+                request = json.loads(attempt["request_json"])
+                prompt_ok = (
+                    prompt_path.read_bytes() == prompt_content
+                    and hashlib.sha256(prompt_content).hexdigest() == request["payload_sha256"]
+                    and identity(request) == attempt["request_sha256"]
+                    and request == ledger._request(
+                        series, segment, request["payload_sha256"],
+                        attempt["configuration_sha256"],
+                    )
+                )
+                providers = build_source_providers(
+                    load_config(source_profile.phase4_config_path).llm, worker.jobs.profile,
+                )
+                provider_ok = (
+                    identity(providers[worker.output_batches.operation].configuration())
+                    == attempt["configuration_sha256"]
+                )
+                evidence["input_artifact"] = {
+                    "artifact_id": source_input["artifact_id"],
+                    "sha256": source_input["sha256"], "ordinal": source_input["ordinal"],
+                    "series_sha256": series.series_sha256,
+                }
+            except Exception:
+                input_ok = prompt_ok = provider_ok = False
+        for name, ok, description in (
+            ("input_artifact_identity", input_ok,
+             "The exact bounded Batch input artifact and Series binding remain intact."),
+            ("segment_prompt_identity", prompt_ok,
+             "The exact Segment prompt bytes and request identity remain intact."),
+            ("provider_configuration_identity", provider_ok,
+             "The reconstructed provider configuration digest equals Attempt 1."),
+        ):
+            dimensions[name] = _dimension(
+                "EXACT_IDENTITY_REQUIRED", "PASS" if ok else "FAIL", description,
+            )
+        if not input_ok or not prompt_ok or not provider_ok:
+            blockers.append("BLOCKED_INPUT_ARTIFACT_CHANGED")
+
+        historical_runtime = json.loads(run["runtime_json"])
+        target_runtime = (
+            runtime_identity(
+                cloud_profile.provider_adapter_version,
+                workbench_schema_version=schema_version(connection),
+            ) if cloud_profile is not None else {}
+        )
+        cloud_surface = _execution_surface_comparison(
+            "cloud", historical_runtime.get("git_sha", ""),
+        )
+        evidence["cloud_execution_surface"] = cloud_surface
+        cloud_comparison = _runtime_comparison(
+            historical_runtime, target_runtime, _CLOUD_METADATA_FIELDS,
+            surface_fields=_CLOUD_SURFACE_FIELDS,
+            surface_compatible=cloud_surface["compatible"],
+        )
+        evidence["cloud_runtime"] = cloud_comparison
+        cloud_ok = cloud_comparison["compatible"]
+        dimensions["code_runtime_identity"] = _dimension(
+            "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS" if cloud_ok else "FAIL",
+            "Only release metadata or AST-proven equivalent execution-surface changes may differ.",
+        )
+        if not cloud_ok:
+            blockers.append("BLOCKED_EXECUTION_CONTRACT_CHANGED")
+
+        context_ok = False
+        if worker is not None and frozen is not None:
+            try:
+                if frozen["contract_version"] == "run-processing-context-v2":
+                    current_basis = Domains(config).pending_basis(
+                        source, target_runtime, source_profile, cloud_profile,
+                    )
+                else:
+                    current_basis = Domains(config).basis(
+                        connection, source, target_runtime, source_profile, cloud_profile,
+                        revision=frozen["basis"]["assignment_revision"],
+                    )
+                historical_basis = dict(frozen["basis"]); historical_basis.pop("runtime")
+                target_basis = dict(current_basis); target_basis.pop("runtime")
+                context_ok = canonical(historical_basis) == canonical(target_basis)
+            except Exception:
+                context_ok = False
+        dimensions["domain_shared_core_processing_context"] = _dimension(
+            "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS" if context_ok else "FAIL",
+            "The frozen non-runtime processing context is exact.",
+        )
+        if not context_ok:
+            blockers.append("BLOCKED_CONTEXT_SEMANTIC_DRIFT")
+
+        native_ok = False
+        native_root = phase4 = None
+        if worker is not None:
+            try:
+                phase4 = load_config(source_profile.phase4_config_path)
+                native_root = checked_path(phase4.root / run["native_root_relative"])
+                native_identity = json.loads(
+                    (native_root / "execution_identity.json").read_text(encoding="utf-8")
+                )
+                target_native = native_runtime()
+                native_surface = _execution_surface_comparison(
+                    "native", native_identity["runtime"].get("repository_commit", ""),
+                )
+                native_comparison = _runtime_comparison(
+                    native_identity["runtime"], target_native, _NATIVE_METADATA_FIELDS,
+                    surface_fields=_NATIVE_SURFACE_FIELDS,
+                    surface_compatible=native_surface["compatible"],
+                )
+                evidence["native_execution_surface"] = native_surface
+                evidence["native_runtime"] = native_comparison
+                native_ok = native_comparison["compatible"]
+            except Exception:
+                native_ok = False
+        dimensions["native_execution_checkpoint"] = _dimension(
+            "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS" if native_ok else "FAIL",
+            "The frozen Phase4 checkpoint and native execution surface remain compatible.",
+        )
+        if not native_ok:
+            blockers.append("BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE")
+
+        dimensions["retry_orchestration_semantics"] = _dimension(
+            "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS",
+            "Target-only authorization reuses the append-only bounded ledger and permits one retry.",
+        )
+        evidence.update({
+            "processing_run_id": run_id, "source_id": run["source_id"],
+            "failed_attempt_id": failed_attempt_id, "failed_job_id": segment_id,
+            "bounded_series_id": series_id, "bounded_segment_id": segment_id,
+            "historical_context_sha256": frozen["context_sha256"] if frozen else None,
+            "target_contract_sha256": compatibility_contract_sha256(),
+            "malformed_json_diagnostic": diagnostic,
+        })
+        if blockers:
+            return _blocked(blockers, dimensions, evidence)
+
+        created = now()
+        record: dict[str, Any] = {
+            "qualification_id": "BOUNDED_RETRY_COMPAT_" + digest({
+                "run": run_id, "attempt": failed_attempt_id,
+                "target": target_runtime["runtime_sha256"],
+                "contract": compatibility_contract_sha256(),
+            })[:32].upper(),
+            "processing_run_id": run_id, "source_id": run["source_id"],
+            "failed_attempt_id": failed_attempt_id, "failed_job_id": segment_id,
+            "historical_runtime_sha256": historical_runtime["runtime_sha256"],
+            "target_runtime_sha256": target_runtime["runtime_sha256"],
+            "historical_context_sha256": frozen["context_sha256"],
+            "target_contract_version": CONTRACT_VERSION,
+            "target_contract_sha256": compatibility_contract_sha256(),
+            "dimensions_json": canonical(dimensions), "evidence_json": canonical(evidence),
+            "evidence_sha256": digest(evidence), "qualification_result": "QUALIFIED",
+            "reason": "ALL_REQUIRED_DIMENSIONS_COMPATIBLE", "created_at": created,
+        }
+        record["record_sha256"] = digest(_record_body(record))
+        token = _validate_record(record)
+        try:
+            guard_cloud_runtime(historical_runtime, target_runtime, token)
+            guard_context(frozen, current_basis, token)
+            _compatible(
+                native_root, run["native_execution_id"], phase4, RetryPolicy.FORBID_ALL,
+                runtime_compatibility=token,
+            )
+        except Exception:
+            dimensions["native_execution_checkpoint"]["result"] = "FAIL"
+            return _blocked(["BLOCKED_NATIVE_CHECKPOINT_INCOMPATIBLE"], dimensions, evidence)
+
+    if persist:
+        with ledger._connection(True) as connection:
+            ledger._load(connection, series_id)
+            existing = []
+            for row in connection.execute(
+                    "SELECT body_json FROM bounded_extraction_events WHERE series_id=? "
+                    "AND event_type=? ORDER BY sequence", (series_id, _BOUNDED_QUALIFICATION_EVENT)):
+                value = json.loads(row[0]).get("record")
+                if (value and value.get("failed_attempt_id") == failed_attempt_id
+                        and value.get("target_runtime_sha256") == record["target_runtime_sha256"]
+                        and value.get("target_contract_sha256") == record["target_contract_sha256"]):
+                    existing.append(value)
+            if len(existing) > 1:
+                raise RetryCompatibilityError("RETRY_COMPATIBILITY_SCOPE_MISMATCH")
+            if existing:
+                prior = _validate_record(existing[0]).record
+                return {
+                    "status": "QUALIFIED", "qualification_result": "QUALIFIED",
+                    "blockers": [], "reason": prior["reason"], "dimensions": dimensions,
+                    "evidence": json.loads(prior["evidence_json"]),
+                    "record": dict(prior), "duplicate": True,
+                }
+            _event(connection, series_id, _BOUNDED_QUALIFICATION_EVENT, record=record)
+    return {
+        "status": "QUALIFIED", "qualification_result": "QUALIFIED", "blockers": [],
+        "reason": record["reason"], "dimensions": dimensions, "evidence": evidence,
+        "record": record, "duplicate": False,
+    }
+
+
+def load_bounded_qualification(connection, *, run_id: str, failed_attempt_id: str,
+                               segment_id: str, series_id: str, source_id: str,
+                               historical_runtime_sha256: str,
+                               target_runtime: Mapping[str, Any],
+                               historical_context_sha256: str) -> _ValidatedQualification | None:
+    """Load only an immutable, exact-scope bounded qualification event."""
+    from pro_a.evidence_binding import identity
+
+    series = connection.execute(
+        "SELECT processing_run_id FROM bounded_extraction_series WHERE series_id=?",
+        (series_id,),
+    ).fetchone()
+    attempt = connection.execute(
+        "SELECT segment_id FROM bounded_extraction_attempts WHERE attempt_id=?",
+        (failed_attempt_id,),
+    ).fetchone()
+    if (series is None or series[0] != run_id or attempt is None or attempt[0] != segment_id):
+        raise RetryCompatibilityError("RETRY_COMPATIBILITY_SCOPE_MISMATCH")
+    previous = "0" * 64
+    records = []
+    for sequence, row in enumerate(connection.execute(
+            "SELECT * FROM bounded_extraction_events WHERE series_id=? ORDER BY sequence",
+            (series_id,)), 1):
+        value = dict(row)
+        event_sha256 = value.pop("event_sha256")
+        if (value["sequence"] != sequence or value["previous_sha256"] != previous
+                or identity(value) != event_sha256):
+            raise RetryCompatibilityError("RETRY_COMPATIBILITY_EVENT_CHAIN_MISMATCH")
+        previous = event_sha256
+        if value["event_type"] == _BOUNDED_QUALIFICATION_EVENT:
+            record = json.loads(value["body_json"]).get("record")
+            if (record and record.get("processing_run_id") == run_id
+                    and record.get("source_id") == source_id
+                    and record.get("failed_attempt_id") == failed_attempt_id
+                    and record.get("failed_job_id") == segment_id
+                    and record.get("historical_runtime_sha256") == historical_runtime_sha256
+                    and record.get("target_runtime_sha256") == target_runtime.get("runtime_sha256")
+                    and record.get("historical_context_sha256") == historical_context_sha256
+                    and record.get("target_contract_version") == CONTRACT_VERSION
+                    and record.get("target_contract_sha256") == compatibility_contract_sha256()):
+                records.append(record)
+    if not records:
+        return None
+    if len(records) != 1:
+        raise RetryCompatibilityError("RETRY_COMPATIBILITY_SCOPE_MISMATCH")
+    token = _validate_record(records[0])
+    bounded = _evidence(token)
+    if (bounded.get("bounded_series_id") != series_id
+            or bounded.get("bounded_segment_id") != segment_id):
         raise RetryCompatibilityError("RETRY_COMPATIBILITY_SCOPE_MISMATCH")
     return token

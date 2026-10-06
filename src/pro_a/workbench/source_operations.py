@@ -713,10 +713,16 @@ class SourceOperations:
 
     def retry_failed_extraction(self, run_id: str, failed_attempt_id: str, *,
                                 retry_reason: str, idempotency_key: str) -> dict[str, Any]:
-        if (self.get_run(run_id)["runtime_identity"].get("whole_piece_compact")
-                or self.get_run(run_id)["runtime_identity"].get("whole_piece_output_decomposition")):
+        runtime = self.get_run(run_id)["runtime_identity"]
+        if runtime.get("whole_piece_output_decomposition"):
+            from .extraction_retry import retry_failed_bounded_extraction
+            return retry_failed_bounded_extraction(
+                self, run_id, failed_attempt_id,
+                retry_reason=retry_reason, idempotency_key=idempotency_key,
+            )
+        if runtime.get("whole_piece_compact"):
             raise SourceOperationError("WHOLE_PIECE_REPROCESS_REQUIRED")
-        if self.get_run(run_id)["runtime_identity"].get("bounded_source_analysis"):
+        if runtime.get("bounded_source_analysis"):
             raise SourceOperationError("BOUNDED_EXTRACTION_RETRY_OWNED_BY_SERIES")
         from .extraction_retry import retry_failed_extraction
         return retry_failed_extraction(self, run_id, failed_attempt_id,

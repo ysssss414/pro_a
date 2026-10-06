@@ -1,6 +1,7 @@
 """Explicit, append-only retry lineage over frozen Source extraction jobs."""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from dataclasses import fields
@@ -10,10 +11,16 @@ from uuid import uuid4
 from pro_a.cloud_contract import budget_for_operation, canonical, digest, now, operation_contract
 from pro_a.production_promotion import sha256_file
 from .cloud_jobs import CloudProfile, JobError
-from .config import BoundaryError
+from .config import BoundaryError, checked_path
 from .domains import Domains
 from .review_store import schema_version
 from .store import Store
+
+
+MALFORMED_JSON_RETRY_POLICY_VERSION = "malformed-provider-json-same-batch-retry-v1"
+MALFORMED_JSON_RETRY_REASON = "MALFORMED_PROVIDER_JSON"
+MAX_MALFORMED_JSON_RETRIES = 1
+_BOUNDED_RETRY_EVENT = "MALFORMED_PROVIDER_JSON_RETRY_AUTHORIZED"
 
 
 def installed(connection):
@@ -193,7 +200,7 @@ def frozen_service(service, run_id, *, required=False, failed_attempt_id=None):
         return worker
 
 
-def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason, idempotency_key):
+def _validate_retry_request(retry_reason, idempotency_key):
     from .source_operations import SourceOperationError
     if (not isinstance(retry_reason, str) or not 1 <= len(retry_reason) <= 1000
             or retry_reason != retry_reason.strip()
@@ -203,6 +210,414 @@ def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason,
         raise SourceOperationError('INVALID_RETRY_REASON', 422)
     if not isinstance(idempotency_key, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._:-]{15,127}', idempotency_key):
         raise SourceOperationError('INVALID_IDEMPOTENCY_KEY', 422)
+
+
+def bounded_frozen_components(config, connection, run):
+    """Reconstruct the exact bounded worker configuration without credentials."""
+    from .source_operations import SourceProfile, SourceOperationError
+    frozen = Domains(config).read(run['processing_run_id'], connection=connection)
+    binding = connection.execute(
+        'SELECT config_path FROM domain_run_bindings WHERE processing_run_id=?',
+        (run['processing_run_id'],),
+    ).fetchone()
+    source = connection.execute(
+        'SELECT * FROM private_sources WHERE source_id=?', (run['source_id'],),
+    ).fetchone()
+    try:
+        if frozen is None or binding is None or source is None:
+            raise ValueError()
+        ref = json.loads(binding['config_path'])
+        source_profile = SourceProfile(
+            Path(ref['path']), ref['max_pdf_bytes'], ref['max_extraction_pieces'],
+        )
+        source_profile.validate()
+        value = frozen['basis']['model_configuration']
+        args = {field.name: value[field.name] for field in fields(CloudProfile)}
+        args['accepted_model_aliases'] = tuple(args['accepted_model_aliases'])
+        profile = CloudProfile(**args)
+        profile.validate()
+        from .domains import config_digest
+        limits = {'max_pdf_bytes': source_profile.max_pdf_bytes,
+                  'max_extraction_pieces': source_profile.max_extraction_pieces}
+        if (profile.public_identity() != value
+                or config_digest(source_profile.phase4_config_path, limits)
+                != frozen['basis']['config_sha256']
+                or frozen['basis']['source_id'] != run['source_id']
+                or sha256_file(checked_path(config.artifact_root / source['storage_relative']))
+                != source['source_sha256']):
+            raise ValueError()
+        return source_profile, profile, frozen, source
+    except (KeyError, TypeError, ValueError, OSError, BoundaryError, JobError):
+        raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE') from None
+
+
+def frozen_bounded_service(service, run_id, failed_attempt_id):
+    """Build a bounded retry worker, requiring an exact-scope token on drift."""
+    from .source_operations import SourceOperations, SourceOperationError
+    with service.store.connect() as connection:
+        run = connection.execute(
+            'SELECT * FROM source_processing_runs WHERE processing_run_id=?', (run_id,),
+        ).fetchone()
+        if run is None:
+            raise SourceOperationError('PROCESSING_RUN_NOT_FOUND', 404)
+        attempt = connection.execute(
+            'SELECT a.*,s.series_id FROM bounded_extraction_attempts a '
+            'JOIN bounded_extraction_segments s ON s.segment_id=a.segment_id '
+            'WHERE a.attempt_id=?', (failed_attempt_id,),
+        ).fetchone()
+        if attempt is None:
+            raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+        source_profile, profile, frozen, _ = bounded_frozen_components(
+            service.config, connection, run,
+        )
+        worker = SourceOperations(service.config, source_profile, profile)
+        historical = json.loads(run['runtime_json'])
+        current = worker.jobs.current_runtime()
+        token = None
+        if canonical(historical) != canonical(current):
+            from .retry_compatibility import load_bounded_qualification, RetryCompatibilityError
+            try:
+                token = load_bounded_qualification(
+                    connection, run_id=run_id, failed_attempt_id=failed_attempt_id,
+                    segment_id=attempt['segment_id'], series_id=attempt['series_id'],
+                    source_id=run['source_id'],
+                    historical_runtime_sha256=run['runtime_sha256'],
+                    target_runtime=current,
+                    historical_context_sha256=frozen['context_sha256'],
+                )
+            except RetryCompatibilityError:
+                raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE') from None
+            if token is None:
+                raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
+            worker = SourceOperations(
+                service.config, source_profile, profile, runtime_compatibility=token,
+            )
+        try:
+            Domains(service.config).guard(
+                run_id, worker.jobs, worker.profile,
+                runtime_compatibility=worker.runtime_compatibility,
+            )
+            from pro_a.config import load_config
+            from pro_a.phase4_orchestration import _compatible
+            from pro_a.phase4_retry import RetryPolicy
+            _compatible(
+                worker._native_root(run), run['native_execution_id'],
+                load_config(worker.profile.phase4_config_path), RetryPolicy.FORBID_ALL,
+                runtime_compatibility=worker.runtime_compatibility,
+            )
+        except Exception:
+            raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE') from None
+        return worker
+
+
+def _bounded_retry_events(connection, *, run_id=None, series_id=None):
+    where, args = ["e.event_type=?"], [_BOUNDED_RETRY_EVENT]
+    if run_id is not None:
+        where.append("s.processing_run_id=?")
+        args.append(run_id)
+    if series_id is not None:
+        where.append("e.series_id=?")
+        args.append(series_id)
+    rows = connection.execute(
+        "SELECT e.series_id,e.body_json FROM bounded_extraction_events e "
+        "JOIN bounded_extraction_series s ON s.series_id=e.series_id WHERE "
+        + " AND ".join(where) + " ORDER BY e.series_id,e.sequence", tuple(args),
+    )
+    result = []
+    for row in rows:
+        value = json.loads(row[1])
+        value["series_id"] = row[0]
+        result.append(value)
+    return result
+
+
+def _json_syntax_diagnostic(body):
+    try:
+        text = body.decode('utf-8', errors='strict')
+        json.loads(text)
+    except json.JSONDecodeError as error:
+        return {
+            'failure_class': 'PROVIDER_MALFORMED_STRUCTURED_OUTPUT',
+            'parser_class': 'JSON_SYNTAX_ERROR',
+            'message': error.msg, 'line': error.lineno, 'column': error.colno,
+            'char_offset': error.pos,
+            'byte_offset': len(text[:error.pos].encode('utf-8')),
+        }
+    except UnicodeError:
+        return None
+    return None
+
+
+def bounded_attempt_for_dispatch(ledger, segment_id, owner, fence, *,
+                                 payload_sha256, configuration_sha256):
+    """Select only an operator-authorized retry; otherwise preserve attempt 1."""
+    from pro_a.evidence_binding import identity
+    from .bounded_extraction_store import _require
+    with ledger._connection() as connection:
+        row, (series, plan, _, _) = ledger._segment_row(connection, segment_id)
+        ledger._owned(row, owner, fence)
+        segment = next(item for item in plan.segments if item.segment_id == segment_id)
+        latest = connection.execute(
+            'SELECT * FROM bounded_extraction_attempts WHERE segment_id=? '
+            'ORDER BY attempt_number DESC LIMIT 1', (segment_id,),
+        ).fetchone()
+        if latest is not None and latest['attempt_number'] > 1:
+            events = [event for event in _bounded_retry_events(
+                connection, series_id=series.series_id,
+            ) if event['new_attempt_id'] == latest['attempt_id']]
+            expected = ledger._request(
+                series, segment, payload_sha256, configuration_sha256,
+            )
+            _require(len(events) == 1, 'RETRY_AUTHORIZATION_REQUIRED')
+            _require(latest['attempt_number'] == 1 + MAX_MALFORMED_JSON_RETRIES,
+                     'RETRY_LIMIT_EXCEEDED')
+            _require(json.loads(latest['request_json']) == expected
+                     and latest['request_sha256'] == identity(expected),
+                     'RETRY_IDENTITY_MISMATCH')
+            return dict(latest)
+        if latest is not None:
+            outcome = connection.execute(
+                'SELECT 1 FROM bounded_extraction_outcomes WHERE attempt_id=?',
+                (latest['attempt_id'],),
+            ).fetchone()
+            if outcome:
+                raise BoundaryError('RETRY_AUTHORIZATION_REQUIRED')
+    return ledger.reserve_attempt(
+        segment_id, owner, fence, attempt_number=1,
+        payload_sha256=payload_sha256,
+        configuration_sha256=configuration_sha256,
+    )
+
+
+def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
+                                    retry_reason, idempotency_key):
+    """Authorize exactly one same-Batch malformed-JSON retry, without dispatch."""
+    from pro_a.config import load_config
+    from pro_a.evidence_binding import identity
+    from . import bounded_extraction_persistence as persistence
+    from .bounded_extraction_persistence import canonical as bounded_canonical
+    from .bounded_extraction_store import BoundedExtractionStore, _event, _now, _record
+    from .source_operations import build_source_providers, SourceOperationError
+
+    _validate_retry_request(retry_reason, idempotency_key)
+    worker = frozen_bounded_service(service, run_id, failed_attempt_id)
+    run_projection = worker.get_run(run_id)
+    bindings = worker.output_batches.inputs(run_projection)
+    ledger = BoundedExtractionStore(worker.config)
+
+    with ledger._connection(True) as connection:
+        prior = next((event for event in _bounded_retry_events(
+            connection,
+        ) if event['idempotency_key'] == idempotency_key), None)
+        if prior:
+            if (prior['processing_run_id'], prior['retry_of_attempt_id'],
+                    prior['operator_reason']) != (run_id, failed_attempt_id, retry_reason):
+                raise SourceOperationError('IDEMPOTENCY_CONFLICT')
+            attempt = connection.execute(
+                'SELECT * FROM bounded_extraction_attempts WHERE attempt_id=?',
+                (prior['new_attempt_id'],),
+            ).fetchone()
+            return {'retry': prior, 'attempt': dict(attempt), 'duplicate': True}
+
+        run = connection.execute(
+            'SELECT * FROM source_processing_runs WHERE processing_run_id=?', (run_id,),
+        ).fetchone()
+        attempt = connection.execute(
+            'SELECT a.*,s.series_id,s.state AS segment_state FROM bounded_extraction_attempts a '
+            'JOIN bounded_extraction_segments s ON s.segment_id=a.segment_id '
+            'WHERE a.attempt_id=?', (failed_attempt_id,),
+        ).fetchone()
+        if run is None or attempt is None:
+            raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+        series_id, segment_id = attempt['series_id'], attempt['segment_id']
+        matching = [item for item in bindings if item[3].series_id == series_id]
+        if len(matching) != 1:
+            raise SourceOperationError('RETRY_IDENTITY_MISMATCH')
+        value, context, catalog, series = matching[0]
+        series_row = connection.execute(
+            'SELECT * FROM bounded_extraction_series WHERE series_id=?', (series_id,),
+        ).fetchone()
+        segment = next((item for item in ledger._load(connection, series_id)[1].segments
+                        if item.segment_id == segment_id), None)
+        latest = connection.execute(
+            'SELECT * FROM bounded_extraction_attempts WHERE segment_id=? '
+            'ORDER BY attempt_number DESC LIMIT 1', (segment_id,),
+        ).fetchone()
+        outcome = connection.execute(
+            'SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?',
+            (failed_attempt_id,),
+        ).fetchone()
+        failure_events = [json.loads(row[0]) for row in connection.execute(
+            "SELECT body_json FROM bounded_extraction_events WHERE series_id=? "
+            "AND event_type='SEGMENT_FAILED' ORDER BY sequence", (series_id,),
+        )]
+        authorized = [event for event in _bounded_retry_events(
+            connection, series_id=series_id,
+        ) if event['segment_id'] == segment_id]
+        if authorized:
+            raise SourceOperationError('RETRY_LIMIT_EXCEEDED')
+        if (run['state'] != 'BLOCKED' or run['stage'] != 'ORCHESTRATION'
+                or run['error_code'] != 'BOUNDED_EXTRACTION_FAILED'
+                or run['lease_owner'] is not None
+                or series_row is None or series_row['state'] != 'FAILED'
+                or attempt['segment_state'] != 'FAILED'
+                or attempt['attempt_number'] != 1 or latest['attempt_id'] != failed_attempt_id
+                or segment is None or outcome is None
+                or outcome['external_outcome'] != 'SUCCEEDED'
+                or outcome['classification'] != 'SUCCEEDED'
+                or outcome['finish_reason'] != 'tool_calls'
+                or type(outcome['output_tokens']) is not int
+                or outcome['output_tokens'] >= segment.max_output_tokens
+                or not any(event.get('attempt_id') == failed_attempt_id
+                           and event.get('classification') == 'INVALID_SEGMENT_RESPONSE'
+                           for event in failure_events)
+                or connection.execute(
+                    'SELECT 1 FROM bounded_extraction_segment_results WHERE segment_id=?',
+                    (segment_id,),
+                ).fetchone()
+                or connection.execute(
+                    'SELECT 1 FROM bounded_extraction_series_results WHERE series_id=?',
+                    (series_id,),
+                ).fetchone()
+                or connection.execute(
+                    'SELECT 1 FROM source_processing_jobs WHERE processing_run_id=?',
+                    (run_id,),
+                ).fetchone()
+                or connection.execute(
+                    'SELECT 1 FROM bounded_extraction_attempts a '
+                    'JOIN bounded_extraction_segments s USING(segment_id) '
+                    'LEFT JOIN bounded_extraction_segment_results r USING(segment_id) '
+                    "WHERE s.series_id=? AND s.segment_id<>? AND "
+                    "(s.state<>'SUCCEEDED_COMPLETE' OR r.attempt_id<>a.attempt_id)",
+                    (series_id, segment_id),
+                ).fetchone()):
+            raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+
+        content = ledger._read_artifact(
+            series_id, failed_attempt_id + '.raw.json', outcome,
+        )
+        envelope, body = ledger._decode_envelope(attempt, content)
+        diagnostic = _json_syntax_diagnostic(body)
+        if (diagnostic is None or envelope['http_status'] != 200
+                or hashlib.sha256(content).hexdigest() != outcome['artifact_sha256']):
+            raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+
+        payload = worker.output_batches.segment_payload(
+            value, context, catalog, series, segment,
+        )
+        prompt_content = bounded_canonical(payload).encode('utf-8')
+        prompt_path = ledger._path(series_id, segment_id + '.prompt.json')
+        if (not prompt_path.exists() or prompt_path.read_bytes() != prompt_content
+                or hashlib.sha256(prompt_content).hexdigest()
+                != json.loads(attempt['request_json'])['payload_sha256']):
+            raise SourceOperationError('RETRY_IDENTITY_MISMATCH')
+        providers = build_source_providers(
+            load_config(worker.profile.phase4_config_path).llm, worker.jobs.profile,
+        )
+        configuration_sha256 = identity(
+            providers[worker.output_batches.operation].configuration(),
+        )
+        if configuration_sha256 != attempt['configuration_sha256']:
+            raise SourceOperationError('RETRY_FROZEN_CONFIG_INCOMPLETE')
+
+        ordered = [item[3].series_id for item in bindings]
+        target_index = ordered.index(series_id)
+        for later_id in ordered[target_index + 1:]:
+            later = connection.execute(
+                'SELECT * FROM bounded_extraction_series WHERE series_id=?', (later_id,),
+            ).fetchone()
+            last = connection.execute(
+                "SELECT body_json FROM bounded_extraction_events WHERE series_id=? "
+                "AND event_type='SERIES_FAILED' ORDER BY sequence DESC LIMIT 1", (later_id,),
+            ).fetchone()
+            if (later['state'] != 'FAILED' or last is None
+                    or json.loads(last[0]).get('code') != 'UPSTREAM_SERIES_FAILED'
+                    or connection.execute(
+                        'SELECT 1 FROM bounded_extraction_attempts a '
+                        'JOIN bounded_extraction_segments s USING(segment_id) '
+                        'WHERE s.series_id=?', (later_id,),
+                    ).fetchone()):
+                raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+
+        request = json.loads(attempt['request_json'])
+        if (request != ledger._request(
+                series, segment, request['payload_sha256'], configuration_sha256)
+                or series_row['provider_call_reservations'] + 1 > series.budget.max_provider_calls
+                or series_row['output_liability'] + segment.max_output_tokens
+                > series.budget.max_cumulative_output_tokens):
+            raise SourceOperationError('RETRY_IDENTITY_MISMATCH')
+
+        retry_attempt_number = 1 + MAX_MALFORMED_JSON_RETRIES
+        new_attempt_id = ledger._attempt_id(
+            segment_id, retry_attempt_number, attempt['request_sha256'],
+        )
+        new_attempt = _record(connection, 'attempts', {
+            'attempt_id': new_attempt_id, 'segment_id': segment_id,
+            'attempt_number': retry_attempt_number, 'request_json': attempt['request_json'],
+            'request_sha256': attempt['request_sha256'],
+            'configuration_sha256': attempt['configuration_sha256'],
+            'budget_identity': attempt['budget_identity'], 'created_at': _now(),
+        })
+        connection.execute(
+            'UPDATE bounded_extraction_series SET state=\'OPEN\','
+            'provider_call_reservations=provider_call_reservations+1,'
+            'output_liability=output_liability+?,updated_at=? WHERE series_id=?',
+            (segment.max_output_tokens, _now(), series_id),
+        )
+        connection.execute(
+            "UPDATE bounded_extraction_segments SET state=CASE WHEN segment_id=? "
+            "THEN 'RUNNING' WHEN state='FAILED' THEN 'PLANNED' ELSE state END,updated_at=? "
+            "WHERE series_id=?", (segment_id, _now(), series_id),
+        )
+        for later_id in ordered[target_index + 1:]:
+            connection.execute(
+                "UPDATE bounded_extraction_series SET state='OPEN',updated_at=? WHERE series_id=?",
+                (_now(), later_id),
+            )
+            connection.execute(
+                "UPDATE bounded_extraction_segments SET state='PLANNED',updated_at=? "
+                "WHERE series_id=? AND state='FAILED'", (_now(), later_id),
+            )
+            _event(connection, later_id, 'SERIES_REOPENED_AFTER_UPSTREAM_RETRY',
+                   retry_of_attempt_id=failed_attempt_id)
+        token = worker.runtime_compatibility
+        retry = {
+            'policy_version': MALFORMED_JSON_RETRY_POLICY_VERSION,
+            'processing_run_id': run_id, 'series_id': series_id,
+            'segment_id': segment_id, 'retry_of_attempt_id': failed_attempt_id,
+            'new_attempt_id': new_attempt_id, 'retry_number': 1,
+            'retry_reason_code': MALFORMED_JSON_RETRY_REASON,
+            'operator_reason': retry_reason, 'idempotency_key': idempotency_key,
+            'context_sha256': Domains(worker.config).read(
+                run_id, connection=connection,
+            )['context_sha256'],
+            'request_sha256': attempt['request_sha256'],
+            'original_raw_sha256': outcome['artifact_sha256'],
+            'json_diagnostic': diagnostic,
+            'compatibility_qualification_id': (
+                token.record['qualification_id'] if token is not None else 'EXACT_RUNTIME'
+            ),
+        }
+        _event(
+            connection, series_id, _BOUNDED_RETRY_EVENT,
+            **{key: value for key, value in retry.items() if key != 'series_id'},
+        )
+        _event(connection, series_id, 'ATTEMPT_RESERVED',
+               attempt_id=new_attempt_id, record_sha256=new_attempt['record_sha256'])
+        worker._event(connection, run_id, 'EXPLICIT_EXTRACTION_RETRY_ACCEPTED', retry)
+        connection.execute(
+            "UPDATE source_processing_runs SET state='EXTRACTION_PROCESSING',"
+            "stage='WHOLE_PIECE_OUTPUT_DECOMPOSITION',error_code=NULL,retry_safe=0,"
+            "manual_recovery_required=0,ended_at=NULL,updated_at=? "
+            "WHERE processing_run_id=?", (_now(), run_id),
+        )
+    persistence.checkpoint('attempt_reserved')
+    return {'retry': retry, 'attempt': new_attempt, 'duplicate': False}
+
+
+def retry_failed_extraction(service, run_id, failed_attempt_id, *, retry_reason, idempotency_key):
+    from .source_operations import SourceOperationError
+    _validate_retry_request(retry_reason, idempotency_key)
     # One write transaction serializes duplicates, eligibility, sequence allocation,
     # new job/lineage insertion and the current Run projection transition.
     with service.store.connect(operator_write=True) as connection:

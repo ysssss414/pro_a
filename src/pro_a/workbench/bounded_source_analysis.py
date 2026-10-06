@@ -202,8 +202,12 @@ class BoundedSourceAnalysisRunner:
                         segment_row, _ = self.ledger._segment_row(c, segment.segment_id)
                         self.ledger._owned(segment_row, owner, fence)
                         _, sha = self.ledger._artifact(series.series_id, segment.segment_id + ".prompt.json", canonical(payload).encode())
-                    attempt = self.ledger.reserve_attempt(segment.segment_id, owner, fence, attempt_number=1,
-                        payload_sha256=sha, configuration_sha256=identity(configuration))
+                    from .extraction_retry import bounded_attempt_for_dispatch
+                    attempt = bounded_attempt_for_dispatch(
+                        self.ledger, segment.segment_id, owner, fence,
+                        payload_sha256=sha,
+                        configuration_sha256=identity(configuration),
+                    )
                     _require(self.ledger.record_dispatch(attempt["attempt_id"], owner, fence), "BOUNDED_DISPATCH_ALREADY_OBSERVED")
                     try:
                         response = selected.invoke(payload)
