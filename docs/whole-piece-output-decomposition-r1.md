@@ -1,7 +1,7 @@
 # SOURCE_ANALYSIS_WHOLE_PIECE_OUTPUT_DECOMPOSITION_R1
 
 Baseline: `9562404e2b85d16394219825b8b254705026a31b` (PR #103).
-Qualification in progress; this document is not a release authorization.
+Gates A–E PASS. Offline implementation qualification only; no release or live-run authorization.
 
 ## Gate A: storage and semantic boundary
 
@@ -71,5 +71,42 @@ the confirmed-call count excludes them. MCP exposes counts and usage only.
 
 Offline/synthetic qualification only. Stable/schema12 and Runs #1–#10 remain
 unchanged. No provider calls, Run #11, Review action, Production or Current View
-writes are authorized in this phase. Gate results, exact test counts, wheel
-identity and evidence hashes will be recorded after qualification.
+writes are authorized in this phase. The companion qualification JSON records the exact tests, build, contracts,
+offline request sizes, benchmarks and safety hashes.
+
+## Qualification receipt
+
+Implementation: `4c1d8cb6ccd239b06502c05f882b32b1bd74d322`. Wheel SHA256: `6c4e1fcb14a814197edd3bceadd642b27f8660aff28c62f99ab738828ef79b68`.
+
+1369 unique scoped tests passed across 31 files, zero outstanding failures/skips. This is not a full repository run.
+
+Compileall, pip check, isolated PEP517 wheel, 142-file source/wheel/install byte equality, installed repository identity, no-Git runtime, privacy scan and diff check passed.
+
+| Piece | Evidence | Initial owned-ref counts | Full context chars | Prompt chars | Prompt UTF-8 bytes |
+|---|---:|---|---:|---|---|
+| 1 | 77 | 16/16/16/16/13 | 3595 | 14654–14852 | 27944–28142 |
+| 2 | 93 | 16/16/16/16/16/13 | 3783 | 14755–14953 | 28305–28503 |
+| 3 | 83 | 16/16/16/16/16/3 | 3556 | 14067–14925 | 27151–28009 |
+| 4 | 82 | 16/16/16/16/16/2 | 3791 | 14828–15752 | 28096–29020 |
+| 5 | 52 | 16/16/16/4 | 2098 | 12412–13204 | 23204–23996 |
+
+Every batch has zero selectable foreign Evidence IDs. Exact per-batch request chars/bytes and foreign context counts are in the companion JSON.
+
+| Owned refs | Claims/ref | Argument chars | UTF-8 bytes |
+|---:|---:|---:|---:|
+| 16 | 1 | 8987 | 9411 |
+| 16 | 4 | 28061 | 29733 |
+| 8 | 1 | 4614 | 4830 |
+| 8 | 4 | 14142 | 14982 |
+| 4 | 1 | 2443 | 2555 |
+| 4 | 4 | 7207 | 7631 |
+| 1 | 1 | 817 | 851 |
+| 1 | 4 | 2008 | 2120 |
+
+No token conversion is estimated. Counts prove smaller serialized responsibility for these comparable fixtures only.
+
+Runs #1–#10 and all 22 queued jobs remain unchanged; the original 14 historical queued jobs are included. Runs #8/#9/#10 remain incompatible with the new execution surface. All safety write/call counts refer to the real environment; test fixtures are disposable.
+
+`NEXT_STAGE = OUTPUT_DECOMPOSITION_RELEASE_AND_LIVE_RUN11_VALIDATION`
+
+`AUTHORIZATION_REQUIRED_FOR_LIVE_RUN11 = true`
