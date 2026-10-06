@@ -1,0 +1,937 @@
+{
+  "stage": "OUTPUT_DECOMPOSITION_CLAIM_DISPOSITION_LINKAGE_R1",
+  "baseline": "99d9abcbc876669277438c203195a38652921404",
+  "implementation_sha": "57a7442a7ccab576d045ef5d71d11234988e4117",
+  "flags": {
+    "OUTPUT_DECOMPOSITION_CLAIM_DISPOSITION_LINKAGE_R1": "PASS",
+    "ROOT_CAUSE": "REDUNDANT_PROVIDER_DISPOSITION_STATE",
+    "PROVIDER_DISPOSITION_ENUM_REMOVED": true,
+    "PROVIDER_CLAIM_LINKAGE": "explicit_claim_refs",
+    "EXPLICIT_EVIDENCE_CONSIDERATION": "preserved",
+    "CLAIM_LINKAGE_SET_EQUALITY": "PASS",
+    "INTERNAL_CLAIMED_DERIVATION": "deterministic",
+    "INTERNAL_NO_INDEPENDENT_CLAIM_DERIVATION": "deterministic",
+    "CANDIDATE_COUNTS_AS_CLAIM": false,
+    "NODE_MATCH_COUNTS_AS_CLAIM": false,
+    "SOURCE_REFERENCE_COUNTS_AS_CLAIM": false,
+    "EVENT_COUNTS_AS_CLAIM": false,
+    "RUN12_REGRESSION": "PASS",
+    "SERIES_COVERAGE_SEMANTICS_CHANGED": false,
+    "OUTPUT_SUBDIVISION_CHANGED": false,
+    "SEMANTIC_CONTEXT": "COMPLETE_SOURCEPIECE",
+    "OUTPUT_OWNERSHIP": "EVIDENCE_BATCHED",
+    "WIRE_FOUNDATION_RELAXED": false,
+    "EVIDENCE_BINDING_RELAXED": false,
+    "ANALYZER_RELAXED": false,
+    "PERMANENT_CLAIM_IDENTITY": "PASS",
+    "AGGREGATE_WIRE_EQUIVALENCE": "PASS",
+    "NATIVE_ANALYZER_EQUIVALENCE": "PASS",
+    "STRICT_TOOL_ROLE": "FORMAT_COMPLIANCE_ASSIST",
+    "AUTHORITATIVE_VALIDATOR": "LOCAL",
+    "PROVIDER_EXECUTION_MODE": "DEEPSEEK_STRICT_TOOL_LEXICAL",
+    "SCHEMA": 12,
+    "RUN12_MUTATED": false,
+    "REAL_PROVIDER_CALLS": 0,
+    "RUN13_CREATED": false,
+    "PRODUCTION_WRITES": 0,
+    "CURRENT_VIEW_WRITES": 0,
+    "REVIEW_ACTIONS": 0,
+    "RUN12_FIRST_BATCH_12000_HEADROOM": true,
+    "OUTPUT_DECOMPOSITION_REQUIRED": true,
+    "NEXT_STAGE": "CLAIM_DISPOSITION_LINKAGE_RELEASE_AND_LIVE_RUN13_VALIDATION",
+    "AUTHORIZATION_REQUIRED_FOR_LIVE_RUN13": true
+  },
+  "identities": {
+    "response_version": "whole-piece-output-batch-response-v2",
+    "prompt_version": "whole-piece-output-batch-lexical-tool-prompt-v2",
+    "adapter_version": "whole-piece-output-batch-lexical-tool-provider-v2",
+    "provider_execution_mode": "DEEPSEEK_STRICT_TOOL_LEXICAL",
+    "provider_record_version": "whole-piece-output-batch-provider-record-v2",
+    "tool_schema_version": "whole-piece-output-batch-tool-schema-v2",
+    "tool_schema_sha256": "ffe6fbbba3b4db8e857a6c538c59f5dfb9689da8aabb1b02ced0c2539ca304d7",
+    "tool_name": "emit_source_analysis",
+    "tool_strict": true,
+    "provider_endpoint": "https://api.deepseek.com/beta/chat/completions",
+    "strict_tool_role": "FORMAT_COMPLIANCE_ASSIST",
+    "authoritative_validator": "LOCAL",
+    "wire": "source-analysis-wire-v3",
+    "evidence_binding": "source-analysis-evidence-binding-v2",
+    "expander": "source-analysis-wire-expander-v2",
+    "max_output_tokens": 12000,
+    "automatic_extraction_retry": false,
+    "system_prompt_sha256": "4083dcb879420ca01d868b2138580f52cfeeef263ac9d8f1bbfcd687dabce11b",
+    "binding_version": "whole-piece-output-decomposition-binding-v1",
+    "provider_version": "whole-piece-output-batch-lexical-tool-provider-v2",
+    "series": "whole-piece-output-series-v1",
+    "batch": "whole-piece-output-batch-v1",
+    "coverage": "whole-piece-output-coverage-v1",
+    "subdivision": "whole-piece-output-subdivision-v1",
+    "ownership_policy": "whole-piece-output-ownership-policy-v1",
+    "claim_linkage_policy": "whole-piece-output-claim-linkage-v1",
+    "budget": {
+      "initial_evidence_refs": 16,
+      "max_leaf_segments": 16,
+      "max_subdivision_depth": 4,
+      "max_provider_calls": 32,
+      "max_cumulative_output_tokens": 384000
+    },
+    "semantic_context": "COMPLETE_SOURCEPIECE",
+    "evidence_segment_semantic_boundary": "deprecated",
+    "output_ownership": "EVIDENCE_BATCHED",
+    "piece_hard_cap": 4000,
+    "planner": "PHASE3E2SL6_PRECALL_PARTITION_V3",
+    "prompt_bundle_sha256": "794281be83604a0facc5dfd098474f1f6754d5eb4b12be59975d6a0b194a17a6"
+  },
+  "test_qualification": {
+    "unique_passed": 1416,
+    "files": 32,
+    "full_repository_run": false,
+    "by_file": {
+      "tests/test_bounded_extraction.py": 98,
+      "tests/test_bounded_extraction_latency.py": 23,
+      "tests/test_bounded_extraction_persistence.py": 36,
+      "tests/test_bounded_extraction_recovery.py": 23,
+      "tests/test_cloud_operation_adapter_binding.py": 24,
+      "tests/test_evidence_binding.py": 31,
+      "tests/test_extraction_capacity.py": 21,
+      "tests/test_extraction_capacity_r2.py": 4,
+      "tests/test_lexical_tool_adapter.py": 19,
+      "tests/test_lexical_tool_qualification.py": 46,
+      "tests/test_mcp_bounded_reads.py": 8,
+      "tests/test_mcp_stage0.py": 30,
+      "tests/test_mcp_stage3.py": 51,
+      "tests/test_operation_output_budget.py": 25,
+      "tests/test_output_claim_linkage.py": 47,
+      "tests/test_output_decomposition.py": 36,
+      "tests/test_output_decomposition_durability.py": 20,
+      "tests/test_phase43_stage1_operator_scale.py": 14,
+      "tests/test_phase43_stage72a_provider_diagnostics.py": 28,
+      "tests/test_phase43_stage72b_extraction_retry.py": 25,
+      "tests/test_phase43_stage72b_unicode_reason.py": 10,
+      "tests/test_phase43_stage72c_retry_compatibility.py": 35,
+      "tests/test_provider_output_failure_telemetry.py": 43,
+      "tests/test_provider_record_json.py": 25,
+      "tests/test_semantic_admission.py": 49,
+      "tests/test_source_analysis_provider_record.py": 467,
+      "tests/test_source_analysis_wire.py": 61,
+      "tests/test_v0_2_analyzer_validation.py": 12,
+      "tests/test_whole_piece_compact.py": 33,
+      "tests/test_whole_piece_execution.py": 24,
+      "tests/test_workbench_stage6.py": 33,
+      "tests/test_workbench_stage7.py": 15
+    },
+    "receipts": [
+      {
+        "label": "initial",
+        "passed": 56,
+        "failed": 0,
+        "junit_sha256": "a18ce9cb6a8d342272d9b458a258a66917354a268300fd237b64c85505e3f66f"
+      },
+      {
+        "label": "linkage-final",
+        "passed": 47,
+        "failed": 0,
+        "junit_sha256": "1905e7e41a3c9020312f48ea2dbb23421e968f7bc70985241624f32e5ceeefdc"
+      },
+      {
+        "label": "related",
+        "passed": 1259,
+        "failed": 1,
+        "junit_sha256": "c1039a199937b0c5678b71bb0001b7fe10ae046fadb30a1ad6c51939a80e7e28"
+      },
+      {
+        "label": "remaining",
+        "passed": 54,
+        "failed": 0,
+        "junit_sha256": "88cb8be3025d4964edeafcb8cbf7f7d19bd55693701c14973bc3da10f631614e"
+      }
+    ],
+    "resolved_test_environment_failure": {
+      "status": "BLOCKED_RUNTIME_DRIFT",
+      "last_error": "RUNTIME_DRIFT",
+      "frozen_test_git_sha": "99d9abcbc876669277438c203195a38652921404",
+      "current_git_sha": "57a7442a7ccab576d045ef5d71d11234988e4117"
+    }
+  },
+  "build": {
+    "status": "PASS",
+    "implementation_sha": "57a7442a7ccab576d045ef5d71d11234988e4117",
+    "wheel_sha256": "beb064126e87ddfdb811fe75be3b0e868e53c844b8eaf088bf6f2e639c82d521",
+    "isolated_pep517_wheel": "PASS",
+    "compileall": "PASS",
+    "pip_check": "No broken requirements found.",
+    "source_wheel_install_python_files": 142,
+    "source_wheel_install_equal": true,
+    "installed_repository_identity": {
+      "contract_version": "pro-a-build-repository-identity-v1",
+      "repository": "ysssss414/pro_a",
+      "repository_commit": "57a7442a7ccab576d045ef5d71d11234988e4117"
+    },
+    "no_git_runtime": "PASS",
+    "pro_a_version": "0.5.1",
+    "python": "3.13.14",
+    "provider_calls": 0
+  },
+  "audit": {
+    "status": "PASS",
+    "run12_raw_replay": {
+      "v1": "CLAIM_DISPOSITION_MISMATCH",
+      "v2": "INVALID_PROVIDER_RECORD_SHAPE"
+    },
+    "run12_raw_artifact_sha256": "a0a19ba8221e5f8325cd4d1c5bc1e7c900b3302cdd516f447fbd69674ff4aef9",
+    "system_prompt": {
+      "v1": {
+        "chars": 7423,
+        "utf8_bytes": 14629
+      },
+      "v2": {
+        "chars": 7620,
+        "utf8_bytes": 14948
+      },
+      "delta": {
+        "chars": 197,
+        "utf8_bytes": 319
+      }
+    },
+    "tool_schema": {
+      "v1": {
+        "chars": 7876,
+        "utf8_bytes": 7876
+      },
+      "v2": {
+        "chars": 7857,
+        "utf8_bytes": 7857
+      },
+      "delta": {
+        "chars": -19,
+        "utf8_bytes": -19
+      }
+    },
+    "synthetic_output_benchmarks": [
+      {
+        "owned_refs": 16,
+        "claims_per_ref": 1,
+        "claim_count": 16,
+        "v1": {
+          "chars": 7984,
+          "utf8_bytes": 8408
+        },
+        "v2": {
+          "chars": 7927,
+          "utf8_bytes": 8351
+        },
+        "delta": {
+          "chars": -57,
+          "utf8_bytes": -57
+        }
+      },
+      {
+        "owned_refs": 16,
+        "claims_per_ref": 4,
+        "claim_count": 64,
+        "v1": {
+          "chars": 28087,
+          "utf8_bytes": 29759
+        },
+        "v2": {
+          "chars": 28318,
+          "utf8_bytes": 29990
+        },
+        "delta": {
+          "chars": 231,
+          "utf8_bytes": 231
+        }
+      },
+      {
+        "owned_refs": 8,
+        "claims_per_ref": 4,
+        "claim_count": 32,
+        "v1": {
+          "chars": 14155,
+          "utf8_bytes": 14995
+        },
+        "v2": {
+          "chars": 14266,
+          "utf8_bytes": 15106
+        },
+        "delta": {
+          "chars": 111,
+          "utf8_bytes": 111
+        }
+      },
+      {
+        "owned_refs": 4,
+        "claims_per_ref": 4,
+        "claim_count": 16,
+        "v1": {
+          "chars": 7215,
+          "utf8_bytes": 7639
+        },
+        "v2": {
+          "chars": 7266,
+          "utf8_bytes": 7690
+        },
+        "delta": {
+          "chars": 51,
+          "utf8_bytes": 51
+        }
+      },
+      {
+        "owned_refs": 1,
+        "claims_per_ref": 4,
+        "claim_count": 4,
+        "v1": {
+          "chars": 2010,
+          "utf8_bytes": 2122
+        },
+        "v2": {
+          "chars": 2021,
+          "utf8_bytes": 2133
+        },
+        "delta": {
+          "chars": 11,
+          "utf8_bytes": 11
+        }
+      }
+    ],
+    "offline_real_source": [
+      {
+        "piece": 1,
+        "evidence_count": 77,
+        "batches": [
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 61,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3595,
+            "request": {
+              "v1": {
+                "chars": 23624,
+                "utf8_bytes": 36956
+              },
+              "v2": {
+                "chars": 23876,
+                "utf8_bytes": 37330
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 61,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3595,
+            "request": {
+              "v1": {
+                "chars": 23624,
+                "utf8_bytes": 36956
+              },
+              "v2": {
+                "chars": 23876,
+                "utf8_bytes": 37330
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 61,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3595,
+            "request": {
+              "v1": {
+                "chars": 23624,
+                "utf8_bytes": 36956
+              },
+              "v2": {
+                "chars": 23876,
+                "utf8_bytes": 37330
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 61,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3595,
+            "request": {
+              "v1": {
+                "chars": 23624,
+                "utf8_bytes": 36956
+              },
+              "v2": {
+                "chars": 23876,
+                "utf8_bytes": 37330
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 13,
+            "foreign_context_refs": 64,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3595,
+            "request": {
+              "v1": {
+                "chars": 23420,
+                "utf8_bytes": 36752
+              },
+              "v2": {
+                "chars": 23672,
+                "utf8_bytes": 37126
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          }
+        ]
+      },
+      {
+        "piece": 2,
+        "evidence_count": 93,
+        "batches": [
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 77,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23708,
+                "utf8_bytes": 37300
+              },
+              "v2": {
+                "chars": 23960,
+                "utf8_bytes": 37674
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 77,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23708,
+                "utf8_bytes": 37300
+              },
+              "v2": {
+                "chars": 23960,
+                "utf8_bytes": 37674
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 77,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23708,
+                "utf8_bytes": 37300
+              },
+              "v2": {
+                "chars": 23960,
+                "utf8_bytes": 37674
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 77,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23708,
+                "utf8_bytes": 37300
+              },
+              "v2": {
+                "chars": 23960,
+                "utf8_bytes": 37674
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 77,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23708,
+                "utf8_bytes": 37300
+              },
+              "v2": {
+                "chars": 23960,
+                "utf8_bytes": 37674
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 13,
+            "foreign_context_refs": 80,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3783,
+            "request": {
+              "v1": {
+                "chars": 23504,
+                "utf8_bytes": 37096
+              },
+              "v2": {
+                "chars": 23756,
+                "utf8_bytes": 37470
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          }
+        ]
+      },
+      {
+        "piece": 3,
+        "evidence_count": 83,
+        "batches": [
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 67,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 23714,
+                "utf8_bytes": 36840
+              },
+              "v2": {
+                "chars": 23966,
+                "utf8_bytes": 37214
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 67,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 23714,
+                "utf8_bytes": 36840
+              },
+              "v2": {
+                "chars": 23966,
+                "utf8_bytes": 37214
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 67,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 23714,
+                "utf8_bytes": 36840
+              },
+              "v2": {
+                "chars": 23966,
+                "utf8_bytes": 37214
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 67,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 23714,
+                "utf8_bytes": 36840
+              },
+              "v2": {
+                "chars": 23966,
+                "utf8_bytes": 37214
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 67,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 23714,
+                "utf8_bytes": 36840
+              },
+              "v2": {
+                "chars": 23966,
+                "utf8_bytes": 37214
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 3,
+            "foreign_context_refs": 80,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3556,
+            "request": {
+              "v1": {
+                "chars": 22830,
+                "utf8_bytes": 35956
+              },
+              "v2": {
+                "chars": 23082,
+                "utf8_bytes": 36330
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          }
+        ]
+      },
+      {
+        "piece": 4,
+        "evidence_count": 82,
+        "batches": [
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 66,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 24613,
+                "utf8_bytes": 37923
+              },
+              "v2": {
+                "chars": 24865,
+                "utf8_bytes": 38297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 66,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 24613,
+                "utf8_bytes": 37923
+              },
+              "v2": {
+                "chars": 24865,
+                "utf8_bytes": 38297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 66,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 24613,
+                "utf8_bytes": 37923
+              },
+              "v2": {
+                "chars": 24865,
+                "utf8_bytes": 38297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 66,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 24613,
+                "utf8_bytes": 37923
+              },
+              "v2": {
+                "chars": 24865,
+                "utf8_bytes": 38297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 66,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 24613,
+                "utf8_bytes": 37923
+              },
+              "v2": {
+                "chars": 24865,
+                "utf8_bytes": 38297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 2,
+            "foreign_context_refs": 80,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 3791,
+            "request": {
+              "v1": {
+                "chars": 23661,
+                "utf8_bytes": 36971
+              },
+              "v2": {
+                "chars": 23913,
+                "utf8_bytes": 37345
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          }
+        ]
+      },
+      {
+        "piece": 5,
+        "evidence_count": 52,
+        "batches": [
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 36,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 2098,
+            "request": {
+              "v1": {
+                "chars": 21905,
+                "utf8_bytes": 32739
+              },
+              "v2": {
+                "chars": 22157,
+                "utf8_bytes": 33113
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 36,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 2098,
+            "request": {
+              "v1": {
+                "chars": 21905,
+                "utf8_bytes": 32739
+              },
+              "v2": {
+                "chars": 22157,
+                "utf8_bytes": 33113
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 16,
+            "foreign_context_refs": 36,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 2098,
+            "request": {
+              "v1": {
+                "chars": 21905,
+                "utf8_bytes": 32739
+              },
+              "v2": {
+                "chars": 22157,
+                "utf8_bytes": 33113
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          },
+          {
+            "owned_refs": 4,
+            "foreign_context_refs": 48,
+            "selectable_foreign_ids": 0,
+            "full_context_chars": 2098,
+            "request": {
+              "v1": {
+                "chars": 21089,
+                "utf8_bytes": 31923
+              },
+              "v2": {
+                "chars": 21341,
+                "utf8_bytes": 32297
+              },
+              "delta": {
+                "chars": 252,
+                "utf8_bytes": 374
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "real_provider_calls": 0,
+    "state_unchanged": true
+  },
+  "history": {
+    "status": "PASS",
+    "historical_runs_readable": 12,
+    "historical_projections_unchanged": true,
+    "stage72c": [
+      {
+        "run": 8,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "compatible": false
+      },
+      {
+        "run": 9,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "compatible": false
+      },
+      {
+        "run": 10,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "compatible": false
+      },
+      {
+        "run": 11,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "compatible": false
+      },
+      {
+        "run": 12,
+        "reason": "SEMANTIC_SURFACE_CHANGED",
+        "compatible": false
+      }
+    ],
+    "schema": 12,
+    "real_provider_calls": 0,
+    "real_state_writes": 0
+  },
+  "safety_hashes": {
+    "workbench_file_sha256": "daf5e09ed170d9e4d5eb56c84d25361832dfff5a4fb35c48d316b6ea79201a54",
+    "workbench_tables_sha256": "5e36d72195687dd321e8bb88b4fb3419ba1df495f2b95aac03c4186ac9e0abf8",
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+    "private_artifacts_tree_sha256": "20a1de9d87991a6ba4fdc8091f0c77fa456a6d259e33f22a8356400ac58900b9",
+    "current_views_tree_sha256": "1e51f4ed298ccd6882423cd93e4dfe44075f118bbda57069d748d9411c275fcd",
+    "historical_mcp_projections_sha256": "7ab74c384359f314e46ad6819c66ee5612b4bcc1ce915c224f85064d4936a75e",
+    "stable_metadata_sha256": "06eb6d50a8dcee24b09bda99ee15696fccf3a2477bfd758d72c3245fed50fe72",
+    "cleanup_receipt_sha256": "17423a9a31c9676b6e3c9cadc1a55bc0a3faedc81a6f57a86cea927c4b3b05e6",
+    "run12_raw_artifact_sha256": "a0a19ba8221e5f8325cd4d1c5bc1e7c900b3302cdd516f447fbd69674ff4aef9"
+  },
+  "cleanup": {
+    "additional_cleanup": false,
+    "frozen_files_deleted": 206884,
+    "frozen_bytes_reclaimed": 15932887602
+  },
+  "ledger_identity_audit": {
+    "provider_format_part_of_series_identity": false,
+    "schema_migration": false,
+    "internal_dispositions_unchanged": true,
+    "series_batch_coverage_subdivision_versions_retained": true
+  },
+  "privacy": {
+    "status": "PASS",
+    "files_scanned": 7,
+    "private_needles_checked": 501,
+    "provider_calls": 0,
+    "real_state_changed": false
+  },
+  "diff_check": "PASS"
+}

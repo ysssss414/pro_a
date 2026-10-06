@@ -64,3 +64,8 @@ def from_canonical(raw, catalog):
     for claim, original in zip(wire['claims'], raw['claims']):
         claim['evidence_pointer'] = original['evidence_pointer']
     return from_wire(wire)
+
+
+def claim_linkages(record, refs):
+    return [{'evidence_ref': ref, 'claim_refs': [f'C{i}' for i,c in enumerate(record['claims'],1)
+            if c['evidence']['evidence_ref'] == ref]} for ref in refs]
