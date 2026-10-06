@@ -10,7 +10,7 @@ from pro_a import output_decomposition as output
 from pro_a.bounded_extraction import (OUTPUT_SERIES_VERSION, SeriesBudget, create_extraction_series,
     initial_extraction_plan, aggregate_segment_wires, expand_source_analysis_wire_v3, subdivide_extraction_plan)
 from pro_a.source_analysis_wire import build_source_evidence_catalog
-from lexical_record_helpers import from_wire
+from lexical_record_helpers import from_wire, claim_linkages
 from test_bounded_extraction import result, v3
 from test_source_analysis_wire import context, canonical_claim, empty_canonical
 
@@ -29,7 +29,7 @@ def record(ctx, catalog, series, batch, *, density=1):
     for i,claim in enumerate(raw['claims'],1):
         claim['claim_ref'] = f'C{i}'
     value = from_wire(v3(raw, catalog))
-    value['dispositions'] = [{'evidence_ref':r,'disposition':'CLAIMED'} for r in batch.assigned_evidence_refs]
+    value['dispositions'] = claim_linkages(value,batch.assigned_evidence_refs)
     return value
 
 
@@ -108,7 +108,8 @@ def test_dispositions_exact(mutation):
     batch=plan.leaves[0]; value=record(ctx,catalog,series,batch)
     if mutation=='missing': value['dispositions'].pop()
     elif mutation=='duplicate': value['dispositions'].append(value['dispositions'][0])
-    else: value['dispositions'][0]['disposition']='NO_INDEPENDENT_CLAIM' if mutation=='wrong_claimed' else 'SUBDIVISION_REQUIRED'
+    elif mutation=='wrong_claimed': value['dispositions'][0]['claim_refs']=[]
+    else: value['dispositions'][0]['disposition']='SUBDIVISION_REQUIRED'
     with pytest.raises(ValueError): accepted(ctx,catalog,series,batch,value)
 
 
@@ -199,8 +200,7 @@ def test_all_canonical_families_exact_with_duplicate_candidate(tmp_path):
         value=from_wire(v3(raw,catalog))
         for family in ('node_candidates','source_references'):
             for obj in value[family]:obj['ownership_evidence_ref']=batch.assigned_evidence_refs[0]
-        used={c['evidence']['evidence_ref'] for c in value['claims']}
-        value['dispositions']=[{'evidence_ref':r,'disposition':'CLAIMED' if r in used else 'NO_INDEPENDENT_CLAIM'} for r in batch.assigned_evidence_refs]
+        value['dispositions']=claim_linkages(value,batch.assigned_evidence_refs)
         records.append(accepted(ctx,catalog,series,batch,value))
     aggregate=aggregate_segment_wires(series,plan,tuple(records),catalog,ctx)
     wire=json.loads(aggregate.wire_json)

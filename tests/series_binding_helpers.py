@@ -111,10 +111,10 @@ class Transport:
             content=__import__('json').dumps(value,ensure_ascii=False)
         if lexical:
             value = __import__('json').loads(content)
-            from lexical_record_helpers import from_wire
+            from lexical_record_helpers import from_wire, claim_linkages
             record = from_wire(value['wire'])
             if not whole:
-                record['dispositions'] = value['dispositions']
+                record['dispositions'] = claim_linkages(record,target['assigned_evidence_refs'])
                 for family in ('node_candidates','source_references'):
                     for obj in record[family]:
                         obj['ownership_evidence_ref'] = target['assigned_evidence_refs'][0]
@@ -123,9 +123,9 @@ class Transport:
 
 
 def batch_record(response, target):
-    from lexical_record_helpers import from_wire
+    from lexical_record_helpers import from_wire, claim_linkages
     record = from_wire(response['wire'])
-    record['dispositions'] = response['dispositions']
+    record['dispositions'] = claim_linkages(record,target['assigned_evidence_refs'])
     for family in ('node_candidates','source_references'):
         for obj in record[family]:
             obj['ownership_evidence_ref'] = target['assigned_evidence_refs'][0]
