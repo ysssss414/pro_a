@@ -17,7 +17,7 @@ from pro_a.workbench.extraction_retry import frozen_cloud
 from pro_a.workbench.source_operations import SourceOperationError
 from test_cloud_operation_adapter_binding import setup_run, advance, jobs
 from test_structured_json_reasoning_policy import assert_private_surfaces, completion, reasoning_sentinel
-from test_llm import FakeResponse
+from series_binding_helpers import ToolResponse
 from pro_a.whole_piece_compact import SYSTEM as WHOLE_PIECE_SYSTEM
 from series_binding_helpers import rows as ledger_rows
 from legacy_source_fixture import historical_case
@@ -95,7 +95,10 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
         output = 12000 if extraction else 8192
         assert payload["max_tokens"] == output
         assert payload["thinking"] == {"type": "disabled"} and "reasoning_effort" not in payload
-        assert payload["response_format"] == {"type": "json_object"}
+        if extraction:
+            assert 'response_format' not in payload and payload['tools'][0]['function']['strict'] is True
+        else:
+            assert payload["response_format"] == {"type": "json_object"}
         requests_seen.append(output)
         response = post(url, **kwargs)
         data = response.json()
@@ -124,7 +127,8 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
         assert profile.max_output_tokens == 8192 and profile.public_identity() == json.loads(row["configuration_json"])
         assert row["state"] == "SUCCEEDED" and row["validation_status"] == "PASS" and row["attempt_count"] == 1
         result = value["service"].jobs.private_result(row["job_id"])
-        assert result["usage"]["reasoning_tokens"] == 0 and result["finish_reason"] == "stop"
+        assert result["usage"]["reasoning_tokens"] == 0
+        assert result["finish_reason"] == ('tool_calls' if expected == 12000 else 'stop')
         assert row["output_tokens"] == (10000 if expected == 12000 else 200)
         request = next(r for r in frozen_requests if hasattr(r,'job_id') and r.job_id == row["job_id"])
         assert request.max_output_tokens == request.budget_identity["max_output_tokens"] == expected
@@ -293,7 +297,7 @@ def test_output_above_total_fails_existing_budget_gate(tmp_path, monkeypatch, op
 
 def test_truncation_at_12000_retains_existing_telemetry(tmp_path, monkeypatch, caplog):
     value = setup_run(tmp_path, monkeypatch)
-    monkeypatch.setattr("pro_a.llm.requests.post", lambda *a, **k: FakeResponse(completion(0, finish="length", content="{", output_tokens=12000)))
+    monkeypatch.setattr("pro_a.llm.requests.post", lambda *a, **k: ToolResponse('{', finish='length', output=12000))
     assert advance(value)["state"] == "FAILED"
     attempts=ledger_rows(value,'cloud_attempts')
     assert len(attempts)==1 and len(jobs(value))==1

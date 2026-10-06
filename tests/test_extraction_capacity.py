@@ -232,12 +232,12 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
         request = kwargs["json"]
         assert request["model"] == "deepseek-flash"
         assert request["thinking"] == {"type": "disabled"} and "reasoning_effort" not in request
-        assert request["response_format"] == {"type": "json_object"}
         user = request["messages"][1]["content"]
         from pro_a.whole_piece_compact import SYSTEM
         is_extraction=request['messages'][0]['content']==SYSTEM
         assert request["max_tokens"] == (12000 if is_extraction else 8192)
         if is_extraction:
+            assert 'response_format' not in request and request['tools'][0]['function']['strict'] is True
             target,annotated=request_parts(request)
             import re
             target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', annotated)
@@ -247,6 +247,7 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
             response_bytes.append(len(json.dumps(output).encode()))
             operation = SOURCE_ANALYSIS_OPERATION
         else:
+            assert request["response_format"] == {"type": "json_object"}
             prefix, suffix = SEMANTIC_DECOMPOSITION_USER.split("{claims_json}")
             assert user.startswith(prefix)
             claims = json.loads(user[len(prefix):len(user) - len(suffix) if suffix else None])
@@ -259,6 +260,10 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
             } for claim in claims]}
             operation = "SEMANTIC_DECOMPOSITION"
         calls.append(operation)
+        if is_extraction:
+            from series_binding_helpers import ToolResponse
+            from lexical_record_helpers import from_wire
+            return ToolResponse(json.dumps(from_wire(output['wire'])), output=10000)
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-capacity"},
             json=lambda: {"model": "deepseek-flash", "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(output)}}],
                           "usage": {"prompt_tokens": 100, "completion_tokens": 10000 if is_extraction else 20,
@@ -288,7 +293,8 @@ def test_selected_capacity_dense_single_run_dual_adapter_e2e(tmp_path, monkeypat
     assert all(j["attempt_count"] == 1 for j in all_jobs)
     for job in all_jobs:
         result = service.jobs.private_result(job["job_id"])
-        assert result["usage"]["reasoning_tokens"] == 0 and result["finish_reason"] == "stop"
+        assert result["usage"]["reasoning_tokens"] == 0
+        assert result["finish_reason"] == ('tool_calls' if job['operation_kind'] == SOURCE_ANALYSIS_OPERATION else 'stop')
         if job["operation_kind"] == SOURCE_ANALYSIS_OPERATION:
             assert job["output_tokens"] == 10000
         else:

@@ -91,7 +91,9 @@ def setup_run(tmp_path, monkeypatch):
             import re
             target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', source_text)
             output=json.loads(response_content(target,source_text))
-            del output['dispositions']
+            from lexical_record_helpers import from_wire
+            from series_binding_helpers import ToolResponse
+            return ToolResponse(json.dumps(from_wire(output['wire'])))
         return SimpleNamespace(status_code=200, text="", headers={"x-request-id": "offline-dual"},
             json=lambda: {"id": "offline-dual", "model": "deepseek-flash",
                           "choices": [{"finish_reason": "stop", "message": {

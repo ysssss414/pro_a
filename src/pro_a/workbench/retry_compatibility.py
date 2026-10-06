@@ -43,6 +43,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "source_analysis_wire.py": None,
     "bounded_source_analysis.py": None,
     "whole_piece_compact.py": None,
+    "source_analysis_provider_record.py": None,
     "workbench/whole_piece_raw.py": None,
     "processing_context.py": None,
     "workbench/bounded_source_analysis.py": None,

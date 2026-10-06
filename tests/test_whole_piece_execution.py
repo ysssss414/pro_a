@@ -10,14 +10,16 @@ from pro_a.cloud_contract import DeterministicFakeProvider, ADAPTER_VERSION
 from pro_a.config import load_config
 from pro_a.workbench.cloud_jobs import CloudProfile, InjectedCrash
 from pro_a.workbench.source_operations import SourceOperations, build_source_providers
-from series_binding_helpers import case, start, Response, response_content
+from series_binding_helpers import case, start, ToolResponse as Response, response_content
+from lexical_record_helpers import from_wire
 
 
 class Transport:
     def __init__(self, mode='success'):
         self.mode, self.calls = mode, []
 
-    def __call__(self, endpoint, *, json: dict, headers, timeout):
+    def __call__(self, endpoint, *, json: dict, headers, timeout, allow_redirects=False):
+        assert endpoint == 'https://api.deepseek.com/beta/chat/completions' and allow_redirects is False
         self.calls.append(deepcopy(json))
         if self.mode == 'unknown':
             raise requests.ReadTimeout('PRIVATE_ERROR')
@@ -33,8 +35,7 @@ class Transport:
         refs = re.findall(r'\[(EV_[^\]]+)\]', source)
         target = {'assigned_evidence_refs': refs}
         body = __import__('json').loads(response_content(target, source))
-        del body['dispositions']
-        return Response(__import__('json').dumps(body, ensure_ascii=False))
+        return Response(__import__('json').dumps(from_wire(body['wire']), ensure_ascii=False))
 
 
 def setup(tmp_path, monkeypatch, mode='success', count=40):
@@ -172,8 +173,10 @@ def test_pending_raw_corruption_fails_closed(tmp_path, monkeypatch, tamper):
 
 
 def test_fresh_process_raw_recovery_without_provider(tmp_path, monkeypatch):
+    import os
     import subprocess
     import sys
+    from pathlib import Path
     from dataclasses import asdict
     value, providers, _, run_id = setup(tmp_path, monkeypatch)
     job = value['service']._jobs_for(run_id, 'SOURCE_ANALYSIS_PIECE')[0]
@@ -202,10 +205,12 @@ def fault(point,expected):
 service.jobs._fault=fault
 service.jobs.run_once(provider,worker_id='child-crash',job_id=info['job_id'],lease_seconds=0)
 '''
-    exited = subprocess.run([sys.executable, '-c', crash, str(path)], capture_output=True)
+    environment = dict(os.environ, PYTHONPATH=os.pathsep.join((
+        str(Path(__file__).resolve().parents[1] / 'src'), str(Path(__file__).resolve().parent))))
+    exited = subprocess.run([sys.executable, '-B', '-c', crash, str(path)], capture_output=True, env=environment)
     assert exited.returncode == 73, exited.stderr.decode(errors='replace')
     recover = bootstrap + "\nservice.jobs.reconcile()\nprint(service.jobs.get(info['job_id'])['status'])\n"
-    result = subprocess.run([sys.executable, '-c', recover, str(path)], capture_output=True)
+    result = subprocess.run([sys.executable, '-B', '-c', recover, str(path)], capture_output=True, env=environment)
     assert result.returncode == 0, result.stderr.decode(errors='replace')
     assert result.stdout.strip() == b'SUCCEEDED'
     with value['service'].store.connect() as c:
@@ -263,7 +268,7 @@ def test_frozen_request_and_exact_raw_are_durable_before_parse(tmp_path, monkeyp
         assert render(payload) == kwargs['json']
         response = transport(*args, **kwargs)
         data = response.json()
-        content.append(data['choices'][0]['message']['content'])
+        content.append(data['choices'][0]['message']['tool_calls'][0]['function']['arguments'])
         data['choices'][0]['message']['reasoning_content'] = ForbiddenReasoning()
         response.json = lambda: data
         return response

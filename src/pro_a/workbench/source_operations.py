@@ -96,6 +96,7 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
             or cloud_profile.requested_model != "deepseek-flash"
             or llm_config.api_key_env != "PROA_LLM_API_KEY"
             or url.scheme != "https" or url.username or url.password
+            or url.hostname != "api.deepseek.com" or url.port not in (None, 443)
             or url.query or url.fragment or url.path not in ("", "/", "/v1", "/v1/")):
         raise SourceOperationError("PROVIDER_CONFIGURATION_MISMATCH", 422)
     effective = replace(llm_config, timeout_seconds=cloud_profile.timeout_seconds,

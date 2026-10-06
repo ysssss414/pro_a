@@ -10,7 +10,7 @@ import json
 import os
 from uuid import uuid4
 
-from pro_a.cloud_contract import CloudResult, CloudContractError, validate_output
+from pro_a.cloud_contract import CloudResult, CloudContractError, validate_output, operation_contract, digest
 from pro_a.whole_piece_compact import RESPONSE_VERSION, parse
 from .config import checked_path
 
@@ -27,6 +27,8 @@ def raw_path(jobs, request):
 
 def persist(jobs, connection, request, result):
     from .cloud_jobs import JobError
+    if digest(request.prompt_identity) != digest(operation_contract('SOURCE_ANALYSIS_PIECE')):
+        raise JobError('WHOLE_PIECE_TOOL_SCHEMA_IDENTITY_MISMATCH')
     attempt = connection.execute(
         'SELECT a.job_id,a.request_sha256 FROM cloud_attempts a JOIN cloud_attempt_dispatches d '
         'ON d.attempt_id=a.attempt_id WHERE a.attempt_id=?', (request.attempt_id,),
@@ -39,7 +41,9 @@ def persist(jobs, connection, request, result):
         'EXACT' if result.provider_reported_model == request.requested_model else 'ACCEPTED_ALIAS')
     result = replace(result, transport_diagnostic={'http_status': 200})
     body = result.output.encode('utf-8')
-    envelope = {'document_type': 'whole-piece-private-raw-v1', 'job_id': request.job_id,
+    envelope = {'document_type': 'whole-piece-private-tool-raw-v1',
+                'tool_identity': {k: request.prompt_identity[k] for k in
+                    ('tool_name', 'tool_strict', 'tool_schema_version', 'tool_schema_sha256', 'provider_record_version')}, 'job_id': request.job_id,
                 'attempt_id': request.attempt_id, 'request_sha256': request.request_sha256,
                 'content_sha256': hashlib.sha256(body).hexdigest(), 'content_bytes': len(body),
                 'result': asdict(result)}
@@ -111,7 +115,7 @@ def evaluate(request, result, aliases):
     if error is None:
         if result.finish_reason == 'length':
             error, status = 'WHOLE_PIECE_COMPACT_OUTPUT_LIMIT', 'TRUNCATED'
-        elif (result.finish_reason != 'stop' or result.operation_kind != request.operation_kind
+        elif (result.finish_reason != 'tool_calls' or result.operation_kind != request.operation_kind
                 or result.attempt_number != request.attempt_number
                 or (result.output_tokens is not None and result.output_tokens > 12000)
                 or (result.usage_status == 'KNOWN' and result.input_tokens + result.output_tokens != result.total_tokens)):
