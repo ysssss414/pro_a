@@ -35,25 +35,16 @@ def prepare_bounded(value):
 class SyntheticProviders(dict):
     @property
     def call_count(self):
-        return len(self['SOURCE_ANALYSIS_PIECE'].transport.calls)+self['SEMANTIC_DECOMPOSITION'].call_count
+        return len(self['WHOLE_PIECE_OUTPUT_BATCH'].transport.calls)+self['SEMANTIC_DECOMPOSITION'].call_count
 
 
 @contextmanager
 def synthetic_providers(value,transport=None):
-    from pro_a.whole_piece_compact import WholePieceCompactProvider
-    class SyntheticWholePiece(WholePieceCompactProvider):
-        provider_identity = 'DETERMINISTIC_FAKE'
-        adapter_version = 'deterministic-fake-v1'
-
-        def invoke(self, request):
-            real = WholePieceCompactProvider(self.cfg, transport=self.transport)
-            response = real.invoke(replace(request, provider='deepseek', requested_model='deepseek-flash'))
-            return replace(response, provider=request.provider, requested_model=request.requested_model,
-                           provider_reported_model=request.requested_model)
+    from pro_a.output_decomposition import OutputBatchProvider
     with patch.dict(os.environ,{'PROA_SYNTHETIC_BOUNDED_KEY':'synthetic-fixture'}):
         cfg=LLMConfig(enabled=True,api_key_env='PROA_SYNTHETIC_BOUNDED_KEY',model='deepseek-flash',
                       max_retries=0,max_output_tokens=12000,timeout_seconds=value['cloud_profile'].timeout_seconds)
-        yield SyntheticProviders({'SOURCE_ANALYSIS_PIECE':SyntheticWholePiece(cfg,transport=transport or Transport()),
+        yield SyntheticProviders({'WHOLE_PIECE_OUTPUT_BATCH':OutputBatchProvider(cfg,transport=transport or Transport()),
                                   'SEMANTIC_DECOMPOSITION':DeterministicFakeProvider()})
 
 
@@ -93,7 +84,8 @@ class Transport:
             self.callback(json)
         target, source = request_parts(json)
         whole = 'assigned_evidence_refs' not in target
-        response_type = ToolResponse if whole else Response
+        lexical = bool(json.get('tools'))
+        response_type = ToolResponse if lexical else Response
         if whole:
             target['assigned_evidence_refs'] = re.findall(r'\[(EV_[^\]]+)\]', source)
         mode = self.mode(target, len(self.calls)) if callable(self.mode) else self.mode
@@ -117,11 +109,27 @@ class Transport:
             for disposition in value['dispositions']:
                 disposition['disposition']='NO_INDEPENDENT_CLAIM'
             content=__import__('json').dumps(value,ensure_ascii=False)
-        if whole:
+        if lexical:
             value = __import__('json').loads(content)
             from lexical_record_helpers import from_wire
-            content = __import__('json').dumps(from_wire(value['wire']), ensure_ascii=False)
+            record = from_wire(value['wire'])
+            if not whole:
+                record['dispositions'] = value['dispositions']
+                for family in ('node_candidates','source_references'):
+                    for obj in record[family]:
+                        obj['ownership_evidence_ref'] = target['assigned_evidence_refs'][0]
+            content = __import__('json').dumps(record, ensure_ascii=False)
         return response_type(content)
+
+
+def batch_record(response, target):
+    from lexical_record_helpers import from_wire
+    record = from_wire(response['wire'])
+    record['dispositions'] = response['dispositions']
+    for family in ('node_candidates','source_references'):
+        for obj in record[family]:
+            obj['ownership_evidence_ref'] = target['assigned_evidence_refs'][0]
+    return record
 
 
 def request_parts(request):

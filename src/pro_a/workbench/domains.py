@@ -111,7 +111,7 @@ def config_digest(path, source_limits):
 
 
 def prompt_digest():
-    return digest([operation_contract(op) for op in ('SOURCE_ANALYSIS_PIECE', 'SEMANTIC_DECOMPOSITION')])
+    return digest([operation_contract(op) for op in ('SOURCE_ANALYSIS_PIECE', 'SEMANTIC_DECOMPOSITION', 'WHOLE_PIECE_OUTPUT_BATCH')])
 
 
 class Domains:

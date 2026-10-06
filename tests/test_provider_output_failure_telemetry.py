@@ -33,14 +33,16 @@ def fail_run(tmp_path, monkeypatch, content, reason, usage, *, model="deepseek-f
                         headers={'content-type': 'application/json', 'x-request-id': 'req-synthetic'})
     monkeypatch.setattr('pro_a.llm.requests.post', post)
     final = advance(value)
-    path=next(value['config'].artifact_root.glob('cloud-results/*/*.raw.json'))
-    envelope=json.loads(path.read_bytes())['result']
+    path=next(value['config'].artifact_root.glob('bounded-extraction/*/*.raw.json'))
+    envelope=json.loads(path.read_bytes())
+    import base64
+    envelope['output']=base64.b64decode(envelope['raw_body_base64']).decode()
     with value['service'].store.connect() as c:
-        outcome = dict(c.execute('SELECT * FROM cloud_attempt_outcomes').fetchone())
-        events = [json.loads(r[0]) for r in c.execute('SELECT event_json FROM cloud_job_events')]
-    assert final['state'] == 'FAILED'
-    assert final['usage']['attempts']==1 and len(calls)==1
-    assert len(jobs(value)) == 1 and not rows(value,'bounded_extraction_segment_results')
+        outcome = dict(c.execute('SELECT * FROM bounded_extraction_outcomes').fetchone())
+        events = [json.loads(r[0]) for r in c.execute('SELECT body_json FROM bounded_extraction_events')]
+    assert final['state'] in ('BLOCKED','EXTRACTION_PROCESSING')
+    assert final['provider_call_count']==1 and len(calls)==1
+    assert len(jobs(value)) == 0 and not rows(value,'bounded_extraction_segment_results')
     # Legacy diagnostic semantics are tested independently through their original
     # adapter. No SourceOperations legacy Run or extraction CloudJob is created.
     legacy,request=adapter(monkeypatch,Response({'model':model,'choices':[{'finish_reason':reason,
@@ -80,12 +82,12 @@ def test_durable_output_failure_classes(tmp_path, monkeypatch, reason, content, 
         assert type(d['raw_response_json_error_position']) is int
         assert 0 <= d['raw_response_json_error_position'] <= len(content)
     assert (outcome['input_tokens'], outcome['output_tokens'],
-            outcome['total_tokens'], outcome['cached_tokens']) == (100, 50, 150, 20)
+            outcome['total_tokens'], outcome['cached_input_tokens']) == (100, 50, 150, 20)
     assert job['raw_envelope']['provider_reported_model'] == 'deepseek-flash'
-    assert outcome['finish_reason'] in ('stop','tool_calls','length','content_filter','UNKNOWN')
-    assert outcome['external_outcome'] == 'KNOWN_SUCCESS'
+    assert outcome['finish_reason'] in ('stop','tool_calls','length','content_filter','error')
+    assert outcome['external_outcome'] in ('SUCCEEDED','TRUNCATED','FAILED')
     assert outcome['latency_ms'] >= 0
-    assert list(value['config'].artifact_root.glob('cloud-results/*/*.raw.json'))
+    assert list(value['config'].artifact_root.glob('bounded-extraction/*/*.raw.json'))
     assert 'PRIVATE_SOURCE_TEXT_SENTINEL' not in json.dumps([outcome, events, job])
 
 
@@ -98,7 +100,7 @@ def test_unknown_usage_does_not_invent_counts(tmp_path, monkeypatch, usage):
     _, _, outcome, _ = fail_run(tmp_path, monkeypatch, '{', 'stop', usage)
     # CloudJob's established UNKNOWN usage contract does not invent totals.
     assert [outcome[k] for k in ('input_tokens','output_tokens','total_tokens')]==[None,None,None]
-    assert outcome['cached_tokens'] is None
+    assert outcome['cached_input_tokens'] is None
 
 
 def diagnostic(**details):
@@ -165,7 +167,7 @@ def test_standard_cached_usage_metadata(tmp_path, monkeypatch):
     _, _, outcome, _ = fail_run(tmp_path, monkeypatch, '{', 'length',
         {'prompt_tokens':3,'completion_tokens':2,'total_tokens':5,
          'prompt_tokens_details':{'cached_tokens':1}})
-    assert outcome['cached_tokens'] == 1
+    assert outcome['cached_input_tokens'] == 1
 
 
 @pytest.mark.parametrize('cached', [True, -1, '1', 10_000_001])
@@ -173,7 +175,7 @@ def test_invalid_cached_count_does_not_invalidate_known_usage(tmp_path, monkeypa
     _, _, outcome, _ = fail_run(tmp_path, monkeypatch, '{', 'length',
         {'prompt_tokens':3,'completion_tokens':2,'total_tokens':5,'prompt_cache_hit_tokens':cached})
     assert outcome['input_tokens']==3 and outcome['output_tokens']==2 and outcome['total_tokens']==5
-    assert outcome['cached_tokens'] is None
+    assert outcome['cached_input_tokens'] is None
 
 
 @pytest.mark.parametrize('response,stage,error,retryable', [

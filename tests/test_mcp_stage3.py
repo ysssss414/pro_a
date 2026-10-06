@@ -1,6 +1,7 @@
 """Disposable fixture mutations precede each strictly read-only measurement window."""
 import asyncio
 from contextlib import closing
+from copy import deepcopy
 import json
 from pathlib import Path
 import shutil
@@ -50,7 +51,21 @@ def test_inventory_compatibility_and_protocol(case, mode):
         async with Client(create_server(case['bridge']), mode=mode) as client:
             definitions = [tool.model_dump(mode='json', by_alias=True) for tool in (await client.list_tools()).tools]
             assert len(definitions) == 14 and {t['name'] for t in definitions} == set(TOOLS)
-            old = [tool for tool in definitions if tool['name'] in baseline]
+            old = deepcopy([tool for tool in definitions if tool['name'] in baseline])
+            # Only the optional output-decomposition projection extends Stage0.
+            # Removing that addition must reproduce every historical tool byte.
+            additions = {
+                'get_processing_run':'1c02eeab53e8d67721ec274f8bbc3c56c02778eb85aa41ee51058d227af4929a',
+                'get_source':'e9add1e2873dce4a67b710725bcf81e429537f8c25ef60d1edbd19274521f75e',
+            }
+            for tool in old:
+                if tool['name'] in additions:
+                    assert canonical_sha256(tool)==additions[tool['name']]
+                    schema=tool['outputSchema']
+                    run=schema if tool['name']=='get_processing_run' else schema['$defs']['ProcessingRun']
+                    assert 'output_decomposition' not in run['required']
+                    run['properties'].pop('output_decomposition')
+                    schema['$defs'].pop('OutputDecompositionStatus')
             assert {t['name']: canonical_sha256(t) for t in old} == baseline
             assert canonical_sha256(old) == '89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc'
             assert all(t['annotations']['readOnlyHint'] and not t['annotations']['destructiveHint'] for t in definitions)

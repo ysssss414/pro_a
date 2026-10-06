@@ -222,7 +222,15 @@ class ReadService:
         if error and not re.fullmatch(r"[A-Z][A-Z0-9_]{0,99}(?::[A-Z][A-Z0-9_]{0,99})?", error["code"]):
             # Operational diagnostics are classifications, never exception payloads.
             error = {**error, "code": "UNCLASSIFIED_FAILURE"}
-        return s.ProcessingRun.model_validate({**raw, "frozen_context": {
+        decomposition = None
+        if raw.get('extraction_execution_mode') == 'WHOLE_PIECE_OUTPUT_DECOMPOSITION':
+            decomposition = {'mode': raw['extraction_execution_mode'], **raw['bounded_usage'],
+                **{k:raw[k] for k in ('logical_extraction_series_count','initial_output_batch_count',
+                    'output_batch_count','provider_call_count','accepted_leaf_calls','truncated_parent_calls',
+                    'reserved_attempt_count','confirmed_provider_call_count','unknown_outcome_call_count',
+                    'subdivision_count','coverage_status')}}
+            decomposition['output_liability_tokens'] = decomposition.pop('output_token_liability')
+        return s.ProcessingRun.model_validate({**raw, 'output_decomposition': decomposition, "frozen_context": {
             "contract_version": context.get("contract_version"),
             "context_sha256": context.get("context_sha256"),
             "runtime_sha256": runtime.get("runtime_sha256"),

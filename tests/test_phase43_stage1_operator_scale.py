@@ -145,9 +145,9 @@ def test_zero_parent_source_skips_semantic_dispatch_and_stops_explicitly(tmp_pat
     assert result["state"] == "BLOCKED", json.dumps(result, sort_keys=True)
     assert result["error"]["code"] == "NATIVE_PACKET_FAILED"
     assert provider.call_count == 1
-    assert len(result['jobs']) == result['logical_job_count'] == 1
-    assert result['jobs'][0]['operation_kind'] == 'SOURCE_ANALYSIS_PIECE'
-    assert result['extraction_execution_mode'] == 'WHOLE_PIECE_COMPACT'
+    assert result['jobs'] == [] and result['logical_job_count'] == 1
+    assert result['logical_extraction_series_count']==1 and result['provider_call_count']==1
+    assert result['extraction_execution_mode'] == 'WHOLE_PIECE_OUTPUT_DECOMPOSITION'
 
 
 def _node_candidate(node_type: str) -> dict:

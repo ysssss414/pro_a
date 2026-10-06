@@ -35,10 +35,13 @@ class Transport:
         refs = re.findall(r'\[(EV_[^\]]+)\]', source)
         target = {'assigned_evidence_refs': refs}
         body = __import__('json').loads(response_content(target, source))
-        return Response(__import__('json').dumps(from_wire(body['wire']), ensure_ascii=False))
+        from series_binding_helpers import request_parts,batch_record
+        actual,_=request_parts(json)
+        record=batch_record(body,target) if 'assigned_evidence_refs' in actual else from_wire(body['wire'])
+        return Response(__import__('json').dumps(record, ensure_ascii=False))
 
 
-def setup(tmp_path, monkeypatch, mode='success', count=40):
+def setup(tmp_path, monkeypatch, mode='success', count=40, *, decomposed=False):
     value = case(tmp_path)
     path = value['phase4_config']
     path.write_text(path.read_text(encoding='utf-8').replace('enabled = false\nmodel = "fake-semantic-v1"',
@@ -50,7 +53,12 @@ def setup(tmp_path, monkeypatch, mode='success', count=40):
     monkeypatch.setattr('requests.sessions.Session.request', lambda *a, **k: pytest.fail('NETWORK_FORBIDDEN'))
     provider = build_source_providers(load_config(path).llm, value['cloud_profile'])
     transport = Transport(mode)
-    provider['SOURCE_ANALYSIS_PIECE'].transport = transport
+    if decomposed:
+        provider['WHOLE_PIECE_OUTPUT_BATCH'].transport = transport
+    else:
+        from pro_a.whole_piece_compact import WholePieceCompactProvider
+        from dataclasses import replace
+        provider['SOURCE_ANALYSIS_PIECE'] = WholePieceCompactProvider(replace(load_config(path).llm, max_output_tokens=12000, max_retries=0), transport=transport)
     semantic = DeterministicFakeProvider()
     semantic.provider_identity = 'deepseek'
     semantic.adapter_version = ADAPTER_VERSION
@@ -68,25 +76,48 @@ def setup(tmp_path, monkeypatch, mode='success', count=40):
         return path
     monkeypatch.setattr('series_binding_helpers.clean_pdf', laid_out_pdf)
     _, run_id = start(value, tmp_path, count=count)
-    run = value['service'].advance_once(worker_id='whole-piece-test', processing_run_id=run_id)
+    if decomposed:
+        run = value['service'].advance_once(worker_id='whole-piece-test', processing_run_id=run_id)
+    else:
+        # Historical single-call acceptance is exercised as a standalone CloudJob.
+        # New SourceOperations runs never select this scheduling path.
+        from pathlib import Path
+        from pro_a.phase4_orchestration import start_execution
+        from pro_a.phase4_retry import RetryPolicy
+        from pro_a.operational_ingestion import plan_external_source_analysis
+        service = value['service']
+        with service.store.connect() as c:
+            source = c.execute('SELECT * FROM private_sources').fetchone()
+        native = start_execution(service.artifacts.resolve(source['storage_relative']),
+            config_path=path, retry_policy=RetryPolicy.FORBID_ALL, stop_after='SOURCE_READY', external_semantic=True)
+        native_root = Path(native['execution_root'])
+        service._transition(run_id,'EXTRACTION_PROCESSING','STANDALONE_WHOLE_PIECE_TEST',values={
+            'native_execution_id':native['execution_id'],
+            'native_root_relative':native_root.relative_to(load_config(path).root.resolve()).as_posix()})
+        plan = plan_external_source_analysis(native_root/'engine',config_path=path)
+        run=service.get_run(run_id)
+        checkpoint={'native_state':'SOURCE_READY','execution_id':native['execution_id'],
+            'run_id':plan['run_id'],'plan_sha256':plan['plan']['initial_extraction_plan_sha256'],
+            'resume_semantics':'REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY'}
+        for ordinal,piece in enumerate(plan['pieces'],1):
+            artifact=service._register_input(run,'SOURCE_ANALYSIS_PIECE',ordinal,
+                {**piece,'source_sha256':plan['source_sha256']},checkpoint)
+            service._bind_job(run_id,'SOURCE_ANALYSIS_PIECE',ordinal,artifact)
     assert run['state'] == 'EXTRACTION_PROCESSING', run.get('error')
     return value, provider, transport, run_id
 
 
-def test_whole_piece_native_replay_to_human_review(tmp_path, monkeypatch):
+def test_historical_whole_piece_canonical_response(tmp_path, monkeypatch):
     value, providers, transport, run_id = setup(tmp_path, monkeypatch)
-    for _ in range(8):
-        run = value['service'].advance_once(worker_id='whole-piece-test', provider=providers, processing_run_id=run_id)
-        if run is None or run['state'] in ('HUMAN_REVIEW_REQUIRED', 'FAILED', 'BLOCKED', 'RECOVERY_REQUIRED'):
-            break
-    assert run['state'] == 'HUMAN_REVIEW_REQUIRED', run.get('error')
-    assert run['extraction_execution_mode'] == 'WHOLE_PIECE_COMPACT'
-    extraction = [j for j in run['jobs'] if j['operation_kind'] == 'SOURCE_ANALYSIS_PIECE']
-    assert len(transport.calls) == len(extraction) == 1
-    assert all(j['attempt_count'] == 1 for j in extraction)
-    with value['service'].store.connect() as c:
-        assert c.execute('SELECT count(*) FROM bounded_extraction_series').fetchone()[0] == 0
-        assert c.execute("SELECT value FROM workbench_meta WHERE key='schema_version'").fetchone()[0] == '12'
+    service=value['service']
+    job=service._jobs_for(run_id,'SOURCE_ANALYSIS_PIECE')[0]
+    result=service.jobs.run_once(providers['SOURCE_ANALYSIS_PIECE'],worker_id='whole-test',job_id=job['job_id'])
+    assert result['status']=='SUCCEEDED'
+    canonical=service.jobs.private_result(job['job_id'])['normalized_output']['response']
+    assert len(canonical['claims'])==40 and len(transport.calls)==1
+    with service.store.connect() as c:
+        assert c.execute('SELECT count(*) FROM bounded_extraction_series').fetchone()[0]==0
+        assert c.execute("SELECT value FROM workbench_meta WHERE key='schema_version'").fetchone()[0]=='12'
 
 
 @pytest.mark.parametrize('mode,error', [('invalid', 'OUTPUT_VALIDATION_FAILED'),
@@ -140,7 +171,9 @@ def test_whole_piece_mcp_is_readonly_and_private(tmp_path, monkeypatch):
     from pro_a.workbench.store import Store
     from test_mcp_bounded_reads import snapshot
     value, providers, _, run_id = setup(tmp_path, monkeypatch, 'invalid')
-    run = value['service'].advance_once(worker_id='whole-piece-test', provider=providers, processing_run_id=run_id)
+    job=value['service']._jobs_for(run_id,'SOURCE_ANALYSIS_PIECE')[0]
+    value['service'].jobs.run_once(providers['SOURCE_ANALYSIS_PIECE'],worker_id='whole-test',job_id=job['job_id'])
+    run=value['service'].get_run(run_id)
     before = snapshot(value['config'])
     original = Store.connect
     def readonly(store, *, operator_write=False):
@@ -198,7 +231,9 @@ def forbidden(*a,**k):raise AssertionError('NETWORK_FORBIDDEN')
 socket.socket.connect=forbidden
 '''
     crash = bootstrap + '''
-provider=build_source_providers(load_config(Path(info['profile'])).llm,service.jobs.profile)['SOURCE_ANALYSIS_PIECE']
+from pro_a.whole_piece_compact import WholePieceCompactProvider
+from dataclasses import replace
+provider=WholePieceCompactProvider(replace(load_config(Path(info['profile'])).llm,max_output_tokens=12000,max_retries=0))
 provider.transport=Transport()
 def fault(point,expected):
  if expected=='after_raw_artifact_before_event_commit':os._exit(73)
@@ -288,7 +323,7 @@ def test_frozen_request_and_exact_raw_are_durable_before_parse(tmp_path, monkeyp
 
 def test_dense_semantic_job_overflow_fails_before_semantic_submission(tmp_path, monkeypatch):
     from test_phase43_stage1_operator_scale import semantic_inputs
-    value, providers, transport, run_id = setup(tmp_path, monkeypatch)
+    value, providers, transport, run_id = setup(tmp_path, monkeypatch, decomposed=True)
     # Native replay is qualified above; exercise the submission boundary with
     # a dense synthetic canonical checkpoint, without repeating PDF analysis.
     def dense_checkpoint(native_root, **kwargs):
@@ -298,8 +333,10 @@ def test_dense_semantic_job_overflow_fails_before_semantic_submission(tmp_path, 
                                    'payload': {'claims': semantic_inputs(249)}}), encoding='utf-8')
         return {'state': 'SEMANTIC_INPUT_READY'}
     monkeypatch.setattr('pro_a.workbench.source_operations.resume_execution', dense_checkpoint)
-    run = value['service'].advance_once(worker_id='whole-piece-test', provider=providers, processing_run_id=run_id)
+    for _ in range(10):
+        run = value['service'].advance_once(worker_id='whole-piece-test', provider=providers, processing_run_id=run_id)
+        if run['state']!='EXTRACTION_PROCESSING':break
     assert run['state'] == 'BLOCKED' and run['error']['code'] == 'SOURCE_JOB_BUDGET_EXCEEDED', run.get('error')
     assert not value['service']._jobs_for(run_id, 'SEMANTIC_DECOMPOSITION')
     assert all(j['attempt_count'] == 1 for j in value['service']._jobs_for(run_id, 'SOURCE_ANALYSIS_PIECE'))
-    assert len(transport.calls) == 1
+    assert len(transport.calls) == 3 and run['logical_extraction_series_count'] == 1

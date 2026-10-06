@@ -19,7 +19,7 @@ BASIS_FIELDS = ('source_id source_sha256 input_artifact_id scope_sha256 processi
 def shared_core_sha256():
     root = Path(__file__).parent
     return digest({'contract_version': SHARED_CORE_CONTRACT,
-                   'prompt_sha256': digest([operation_contract(op) for op in ('SOURCE_ANALYSIS_PIECE', 'SEMANTIC_DECOMPOSITION')]),
+                   'prompt_sha256': digest([operation_contract(op) for op in ('SOURCE_ANALYSIS_PIECE', 'SEMANTIC_DECOMPOSITION', 'WHOLE_PIECE_OUTPUT_BATCH')]),
                    'node_types': NODE_TYPES, 'relation_types': RELATION_TYPES,
                    'claim_node_roles': sorted(CLAIM_NODE_ROLES),
                    'source_evidence_rules_sha256': hashlib.sha256((root / 'operational_ingestion.py').read_bytes()).hexdigest(),

@@ -230,6 +230,28 @@ class FrozenContext(BaseModel):
     runtime_sha256: str | None = None
 
 
+class OutputDecompositionStatus(BaseModel):
+    mode: Literal['WHOLE_PIECE_OUTPUT_DECOMPOSITION']
+    logical_extraction_series_count: int
+    initial_output_batch_count: int
+    output_batch_count: int
+    provider_call_count: int
+    reserved_attempt_count: int
+    confirmed_provider_call_count: int
+    unknown_outcome_call_count: int
+    accepted_leaf_calls: int
+    truncated_parent_calls: int
+    subdivision_count: int
+    coverage_status: str
+    input_tokens: int | None
+    cached_tokens: int | None
+    output_tokens: int | None
+    total_tokens: int | None
+    latency_ms: float | None
+    output_liability_tokens: int
+    unknown_usage_calls: int
+
+
 class ProcessingRun(BaseModel):
     processing_run_id: str
     source_id: str
@@ -249,6 +271,7 @@ class ProcessingRun(BaseModel):
     error: RunError | None
     review: RunReview | None
     jobs: list[JobState]
+    output_decomposition: OutputDecompositionStatus | None = Field(default=None, exclude_if=lambda v: v is None)
 
 
 class Source(BaseModel):

@@ -19,7 +19,7 @@ from pro_a.bounded_extraction import (
     EvidenceDisposition, ExtractionPlan, ExtractionSegment, ExtractionSeries,
     SegmentCallAccounting, SegmentWireResult, SeriesBudget, SOURCE_ANALYSIS_WIRE_V3_EXPANDER_VERSION, _plan, _series,
     account_series_calls, aggregate_segment_wires, create_segment_wire_result,
-    initial_extraction_plan, subdivide_extraction_plan,
+    initial_extraction_plan, subdivide_extraction_plan, OUTPUT_SERIES_VERSION,
 )
 from pro_a.evidence_binding import identity
 from pro_a.provider_diagnostics import safe_identifier
@@ -226,6 +226,7 @@ class BoundedExtractionStore:
     @staticmethod
     def _request(series, segment, payload_sha256, configuration_sha256):
         return {"series_sha256": series.series_sha256, "segment_sha256": segment.segment_sha256,
+                **({"series_version": series.series_version} if series.series_version == "whole-piece-output-series-v1" else {}),
                 "payload_sha256": _sha(payload_sha256), "configuration_sha256": _sha(configuration_sha256),
                 "budget_identity": series.output_budget_identity, "max_output_tokens": segment.max_output_tokens}
 
@@ -239,6 +240,8 @@ class BoundedExtractionStore:
             row, (series, plan, series_row, _) = self._segment_row(connection, segment_id)
             self._owned(row, owner, fence)
             _require(series_row["state"] == "OPEN" and row["state"] in ("RUNNING", "FAILED"), "SEGMENT_NOT_DISPATCHABLE")
+            _require(series.series_version != 'whole-piece-output-series-v1' or attempt_number == 1,
+                     'OUTPUT_BATCH_RETRY_FORBIDDEN')
             segment = next(s for s in plan.segments if s.segment_id == segment_id)
             request = self._request(series, segment, payload_sha256, configuration_sha256)
             request_sha = identity(request)
@@ -292,7 +295,9 @@ class BoundedExtractionStore:
         _require(type(raw_body) is bytes, "RAW_BYTES_REQUIRED")
         _require(http_status is None or type(http_status) is int and 100 <= http_status <= 599, "INVALID_HTTP_STATUS")
         _require(provider_request_id is None or isinstance(provider_request_id, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,200}", provider_request_id), "INVALID_PROVIDER_REQUEST_ID")
-        _require(finish_reason in (None, "stop", "length", "error", "content_filter"), "INVALID_FINISH_REASON")
+        output_batch = json.loads(attempt['request_json']).get('series_version') == 'whole-piece-output-series-v1'
+        _require(finish_reason in (None, "stop", "length", "error", "content_filter")
+                 or output_batch and finish_reason == 'tool_calls', "INVALID_FINISH_REASON")
         usage = dict(input_tokens=input_tokens, output_tokens=output_tokens, total_tokens=total_tokens, cached_input_tokens=cached_input_tokens)
         _require(all(v is None or type(v) is int and v >= 0 for v in usage.values()), "INVALID_CALL_USAGE")
         if latency_ms is not None:
@@ -337,6 +342,11 @@ class BoundedExtractionStore:
         external = ("TRUNCATED" if envelope["finish_reason"] == "length" else
                     "UNKNOWN" if envelope["http_status"] is None else
                     "FAILED" if envelope["http_status"] != 200 or envelope["finish_reason"] in ("error", "content_filter") else "SUCCEEDED")
+        if json.loads(attempt['request_json']).get('series_version') == OUTPUT_SERIES_VERSION:
+            if envelope['http_status'] is None:
+                external = 'UNKNOWN'
+            elif envelope['http_status'] != 200:
+                external = 'FAILED'
         usage = {k: envelope[k] for k in ("input_tokens", "output_tokens", "total_tokens", "cached_input_tokens")}
         # Invalid reported usage remains private and auditable, but cannot release liability.
         invalid = (usage["output_tokens"] is not None and usage["output_tokens"] > 12000
@@ -394,13 +404,18 @@ class BoundedExtractionStore:
                 content = self._read_artifact(series.series_id, attempt_id + ".raw.json", outcome)
                 _, body = self._decode_envelope(attempt, content)
                 try:
-                    document = json.loads(body)
-                    _require(type(document) is dict and set(document) == {"wire", "dispositions"}, "INVALID_SEGMENT_RESPONSE")
-                    dispositions = tuple(EvidenceDisposition(**v) for v in document["dispositions"])
                     segment = next(s for s in plan.segments if s.segment_id == row["segment_id"])
-                    result = create_segment_wire_result(series, segment, document["wire"], dispositions, catalog, context)
-                    if any(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions):
-                        _require(not document["wire"]["claims"] and all(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions), "INVALID_SEGMENT_RESPONSE")
+                    if series.series_version == 'whole-piece-output-series-v1':
+                        from pro_a.output_decomposition import record_to_result
+                        _require(outcome['finish_reason'] == 'tool_calls', 'INVALID_OUTPUT_TOOL_FINISH')
+                        result = record_to_result(body.decode('utf-8'), series, segment, catalog, context)
+                    else:
+                        document = json.loads(body)
+                        _require(type(document) is dict and set(document) == {"wire", "dispositions"}, "INVALID_SEGMENT_RESPONSE")
+                        dispositions = tuple(EvidenceDisposition(**v) for v in document["dispositions"])
+                        result = create_segment_wire_result(series, segment, document["wire"], dispositions, catalog, context)
+                        if any(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions):
+                            _require(not document["wire"]["claims"] and all(d.disposition == "SUBDIVISION_REQUIRED" for d in dispositions), "INVALID_SEGMENT_RESPONSE")
                 except (ValueError, TypeError, KeyError, UnicodeError):
                     failure = "INVALID_SEGMENT_RESPONSE"
             if failure:

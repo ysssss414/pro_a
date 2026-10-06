@@ -299,9 +299,9 @@ def test_migrated_v12_existing_source_cloud_review_stage1_mcp_semantics(tmp_path
     assert lifecycle_status(config)["schema_version"] == "12"
     with Store(config).connect() as c:
         assert stage1_capacity(c)["native_pending_rows"] > 0
-        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series").fetchone()[0] == 0
-        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series_results").fetchone()[0] == 0
-        assert c.execute("SELECT COUNT(*) FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone()[0] == 1
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series").fetchone()[0] == 1
+        assert c.execute("SELECT COUNT(*) FROM bounded_extraction_series_results").fetchone()[0] == 1
+        assert c.execute("SELECT COUNT(*) FROM cloud_jobs WHERE operation_kind='SOURCE_ANALYSIS_PIECE'").fetchone()[0] == 0
     assert runtime_identity("source-analysis-piece-adapter-v2", workbench_schema_version="12")["workbench_schema_version"] == "12"
     assert config.state_db.read_bytes() == before and config.knowledge_db.read_bytes() == production
 

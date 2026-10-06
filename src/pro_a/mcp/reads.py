@@ -7,6 +7,7 @@ reads retain Store's mode=ro/query_only and registered-artifact checks.
 from pro_a.workbench.artifacts import Artifacts
 from pro_a.workbench.bounded_extraction_store import BoundedExtractionStore
 from pro_a.workbench.bounded_source_analysis import BoundedSourceAnalysisRunner
+from pro_a.workbench.output_decomposition import OutputDecompositionRunner
 from pro_a.workbench.cloud_jobs import CloudJobs
 from pro_a.workbench.config import BoundaryError
 from pro_a.workbench.review_store import schema_version
@@ -115,3 +116,8 @@ class OperationalReads:
         self.store = ReadStore(config)
         self.jobs = JobReads(config)
         self.bounded = BoundedReads(config)
+        self.output_batches = OutputBatchReads(config)
+
+
+class OutputBatchReads(BoundedReads):
+    projection = OutputDecompositionRunner.projection

@@ -23,6 +23,11 @@ BOUNDED_EXTRACTION_POLICY_VERSION = "bounded-extraction-policy-v1"
 SOURCE_ANALYSIS_WIRE_V3_VERSION = "source-analysis-wire-v3"
 SOURCE_ANALYSIS_WIRE_V3_EXPANDER_VERSION = "source-analysis-wire-expander-v2"
 SEGMENT_OUTPUT_CEILING = 12000
+OUTPUT_SERIES_VERSION = "whole-piece-output-series-v1"
+OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v1"
+OUTPUT_COVERAGE_VERSION = "whole-piece-output-coverage-v1"
+OUTPUT_SUBDIVISION_VERSION = "whole-piece-output-subdivision-v1"
+OUTPUT_POLICY_VERSION = "whole-piece-output-ownership-policy-v1"
 
 
 class BoundedExtractionError(ValueError):
@@ -73,16 +78,20 @@ class ExtractionSeries:
 
 
 def create_extraction_series(context: SourcePieceContext, catalog: SourceEvidenceCatalog,
-                             processing_run_id: str, budget: SeriesBudget = SeriesBudget()) -> ExtractionSeries:
+                             processing_run_id: str, budget: SeriesBudget = SeriesBudget(), *,
+                             series_version: str = BOUNDED_EXTRACTION_SERIES_VERSION) -> ExtractionSeries:
     validate_catalog(catalog, context)
     if not isinstance(processing_run_id, str) or not processing_run_id.strip() or not isinstance(budget, SeriesBudget):
         raise BoundedExtractionError("INVALID_SERIES_INPUT")
     universe = identity({"catalog": asdict(catalog), "known_node_ids": context.known_node_ids})
-    values = {"series_version": BOUNDED_EXTRACTION_SERIES_VERSION, "processing_run_id": processing_run_id,
+    if series_version not in (BOUNDED_EXTRACTION_SERIES_VERSION, OUTPUT_SERIES_VERSION):
+        raise BoundedExtractionError("INVALID_SERIES_VERSION")
+    values = {"series_version": series_version, "processing_run_id": processing_run_id,
               "source_sha256": context.source_sha256, "source_piece_id": context.piece.piece_id,
               "source_piece_sha256": context.piece.source_sha256, "source_prompt_sha256": context.piece.prompt_sha256,
               "evidence_universe_sha256": universe, "eligible_evidence_refs": tuple(u.evidence_ref for u in catalog.units),
-              "wire_contract_identity": SOURCE_ANALYSIS_WIRE_V3_VERSION, "task_policy_identity": BOUNDED_EXTRACTION_POLICY_VERSION,
+              "wire_contract_identity": SOURCE_ANALYSIS_WIRE_V3_VERSION,
+              "task_policy_identity": OUTPUT_POLICY_VERSION if series_version == OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_POLICY_VERSION,
               "output_budget_identity": "operation-output-budget-v1", "budget": asdict(budget)}
     series_id = "SERIES_" + identity(values)[:32].upper()
     sha = identity({**values, "series_id": series_id})
@@ -95,9 +104,9 @@ def _series(series: ExtractionSeries) -> None:
     values = asdict(series)
     sha = values.pop("series_sha256")
     sid = values.pop("series_id")
-    if (series.series_version != BOUNDED_EXTRACTION_SERIES_VERSION
+    if (series.series_version not in (BOUNDED_EXTRACTION_SERIES_VERSION, OUTPUT_SERIES_VERSION)
             or series.wire_contract_identity != SOURCE_ANALYSIS_WIRE_V3_VERSION
-            or series.task_policy_identity != BOUNDED_EXTRACTION_POLICY_VERSION
+            or series.task_policy_identity != (OUTPUT_POLICY_VERSION if series.series_version == OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_POLICY_VERSION)
             or series.output_budget_identity != "operation-output-budget-v1"
             or len(set(series.eligible_evidence_refs)) != len(series.eligible_evidence_refs)
             or sid != "SERIES_" + identity(values)[:32].upper()
@@ -126,7 +135,7 @@ class ExtractionSegment:
 def _segment(series: ExtractionSeries, lo: int, hi: int, path: tuple[int, ...],
              parent: ExtractionSegment | None = None) -> ExtractionSegment:
     refs = series.eligible_evidence_refs[lo:hi]
-    values = {"segment_version": BOUNDED_EXTRACTION_SEGMENT_VERSION, "series_id": series.series_id,
+    values = {"segment_version": OUTPUT_BATCH_VERSION if series.series_version == OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_SEGMENT_VERSION, "series_id": series.series_id,
               "parent_segment_id": parent.segment_id if parent else None,
               "subdivision_depth": parent.subdivision_depth + 1 if parent else 0,
               "stable_path": path, "range_start": lo, "range_end": hi, "assigned_evidence_refs": refs,
@@ -134,7 +143,7 @@ def _segment(series: ExtractionSeries, lo: int, hi: int, path: tuple[int, ...],
               "max_output_tokens": SEGMENT_OUTPUT_CEILING}
     seed = {**values, "series_sha256": series.series_sha256,
             "parent_segment_sha256": parent.segment_sha256 if parent else None,
-            "subdivision_policy": BOUNDED_EXTRACTION_SUBDIVISION_VERSION}
+            "subdivision_policy": OUTPUT_SUBDIVISION_VERSION if series.series_version == OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_SUBDIVISION_VERSION}
     sid = "SEGMENT_" + identity(seed)[:32].upper()
     return ExtractionSegment(**values, segment_id=sid, segment_sha256=identity({**seed, "segment_id": sid}))
 
@@ -312,7 +321,7 @@ class SegmentWireResult:
 def create_segment_wire_result(series: ExtractionSeries, segment: ExtractionSegment, wire: dict,
                                dispositions: tuple[EvidenceDisposition, ...],
                                catalog: SourceEvidenceCatalog, context: SourcePieceContext) -> SegmentWireResult:
-    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget):
+    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version):
         raise BoundedExtractionError("SERIES_INPUT_BINDING_MISMATCH")
     if segment.series_id != series.series_id:
         raise BoundedExtractionError("SEGMENT_SERIES_MISMATCH")
@@ -326,6 +335,8 @@ def create_segment_wire_result(series: ExtractionSeries, segment: ExtractionSegm
             or Counter(d.evidence_ref for d in dispositions) != Counter(segment.assigned_evidence_refs)):
         raise BoundedExtractionError("MISSING_OR_DUPLICATE_DISPOSITION")
     for item in dispositions:
+        if series.series_version == OUTPUT_SERIES_VERSION and item.disposition not in ("CLAIMED", "NO_INDEPENDENT_CLAIM"):
+            raise BoundedExtractionError("INVALID_OUTPUT_DISPOSITION")
         if (item.disposition not in ("CLAIMED", "NO_INDEPENDENT_CLAIM", "CONTEXT_ONLY", "SUBDIVISION_REQUIRED")
                 or (item.disposition == "CLAIMED") != (item.evidence_ref in claimed)):
             raise BoundedExtractionError("CLAIM_DISPOSITION_MISMATCH")
@@ -355,7 +366,7 @@ class SeriesCoverage:
 def series_coverage(series: ExtractionSeries, plan: ExtractionPlan, results: tuple[SegmentWireResult, ...],
                     catalog: SourceEvidenceCatalog, context: SourcePieceContext) -> SeriesCoverage:
     _plan(series, plan)
-    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget):
+    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version):
         raise BoundedExtractionError("SERIES_INPUT_BINDING_MISMATCH")
     leaves = {s.segment_id: s for s in plan.leaves}
     accepted, closed = set(), set()
@@ -374,7 +385,7 @@ def series_coverage(series: ExtractionSeries, plan: ExtractionPlan, results: tup
     assigned = tuple(ref for leaf in plan.leaves for ref in leaf.assigned_evidence_refs)
     counts = Counter(assigned)
     eligible = series.eligible_evidence_refs
-    values = {"coverage_version": BOUNDED_EXTRACTION_COVERAGE_VERSION, "eligible_evidence_refs": eligible,
+    values = {"coverage_version": OUTPUT_COVERAGE_VERSION if series.series_version == OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_COVERAGE_VERSION, "eligible_evidence_refs": eligible,
               "terminal_assigned_refs": assigned, "closed_refs": tuple(ref for ref in eligible if ref in closed),
               "missing_refs": tuple(ref for ref in eligible if ref not in closed),
               "duplicate_terminal_assignment_refs": tuple(ref for ref in eligible if counts[ref] > 1)}
@@ -399,7 +410,9 @@ def aggregate_segment_wires(series: ExtractionSeries, plan: ExtractionPlan, resu
     wire = {"wire_version": SOURCE_ANALYSIS_WIRE_V3_VERSION, "source_metadata": {}, "claims": [],
             "node_matches": [], "node_candidates": [], "relation_candidates": [], "source_references": []}
     candidate_keys = {}
-    def candidate_semantics(candidate: dict) -> dict:
+    def candidate_semantics(candidate: dict) -> dict | str:
+        if series.series_version == OUTPUT_SERIES_VERSION:
+            return _json(candidate)
         value = copy.deepcopy(candidate)
         for obj in (value, value.get("preserved_fields", {})):
             for field in EVIDENCE_SELECTION_FIELDS:
@@ -412,6 +425,8 @@ def aggregate_segment_wires(series: ExtractionSeries, plan: ExtractionPlan, resu
         ordered_sha.append(result.result_sha256)
         if not wire["source_metadata"]:
             wire["source_metadata"] = part["source_metadata"]
+        elif series.series_version == OUTPUT_SERIES_VERSION and _json(wire["source_metadata"]) != _json(part["source_metadata"]):
+            raise BoundedExtractionError("SOURCE_METADATA_CONFLICT")
         offset = len(wire["claims"])
         wire["claims"].extend(part["claims"])
         wire["node_matches"].extend(part.get("node_matches", []))

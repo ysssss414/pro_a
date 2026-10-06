@@ -131,6 +131,12 @@ class WholePieceCompactProvider:
                 or cfg.max_retries != 0 or not cfg.enabled or not cfg.api_key):
             raise ProviderFailure('PROVIDER_CONFIGURATION_MISMATCH', retryable=False, external_outcome='NOT_DISPATCHED')
         body = render(request.payload)
+        return self._send(body, request.operation_kind, request.attempt_number)
+
+    def _send(self, body, operation_kind, attempt_number):
+        """One lexical tool HTTP call; arguments stay unparsed for durable storage."""
+        from .cloud_contract import CloudResult, ProviderFailure, now
+        cfg = self.cfg
         started_at, started = now(), time.perf_counter()
         try:
             response = (self.transport or requests.post)(BETA_ENDPOINT,
@@ -176,7 +182,7 @@ class WholePieceCompactProvider:
         return CloudResult(provider=self.provider_identity, requested_model=cfg.model,
             provider_reported_model=safe_identifier(data.get('model')) or 'UNKNOWN',
             provider_request_id=safe_request_id(response.headers.get('x-request-id') or data.get('id')),
-            operation_kind=request.operation_kind, attempt_number=request.attempt_number,
+            operation_kind=operation_kind, attempt_number=attempt_number,
             started_at=started_at, ended_at=now(), latency_ms=(time.perf_counter() - started) * 1000,
             finish_reason=choice.get('finish_reason') if choice.get('finish_reason') in ('tool_calls', 'stop', 'length', 'content_filter') else 'UNKNOWN',
             usage_status='KNOWN' if known else 'UNKNOWN', input_tokens=counts[0] if known else None,
