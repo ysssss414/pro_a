@@ -108,6 +108,39 @@ and both execution surfaces are incompatible with the new runtime.
 
 ## Qualification evidence
 
+Gates A–E: **PASS**. Baseline/stable remains
+`43939a077174dabb0357488418cc3c00bb93ff8d`; implementation commit is
+`eb8bb8dba50d4dd5cd43ddb305ff1ee2204991a1`.
+
+The scoped regression suites passed **1152 unique tests**, with zero failures
+or skips. The five final batches ran 713, 120, 84, 138 and 143 tests, including
+46 repeated qualification cases. This is not a full repository test run.
+
+Compileall, pip check, isolated PEP517 wheel, installed repository identity,
+no-Git runtime and source/wheel/isolated-install byte equality all passed.
+All **140 Python files** match exactly. The qualified wheel SHA256 is
+`437c63ed021a614170ee466d9d8f78f4a238518673002b4b64bfeb103812481c`.
+Stable was neither replaced nor activated.
+
+The system prompt changed from 8463 characters / 14845 UTF-8 bytes to
+6828 characters / 13480 bytes (−1635 characters / −1365 bytes). Each of the
+five frozen Piece requests grew by 6454 characters / 6748 bytes after including
+the 7474-byte tool schema. The receipt records all five absolute request sizes,
+Evidence counts and Node counts; no private Source text is included.
+
+Synthetic lexical output grew by 43.771% versus compact Wire for 40 dense
+Claims and by 41.9957% at the 100-Claim limit. The mixed fixture grew by
+112.7647% in UTF-8 bytes. Relative to canonical verbose output, the same
+increases were 2.1441%, 0.7953% and 48.4395%. These are material costs, with
+no qualified tokenizer estimate or live capacity conclusion.
+
+Real-state hashes match the initial guard: schema12, blocked Run #9,
+historical Runs, 14 historical queued jobs plus four Run #9 queued jobs,
+Production, Current View, private artifacts and stable installation. Runs
+#1–#9 retain identical read projections. Both Run #8 and Run #9 fail current
+runtime compatibility with `SEMANTIC_SURFACE_CHANGED`. Real provider calls,
+Run #10 creation and Review actions in this stage are all zero.
+
 The companion `whole_piece_lexical_tool_provider_contract_r1_receipt.json`
 records final regression counts, baseline/implementation provenance, tool schema
 SHA, wheel SHA, build checks, request/output benchmarks and real-state guards.
