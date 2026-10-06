@@ -394,6 +394,21 @@ class BoundedExtractionStore:
             existing = connection.execute("SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?", (row["segment_id"],)).fetchone()
             if existing:
                 _require(existing["attempt_id"] == attempt_id, "SEGMENT_ALREADY_ACCEPTED")
+                target = ("SUCCEEDED_COMPLETE" if existing["result_type"] == "COMPLETE"
+                          else "SUBDIVISION_REQUIRED")
+                if row["state"] not in (target, "SUPERSEDED_BY_CHILDREN"):
+                    _require(row["state"] in ("RUNNING", "RECOVERY_REQUIRED"),
+                             "INVALID_SEGMENT_TRANSITION")
+                    connection.execute(
+                        "UPDATE bounded_extraction_segments SET state=?,updated_at=? "
+                        "WHERE segment_id=?", (target, _now(), row["segment_id"]),
+                    )
+                    _event(
+                        connection, row["series_id"],
+                        "SEGMENT_COMPLETED" if target == "SUCCEEDED_COMPLETE"
+                        else "SEGMENT_SUBDIVISION_REQUIRED",
+                        segment_id=row["segment_id"],
+                    )
                 return dict(existing)
             _require(row["state"] in ("RUNNING", "RECOVERY_REQUIRED"), "SEGMENT_NOT_ACCEPTABLE")
             outcome = connection.execute("SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?", (attempt_id,)).fetchone()

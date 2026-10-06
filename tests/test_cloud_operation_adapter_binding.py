@@ -272,7 +272,7 @@ def test_retry_copies_operation_adapter_and_rejects_current_substitution(tmp_pat
     result = advance(value)
     assert result["state"] == "BLOCKED"
     original=ledger_rows(value,'bounded_extraction_attempts')
-    with pytest.raises(SourceOperationError,match='WHOLE_PIECE_REPROCESS_REQUIRED'):
+    with pytest.raises(SourceOperationError,match='RETRY_NOT_ELIGIBLE'):
         service.retry_failed_extraction(value['run_id'],original[0]['attempt_id'],
             retry_reason='Explicit synthetic retry',idempotency_key='operation-adapter-retry-0001')
     assert ledger_rows(value,'bounded_extraction_attempts') == original and len(jobs(value)) == 0
