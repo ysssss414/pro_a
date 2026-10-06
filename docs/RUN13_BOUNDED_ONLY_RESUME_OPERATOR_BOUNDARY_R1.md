@@ -87,3 +87,62 @@ The actual Run13 must remain at three provider calls, two completed Segments and
 write, Review action or Run14 creation is permitted.
 
 Next stage, only after qualification: `BOUNDED_ONLY_RESUME_OPERATOR_RELEASE_AND_LIVE_RUN13_R1`.
+
+## Measured qualification evidence
+
+```text
+QUALIFICATION_GATES = PASS
+BASELINE_STABLE_SHA = 1d700d95cc394174120ae55144660c769b4efc51
+IMPLEMENTATION_SHA = 4fdab717355998be569332508f97a904757c05e9
+SCHEMA = 12 / UNCHANGED
+FOCUSED_TESTS = 45 passed (42 main + 3 capacity gates)
+RELATED_TESTS = 663 passed (582 core + 81 MCP)
+UNEXPECTED_ACCEPTANCE_FAILURES = 0
+COMPILEALL = PASS
+PIP_CHECK = PASS
+BUILD = PASS / ISOLATED_PEP517
+WHEEL_SHA256 = 9aa0c2507f0dbde626cac02f6c22d0e948350a074cfec6e3ab9df35fc8c3ac98
+SOURCE_WHEEL_INSTALL_BYTE_EQUALITY = PASS / 143 Python files
+NO_GIT_RUNTIME = PASS
+RUN13_CROSS_RELEASE_COMPATIBILITY = QUALIFIED / persist=false
+CLOUD_EXECUTION_SURFACE = SEMANTIC_SURFACE_EXACT
+NATIVE_EXECUTION_SURFACE = SEMANTIC_SURFACE_EXACT
+REAL_PROVIDER_CALLS = 0
+RUN13_PROVIDER_CALLS = 3 / UNCHANGED
+RUN13_COMPLETED_SEGMENTS = 2 / UNCHANGED
+RUN13_PENDING_SEGMENTS = 25 / UNCHANGED
+WORKBENCH_SHA256 = 8d0eefd10a3da482aac71dc95da941c451bdc3a6caa2277adf9874fc361daf6d
+PRODUCTION_SHA256 = 6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1
+PRODUCTION_WRITES = 0
+CURRENT_VIEW_WRITES = 0
+SEMANTIC_WRITES = 0
+REVIEW_ACTIONS = 0
+RUN14_CREATED = false
+PRIVACY_SCAN = PASS
+STABLE_ACTIVATED = false
+```
+
+The final PR head may add only this qualification receipt to the implementation;
+runtime and test bytes must remain identical to the qualified implementation.
+The wheel is a private operator build artifact and is not committed.
+
+All 81 MCP cases have passing evidence from the existing environments: 79 run
+with repo Python plus read-only SDK path loading, and two transport cases run
+with installed SDK Python plus the existing pytest path. No package installation,
+environment cleanup or stable-runtime change was performed. Historical subprocess
+fixtures therefore retain their existing pytest-capable interpreter.
+
+Initial long-path fixture failures were rerun in short isolated fixture directories;
+no runtime path-handling changes were made. Historical missing-runner surface
+classification remains fail-closed as `SEMANTIC_SURFACE_CHANGED`.
+
+The real-state proof compares every Workbench table row hash (including counters),
+schema/integrity, original Attempts/outcomes/raw hashes, private artifact manifest,
+native checkpoint manifest, Production bytes and Current View manifest. All are
+unchanged. The actual historical Run13 assessment and stable-to-implementation
+surface comparison both pass. No qualification record was written to real state.
+
+Dependency manifests, provider configuration/prompt/schema, Wire, Evidence Binding,
+Claim linkage, ownership/coverage, analyzer, aggregate and Semantic/Review/Production/
+Current View research contracts are unchanged. PR #106 remains forensic-only,
+open Draft and not merged; it is not a runtime dependency.
