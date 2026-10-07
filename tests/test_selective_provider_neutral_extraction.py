@@ -246,12 +246,12 @@ def test_current_attempt_pins_v3_contract_without_schema_migration(tmp_path):
 
 @pytest.mark.parametrize('module',['extraction_analysis_record.py','output_decomposition_legacy.py'])
 def test_acceptance_modules_bound_by_runtime_code_identity(monkeypatch,module):
-    from pathlib import Path
+    from pro_a.workbench import cloud_jobs
     from pro_a.workbench.cloud_jobs import runtime_identity
-    original=Path.read_bytes
+    original=cloud_jobs.sha256_file
     runtime_identity.cache_clear()
     baseline=runtime_identity('synthetic',workbench_schema_version='12')
-    monkeypatch.setattr(Path,'read_bytes',lambda path:original(path)+(b'\n# synthetic identity drift\n' if path.name==module else b''))
+    monkeypatch.setattr(cloud_jobs,'sha256_file',lambda path:'0'*64 if path.name==module else original(path))
     runtime_identity.cache_clear()
     changed=runtime_identity('synthetic',workbench_schema_version='12')
     assert baseline['domain_code_sha256']!=changed['domain_code_sha256']
