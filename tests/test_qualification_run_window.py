@@ -168,8 +168,9 @@ def test_no_public_api_frontend_or_mcp_override_exposure():
     assert 'bypass_run_window' not in inspect.signature(SourceOperations.start).parameters
     assert 'qualification_reason' not in SourceProcessRequest.model_fields
     root = Path(__file__).resolve().parents[1]
-    public = [root / 'src/pro_a/workbench/api.py']
-    public += list((root / 'src/pro_a/mcp').rglob('*.py'))
+    package = Path(inspect.getfile(SourceOperations)).resolve().parent.parent
+    public = [package / 'workbench/api.py']
+    public += list((package / 'mcp').rglob('*.py'))
     for directory in ('frontend', 'web', 'ui'):
         public += [p for p in (root / directory).rglob('*') if p.is_file()]
     for path in public:
