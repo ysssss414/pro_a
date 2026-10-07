@@ -59,6 +59,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "domain_packs.py": None,
     "run_context.py": None,
     "workbench/artifacts.py": None,
+    "workbench/stage1_scale.py": None,
     "workbench/domains.py": (
         "config_digest", "prompt_digest", "Domains.assignment", "Domains.packs",
         "Domains.basis", "Domains.pending_basis", "Domains.read", "Domains.guard",
@@ -78,6 +79,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "workbench/source_operations.py": (
         "_canonical", "_now", "_ExtractionReplay", "SourceProfile.validate",
         "SourceOperations.__init__", "SourceOperations.start", "SourceOperations._event",
+        "SourceOperations._start", "SourceOperations.start_qualification_reprocess",
         "SourceOperations._transition", "SourceOperations._community_bound",
         "SourceOperations._register_input", "SourceOperations._bind_job",
         "SourceOperations._jobs_for", "SourceOperations._propagate_job_state",

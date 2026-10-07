@@ -307,7 +307,9 @@ def test_r2_does_not_inherit_old_boundary_cloud_authorization(kind):
     # R2 changes the response contract; only unchanged native research execution
     # stays exact. The historical boundary qualification cannot authorize V3.
     assert result['compatible'] is (kind=='native'),result
-    assert result['reason']==('SEMANTIC_SURFACE_EXACT' if kind=='native' else 'SEMANTIC_SURFACE_CHANGED'),result
+    # The qualification creation helper is now bound; old cloud code lacks it.
+    assert result['reason']==('SEMANTIC_SURFACE_EXACT' if kind=='native'
+                             else 'EXECUTION_SURFACE_UNAVAILABLE:RetryCompatibilityError'),result
 
 
 @pytest.mark.parametrize('mutation',[
