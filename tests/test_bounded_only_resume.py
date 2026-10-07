@@ -300,11 +300,14 @@ def test_capacity_stops_before_dispatch_without_subdivision(tmp_path,monkeypatch
 
 
 @pytest.mark.parametrize('kind',['cloud','native'])
-def test_stable_to_boundary_semantic_surface_exact(kind):
+def test_r2_does_not_inherit_old_boundary_cloud_authorization(kind):
     from pro_a.workbench.retry_compatibility import _execution_surface_comparison
     _execution_surface_comparison.cache_clear()
     result=_execution_surface_comparison(kind,'1d700d95cc394174120ae55144660c769b4efc51')
-    assert result['compatible'] and result['reason']=='SEMANTIC_SURFACE_EXACT',result
+    # R2 changes the response contract; only unchanged native research execution
+    # stays exact. The historical boundary qualification cannot authorize V3.
+    assert result['compatible'] is (kind=='native'),result
+    assert result['reason']==('SEMANTIC_SURFACE_EXACT' if kind=='native' else 'SEMANTIC_SURFACE_CHANGED'),result
 
 
 @pytest.mark.parametrize('mutation',[
