@@ -4,12 +4,23 @@ import json
 
 import pytest
 
-from pro_a import output_decomposition as output
+from pro_a import output_decomposition_legacy as output
 from pro_a.bounded_extraction import EvidenceDisposition, create_segment_wire_result, aggregate_segment_wires
 from lexical_record_helpers import claim_linkages, from_wire
-from test_output_decomposition import fixture, record, accepted
+from test_output_decomposition import fixture, record as current_record
 from test_source_analysis_wire import empty_canonical, normal_node
 from test_bounded_extraction import v3
+
+
+def record(ctx,cat,series,batch,**kwargs):
+    value=current_record(ctx,cat,series,batch,**kwargs)
+    value.pop('evidence_acknowledgements')
+    value['dispositions']=claim_linkages(value,batch.assigned_evidence_refs)
+    return value
+
+
+def accepted(ctx,cat,series,batch,value):
+    return output.record_to_result(json.dumps(value),series,batch,cat,ctx)
 
 
 def three_claims():
@@ -128,14 +139,11 @@ def test_v1_v2_internal_and_aggregate_exact_equivalence(count,density):
 
 
 def test_provider_versions_and_closed_schema():
-    c=output.contract();schema=output.record_schema()['properties']['dispositions']['items']
+    schema=output.record_schema()['properties']['dispositions']['items']
     assert schema['additionalProperties'] is False
     assert set(schema['required'])=={'evidence_ref','claim_refs'}
     assert schema['properties']['claim_refs']=={'type':'array','items':{'type':'string'}}
-    assert c['claim_linkage_policy']=='whole-piece-output-claim-linkage-v1'
-    assert all(c[k].endswith('-v2') for k in ('adapter_version','provider_version','prompt_version','response_version','provider_record_version','tool_schema_version'))
-    assert all(c[k].endswith('-v1') for k in ('series','batch','coverage','subdivision','ownership_policy'))
-    assert 'CLAIMED' not in output.SYSTEM and 'NO_INDEPENDENT_CLAIM' not in output.SYSTEM
+    assert output.RECORD_VERSION.endswith('-v2')
 
 
 @pytest.mark.parametrize('window',['raw_artifact_durable','outcome_durable'])

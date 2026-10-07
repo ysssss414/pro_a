@@ -149,9 +149,9 @@ class _SemanticFailureTransport(Transport):
         target["assigned_evidence_refs"] = re.findall(r"\[(EV_[^\]]+)\]", source)
         record = batch_record(json_module.loads(response_content(target, source)), target)
         if self.mutation == "claim_linkage":
-            record["dispositions"][0]["claim_refs"] = []
+            record["evidence_acknowledgements"][0]["claim_refs"] = []
         elif self.mutation == "foreign_evidence":
-            record["dispositions"][0]["evidence_ref"] = "EV_INVENTED"
+            record["evidence_acknowledgements"][0]["evidence_ref"] = "EV_INVENTED"
         elif self.mutation == "invalid_selector":
             record["claims"][0]["evidence"].update(
                 selection_mode="RAW_SUBSPAN", selector="absent synthetic substring",
@@ -279,14 +279,15 @@ def test_bounded_qualification_is_event_backed_and_required_on_runtime_drift(
     from pro_a.workbench.cloud_jobs import runtime_identity
 
     target = runtime_identity("semantic-backend-adapter-v2", workbench_schema_version="12")
-    historical = {**target, "git_sha": "35e54a7d342317487b2e99e540fb4011bdec43b1",
+    # This fixture tests metadata drift within one qualified response contract,
+    # not v2 -> v3 semantic/encoding changes, which must remain blocked.
+    historical = {**target, "git_sha": target["git_sha"],
                   "domain_code_sha256": "0" * 64}
     historical["runtime_sha256"] = digest({
         key: item for key, item in historical.items() if key != "runtime_sha256"
     })
     target_native = orchestration._runtime()
-    historical_native = {**target_native,
-                         "repository_commit": "35e54a7d342317487b2e99e540fb4011bdec43b1"}
+    historical_native = dict(target_native)
     monkeypatch.setattr(
         "pro_a.workbench.cloud_jobs.CloudJobs.current_runtime", lambda _self: historical,
     )
