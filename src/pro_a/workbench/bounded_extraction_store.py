@@ -140,7 +140,8 @@ class BoundedExtractionStore:
             for number, attempt in enumerate(connection.execute("SELECT * FROM bounded_extraction_attempts WHERE segment_id=? ORDER BY attempt_number", (segment.segment_id,)), 1):
                 attempt = _verified(attempt)
                 request = json.loads(attempt["request_json"])
-                _require(number == attempt["attempt_number"] and request == self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"])
+                _require(number == attempt["attempt_number"] and request == self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"],
+                         provider_record_version=request.get('provider_record_version', ''))
                          and identity(request) == attempt["request_sha256"] and attempt["budget_identity"] == series.output_budget_identity
                          and attempt["attempt_id"] == self._attempt_id(segment.segment_id, number, attempt["request_sha256"])
                          and previous_request in (None, attempt["request_sha256"]), "ATTEMPT_IDENTITY_MISMATCH")
@@ -224,9 +225,17 @@ class BoundedExtractionStore:
         return self._claim("series", "series_id", series_id, owner, lease_seconds, now)
 
     @staticmethod
-    def _request(series, segment, payload_sha256, configuration_sha256):
+    def _request(series, segment, payload_sha256, configuration_sha256, *, provider_record_version=None):
+        contract = {}
+        if series.series_version == OUTPUT_SERIES_VERSION:
+            if provider_record_version is None:
+                from pro_a.output_decomposition import RECORD_VERSION
+                provider_record_version = RECORD_VERSION
+            if provider_record_version:
+                contract['provider_record_version'] = provider_record_version
         return {"series_sha256": series.series_sha256, "segment_sha256": segment.segment_sha256,
                 **({"series_version": series.series_version} if series.series_version == "whole-piece-output-series-v1" else {}),
+                **contract,
                 "payload_sha256": _sha(payload_sha256), "configuration_sha256": _sha(configuration_sha256),
                 "budget_identity": series.output_budget_identity, "max_output_tokens": segment.max_output_tokens}
 
@@ -423,7 +432,14 @@ class BoundedExtractionStore:
                     if series.series_version == 'whole-piece-output-series-v1':
                         from pro_a.output_decomposition import record_to_result
                         _require(outcome['finish_reason'] == 'tool_calls', 'INVALID_OUTPUT_TOOL_FINISH')
-                        result = record_to_result(body.decode('utf-8'), series, segment, catalog, context)
+                        request = json.loads(attempt['request_json'])
+                        version = request.get('provider_record_version')
+                        if version is None:
+                            # Original Attempts bind their contract through the frozen prompt.
+                            prompt = checked_path(self._path(series.series_id, segment.segment_id + '.prompt.json')).read_bytes()
+                            _require(hashlib.sha256(prompt).hexdigest() == request['payload_sha256'], 'HISTORICAL_PROMPT_IDENTITY_MISMATCH')
+                            version = json.loads(prompt)['target']['provider_record_version']
+                        result = record_to_result(body.decode('utf-8'), series, segment, catalog, context, record_version=version)
                     else:
                         document = json.loads(body)
                         _require(type(document) is dict and set(document) == {"wire", "dispositions"}, "INVALID_SEGMENT_RESPONSE")

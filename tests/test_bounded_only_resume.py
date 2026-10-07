@@ -146,7 +146,7 @@ def test_first_failure_stops_without_retry_subdivision_or_semantic(tmp_path,monk
                 response=ToolResponse('{}'); response.status_code=503; return response
             record=batch_record(json.loads(response_content(target,source)),target)
             if mode=='invalid_shape': record['unexpected']='invalid'
-            if mode=='claim_linkage': record['dispositions'][0]['claim_refs']=[]
+            if mode=='claim_linkage': record['evidence_acknowledgements'][0]['claim_refs']=[]
             if mode=='ownership': record['node_candidates'][0]['ownership_evidence_ref']='EV_FOREIGN'
             return ToolResponse(json.dumps(record),output=12001 if mode=='oversized' else 50)
     transport=Failure()

@@ -1,43 +1,32 @@
 """Full SourcePiece semantics with bounded, locally enforced output ownership."""
 import copy
 from dataclasses import asdict
-from collections import Counter
 import hashlib
 import json
-import re
 
 from . import bounded_source_analysis as historical
 from . import source_analysis_provider_record as lexical
 from . import whole_piece_compact as whole
+from . import extraction_analysis_record as normalized
+from . import output_decomposition_legacy as legacy
 from .bounded_extraction import (OUTPUT_SERIES_VERSION, OUTPUT_BATCH_VERSION, OUTPUT_COVERAGE_VERSION,
-    OUTPUT_SUBDIVISION_VERSION, OUTPUT_POLICY_VERSION, SeriesBudget, EvidenceDisposition,
-    create_extraction_series, create_segment_wire_result, _segment_contract)
-from .evidence_binding import identity, validate_catalog, resolve_evidence_binding_v2
+    OUTPUT_SUBDIVISION_VERSION, OUTPUT_POLICY_VERSION, SeriesBudget,
+    create_extraction_series, _segment_contract)
+from .evidence_binding import identity, validate_catalog
 
 BINDING_VERSION = 'whole-piece-output-decomposition-binding-v1'
-PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v2'
-PROMPT_VERSION = 'whole-piece-output-batch-lexical-tool-prompt-v2'
-RESPONSE_VERSION = 'whole-piece-output-batch-response-v2'
-RECORD_VERSION = 'whole-piece-output-batch-provider-record-v2'
-SCHEMA_VERSION = 'whole-piece-output-batch-tool-schema-v2'
-CLAIM_LINKAGE_VERSION = 'whole-piece-output-claim-linkage-v1'
+PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v3'
+PROMPT_VERSION = 'whole-piece-output-batch-lexical-tool-prompt-v3'
+RESPONSE_VERSION = 'whole-piece-output-batch-response-v3'
+RECORD_VERSION = 'whole-piece-output-batch-provider-record-v3'
+SCHEMA_VERSION = 'whole-piece-output-batch-tool-schema-v3'
+ENCODING_VERSION = 'deepseek-output-batch-lexical-encoding-v3'
+CLAIM_LINKAGE_VERSION = 'whole-piece-output-claim-linkage-v2'
 OPERATION = 'WHOLE_PIECE_OUTPUT_BATCH'
 MODE = 'WHOLE_PIECE_OUTPUT_DECOMPOSITION'
-SYSTEM = whole.SYSTEM.replace('不得生成细分指令、dispositions或上下文依赖图。', '不得生成细分指令或上下文依赖图。') + """
-本调用只承担 assigned_evidence_refs 的输出责任；语义上下文始终为完整 SourcePiece。
-全部上下文均可用于理解指代、说话人、时间和段落关系，但只有带EV标签的单元可引用为Evidence。
-无标签周围原文仅供理解；没有提供其Evidence ID，不得虚构ID或从其他批次引用ID。
-所有Claim、node_match、Event及preserved_fields中的Evidence必须属于本批次。
-每个candidate和source_reference必须给出本批次的ownership_evidence_ref，表示由该单元触发输出责任；
-它仅是调度归属，绝不是额外的Claim Evidence或永久研究语义。Event的实际Evidence也必须属于本批次。
-Claim引用candidate名称时须在本批次同时输出该candidate。Relation只能引用本批次C1..Cn，禁止跨批次合成。
-source_metadata根据完整SourcePiece填写，各批次必须逐字段完全一致。
-dispositions对每个assigned_evidence_ref恰好给出一条{evidence_ref,claim_refs}。
-claim_refs列出本批次所有实际使用该Evidence的Claim序号C1..Cn（按claims数组位置）；无Claim则[]。
-必须完整列出、不得重复；顺序不限。candidate、node_match、Event、source_reference或ownership锚点不算Claim。
-例如C1和C3使用同一Evidence，其claim_refs为["C1","C3"]；不得另填disposition标签。
-dispositions仅声明已考虑该单元，不保证研究提取绝对完整。禁止请求细分、部分完成或继续生成。
-"""
+# The existing lexical workaround is encoding, not the normalized research IR.
+ENCODING_SYSTEM = whole.SYSTEM[len(whole.SOURCE_ANALYSIS_SYSTEM):]
+SYSTEM = normalized.SEMANTIC_SYSTEM + ENCODING_SYSTEM
 
 
 def record_schema():
@@ -46,9 +35,9 @@ def record_schema():
         item = schema['properties'][family]['items']
         item['properties']['ownership_evidence_ref'] = {'type': 'string'}
         item['required'].append('ownership_evidence_ref')
-    schema['properties']['dispositions'] = {'type': 'array', 'items': lexical.closed({
-        'evidence_ref': {'type': 'string'}, 'claim_refs': {'type': 'array', 'items': {'type': 'string'}}})}
-    schema['required'].append('dispositions')
+    schema['properties']['evidence_acknowledgements'] = {'type': 'array', 'items': lexical.closed({
+        'evidence_ref': {'type': 'string'}})}
+    schema['required'].append('evidence_acknowledgements')
     return schema
 
 
@@ -60,7 +49,10 @@ def contract():
         'system_prompt_sha256': hashlib.sha256(SYSTEM.encode()).hexdigest(),
         'series': OUTPUT_SERIES_VERSION, 'batch': OUTPUT_BATCH_VERSION, 'coverage': OUTPUT_COVERAGE_VERSION,
         'subdivision': OUTPUT_SUBDIVISION_VERSION, 'ownership_policy': OUTPUT_POLICY_VERSION,
-        'claim_linkage_policy': CLAIM_LINKAGE_VERSION,
+        'claim_linkage_policy': CLAIM_LINKAGE_VERSION, 'research_semantic_contract': normalized.contract(),
+        'normalized_analysis_record_version': normalized.VERSION,
+        'provider_encoding_contract_version': ENCODING_VERSION,
+        'provider_encoding_prompt_sha256': hashlib.sha256(ENCODING_SYSTEM.encode()).hexdigest(),
         'budget': asdict(SeriesBudget()), 'semantic_context': 'COMPLETE_SOURCEPIECE',
         'evidence_segment_semantic_boundary': 'deprecated', 'output_ownership': 'EVIDENCE_BATCHED',
         'piece_hard_cap': historical.FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS,
@@ -118,54 +110,29 @@ def segment_payload(value, context, catalog, series, segment):
     return {'target':target, 'request':request}
 
 
-def record_to_result(content, series, segment, catalog, context):
+def normalize_record(content):
+    """DeepSeek lexical adapter -> provider-neutral native types, before binding."""
     record = lexical.parse_object(content)
     lexical.validate_shape(record, record_schema())
-    owned = set(segment.assigned_evidence_refs)
     stripped = copy.deepcopy(record)
-    linkages = stripped.pop('dispositions')
-    refs = [item['evidence_ref'] for item in linkages]
-    if set(refs) - owned:
-        raise ValueError('FOREIGN_EVIDENCE_LINKAGE')
-    if any(count != 1 for count in Counter(refs).values()):
-        raise ValueError('DUPLICATE_EVIDENCE_LINKAGE')
-    if set(refs) != owned:
-        raise ValueError('MISSING_EVIDENCE_LINKAGE')
+    acknowledgements = stripped.pop('evidence_acknowledgements')
+    anchors = {}
     for family in ('node_candidates','source_references'):
-        for obj in stripped[family]:
-            if obj.pop('ownership_evidence_ref') not in owned:
-                raise ValueError('OUTPUT_OWNERSHIP_VIOLATION')
-    selections = [obj['evidence'] for family in ('claims','node_matches') for obj in stripped[family]]
-    for obj in stripped['node_candidates']:
-        if obj['event_evidence']['selection_mode'] != 'NONE':
-            selections.append(obj['event_evidence'])
-        preserved = obj['preserved_fields']['evidence_ref']
-        if preserved['present'] == 'TRUE':
-            selections.append(preserved['value'])
-    if any(selection['evidence_ref'] not in owned for selection in selections):
-        raise ValueError('OUTPUT_OWNERSHIP_VIOLATION')
-    # Only structurally valid, deterministically bound Claim Evidence contributes.
-    expected = {ref: set() for ref in owned}
-    for index, claim in enumerate(stripped['claims'], 1):
-        selection = lexical.selection(claim['evidence'])
-        resolve_evidence_binding_v2(selection, catalog, context)
-        expected[selection['evidence_ref']].add(f'C{index}')
-    valid_refs = {f'C{i}' for i in range(1, len(stripped['claims']) + 1)}
-    for item in linkages:
-        claim_refs = item['claim_refs']
-        if any(not re.fullmatch(r'C[1-9][0-9]*', ref) for ref in claim_refs):
-            raise ValueError('INVALID_LOCAL_CLAIM_LINK')
-        if len(set(claim_refs)) != len(claim_refs):
-            raise ValueError('DUPLICATE_LOCAL_CLAIM_LINK')
-        if set(claim_refs) - valid_refs:
-            raise ValueError('UNKNOWN_LOCAL_CLAIM_LINK')
-        if set(claim_refs) != expected[item['evidence_ref']]:
-            raise ValueError('CLAIM_LINKAGE_MISMATCH')
-    dispositions = tuple(EvidenceDisposition(ref, 'CLAIMED' if expected[ref] else 'NO_INDEPENDENT_CLAIM')
-                         for ref in segment.assigned_evidence_refs)
+        anchors[family] = [obj.pop('ownership_evidence_ref') for obj in stripped[family]]
     wire = lexical.provider_record_to_wire_v3(stripped)
-    # All active selections, including preserved Event fields, use the existing binder.
-    return create_segment_wire_result(series, segment, wire, dispositions, catalog, context)
+    wire.pop('wire_version')
+    for family, refs in anchors.items():
+        for obj, ref in zip(wire[family], refs):obj['ownership_evidence_ref'] = ref
+    return {**wire, 'analysis_record_version': normalized.VERSION, 'evidence_acknowledgements': acknowledgements}
+
+
+def record_to_result(content, series, segment, catalog, context, *, record_version=RECORD_VERSION):
+    # Selection is frozen by Attempt identity, never inferred from response shape.
+    if record_version in (legacy.V1, legacy.RECORD_VERSION):
+        return legacy.record_to_result(content, series, segment, catalog, context, record_version=record_version)
+    if record_version != RECORD_VERSION:
+        raise ValueError('UNSUPPORTED_PROVIDER_RECORD_VERSION')
+    return normalized.record_to_result(normalize_record(content), series, segment, catalog, context)
 
 
 class OutputBatchProvider(whole.WholePieceCompactProvider):
