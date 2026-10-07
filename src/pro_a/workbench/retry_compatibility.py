@@ -4,9 +4,10 @@ from __future__ import annotations
 import ast
 import copy
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import lru_cache, partial
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -623,25 +624,56 @@ def _surface_manifest(sources: Mapping[str, bytes],
 def _execution_surface_sources(
         historical_git_sha: str,
         specification: Mapping[str, tuple[str, ...] | None],
+        *, historical_repository_root: Path | None = None,
 ) -> tuple[dict[str, bytes], dict[str, bytes]]:
     package = Path(__file__).resolve().parent.parent
-    root = package.parents[1]
+    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", historical_git_sha or ""):
+        raise RetryCompatibilityError("HISTORICAL_GIT_IDENTITY_INVALID")
+    if historical_repository_root is None:
+        root = package.parents[1]
+        if package != root / "src/pro_a":
+            raise RetryCompatibilityError("HISTORICAL_EXECUTION_REPOSITORY_REQUIRED")
+    else:
+        root = Path(historical_repository_root)
+    try:
+        root = checked_path(root)
+    except BoundaryError:
+        raise RetryCompatibilityError("HISTORICAL_EXECUTION_REPOSITORY_UNAVAILABLE") from None
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+
+    def git(*arguments, optional=False):
+        result = subprocess.run(["git", "--no-replace-objects", "-C", str(root), *arguments],
+                                env=environment, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if result.returncode != 0:
+            if optional:
+                return None
+            raise RetryCompatibilityError("HISTORICAL_EXECUTION_SOURCE_UNAVAILABLE")
+        return result.stdout
+
+    if Path(git("rev-parse", "--show-toplevel").decode("utf-8").strip()).resolve() != root:
+        raise RetryCompatibilityError("HISTORICAL_EXECUTION_REPOSITORY_MISMATCH")
+    if git("rev-parse", "--verify", historical_git_sha + "^{commit}").decode().strip() != historical_git_sha:
+        raise RetryCompatibilityError("HISTORICAL_GIT_IDENTITY_MISMATCH")
     historical: dict[str, bytes] = {}
     target: dict[str, bytes] = {}
     for name in specification:
         repository_name = f"src/pro_a/{name}"
-        present = subprocess.run(["git", "cat-file", "-e", f"{historical_git_sha}:{repository_name}"],
-                                 cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        object_id = git("rev-parse", "--verify", f"{historical_git_sha}:{repository_name}", optional=True)
         # Absence is a different execution surface, never a compatibility waiver.
-        historical[name] = (subprocess.check_output(
-            ["git", "show", f"{historical_git_sha}:{repository_name}"], cwd=root,
-            stderr=subprocess.DEVNULL) if present.returncode == 0 else b"")
+        historical[name] = b""
+        if object_id is not None:
+            oid = object_id.decode().strip()
+            content = git("cat-file", "blob", oid)
+            algorithm = hashlib.sha1 if len(oid) == 40 else hashlib.sha256
+            if algorithm(b"blob " + str(len(content)).encode() + b"\0" + content).hexdigest() != oid:
+                raise RetryCompatibilityError("HISTORICAL_EXECUTION_BLOB_INTEGRITY")
+            historical[name] = content
         target[name] = (package / name).read_bytes()
     return historical, target
 
 
-@lru_cache(maxsize=64)
-def _execution_surface_comparison(kind: str, historical_git_sha: str) -> dict[str, Any]:
+def _assess_execution_surface(kind: str, historical_git_sha: str, *,
+                              historical_repository_root: Path | None = None) -> dict[str, Any]:
     specification = {
         "cloud": _CLOUD_EXECUTION_SURFACE,
         "native": _NATIVE_EXECUTION_SURFACE,
@@ -656,12 +688,16 @@ def _execution_surface_comparison(kind: str, historical_git_sha: str) -> dict[st
         result["reason"] = "HISTORICAL_GIT_IDENTITY_INVALID"
         return result
     try:
-        historical, target = _execution_surface_sources(historical_git_sha, specification)
+        historical, target = (_execution_surface_sources(historical_git_sha, specification)
+            if historical_repository_root is None else _execution_surface_sources(
+                historical_git_sha, specification, historical_repository_root=historical_repository_root))
         historical_manifest = _surface_manifest(historical, specification)
         target_manifest = _surface_manifest(target, specification)
     except (OSError, UnicodeError, subprocess.CalledProcessError, SyntaxError,
             RetryCompatibilityError) as exc:
         result["reason"] = f"EXECUTION_SURFACE_UNAVAILABLE:{type(exc).__name__}"
+        if isinstance(exc, RetryCompatibilityError) and re.fullmatch(r"HISTORICAL_[A-Z_]+", str(exc)):
+            result["history_source_error_code"] = str(exc)
         return result
     result.update({
         "historical": historical_manifest,
@@ -670,8 +706,15 @@ def _execution_surface_comparison(kind: str, historical_git_sha: str) -> dict[st
         == target_manifest["semantic_surface_sha256"],
         "reason": "SEMANTIC_SURFACE_EXACT" if historical_manifest["semantic_surface_sha256"]
         == target_manifest["semantic_surface_sha256"] else "SEMANTIC_SURFACE_CHANGED",
+        "historical_source_authority": "EXACT_GIT_COMMIT_TREE",
+        "explicit_history_repository": historical_repository_root is not None,
     })
     return result
+
+
+@lru_cache(maxsize=64)
+def _execution_surface_comparison(kind: str, historical_git_sha: str) -> dict[str, Any]:
+    return _assess_execution_surface(kind, historical_git_sha)
 
 
 def _runtime_comparison(historical: Mapping[str, Any], target: Mapping[str, Any],
@@ -843,7 +886,8 @@ def _blocked(blockers: list[str], dimensions: Mapping[str, Any],
 
 
 def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
-                               *, persist: bool = False) -> dict[str, Any]:
+                               *, persist: bool = False,
+                               historical_repository_root: Path | None = None) -> dict[str, Any]:
     """Assess immutable state; persist only an exact-scope QUALIFIED record."""
     from .cloud_jobs import runtime_identity
     from .extraction_retry import frozen_cloud
@@ -852,6 +896,8 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
     dimensions: dict[str, Any] = {}
     evidence: dict[str, Any] = {}
     blockers: list[str] = []
+    surface_comparison = (_execution_surface_comparison if historical_repository_root is None else
+        partial(_assess_execution_surface, historical_repository_root=historical_repository_root))
     with Store(config).connect() as connection:
         run = connection.execute(
             "SELECT * FROM source_processing_runs WHERE processing_run_id=?", (run_id,),
@@ -965,7 +1011,7 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
         historical_runtime = json.loads(run["runtime_json"])
         target_runtime = (runtime_identity(cloud_profile.provider_adapter_version, workbench_schema_version=schema_version(connection))
                           if cloud_profile is not None else {})
-        cloud_surface = _execution_surface_comparison(
+        cloud_surface = surface_comparison(
             "cloud", historical_runtime.get("git_sha", ""),
         )
         evidence["cloud_execution_surface"] = cloud_surface
@@ -975,7 +1021,8 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
             surface_compatible=cloud_surface["compatible"],
         )
         evidence["cloud_runtime"] = cloud_comparison
-        cloud_ok = cloud_comparison["compatible"]
+        cloud_ok = cloud_comparison["compatible"] and (
+            historical_repository_root is None or cloud_surface["compatible"])
         dimensions["code_runtime_identity"] = _dimension(
             "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS" if cloud_ok else "FAIL",
             "Release metadata may differ; broad code digests may differ only when the versioned "
@@ -1037,7 +1084,7 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
                 native_root = checked_path(phase4.root / run["native_root_relative"])
                 identity = json.loads((native_root / "execution_identity.json").read_text(encoding="utf-8"))
                 target_native = native_runtime()
-                native_surface = _execution_surface_comparison(
+                native_surface = surface_comparison(
                     "native", identity["runtime"].get("repository_commit", ""),
                 )
                 evidence["native_execution_surface"] = native_surface
@@ -1047,7 +1094,8 @@ def assess_retry_compatibility(config, run_id: str, failed_attempt_id: str,
                     surface_compatible=native_surface["compatible"],
                 )
                 evidence["native_runtime"] = native_comparison
-                native_ok = native_comparison["compatible"]
+                native_ok = native_comparison["compatible"] and (
+                    historical_repository_root is None or native_surface["compatible"])
             except Exception:
                 native_ok = False
         dimensions["native_execution_checkpoint"] = _dimension(
@@ -1169,7 +1217,8 @@ def load_qualification(connection, *, run_id: str, failed_attempt_id: str,
 def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: str,
                                        *, persist: bool = False,
                                        bounded_only_resume: bool = False,
-                                       bounded_truncation_recovery: bool = False) -> dict[str, Any]:
+                                       bounded_truncation_recovery: bool = False,
+                                       historical_repository_root: Path | None = None) -> dict[str, Any]:
     """Qualify an exact-scope bounded Attempt; recovery is a separate opt-in."""
     from pro_a.evidence_binding import identity
     from .bounded_extraction_store import BoundedExtractionStore, _event
@@ -1185,6 +1234,8 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
     dimensions: dict[str, Any] = {}
     evidence: dict[str, Any] = {}
     blockers: list[str] = []
+    surface_comparison = (_execution_surface_comparison if historical_repository_root is None else
+        partial(_assess_execution_surface, historical_repository_root=historical_repository_root))
     ledger = BoundedExtractionStore(config)
     with Store(config).connect() as connection:
         if schema_version(connection) != "12":
@@ -1430,7 +1481,7 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                 workbench_schema_version=schema_version(connection),
             ) if cloud_profile is not None else {}
         )
-        cloud_surface = _execution_surface_comparison(
+        cloud_surface = surface_comparison(
             "cloud", historical_runtime.get("git_sha", ""),
         )
         evidence["cloud_execution_surface"] = cloud_surface
@@ -1440,7 +1491,8 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             surface_compatible=cloud_surface["compatible"],
         )
         evidence["cloud_runtime"] = cloud_comparison
-        cloud_ok = cloud_comparison["compatible"]
+        cloud_ok = cloud_comparison["compatible"] and (
+            historical_repository_root is None or cloud_surface["compatible"])
         dimensions["code_runtime_identity"] = _dimension(
             "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS" if cloud_ok else "FAIL",
             "Only release metadata or AST-proven equivalent execution-surface changes may differ.",
@@ -1482,7 +1534,7 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                     (native_root / "execution_identity.json").read_text(encoding="utf-8")
                 )
                 target_native = native_runtime()
-                native_surface = _execution_surface_comparison(
+                native_surface = surface_comparison(
                     "native", native_identity["runtime"].get("repository_commit", ""),
                 )
                 native_comparison = _runtime_comparison(
@@ -1492,7 +1544,8 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                 )
                 evidence["native_execution_surface"] = native_surface
                 evidence["native_runtime"] = native_comparison
-                native_ok = native_comparison["compatible"]
+                native_ok = native_comparison["compatible"] and (
+                    historical_repository_root is None or native_surface["compatible"])
             except Exception:
                 native_ok = False
         dimensions["native_execution_checkpoint"] = _dimension(
