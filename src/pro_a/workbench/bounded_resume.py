@@ -52,8 +52,13 @@ def _worker(service, run_id):
         if row['runtime_sha256'] != worker.jobs.current_runtime()['runtime_sha256'] and worker.runtime_compatibility is None:
             retries = list(_bounded_retry_events(c,run_id=run_id))
             if not retries:
-                raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
-            worker = frozen_bounded_service(service,run_id,retries[-1]['retry_of_attempt_id'])
+                recoveries = list(c.execute("SELECT event_json FROM source_processing_events WHERE processing_run_id=? AND event_type='TRUNCATED_PARENT_SUBDIVIDED' ORDER BY sequence", (run_id,)))
+                if not recoveries:
+                    raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
+                attempt_id = json.loads(recoveries[-1][0])['attempt_id']
+            else:
+                attempt_id = retries[-1]['retry_of_attempt_id']
+            worker = frozen_bounded_service(service,run_id,attempt_id)
         Domains(service.config).guard(run_id,worker.jobs,worker.profile,
                                       runtime_compatibility=worker.runtime_compatibility)
         _compatible(worker._native_root(row),row['native_execution_id'],
