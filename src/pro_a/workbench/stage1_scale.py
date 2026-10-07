@@ -797,7 +797,7 @@ def stage1_capacity(connection: sqlite3.Connection, *, now: datetime | None = No
     return result
 
 
-def require_stage1_intake(connection: sqlite3.Connection) -> None:
+def require_stage1_intake(connection: sqlite3.Connection, *, bypass_run_window: bool = False) -> None:
     capacity = stage1_capacity(connection)
     if not capacity.get("enabled"):
         return
@@ -807,7 +807,7 @@ def require_stage1_intake(connection: sqlite3.Connection) -> None:
         raise BoundaryError("STAGE1_INTAKE_PAUSED")
     if capacity["wip_state"] == "HARD_STOP":
         raise BoundaryError("STAGE1_REVIEW_WIP_HARD_LIMIT")
-    if capacity["runs_last_24h"] >= LIMITS.runs_per_24h:
+    if not bypass_run_window and capacity["runs_last_24h"] >= LIMITS.runs_per_24h:
         raise BoundaryError("STAGE1_RUN_WINDOW_LIMIT")
 
 

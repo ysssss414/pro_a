@@ -326,7 +326,10 @@ def test_output_telemetry_repair_changes_execution_surface(kind):
 
     result = _execution_surface_comparison(kind, '5eb9d6bedd97a615a5ef56e143840e17aa8ba6ad')
     assert result['compatible'] is False
-    assert result['reason'] == 'SEMANTIC_SURFACE_CHANGED'
+    # Historical cloud releases lack the qualification-only creation helper and
+    # its newly bound intake guard. Missing dependencies remain fail closed.
+    expected = 'EXECUTION_SURFACE_UNAVAILABLE:RetryCompatibilityError' if kind == 'cloud' else 'SEMANTIC_SURFACE_CHANGED'
+    assert result['reason'] == expected
 
 
 def test_unrepresented_helper_dependency_fails_closed():
