@@ -984,6 +984,16 @@ class SourceOperations:
             max_new_calls=max_new_calls, provider=provider,
         )
 
+    def recover_truncated_bounded_extraction(self, run_id: str, attempt_id: str, *,
+                                             worker_id: str, idempotency_key: str,
+                                             reason: str) -> dict[str, Any]:
+        """Explicit zero-call subdivision and proven upstream frontier recovery."""
+        from .truncation_recovery import recover_truncated_bounded_extraction
+        return recover_truncated_bounded_extraction(
+            self, run_id, attempt_id, worker_id=worker_id,
+            idempotency_key=idempotency_key, reason=reason,
+        )
+
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
                      lease_seconds: int = 180) -> dict[str, Any] | None:

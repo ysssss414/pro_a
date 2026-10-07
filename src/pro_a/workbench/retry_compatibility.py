@@ -157,6 +157,7 @@ _INTEGRATION_FILES = (
     "workbench/source_operations.py",
     "workbench/extraction_retry.py",
     "workbench/bounded_resume.py",
+    "workbench/truncation_recovery.py",
     "workbench/retry_compatibility.py",
 )
 _CONTRACT_FILES = tuple(sorted(
@@ -1167,8 +1168,9 @@ def load_qualification(connection, *, run_id: str, failed_attempt_id: str,
 
 def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: str,
                                        *, persist: bool = False,
-                                       bounded_only_resume: bool = False) -> dict[str, Any]:
-    """Qualify one malformed-JSON bounded Attempt against the target release."""
+                                       bounded_only_resume: bool = False,
+                                       bounded_truncation_recovery: bool = False) -> dict[str, Any]:
+    """Qualify an exact-scope bounded Attempt; recovery is a separate opt-in."""
     from pro_a.evidence_binding import identity
     from .bounded_extraction_store import BoundedExtractionStore, _event
     from .cloud_jobs import runtime_identity
@@ -1176,6 +1178,9 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
         _json_syntax_diagnostic, bounded_frozen_components,
     )
     from .source_operations import SourceOperations, build_source_providers
+
+    if bounded_only_resume and bounded_truncation_recovery:
+        raise RetryCompatibilityError('INCOMPATIBLE_QUALIFICATION_SCOPES')
 
     dimensions: dict[str, Any] = {}
     evidence: dict[str, Any] = {}
@@ -1271,6 +1276,20 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             )
             results_absent = no_semantic
             evidence['bounded_only_resume_boundary'] = boundary_contract()
+        if bounded_truncation_recovery:
+            from .truncation_recovery import _assessment, contract as recovery_contract
+            scope_ok = False
+            try:
+                profile, cloud, _, _ = bounded_frozen_components(config, connection, run)
+                scope_worker = SourceOperations(config, profile, cloud)
+                bindings = scope_worker.output_batches.inputs(scope_worker.get_run(run_id))
+                proof = _assessment(scope_worker, connection, run_id, failed_attempt_id, bindings)
+                evidence['truncation_recovery_scope'] = proof
+                evidence['truncation_recovery_boundary'] = recovery_contract()
+                scope_ok = chain_ok and attempt['series_run_id'] == run_id and run['lease_owner'] is None
+            except (ValueError, RuntimeError, OSError):
+                pass
+            results_absent = not connection.execute('SELECT 1 FROM source_processing_jobs WHERE processing_run_id=?', (run_id,)).fetchone()
         dimensions["historical_failed_scope"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if scope_ok else "FAIL",
             "Run, Series, Segment, Attempt, outcome and terminal failure are exactly bound.",
@@ -1313,9 +1332,11 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                     series_id, failed_attempt_id + ".raw.json", outcome,
                 )
                 envelope, body = ledger._decode_envelope(attempt, content)
-                diagnostic = _json_syntax_diagnostic(body)
+                diagnostic = None if bounded_truncation_recovery else _json_syntax_diagnostic(body)
                 raw_ok = (
-                    envelope["http_status"] == 200 and diagnostic is not None
+                    envelope["http_status"] == 200
+                    and (outcome['external_outcome'] == 'TRUNCATED' and envelope['finish_reason'] == 'length'
+                         if bounded_truncation_recovery else diagnostic is not None)
                     and hashlib.sha256(content).hexdigest() == outcome["artifact_sha256"]
                 )
             except Exception:
@@ -1324,12 +1345,13 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             "EXACT_IDENTITY_REQUIRED", "PASS" if raw_ok else "FAIL",
             "The immutable raw envelope is hash-bound and HTTP 200.",
         )
-        dimensions["malformed_json_syntax_only"] = _dimension(
-            "EXACT_IDENTITY_REQUIRED", "PASS" if diagnostic is not None else "FAIL",
-            "Strict UTF-8 decoding succeeds and json.loads fails with JSONDecodeError.",
+        dimensions['durable_truncation' if bounded_truncation_recovery else "malformed_json_syntax_only"] = _dimension(
+            "EXACT_IDENTITY_REQUIRED", "PASS" if (raw_ok if bounded_truncation_recovery else diagnostic is not None) else "FAIL",
+            ("Durable TRUNCATED outcome and length finish; partial JSON is never parsed."
+             if bounded_truncation_recovery else "Strict UTF-8 decoding succeeds and json.loads fails with JSONDecodeError."),
         )
         if not raw_ok:
-            blockers.append("BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
+            blockers.append('BLOCKED_FAILURE_NOT_TRUNCATION' if bounded_truncation_recovery else "BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
 
         input_ok = prompt_ok = provider_ok = False
         if worker is not None:
@@ -1482,7 +1504,8 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
 
         dimensions["retry_orchestration_semantics"] = _dimension(
             "SEMANTIC_COMPATIBILITY_ALLOWED", "PASS",
-            "Target-only authorization reuses the append-only bounded ledger and permits one retry.",
+            ("Target-only explicit recovery reuses the same engine, performs one subdivision and zero calls."
+             if bounded_truncation_recovery else "Target-only authorization reuses the append-only bounded ledger and permits one retry."),
         )
         evidence.update({
             "processing_run_id": run_id, "source_id": run["source_id"],
