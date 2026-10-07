@@ -33,6 +33,9 @@ pro-a-mcp = "pro_a.mcp.server:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+pro_a = ["schema.sql", "migrations/*.sql"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
