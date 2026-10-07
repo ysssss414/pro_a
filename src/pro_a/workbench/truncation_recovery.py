@@ -35,10 +35,12 @@ def _worker(service, run_id, attempt_id):
     return frozen_bounded_service(service, run_id, attempt_id)
 
 
-def assess_truncation_recovery_compatibility(config, run_id, attempt_id, *, persist=False):
+def assess_truncation_recovery_compatibility(config, run_id, attempt_id, *, persist=False,
+                                           historical_repository_root=None):
     from .retry_compatibility import assess_bounded_retry_compatibility
     return assess_bounded_retry_compatibility(config, run_id, attempt_id,
-        persist=persist, bounded_truncation_recovery=True)
+        persist=persist, bounded_truncation_recovery=True,
+        historical_repository_root=historical_repository_root)
 
 
 def contract():
