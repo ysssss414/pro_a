@@ -84,7 +84,7 @@ def test_real_topology_atomic_recovery_and_later_fake_execution(tmp_path, monkey
     series = next(b[3] for b in bindings if b[3].series_id == result['series_id'])
     _, _, state, usage = value['service'].output_batches.ledger.read(series.series_id)
     assert state['provider_call_reservations'] == usage.provider_call_count == 2
-    assert state['output_liability'] == usage.output_token_liability == 12050
+    assert state['output_liability'] == usage.output_token_liability == 24050
     with monkeypatch.context() as execution:
         tripwires(execution)
         transport = Transport(mode='empty')
@@ -301,7 +301,7 @@ def test_recovery_does_not_normalize_changed_research_or_provider_semantics():
     for name, old, new in (
         ('workbench/bounded_extraction_store.py', b'"DURABLE_TRUNCATION_REQUIRED"', b'"CHANGED_TRUNCATION"'),
         ('bounded_extraction.py', b'(parent.range_start + parent.range_end) // 2', b'parent.range_start + 1'),
-        ('output_decomposition.py', b"'max_tokens':12000", b"'max_tokens':24000"),
+        ('output_decomposition.py', b"'max_tokens':segment.max_output_tokens", b"'max_tokens':48000"),
     ):
         source = (package / name).read_bytes()
         assert old in source

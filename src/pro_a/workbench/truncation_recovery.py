@@ -127,10 +127,11 @@ def _assessment(worker, connection, run_id, attempt_id, bindings):
         _require(json.loads(failure['body_json'])['code'] == ('BOUNDED_EXTRACTION_FAILED' if index == root_index else 'UPSTREAM_SERIES_FAILED'))
     changed = subdivide_extraction_plan(series, plan, parent.segment_id)
     children = tuple(s for s in changed.segments if s.parent_segment_id == parent.segment_id)
-    for item, _, item_state, _, _ in loaded:
+    for item, item_plan, item_state, _, _ in loaded:
         pending = [r for r in reopened if r['series_id'] == item.series_id]
         liability = sum(s.max_output_tokens for s in (children if item.series_id == series.series_id else ()))
-        liability += len(pending) * 12000
+        pending_ids = {r['segment_id'] for r in pending}
+        liability += sum(s.max_output_tokens for s in item_plan.leaves if s.segment_id in pending_ids)
         reservations = len(pending) + (len(children) if item.series_id == series.series_id else 0)
         _require(item_state['provider_call_reservations'] + reservations <= item.budget.max_provider_calls
                  and item_state['output_liability'] + liability <= item.budget.max_cumulative_output_tokens,

@@ -148,7 +148,7 @@ def test_first_failure_stops_without_retry_subdivision_or_semantic(tmp_path,monk
             if mode=='invalid_shape': record['unexpected']='invalid'
             if mode=='claim_linkage': record['evidence_acknowledgements'][0]['claim_refs']=[]
             if mode=='ownership': record['node_candidates'][0]['ownership_evidence_ref']='EV_FOREIGN'
-            return ToolResponse(json.dumps(record),output=12001 if mode=='oversized' else 50)
+            return ToolResponse(json.dumps(record),output=24001 if mode=='oversized' else 50)
     transport=Failure()
     with synthetic_providers(value,transport) as providers:
         result=resume(value,providers)

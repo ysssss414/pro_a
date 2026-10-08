@@ -13,7 +13,7 @@ from .analyzer import FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS, INITIAL_EXTRACTION_PL
 from .bounded_extraction import (
     BOUNDED_EXTRACTION_SERIES_VERSION, BOUNDED_EXTRACTION_SEGMENT_VERSION,
     BOUNDED_EXTRACTION_COVERAGE_VERSION, BOUNDED_EXTRACTION_SUBDIVISION_VERSION,
-    BOUNDED_EXTRACTION_POLICY_VERSION, SEGMENT_OUTPUT_CEILING, SeriesBudget,
+    BOUNDED_EXTRACTION_POLICY_VERSION, LEGACY_SEGMENT_OUTPUT_CEILING as SEGMENT_OUTPUT_CEILING, SeriesBudget,
     SOURCE_ANALYSIS_WIRE_V3_VERSION, SOURCE_ANALYSIS_WIRE_V3_EXPANDER_VERSION,
     create_extraction_series,
 )
@@ -119,7 +119,7 @@ def segment_payload(value, context, catalog, series, segment):
     user = ("Frozen target:\n" + json.dumps(target, ensure_ascii=False, sort_keys=True) +
             "\nScoped existing Nodes:\n" + json.dumps(value["native"]["scoped_node_catalog"], ensure_ascii=False) +
             "\nComplete annotated SourcePiece:\n" + annotated_source(context, catalog))
-    return {"target": target, "request": {"model": "deepseek-flash", "max_tokens": 12000,
+    return {"target": target, "request": {"model": "deepseek-flash", "max_tokens": SEGMENT_OUTPUT_CEILING,
             "thinking": {"type": "disabled"}, "response_format": {"type": "json_object"}, "temperature": 0.1,
             "messages": [{"role": "system", "content": BOUNDED_SOURCE_ANALYSIS_SYSTEM},
                          {"role": "user", "content": user}]}}
@@ -152,7 +152,7 @@ class BoundedSourceAnalysisSegmentProvider:
         cfg=self.cfg
         url = urlsplit(cfg.base_url)
         if (cfg.provider != "deepseek" or cfg.model != "deepseek-flash" or cfg.max_retries != 0
-                or cfg.max_output_tokens != 12000 or url.scheme != "https" or url.username or url.password
+                or cfg.max_output_tokens != SEGMENT_OUTPUT_CEILING or url.scheme != "https" or url.username or url.password
                 or url.query or url.fragment or url.path not in ("", "/", "/v1", "/v1/")):
             raise ValueError("BOUNDED_PROVIDER_CONFIGURATION_MISMATCH")
 
@@ -170,7 +170,7 @@ class BoundedSourceAnalysisSegmentProvider:
         request = payload["request"]
         expected = binding_contract()
         if (any(payload["target"].get(k) != v for k, v in expected.items())
-                or request["model"] != self.cfg.model or request["max_tokens"] != 12000
+                or request["model"] != self.cfg.model or request["max_tokens"] != SEGMENT_OUTPUT_CEILING
                 or request["thinking"] != {"type": "disabled"} or "reasoning_effort" in request
                 or request["response_format"] != {"type": "json_object"}
                 or request["messages"][0] != {"role": "system", "content": BOUNDED_SOURCE_ANALYSIS_SYSTEM}):

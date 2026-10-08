@@ -92,7 +92,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     def capture(url, **kwargs):
         payload = kwargs["json"]
         extraction = payload["messages"][0]["content"] == WHOLE_PIECE_SYSTEM
-        output = 12000 if extraction else 8192
+        output = 24000 if extraction else 8192
         assert payload["max_tokens"] == output
         assert payload["thinking"] == {"type": "disabled"} and "reasoning_effort" not in payload
         if extraction:
@@ -117,7 +117,7 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     assert advance(value)["state"] == "SEMANTIC_PROCESSING"
     final = advance(value)
     assert final["state"] == "HUMAN_REVIEW_REQUIRED" and final["packet_id"] and final["packet_artifact_id"]
-    assert requests_seen == [12000, 8192]
+    assert requests_seen == [24000, 8192]
     rows = jobs(value)
     assert len(rows)==1
     for row in rows:
@@ -143,11 +143,11 @@ def test_dual_adapter_e2e_above_8192_and_frozen_reconstruction(tmp_path, monkeyp
     assert envelope['output_tokens']==10000 and envelope['reasoning_tokens']==0
     assert len(ledger_rows(value,'bounded_extraction_series')) == 1
     whole_request=next(r for r in frozen_requests if isinstance(r,dict))
-    assert whole_request['request']['max_tokens']==12000
+    assert whole_request['request']['max_tokens']==24000
     assert ledger_rows(value,'bounded_extraction_outcomes')[0]['output_tokens']==10000
     assert_private_surfaces(value, caplog, tmp_path)
     record_property("extraction_completion_tokens", 10000)
-    record_property("wire_output_budgets", "12000/8192")
+    record_property("wire_output_budgets", "24000/8192")
     record_property("semantic_input_budget", 11808)
     record_property("packet_registered", True)
 

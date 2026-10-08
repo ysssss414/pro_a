@@ -197,7 +197,7 @@ def test_environment_mapping_and_no_network_construction(monkeypatch):
         cfg=provider.cfg if operation==WHOLE_PIECE_OPERATION else provider.backend.llm.cfg
         assert cfg.model == profile.requested_model
         assert cfg.max_retries == 0
-        assert cfg.max_output_tokens == (12000 if operation == WHOLE_PIECE_OPERATION else 8192)
+        assert cfg.max_output_tokens == (24000 if operation == WHOLE_PIECE_OPERATION else 8192)
     assert profile.public_identity() == profile.public_identity()
     assert "api_key" not in json.dumps(profile.public_identity())
     with pytest.raises(CloudContractError, match="UNSUPPORTED_CLOUD_OPERATION"):

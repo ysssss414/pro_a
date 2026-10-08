@@ -19,7 +19,7 @@ from pro_a.bounded_extraction import (
     EvidenceDisposition, ExtractionPlan, ExtractionSegment, ExtractionSeries,
     SegmentCallAccounting, SegmentWireResult, SeriesBudget, SOURCE_ANALYSIS_WIRE_V3_EXPANDER_VERSION, _plan, _series,
     account_series_calls, aggregate_segment_wires, create_segment_wire_result,
-    initial_extraction_plan, subdivide_extraction_plan, OUTPUT_SERIES_VERSION,
+    initial_extraction_plan, subdivide_extraction_plan, OUTPUT_SERIES_VERSIONS,
 )
 from pro_a.evidence_binding import identity
 from pro_a.provider_diagnostics import safe_identifier
@@ -227,14 +227,14 @@ class BoundedExtractionStore:
     @staticmethod
     def _request(series, segment, payload_sha256, configuration_sha256, *, provider_record_version=None):
         contract = {}
-        if series.series_version == OUTPUT_SERIES_VERSION:
+        if series.series_version in OUTPUT_SERIES_VERSIONS:
             if provider_record_version is None:
                 from pro_a.output_decomposition import RECORD_VERSION
                 provider_record_version = RECORD_VERSION
             if provider_record_version:
                 contract['provider_record_version'] = provider_record_version
         return {"series_sha256": series.series_sha256, "segment_sha256": segment.segment_sha256,
-                **({"series_version": series.series_version} if series.series_version == "whole-piece-output-series-v1" else {}),
+                **({"series_version": series.series_version} if series.series_version in OUTPUT_SERIES_VERSIONS else {}),
                 **contract,
                 "payload_sha256": _sha(payload_sha256), "configuration_sha256": _sha(configuration_sha256),
                 "budget_identity": series.output_budget_identity, "max_output_tokens": segment.max_output_tokens}
@@ -249,7 +249,7 @@ class BoundedExtractionStore:
             row, (series, plan, series_row, _) = self._segment_row(connection, segment_id)
             self._owned(row, owner, fence)
             _require(series_row["state"] == "OPEN" and row["state"] in ("RUNNING", "FAILED"), "SEGMENT_NOT_DISPATCHABLE")
-            _require(series.series_version != 'whole-piece-output-series-v1' or attempt_number == 1,
+            _require(series.series_version not in OUTPUT_SERIES_VERSIONS or attempt_number == 1,
                      'OUTPUT_BATCH_RETRY_FORBIDDEN')
             segment = next(s for s in plan.segments if s.segment_id == segment_id)
             request = self._request(series, segment, payload_sha256, configuration_sha256)
@@ -304,7 +304,7 @@ class BoundedExtractionStore:
         _require(type(raw_body) is bytes, "RAW_BYTES_REQUIRED")
         _require(http_status is None or type(http_status) is int and 100 <= http_status <= 599, "INVALID_HTTP_STATUS")
         _require(provider_request_id is None or isinstance(provider_request_id, str) and re.fullmatch(r"[A-Za-z0-9_.:-]{1,200}", provider_request_id), "INVALID_PROVIDER_REQUEST_ID")
-        output_batch = json.loads(attempt['request_json']).get('series_version') == 'whole-piece-output-series-v1'
+        output_batch = json.loads(attempt['request_json']).get('series_version') in OUTPUT_SERIES_VERSIONS
         _require(finish_reason in (None, "stop", "length", "error", "content_filter")
                  or output_batch and finish_reason == 'tool_calls', "INVALID_FINISH_REASON")
         usage = dict(input_tokens=input_tokens, output_tokens=output_tokens, total_tokens=total_tokens, cached_input_tokens=cached_input_tokens)
@@ -351,14 +351,16 @@ class BoundedExtractionStore:
         external = ("TRUNCATED" if envelope["finish_reason"] == "length" else
                     "UNKNOWN" if envelope["http_status"] is None else
                     "FAILED" if envelope["http_status"] != 200 or envelope["finish_reason"] in ("error", "content_filter") else "SUCCEEDED")
-        if json.loads(attempt['request_json']).get('series_version') == OUTPUT_SERIES_VERSION:
+        request = json.loads(attempt['request_json'])
+        if request.get('series_version') in OUTPUT_SERIES_VERSIONS:
             if envelope['http_status'] is None:
                 external = 'UNKNOWN'
             elif envelope['http_status'] != 200:
                 external = 'FAILED'
         usage = {k: envelope[k] for k in ("input_tokens", "output_tokens", "total_tokens", "cached_input_tokens")}
         # Invalid reported usage remains private and auditable, but cannot release liability.
-        invalid = (usage["output_tokens"] is not None and usage["output_tokens"] > 12000
+        ceiling = request['max_output_tokens']
+        invalid = (usage["output_tokens"] is not None and usage["output_tokens"] > ceiling
                    or usage["cached_input_tokens"] is not None and usage["input_tokens"] is not None and usage["cached_input_tokens"] > usage["input_tokens"]
                    or all(usage[k] is not None for k in ("input_tokens", "output_tokens", "total_tokens")) and usage["input_tokens"] + usage["output_tokens"] != usage["total_tokens"])
         if invalid or external == "UNKNOWN":
@@ -370,8 +372,8 @@ class BoundedExtractionStore:
             "latency_ms": float(envelope["latency_ms"] or 0.0) if envelope["latency_ms"] is not None else None,
             "finish_reason": envelope["finish_reason"],
             "classification": "INVALID_USAGE" if invalid else external, "created_at": _now()})
-        actual = usage["output_tokens"] if usage["output_tokens"] is not None else 12000
-        connection.execute("UPDATE bounded_extraction_series SET output_liability=output_liability-12000+?,updated_at=? WHERE series_id=?", (actual, _now(), sid))
+        actual = usage["output_tokens"] if usage["output_tokens"] is not None else ceiling
+        connection.execute("UPDATE bounded_extraction_series SET output_liability=output_liability-?+?,updated_at=? WHERE series_id=?", (ceiling, actual, _now(), sid))
         _event(connection, sid, "PROVIDER_OUTCOME_DURABLE", attempt_id=attempt["attempt_id"], record_sha256=outcome["record_sha256"])
         return outcome
 
@@ -429,7 +431,7 @@ class BoundedExtractionStore:
                 _, body = self._decode_envelope(attempt, content)
                 try:
                     segment = next(s for s in plan.segments if s.segment_id == row["segment_id"])
-                    if series.series_version == 'whole-piece-output-series-v1':
+                    if series.series_version in OUTPUT_SERIES_VERSIONS:
                         from pro_a.output_decomposition import record_to_result
                         _require(outcome['finish_reason'] == 'tool_calls', 'INVALID_OUTPUT_TOOL_FINISH')
                         request = json.loads(attempt['request_json'])
@@ -547,8 +549,9 @@ class BoundedExtractionStore:
                 return tuple(s for s in plan.segments if s.parent_segment_id == segment_id)
             _require(series_row["state"] == "OPEN" and series_row["frontier_version"] == expected_frontier_version, "STALE_FRONTIER")
             _require(segment_id in {s.segment_id for s in plan.leaves}, "SEGMENT_NOT_ACTIVE_LEAF")
+            ceiling = next(s.max_output_tokens for s in plan.leaves if s.segment_id == segment_id)
             _require(series_row["provider_call_reservations"] + 2 <= series.budget.max_provider_calls
-                     and series_row["output_liability"] + 24000 <= series.budget.max_cumulative_output_tokens,
+                     and series_row["output_liability"] + 2 * ceiling <= series.budget.max_cumulative_output_tokens,
                      "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY")
             children = self._subdivision(connection, series, plan, segment_id)
             _event(connection, series.series_id, "SEGMENT_OVERFLOW_SUBDIVIDED", segment_id=segment_id,

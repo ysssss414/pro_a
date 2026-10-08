@@ -201,7 +201,7 @@ def test_mcp_output_counts_readonly_and_private(tmp_path,monkeypatch):
     projected=reader.get_processing_run(rid)
     assert projected.output_decomposition.provider_call_count==1
     assert projected.output_decomposition.truncated_parent_calls==1
-    assert projected.output_decomposition.output_liability_tokens==12000
+    assert projected.output_decomposition.output_liability_tokens==24000
     public=projected.model_dump_json()
     assert 'EV_' not in public and 'Synthetic Company product' not in public and 'raw_body' not in public
     assert reader.operations.get_run(rid)==run
