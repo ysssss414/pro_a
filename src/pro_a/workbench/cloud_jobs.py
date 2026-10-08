@@ -164,7 +164,7 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'workbench/whole_piece_raw.py', 'source_analysis_provider_record.py',
                  'output_decomposition.py', 'workbench/output_decomposition.py',
                  'extraction_analysis_record.py', 'output_decomposition_legacy.py',
-                 'workbench/strict_recovery.py')
+                 'workbench/strict_recovery.py', 'output_provider_record_v4.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     if workbench_schema_version == "12":

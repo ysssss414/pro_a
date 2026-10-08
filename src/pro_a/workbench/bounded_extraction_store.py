@@ -235,8 +235,8 @@ class BoundedExtractionStore:
         contract = {}
         if series.series_version in OUTPUT_SERIES_VERSIONS:
             if provider_record_version is None:
-                from pro_a.output_decomposition import RECORD_VERSION
-                provider_record_version = RECORD_VERSION
+                from pro_a.output_decomposition import record_version_for_series
+                provider_record_version = record_version_for_series(series.series_version)
             if provider_record_version:
                 contract['provider_record_version'] = provider_record_version
         return {"series_sha256": series.series_sha256, "segment_sha256": segment.segment_sha256,

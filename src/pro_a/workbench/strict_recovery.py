@@ -53,9 +53,9 @@ def _require(value, code='STRICT_RECOVERY_NOT_ELIGIBLE'):
 def failure_diagnostic(body, segment, catalog, context):
     """Validate original fields independently. Never repair a record to admit it."""
     record = lexical.parse_object(body.decode('utf-8', errors='strict'))
-    lexical.validate_shape(record, output.record_schema())
+    lexical.validate_shape(record, output.record_schema(record_version=output.V3_RECORD_VERSION))
     try:
-        output.normalize_record(body.decode('utf-8'))
+        output.normalize_record(body.decode('utf-8'), record_version=output.V3_RECORD_VERSION)
     except ValueError as error:
         _require(str(error) == 'NONDEFAULT_INACTIVE_VARIANT')
     else:
@@ -254,12 +254,13 @@ def _assessment(worker, connection, run_id, attempt_id, bindings):
     original = output.segment_payload(value, context, catalog, series, segment)
     original_content = canonical(original).encode('utf-8')
     request = json.loads(attempt['request_json'])
-    _require(request.get('provider_record_version') == output.RECORD_VERSION
+    _require(request.get('provider_record_version') == output.V3_RECORD_VERSION
              and ledger._path(series.series_id, segment.segment_id + '.prompt.json').read_bytes() == original_content
              and hashlib.sha256(original_content).hexdigest() == request['payload_sha256'])
     from pro_a.config import load_config
     from .source_operations import build_source_providers
-    providers = build_source_providers(load_config(worker.profile.phase4_config_path).llm, worker.jobs.profile)
+    providers = build_source_providers(load_config(worker.profile.phase4_config_path).llm, worker.jobs.profile,
+                                      output_binding_version=output.V3_BINDING_VERSION)
     _require(identity(providers[output.OPERATION].configuration()) == attempt['configuration_sha256'], 'STRICT_RECOVERY_FROZEN_CONFIG_MISMATCH')
     root_index = [item[0].series_id for item in loaded].index(series.series_id)
     for i, (item, plan, state, series_failure) in enumerate(loaded):

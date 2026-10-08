@@ -77,7 +77,7 @@ class SourceProfile:
             raise SourceOperationError("SOURCE_PIECE_LIMIT_INVALID", 422)
 
 
-def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str, Any]:
+def build_source_providers(llm_config, cloud_profile: CloudProfile, *, output_binding_version=None) -> dict[str, Any]:
     """Construct the qualified operator worker adapters without reading credentials.
 
     Extraction and Semantic CloudJobs own their operation budgets and attempts.
@@ -104,7 +104,8 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
                         max_retries=0)
     return {
         OUTPUT_OPERATION: OutputBatchProvider(
-            replace(effective, max_output_tokens=SEGMENT_OUTPUT_CEILING)),
+            replace(effective, max_output_tokens=SEGMENT_OUTPUT_CEILING),
+            **({'binding_version': output_binding_version} if output_binding_version is not None else {})),
         SEMANTIC_OPERATION: SemanticBackendProvider(
             ChatLLMSemanticBackend(ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
                 SEMANTIC_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"]))),
