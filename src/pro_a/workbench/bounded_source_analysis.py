@@ -284,6 +284,10 @@ class BoundedSourceAnalysisRunner:
             self.ledger.subdivide(segment.segment_id, owner, fence, expected_frontier_version=sr["frontier_version"])
 
     def replay(self, run, cfg):
+        from .lossless_runtime import replay_if_authorized
+        authorized = replay_if_authorized(self, run, cfg)
+        if authorized is not None:
+            return authorized
         responses, metadata = {}, {}
         for value, context, catalog, series in self.inputs(run):
             aggregate = self.ledger.aggregate(series.series_id)

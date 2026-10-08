@@ -1003,6 +1003,13 @@ class SourceOperations:
         return authorize_strict_same_run_recovery(self, run_id, failed_attempt_id,
             idempotency_key=idempotency_key, worker_id=worker_id, reason=reason)
 
+    def authorize_lossless_aggregate_recovery(self, run_id, resolution, qualification, *,
+                                             idempotency_key, worker_id, reason):
+        """Explicit target-only zero-call recovery; never grants metadata authority."""
+        from .lossless_recovery import authorize_recovery
+        return authorize_recovery(self, run_id, resolution, qualification,
+            idempotency_key=idempotency_key, worker_id=worker_id, reason=reason)
+
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
                      lease_seconds: int = 180) -> dict[str, Any] | None:
@@ -1151,6 +1158,9 @@ class SourceOperations:
             if result["state"] != "SEMANTIC_INPUT_READY":
                 raise SourceOperationError(result.get("code") or "NATIVE_EXTRACTION_FAILED")
             document = json.loads((native_root / "engine/evidence/stage6_semantic_input.json").read_text(encoding="utf-8"))
+            from .lossless_runtime import guard_native_admission
+            guard_native_admission(self, self.get_run(run_id), native_root, document,
+                                   worker_id=worker_id, fence=row['fence'])
             checkpoint = {"native_state": "SEMANTIC_INPUT_READY",
                           "execution_id": row["native_execution_id"],
                           "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],

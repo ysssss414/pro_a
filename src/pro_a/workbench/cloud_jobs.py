@@ -170,6 +170,8 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
     if workbench_schema_version == "12":
         from pro_a.output_decomposition import contract
         value["whole_piece_output_decomposition"] = contract()
+        from .lossless_compatibility import runtime_contract
+        value["lossless_aggregate_recovery"] = runtime_contract()
     value["runtime_sha256"] = digest(value)
     return value
 

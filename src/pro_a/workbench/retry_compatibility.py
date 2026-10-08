@@ -834,6 +834,9 @@ def _evidence(token: _ValidatedQualification) -> dict[str, Any]:
 
 def guard_cloud_runtime(historical: Mapping[str, Any], target: Mapping[str, Any],
                         token: _ValidatedQualification) -> None:
+    from .lossless_compatibility import LosslessQualification, guard_cloud
+    if isinstance(token, LosslessQualification):
+        return guard_cloud(historical, target, token)
     evidence = _evidence(token)
     surface = evidence.get("cloud_execution_surface", {})
     comparison = _runtime_comparison(
@@ -851,6 +854,9 @@ def guard_cloud_runtime(historical: Mapping[str, Any], target: Mapping[str, Any]
 
 def guard_native_runtime(historical: Mapping[str, Any], target: Mapping[str, Any],
                          token: _ValidatedQualification) -> None:
+    from .lossless_compatibility import LosslessQualification, guard_native
+    if isinstance(token, LosslessQualification):
+        return guard_native(historical, target, token)
     evidence = _evidence(token)
     surface = evidence.get("native_execution_surface", {})
     comparison = _runtime_comparison(
@@ -866,6 +872,9 @@ def guard_native_runtime(historical: Mapping[str, Any], target: Mapping[str, Any
 
 def guard_context(frozen: Mapping[str, Any], current_basis: Mapping[str, Any],
                   token: _ValidatedQualification) -> None:
+    from .lossless_compatibility import LosslessQualification, guard_context as guard_lossless_context
+    if isinstance(token, LosslessQualification):
+        return guard_lossless_context(frozen, current_basis, token)
     evidence = _evidence(token)
     historical_basis = dict(frozen["basis"])
     historical_runtime = historical_basis.pop("runtime")

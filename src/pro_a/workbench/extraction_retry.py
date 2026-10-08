@@ -127,6 +127,10 @@ def frozen_service(service, run_id, *, required=False, failed_attempt_id=None):
     validated Stage 7.2C qualification record is present.
     """
     from .source_operations import SourceOperations, SourceProfile, SourceOperationError
+    from .lossless_recovery import load_worker
+    lossless = load_worker(service, run_id)
+    if lossless is not None:
+        return lossless
     with service.store.connect() as connection:
         if not required and (not installed(connection) or not connection.execute(
                 'SELECT 1 FROM extraction_retries WHERE processing_run_id=?', (run_id,)).fetchone()):

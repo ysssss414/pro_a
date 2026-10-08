@@ -597,6 +597,9 @@ class BoundedExtractionStore:
         _verified(row)
         content = self._read_artifact(series.series_id, "aggregate.json", row)
         document = json.loads(content)
+        if document.get("version") == "lossless-sourcepiece-aggregate-v2":
+            from .lossless_runtime import verify_final
+            return verify_final(self, connection, series, plan, row, document)
         _require(identity(document["coverage"]) == row["coverage_sha256"], "COVERAGE_IDENTITY_MISMATCH")
         coverage = document["coverage"]
         _require(coverage["series_sha256"] == series.series_sha256 and not coverage["missing_refs"]
@@ -632,6 +635,9 @@ class BoundedExtractionStore:
                 accepted = connection.execute("SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?", (leaf.segment_id,)).fetchone()
                 _require(state == "SUCCEEDED_COMPLETE" and accepted and accepted["result_type"] == "COMPLETE", "SERIES_COVERAGE_INCOMPLETE")
                 results.append(self._result(series_id, accepted))
+            from .lossless_runtime import policy, finalize
+            if policy(connection, series_id):
+                return finalize(self, connection, series, plan, tuple(results), catalog, context)
             aggregate = aggregate_segment_wires(series, plan, tuple(results), catalog, context)
             coverage = asdict(aggregate.coverage)
             coverage_sha = coverage.pop("coverage_sha256")
