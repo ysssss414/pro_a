@@ -199,10 +199,12 @@ class BoundedSourceAnalysisRunner:
                     configuration = selected.configuration()
                     _require(configuration["timeout_seconds"] == self.service.jobs.profile.timeout_seconds, "BOUNDED_PROVIDER_CONFIGURATION_MISMATCH")
                     payload = self.segment_payload(value, context, catalog, series, segment)
+                    from .strict_recovery import dispatch_payload
+                    payload, prompt_name = dispatch_payload(self.ledger, segment.segment_id, payload)
                     with self.ledger._connection(True) as c:
                         segment_row, _ = self.ledger._segment_row(c, segment.segment_id)
                         self.ledger._owned(segment_row, owner, fence)
-                        _, sha = self.ledger._artifact(series.series_id, segment.segment_id + ".prompt.json", canonical(payload).encode())
+                        _, sha = self.ledger._artifact(series.series_id, prompt_name, canonical(payload).encode())
                     from .extraction_retry import bounded_attempt_for_dispatch
                     attempt = bounded_attempt_for_dispatch(
                         self.ledger, segment.segment_id, owner, fence,

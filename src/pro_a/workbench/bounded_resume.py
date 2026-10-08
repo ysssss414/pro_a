@@ -51,7 +51,11 @@ def _worker(service, run_id):
                                   runtime_compatibility=service.runtime_compatibility)
         if row['runtime_sha256'] != worker.jobs.current_runtime()['runtime_sha256'] and worker.runtime_compatibility is None:
             retries = list(_bounded_retry_events(c,run_id=run_id))
-            if not retries:
+            from .strict_recovery import authorizations
+            strict = authorizations(c, run_id)
+            if strict:
+                attempt_id = strict[-1]['failed_attempt_id']
+            elif not retries:
                 recoveries = list(c.execute("SELECT event_json FROM source_processing_events WHERE processing_run_id=? AND event_type='TRUNCATED_PARENT_SUBDIVIDED' ORDER BY sequence", (run_id,)))
                 if not recoveries:
                     raise SourceOperationError('RETRY_RUNTIME_INCOMPATIBLE')
