@@ -2,6 +2,7 @@
 import hashlib
 import json
 from dataclasses import asdict
+from threading import Lock
 
 from pro_a import claim_observations as observations
 from pro_a import lossless_aggregate as aggregate
@@ -15,6 +16,7 @@ from .bounded_extraction_store import _event, _record, _now, _require
 AUTHORIZED = 'LOSSLESS_AGGREGATE_POLICY_AUTHORIZED'
 REVIEW_DURABLE = 'LOSSLESS_NATIVE_REVIEW_DURABLE'
 _VERIFIED_AGGREGATES = {}
+_CACHE_LOCK = Lock()
 
 
 def policy(connection, series_id):
@@ -92,9 +94,10 @@ def verify_final(ledger, connection, series, plan, row, document):
     expected = _VERIFIED_AGGREGATES.get(key)
     if expected is None:
         expected = aggregate.build_aggregate(source_id, series, plan, results, catalog, context, authority)
-        if len(_VERIFIED_AGGREGATES) >= 8:
-            _VERIFIED_AGGREGATES.pop(next(iter(_VERIFIED_AGGREGATES)))
-        _VERIFIED_AGGREGATES[key] = expected
+        with _CACHE_LOCK:
+            if key not in _VERIFIED_AGGREGATES and len(_VERIFIED_AGGREGATES) >= 8:
+                _VERIFIED_AGGREGATES.pop(next(iter(_VERIFIED_AGGREGATES)))
+            _VERIFIED_AGGREGATES[key] = expected
     _require(document == expected and document['identity'] == row['aggregate_wire_sha256']
         and document['coverage_sha256'] == row['coverage_sha256']
         and canonical(document['ordered_segment_result_sha256']) == row['ordered_result_shas_json'], 'AGGREGATE_IDENTITY_MISMATCH')
