@@ -1511,8 +1511,10 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                         attempt["configuration_sha256"],
                     )
                 )
+                from pro_a.output_decomposition import binding_for_series
                 providers = build_source_providers(
                     load_config(source_profile.phase4_config_path).llm, worker.jobs.profile,
+                    output_binding_version=binding_for_series(series.series_version),
                 )
                 provider_ok = (
                     identity(providers[worker.output_batches.operation].configuration())
