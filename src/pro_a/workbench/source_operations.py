@@ -995,6 +995,13 @@ class SourceOperations:
             idempotency_key=idempotency_key, reason=reason,
         )
 
+    def authorize_strict_same_run_recovery(self, run_id: str, failed_attempt_id: str, *,
+                                          idempotency_key: str, worker_id: str, reason: str):
+        """Operator only; reserve one versioned regeneration without dispatch."""
+        from .strict_recovery import authorize_strict_same_run_recovery
+        return authorize_strict_same_run_recovery(self, run_id, failed_attempt_id,
+            idempotency_key=idempotency_key, worker_id=worker_id, reason=reason)
+
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
                      lease_seconds: int = 180) -> dict[str, Any] | None:

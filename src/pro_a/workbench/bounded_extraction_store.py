@@ -140,11 +140,17 @@ class BoundedExtractionStore:
             for number, attempt in enumerate(connection.execute("SELECT * FROM bounded_extraction_attempts WHERE segment_id=? ORDER BY attempt_number", (segment.segment_id,)), 1):
                 attempt = _verified(attempt)
                 request = json.loads(attempt["request_json"])
-                _require(number == attempt["attempt_number"] and request == self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"],
+                expected = self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"],
                          provider_record_version=request.get('provider_record_version', ''))
+                same_request = previous_request in (None, attempt["request_sha256"])
+                if 'regeneration_contract_version' in request:
+                    from .strict_recovery import expected_attempt_request
+                    expected = expected_attempt_request(self, connection, series, segment, attempt)
+                    same_request = number == 2 and previous_request == request['original_request_sha256']
+                _require(number == attempt["attempt_number"] and request == expected
                          and identity(request) == attempt["request_sha256"] and attempt["budget_identity"] == series.output_budget_identity
                          and attempt["attempt_id"] == self._attempt_id(segment.segment_id, number, attempt["request_sha256"])
-                         and previous_request in (None, attempt["request_sha256"]), "ATTEMPT_IDENTITY_MISMATCH")
+                         and same_request, "ATTEMPT_IDENTITY_MISMATCH")
                 previous_request = attempt["request_sha256"]
                 dispatch = connection.execute("SELECT * FROM bounded_extraction_dispatches WHERE attempt_id=?", (attempt["attempt_id"],)).fetchone()
                 if dispatch:

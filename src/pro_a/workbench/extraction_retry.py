@@ -362,6 +362,15 @@ def bounded_attempt_for_dispatch(ledger, segment_id, owner, fence, *,
             'ORDER BY attempt_number DESC LIMIT 1', (segment_id,),
         ).fetchone()
         if latest is not None and latest['attempt_number'] > 1:
+            if 'regeneration_contract_version' in json.loads(latest['request_json']):
+                from .strict_recovery import expected_attempt_request
+                expected = expected_attempt_request(ledger, connection, series, segment, latest)
+                _require(json.loads(latest['request_json']) == expected
+                         and latest['request_sha256'] == identity(expected)
+                         and expected['payload_sha256'] == payload_sha256
+                         and latest['configuration_sha256'] == configuration_sha256,
+                         'STRICT_RECOVERY_REQUEST_IDENTITY_MISMATCH')
+                return dict(latest)
             events = [event for event in _bounded_retry_events(
                 connection, series_id=series.series_id,
             ) if event['new_attempt_id'] == latest['attempt_id']]

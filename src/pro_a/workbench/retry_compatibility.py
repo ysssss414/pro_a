@@ -136,6 +136,10 @@ _EXECUTION_SURFACE_EXCLUSIONS = {
             "Target-only explicit operator boundary. It reuses the unchanged full-run "
             "execution defaults; its complete source is bound by the target contract digest."
         ),
+        "workbench/strict_recovery.py": (
+            "Target-only explicit v2 regeneration authorization; the complete source and "
+            "versioned guidance are bound by the target qualification contract digest."
+        ),
     },
     "native": {},
 }
@@ -159,6 +163,7 @@ _INTEGRATION_FILES = (
     "workbench/extraction_retry.py",
     "workbench/bounded_resume.py",
     "workbench/truncation_recovery.py",
+    "workbench/strict_recovery.py",
     "workbench/retry_compatibility.py",
 )
 _CONTRACT_FILES = tuple(sorted(
@@ -432,6 +437,34 @@ if existing:
 }
 
 
+_STRICT_RECOVERY_SURFACE_REPLACEMENTS = {
+    'workbench/bounded_source_analysis.py': (
+        ('''from .strict_recovery import dispatch_payload
+payload, prompt_name = dispatch_payload(self.ledger, segment.segment_id, payload)''', ''),
+        ('''_, sha = self.ledger._artifact(series.series_id, prompt_name, canonical(payload).encode())''',
+         '''_, sha = self.ledger._artifact(series.series_id, segment.segment_id + ".prompt.json", canonical(payload).encode())'''),
+    ),
+    'workbench/bounded_extraction_store.py': ((
+        '''expected = self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"],
+                         provider_record_version=request.get('provider_record_version', ''))
+same_request = previous_request in (None, attempt["request_sha256"])
+if 'regeneration_contract_version' in request:
+    from .strict_recovery import expected_attempt_request
+    expected = expected_attempt_request(self, connection, series, segment, attempt)
+    same_request = number == 2 and previous_request == request['original_request_sha256']
+_require(number == attempt["attempt_number"] and request == expected
+         and identity(request) == attempt["request_sha256"] and attempt["budget_identity"] == series.output_budget_identity
+         and attempt["attempt_id"] == self._attempt_id(segment.segment_id, number, attempt["request_sha256"])
+         and same_request, "ATTEMPT_IDENTITY_MISMATCH")''',
+        '''_require(number == attempt["attempt_number"] and request == self._request(series, segment, request["payload_sha256"], attempt["configuration_sha256"],
+                         provider_record_version=request.get('provider_record_version', ''))
+         and identity(request) == attempt["request_sha256"] and attempt["budget_identity"] == series.output_budget_identity
+         and attempt["attempt_id"] == self._attempt_id(segment.segment_id, number, attempt["request_sha256"])
+         and previous_request in (None, attempt["request_sha256"]), "ATTEMPT_IDENTITY_MISMATCH")''',
+    ),),
+}
+
+
 def _call_name(call: ast.Call) -> str | None:
     if isinstance(call.func, ast.Name):
         return call.func.id
@@ -471,6 +504,17 @@ def _replace_exact_statements(node: ast.AST, before: str, after: str) -> int:
 def _normalize_compatibility_plumbing(name: str, selector: str, node: ast.AST) -> ast.AST:
     key = (name, selector)
     node = copy.deepcopy(node)
+    if key == ('workbench/cloud_jobs.py', 'runtime_identity'):
+        # Hash the new target-only operator, without changing historical research execution.
+        for assignment in (n for n in ast.walk(node) if isinstance(n, ast.Assign)
+                           and any(isinstance(t, ast.Name) and t.id == 'names' for t in n.targets)
+                           and isinstance(n.value, ast.Tuple)):
+            matches = [i for i, value in enumerate(assignment.value.elts)
+                       if isinstance(value, ast.Constant) and value.value == 'workbench/strict_recovery.py']
+            if matches:
+                if matches != [len(assignment.value.elts) - 1]:
+                    raise RetryCompatibilityError('EXECUTION_SURFACE_NORMALIZATION_AMBIGUOUS')
+                assignment.value.elts.pop()
     if key in _COMPATIBILITY_SIGNATURES and isinstance(
             node, (ast.FunctionDef, ast.AsyncFunctionDef)):
         matches = [
@@ -569,6 +613,8 @@ def _ast_sha256(content: bytes, selectors: tuple[str, ...] | None, *, name: str 
     ast.fix_missing_locations(tree)
     _validate_dependency_closure(tree, name, selectors)
     if selectors is None:
+        for before, after in _STRICT_RECOVERY_SURFACE_REPLACEMENTS.get(name, ()):
+            _replace_exact_statements(tree, before, after)
         if name == 'workbench/bounded_source_analysis.py':
             # Normalize only the opt-in subdivision argument whose full-run default
             # remains True, plus its exact plumbing and narrower-mode guards.
@@ -1218,6 +1264,7 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                                        *, persist: bool = False,
                                        bounded_only_resume: bool = False,
                                        bounded_truncation_recovery: bool = False,
+                                       bounded_strict_recovery: bool = False,
                                        historical_repository_root: Path | None = None) -> dict[str, Any]:
     """Qualify an exact-scope bounded Attempt; recovery is a separate opt-in."""
     from pro_a.evidence_binding import identity
@@ -1228,7 +1275,7 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
     )
     from .source_operations import SourceOperations, build_source_providers
 
-    if bounded_only_resume and bounded_truncation_recovery:
+    if sum((bounded_only_resume, bounded_truncation_recovery, bounded_strict_recovery)) > 1:
         raise RetryCompatibilityError('INCOMPATIBLE_QUALIFICATION_SCOPES')
 
     dimensions: dict[str, Any] = {}
@@ -1341,6 +1388,20 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             except (ValueError, RuntimeError, OSError):
                 pass
             results_absent = not connection.execute('SELECT 1 FROM source_processing_jobs WHERE processing_run_id=?', (run_id,)).fetchone()
+        strict_proof = None
+        if bounded_strict_recovery:
+            from .strict_recovery import _assessment, contract as strict_contract
+            scope_ok = False
+            try:
+                profile, cloud, _, _ = bounded_frozen_components(config, connection, run)
+                scope_worker = SourceOperations(config, profile, cloud)
+                bindings = scope_worker.output_batches.inputs(scope_worker.get_run(run_id))
+                strict_proof = _assessment(scope_worker, connection, run_id, failed_attempt_id, bindings)
+                scope_ok = chain_ok and attempt['series_run_id'] == run_id and run['lease_owner'] is None
+                evidence['strict_recovery_scope'] = strict_proof
+                evidence['strict_recovery_contract'] = strict_contract()
+            except (ValueError, RuntimeError, OSError):
+                pass
         dimensions["historical_failed_scope"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if scope_ok else "FAIL",
             "Run, Series, Segment, Attempt, outcome and terminal failure are exactly bound.",
@@ -1383,10 +1444,12 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                     series_id, failed_attempt_id + ".raw.json", outcome,
                 )
                 envelope, body = ledger._decode_envelope(attempt, content)
-                diagnostic = None if bounded_truncation_recovery else _json_syntax_diagnostic(body)
+                diagnostic = (strict_proof['diagnostic'] if bounded_strict_recovery and strict_proof else
+                              None if bounded_truncation_recovery else _json_syntax_diagnostic(body))
                 raw_ok = (
                     envelope["http_status"] == 200
-                    and (outcome['external_outcome'] == 'TRUNCATED' and envelope['finish_reason'] == 'length'
+                    and (strict_proof is not None and envelope['finish_reason'] == 'tool_calls'
+                         if bounded_strict_recovery else outcome['external_outcome'] == 'TRUNCATED' and envelope['finish_reason'] == 'length'
                          if bounded_truncation_recovery else diagnostic is not None)
                     and hashlib.sha256(content).hexdigest() == outcome["artifact_sha256"]
                 )
@@ -1396,13 +1459,14 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             "EXACT_IDENTITY_REQUIRED", "PASS" if raw_ok else "FAIL",
             "The immutable raw envelope is hash-bound and HTTP 200.",
         )
-        dimensions['durable_truncation' if bounded_truncation_recovery else "malformed_json_syntax_only"] = _dimension(
+        dimensions['strict_output_failure_family' if bounded_strict_recovery else 'durable_truncation' if bounded_truncation_recovery else "malformed_json_syntax_only"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if (raw_ok if bounded_truncation_recovery else diagnostic is not None) else "FAIL",
-            ("Durable TRUNCATED outcome and length finish; partial JSON is never parsed."
+            ("Exact lexical variant failure plus same-response candidate references; all Evidence gates independently pass."
+             if bounded_strict_recovery else "Durable TRUNCATED outcome and length finish; partial JSON is never parsed."
              if bounded_truncation_recovery else "Strict UTF-8 decoding succeeds and json.loads fails with JSONDecodeError."),
         )
         if not raw_ok:
-            blockers.append('BLOCKED_FAILURE_NOT_TRUNCATION' if bounded_truncation_recovery else "BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
+            blockers.append('BLOCKED_FAILURE_NOT_STRICT_RECOVERY_SCOPE' if bounded_strict_recovery else 'BLOCKED_FAILURE_NOT_TRUNCATION' if bounded_truncation_recovery else "BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
 
         input_ok = prompt_ok = provider_ok = False
         if worker is not None:
@@ -1473,6 +1537,16 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             )
         if not input_ok or not prompt_ok or not provider_ok:
             blockers.append("BLOCKED_INPUT_ARTIFACT_CHANGED")
+        if bounded_strict_recovery and prompt_ok:
+            from .strict_recovery import regeneration_payload, _request as regeneration_request
+            regenerated = regeneration_payload(payload, frozen['context_sha256'], attempt['request_sha256'])
+            regenerated_sha = hashlib.sha256(canonical(regenerated).encode('utf-8')).hexdigest()
+            evidence['strict_regeneration_request'] = {
+                'original_request_sha256': attempt['request_sha256'],
+                'frozen_context_sha256': frozen['context_sha256'],
+                'new_prompt_sha256': regenerated_sha,
+                'new_request_sha256': identity(regeneration_request(ledger, series, segment, attempt, frozen['context_sha256'], regenerated_sha)),
+            }
 
         historical_runtime = json.loads(run["runtime_json"])
         target_runtime = (
