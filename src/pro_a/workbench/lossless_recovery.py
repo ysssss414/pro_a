@@ -94,10 +94,12 @@ def assessment(worker, connection, run_id, bindings):
             'frontier_version': state['frontier_version'], 'provider_calls': usage.provider_call_count})
     require(len(accepted) == 5 and len(unopened) == 22 and sum(p['provider_calls'] for p in series_proof) == 5)
     frozen = Domains(worker.config).read(run_id, connection=connection)
-    return {'run_id': run_id, 'source_id': run['source_id'], 'source_sha256': run['source_sha256'],
+    source = connection.execute('SELECT * FROM private_sources WHERE source_id=?', (run['source_id'],)).fetchone()
+    require(source and all(b[1].source_sha256 == source['source_sha256'] for b in bindings))
+    return {'run_id': run_id, 'source_id': run['source_id'], 'source_sha256': source['source_sha256'],
         'frozen_context_sha256': frozen['context_sha256'], 'run_fence': run['fence'],
         'blocked_event_sha256': stops[-1]['event_sha256'], 'accepted': accepted, 'unopened': unopened,
-        'series': series_proof, 'authority_scope': scope(run_id, run['source_id'], run['source_sha256'], pieces,
+        'series': series_proof, 'authority_scope': scope(run_id, run['source_id'], source['source_sha256'], pieces,
             [a['result_sha256'] for a in accepted])}
 
 
