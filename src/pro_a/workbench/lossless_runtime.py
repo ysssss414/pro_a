@@ -1,6 +1,7 @@
 """Explicit schema12 Aggregate/Replay/Review/admission integration."""
 import hashlib
 import json
+from dataclasses import asdict
 
 from pro_a import claim_observations as observations
 from pro_a import lossless_aggregate as aggregate
@@ -13,6 +14,7 @@ from .bounded_extraction_store import _event, _record, _now, _require
 
 AUTHORIZED = 'LOSSLESS_AGGREGATE_POLICY_AUTHORIZED'
 REVIEW_DURABLE = 'LOSSLESS_NATIVE_REVIEW_DURABLE'
+_VERIFIED_AGGREGATES = {}
 
 
 def policy(connection, series_id):
@@ -81,7 +83,18 @@ def verify_final(ledger, connection, series, plan, row, document):
     source_id, context, catalog = frozen_input(ledger, connection, series)
     authority = resolution(ledger, connection, series)
     results = accepted_results(ledger, connection, series, plan)
-    expected = aggregate.build_aggregate(source_id, series, plan, results, catalog, context, authority)
+    # _load still verifies every durable event/record/file on every read. Cache
+    # only the pure reconstruction, keyed by all its inputs, never by a path or
+    # a self-asserted document identity. Bound memory across completed Sources.
+    key = identity({'source_id': source_id, 'series': asdict(series), 'plan': asdict(plan),
+        'results': [asdict(r) for r in results], 'catalog': asdict(catalog),
+        'context': asdict(context), 'authority': authority})
+    expected = _VERIFIED_AGGREGATES.get(key)
+    if expected is None:
+        expected = aggregate.build_aggregate(source_id, series, plan, results, catalog, context, authority)
+        if len(_VERIFIED_AGGREGATES) >= 8:
+            _VERIFIED_AGGREGATES.pop(next(iter(_VERIFIED_AGGREGATES)))
+        _VERIFIED_AGGREGATES[key] = expected
     _require(document == expected and document['identity'] == row['aggregate_wire_sha256']
         and document['coverage_sha256'] == row['coverage_sha256']
         and canonical(document['ordered_segment_result_sha256']) == row['ordered_result_shas_json'], 'AGGREGATE_IDENTITY_MISMATCH')

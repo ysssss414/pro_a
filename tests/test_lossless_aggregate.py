@@ -83,6 +83,43 @@ def test_verified_conflicts_require_explicit_disposition():
         synthetic_authority(authority['scope'], evidence=evidence)
 
 
+def test_original_segment_100_limit_is_still_enforced():
+    from pro_a.bounded_extraction import create_segment_wire_result
+    ctx, catalog, series, plan = fixture(1)
+    original = result(ctx, catalog, series, plan.leaves[0])
+    wire = json.loads(original.wire_json)
+    wire['claims'] = [copy.deepcopy(wire['claims'][0]) for _ in range(101)]
+    with pytest.raises(ValueError, match='bounded array'):
+        create_segment_wire_result(series, plan.leaves[0], wire, original.dispositions, catalog, ctx)
+
+
+def test_local_relations_and_summary_variants_survive_global_projection():
+    from pro_a.bounded_extraction import create_extraction_series, create_segment_wire_result, initial_extraction_plan, SeriesBudget
+    from pro_a.source_analysis_wire import build_source_evidence_catalog
+    from test_source_analysis_wire import context
+    ctx = context('Product Alpha uses Material Beta. Product Alpha uses Material Beta again.', ('NODE_A', 'NODE_B'))
+    catalog = build_source_evidence_catalog(ctx)
+    series = create_extraction_series(ctx, catalog, 'RUN_RELATIONS', SeriesBudget(initial_evidence_refs=1))
+    plan = initial_extraction_plan(series)
+    results = []
+    for i, leaf in enumerate(plan.leaves):
+        original = result(ctx, catalog, series, leaf)
+        wire = json.loads(original.wire_json)
+        wire['source_metadata']['summary'] = f'Original synthetic summary {i}'
+        wire['relation_candidates'] = [{'from_node_id': 'NODE_A', 'to_node_id': 'NODE_B', 'relation_type': 'uses',
+            'supporting_claim_refs': ['C1'], 'scope': 'Product Alpha', 'confidence': 0.9}]
+        results.append(create_segment_wire_result(series, leaf, wire, original.dispositions, catalog, ctx))
+    bound = scope(series.processing_run_id, 'SRC_SYNTHETIC', ctx.source_sha256,
+        [{'source_piece_id': ctx.piece.piece_id, 'series_id': series.series_id, 'series_sha256': series.series_sha256}],
+        [r.result_sha256 for r in results])
+    document = build_aggregate('SRC_SYNTHETIC', series, plan, tuple(results), catalog, ctx, synthetic_authority(bound))
+    assert [r['supporting_claim_refs'] for r in document['native_input']['relation_candidates']] == [['C1'], ['C2']]
+    assert [p['metadata_variant']['summary'] for p in document['components']] == ['Original synthetic summary 0', 'Original synthetic summary 1']
+    assert document['native_input']['source_metadata']['summary'] == ''
+    assert [o['binding']['local_claim_ordinal'] for o in document['observation_ledger']['observations']] == [1, 1]
+    assert [o['aggregate_ordinal'] for o in document['observation_ledger']['observations']] == [1, 2]
+
+
 def test_five_series_native_cross_piece_merge_is_losslessly_reviewable(tmp_path):
     import hashlib
     from pro_a.analyzer import Analyzer, InitialExtractionPlan, PlannedExtractionPiece
