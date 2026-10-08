@@ -16,6 +16,7 @@ from .production_promotion import deterministic_id
 from .semantic_decomposition import SEMANTIC_MAX_PARENTS_PER_BATCH, partition_semantic_claims, semantic_prompt_token_upper_bound
 
 LEDGER_VERSION = "claim-observation-ledger-v1"
+LEDGER_SET_VERSION = "source-observation-ledger-set-v1"
 PROJECTION_VERSION = "native-claim-observation-projection-v1"
 ADMISSION_VERSION = "observation-semantic-admission-v1"
 BLOCKED = "BLOCKED_PENDING_REVIEW"
@@ -85,6 +86,35 @@ def _core(observation):
         "referenced_candidates": observation["referenced_candidates"]}
 
 
+def combine_observation_ledgers(ledgers):
+    """Ordered Source manifest of existing v1 ledgers, never a second Claim ledger."""
+    _require(isinstance(ledgers, list) and bool(ledgers), "OBSERVATION_LEDGER_SET_REQUIRED")
+    for ledger in ledgers:
+        _verify(ledger, LEDGER_VERSION)
+    fields = ("processing_run_id", "source_id", "source_sha256")
+    _require(all(all(l[k] == ledgers[0][k] for k in fields) for l in ledgers), "OBSERVATION_SOURCE_MISMATCH")
+    _require(len({l["series_id"] for l in ledgers}) == len(ledgers)
+             and len({l["source_piece_id"] for l in ledgers}) == len(ledgers), "DUPLICATE_OBSERVATION_SERIES")
+    ids = [o["observation_id"] for l in ledgers for o in l["observations"]]
+    _require(len(ids) == len(set(ids)), "DUPLICATE_OBSERVATION_ID")
+    return _seal({"version": LEDGER_SET_VERSION, **{k: ledgers[0][k] for k in fields},
+        "ordered_ledger_identities": [l["identity"] for l in ledgers], "series_ledgers": ledgers})
+
+
+def _observations(ledger):
+    if ledger.get("version") == LEDGER_VERSION:
+        _verify(ledger, LEDGER_VERSION)
+        return ledger["observations"]
+    _verify(ledger, LEDGER_SET_VERSION)
+    _require(ledger == combine_observation_ledgers(ledger["series_ledgers"]), "OBSERVATION_LEDGER_SET_MISMATCH")
+    result = []
+    for part in ledger["series_ledgers"]:
+        for local, observation in enumerate(part["observations"], 1):
+            _require(observation["aggregate_ordinal"] == local, "STOP_PROJECTION_MAPPING_AMBIGUOUS")
+            result.append({**observation, "aggregate_ordinal": len(result) + 1})
+    return result
+
+
 def _classification(members):
     if len(members) == 1:
         return "SINGLE_OBSERVATION", []
@@ -107,8 +137,7 @@ def build_native_projection(ledger, native_claims):
     Input must be the full Analyzer result, before permanent Claim construction.
     Atomic splits or any unsupported mapping topology fail closed for review.
     """
-    _verify(ledger, LEDGER_VERSION)
-    observations = ledger["observations"]
+    observations = _observations(ledger)
     expected = {}
     for ordinal, observation in enumerate(observations, 1):
         _require(observation["aggregate_ordinal"] == ordinal, "STOP_PROJECTION_MAPPING_AMBIGUOUS")
@@ -140,7 +169,7 @@ def build_native_projection(ledger, native_claims):
 
 
 def verify_projection(ledger, projection):
-    _verify(ledger, LEDGER_VERSION)
+    _observations(ledger)
     _verify(projection, PROJECTION_VERSION)
     _require(projection == build_native_projection(ledger, [g["native_claim"] for g in projection["groups"]]),
              "OBSERVATION_PROJECTION_MISMATCH")

@@ -44,6 +44,10 @@ def assess_bounded_resume_compatibility(config, run_id, *, persist=False):
 
 
 def _worker(service, run_id):
+    from .lossless_recovery import load_worker
+    lossless = load_worker(service, run_id)
+    if lossless is not None:
+        return lossless
     with service.store.connect() as c:
         row = c.execute('SELECT * FROM source_processing_runs WHERE processing_run_id=?',(run_id,)).fetchone()
         profile, cloud, _, _ = bounded_frozen_components(service.config,c,row)
