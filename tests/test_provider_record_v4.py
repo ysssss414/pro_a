@@ -150,6 +150,8 @@ def test_execution_versions_and_frozen_capacity_are_distinct():
     assert new['budget']['max_cumulative_output_tokens']==384000 and new['budget']['initial_evidence_refs']==16
     assert output.record_version_for_series(old['series'])==output.V3_RECORD_VERSION
     assert output.record_version_for_series(new['series'])==v4.VERSION
+    from pro_a.workbench.retry_compatibility import _CLOUD_EXECUTION_SURFACE
+    assert 'output_provider_record_v4.py' in _CLOUD_EXECUTION_SURFACE
 
 
 def test_clean_run_v4_transport_ownership_aggregation_and_boundaries(tmp_path, monkeypatch):

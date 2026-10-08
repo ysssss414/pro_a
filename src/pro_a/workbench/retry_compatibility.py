@@ -46,6 +46,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "bounded_source_analysis.py": None,
     "whole_piece_compact.py": None,
     "output_decomposition.py": None,
+    "output_provider_record_v4.py": None,
     "output_decomposition_legacy.py": None,
     "extraction_analysis_record.py": None,
     "workbench/output_decomposition.py": None,
