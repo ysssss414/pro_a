@@ -1,5 +1,6 @@
 """Disposable five-Series recovery; synthetic HTTP and authority exclusively."""
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -71,3 +72,46 @@ def test_zero_call_recovery_preserves_accepted_and_reopens_only_22(tmp_path, mon
     assert value['config'].knowledge_db.read_bytes() == value['production_before']
     with pytest.raises(SourceOperationError, match='IDEMPOTENCY_CONFLICT'):
         authorize(value, token, 'lossless-different-key')
+
+
+def test_transaction_crash_windows_and_concurrent_idempotency(tmp_path, monkeypatch):
+    from pro_a.workbench import lossless_recovery, lossless_runtime
+    value = stopped(tmp_path, monkeypatch)
+    token = qualified(value)
+    originals = rows(value, 'bounded_extraction_segment_results')
+    for window in ('lossless_recovery_authorized', 'lossless_aggregate_artifact_durable',
+                   'lossless_recovery_first_aggregate', 'lossless_recovery_frontier_reopened'):
+        def crash(name):
+            if name == window:
+                raise RuntimeError('SYNTHETIC_CRASH')
+        monkeypatch.setattr(lossless_recovery, 'checkpoint', crash)
+        monkeypatch.setattr(lossless_runtime, 'checkpoint', crash)
+        with pytest.raises(RuntimeError, match='SYNTHETIC_CRASH'):
+            authorize(value, token)
+        assert value['service'].get_run(value['run_id'])['state'] == 'BLOCKED'
+        assert rows(value, 'bounded_extraction_segment_results') == originals
+        assert len(rows(value, 'bounded_extraction_attempts')) == 5
+    monkeypatch.setattr(lossless_recovery, 'checkpoint', lambda _name: None)
+    monkeypatch.setattr(lossless_runtime, 'checkpoint', lambda _name: None)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(authorize, value, token) for _ in range(2)]
+        results = [f.result() for f in futures]
+    assert sorted(r['duplicate'] for r in results) == [False, True]
+    assert len(rows(value, 'bounded_extraction_attempts')) == 5
+    assert sum(r['state'] == 'PLANNED' for r in rows(value, 'bounded_extraction_segments')) == 22
+
+
+def test_unresolved_metadata_and_stale_run_fence_rejected(tmp_path, monkeypatch):
+    from pro_a.source_metadata_authority import candidate_resolution, MetadataAuthorityError
+    value = stopped(tmp_path, monkeypatch)
+    unresolved = candidate_resolution(value['resolution']['scope'], [])
+    with pytest.raises(MetadataAuthorityError, match='NEEDS_HUMAN_RESOLUTION'):
+        qualify_recovery(value['service'], value['run_id'], unresolved,
+            historical_repository_root=Path(__file__).resolve().parents[1])
+    token = qualified(value)
+    with value['service'].store.connect(operator_write=True) as conn:
+        conn.execute('UPDATE source_processing_runs SET fence=fence+1 WHERE processing_run_id=?', (value['run_id'],))
+    with pytest.raises(SourceOperationError, match='LOSSLESS_RECOVERY_SCOPE_DRIFT'):
+        authorize(value, token)
+    assert len(rows(value, 'bounded_extraction_attempts')) == 5
+    assert not rows(value, 'bounded_extraction_series_results')

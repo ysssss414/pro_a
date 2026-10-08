@@ -81,3 +81,50 @@ def test_verified_conflicts_require_explicit_disposition():
         for i, v in enumerate(('A', 'B'), 1)]
     with pytest.raises(MetadataAuthorityError, match='CONFLICTING_AUTHORITY_EVIDENCE'):
         synthetic_authority(authority['scope'], evidence=evidence)
+
+
+def test_five_series_native_cross_piece_merge_is_losslessly_reviewable(tmp_path):
+    import hashlib
+    from pro_a.analyzer import Analyzer, InitialExtractionPlan, PlannedExtractionPiece
+    from pro_a.bounded_extraction import create_extraction_series, initial_extraction_plan
+    from pro_a.source_analysis_wire import build_source_evidence_catalog
+    from pro_a.claim_observations import combine_observation_ledgers, build_native_projection, private_review_artifact, BLOCKED
+    from pro_a.workbench.bounded_source_analysis import BoundedExtractionReplay
+    from test_source_analysis_wire import context
+    from stability_helpers import make_config
+    values = []
+    for i in range(1, 6):
+        ctx = context(f'Common assertion.\nPiece{i} unique assertion.', source_sha='a'*64, chunk_index=i)
+        catalog = build_source_evidence_catalog(ctx)
+        series = create_extraction_series(ctx, catalog, 'SYNTHETIC_MULTI_SERIES')
+        plan = initial_extraction_plan(series)
+        results = tuple(result(ctx, catalog, series, leaf) for leaf in plan.leaves)
+        values.append((series, plan, results, catalog, ctx))
+    bound = scope('SYNTHETIC_MULTI_SERIES', 'SRC_SYNTHETIC', 'a'*64,
+        [{'source_piece_id': c.piece.piece_id, 'series_id': s.series_id, 'series_sha256': s.series_sha256}
+         for s, _, _, _, c in values], [r.result_sha256 for _, _, rr, _, _ in values for r in rr])
+    authority = synthetic_authority(bound)
+    aggregates = [build_aggregate('SRC_SYNTHETIC', s, p, rr, cat, ctx, authority) for s, p, rr, cat, ctx in values]
+    manifest = combine_observation_ledgers([d['observation_ledger'] for d in aggregates])
+    planned, responses = [], {}
+    for i, (args, document) in enumerate(zip(values, aggregates)):
+        ctx = args[-1]
+        prompt = f'SYNTHETIC_FROZEN_{i}'
+        planned.append(PlannedExtractionPiece(ctx.piece, 0, len(ctx.piece.source_text), (), (), prompt))
+        responses[hashlib.sha256(prompt.encode()).hexdigest()] = document['native_input']
+    cfg, db = make_config(tmp_path)
+    analyzer = Analyzer(cfg, db)
+    analyzer.plan_initial_extraction = lambda *a, **k: InitialExtractionPlan(4000, 0, identity([]), tuple(planned), {}, identity({'synthetic': True}))
+    analyzer.llm = BoundedExtractionReplay(cfg.llm, responses, {k: {} for k in responses})
+    analysis = analyzer.analyze_source('synthetic.txt', '\n'.join(v[-1].piece.source_text for v in values), 'deep', adaptive_retry_policy='forbid')
+    projection = build_native_projection(manifest, analysis.claims)
+    assert len(projection['groups']) == 6
+    common = projection['groups'][0]
+    assert common['native_claim']['_relation_claim_refs'] == ['C1', 'C3', 'C5', 'C7', 'C9']
+    assert len(common['observation_ids']) == 5 and common['semantic_admission'] == BLOCKED
+    mapped = [o for g in projection['groups'] for o in g['observation_ids']]
+    assert len(mapped) == len(set(mapped)) == 10
+    review = private_review_artifact(manifest, projection)
+    stored = json.loads(json.dumps(review))
+    assert private_review_artifact(stored['ledger'], stored['projection']) == review
+    assert len(stored['ledger']['series_ledgers']) == 5

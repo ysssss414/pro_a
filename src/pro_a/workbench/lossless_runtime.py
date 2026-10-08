@@ -120,7 +120,7 @@ def replay_if_authorized(runner, run, cfg):
     return BoundedExtractionReplay(cfg, responses, metadata)
 
 
-def guard_native_admission(service, run, native_root, semantic_document):
+def guard_native_admission(service, run, native_root, semantic_document, *, worker_id, fence):
     """Durable complete Review first, then all-or-nothing admission before Job creation."""
     from .source_operations import SourceOperationError
     bindings = service.output_batches.inputs(run)
@@ -130,6 +130,15 @@ def guard_native_admission(service, run, native_root, semantic_document):
     if not any(grants):
         return
     _require(all(grants), 'LOSSLESS_SOURCE_POLICY_INCOMPLETE')
+    from pro_a.phase4_orchestration import _compatible
+    from pro_a.phase4_retry import RetryPolicy
+    from pro_a.config import load_config
+    from .bounded_resume import _owned
+    with service.store.connect() as connection:
+        native = connection.execute('SELECT native_execution_id FROM source_processing_runs WHERE processing_run_id=?',
+            (run['processing_run_id'],)).fetchone()
+    _compatible(native_root, native[0], load_config(service.profile.phase4_config_path),
+        RetryPolicy.FORBID_ALL, runtime_compatibility=service.runtime_compatibility)
     documents = [ledger.aggregate(b[3].series_id) for b in bindings]
     manifest = observations.combine_observation_ledgers([d['observation_ledger'] for d in documents])
     engine = native_root / 'engine'
@@ -143,7 +152,7 @@ def guard_native_admission(service, run, native_root, semantic_document):
     inputs = semantic_document['payload']['claims']
     admission = observations.bind_semantic_inputs(manifest, projection, bundle['claims'], inputs)
     with ledger._connection(True) as connection:
-        # The run's worker lease is still held by SourceOperations; SQLite serializes publication.
+        _owned(connection, run['processing_run_id'], worker_id, fence)
         sid = bindings[0][3].series_id
         relative, digest = ledger._artifact(sid, 'review-' + review['identity'] + '.json', canonical(review).encode('utf-8'))
         ar, ash = ledger._artifact(sid, 'admission-' + admission['identity'] + '.json', canonical(admission).encode('utf-8'))

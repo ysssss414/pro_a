@@ -1159,7 +1159,8 @@ class SourceOperations:
                 raise SourceOperationError(result.get("code") or "NATIVE_EXTRACTION_FAILED")
             document = json.loads((native_root / "engine/evidence/stage6_semantic_input.json").read_text(encoding="utf-8"))
             from .lossless_runtime import guard_native_admission
-            guard_native_admission(self, self.get_run(run_id), native_root, document)
+            guard_native_admission(self, self.get_run(run_id), native_root, document,
+                                   worker_id=worker_id, fence=row['fence'])
             checkpoint = {"native_state": "SEMANTIC_INPUT_READY",
                           "execution_id": row["native_execution_id"],
                           "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],
