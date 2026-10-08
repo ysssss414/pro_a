@@ -6,7 +6,7 @@ import json
 import pytest
 
 from pro_a import output_decomposition as output
-from pro_a.bounded_extraction import (LEGACY_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION,
+from pro_a.bounded_extraction import (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION as OUTPUT_SERIES_VERSION,
     SeriesBudget, SegmentCallAccounting, account_series_calls, create_extraction_series,
     initial_extraction_plan, subdivide_extraction_plan)
 from pro_a.config import LLMConfig
@@ -58,7 +58,7 @@ def test_current_provider_rejects_frozen_12k_request_before_dispatch(monkeypatch
     with pytest.raises(ValueError, match='OUTPUT_PROVIDER_CONFIGURATION_MISMATCH'):
         provider.invoke(body)
     before = output.contract(binding_version=output.LEGACY_BINDING_VERSION)
-    after = output.contract()
+    after = output.contract(binding_version=output.V3_BINDING_VERSION)
     for field in ('research_semantic_contract', 'claim_linkage_policy', 'system_prompt_sha256',
             'provider_encoding_prompt_sha256', 'tool_schema_sha256', 'prompt_version', 'evidence_binding', 'wire'):
         assert before[field] == after[field]
@@ -104,7 +104,7 @@ def test_historical_released_12k_identity_vectors_and_input_restore():
     assert identity(body) == '591ad9cb4aadb8fc98510c813da76e207105b7f75cbf27c55995a6672cae7b00'
     assert identity(body['request']) == '54b8228b3dc619a2baa304d12f9229830aa0c772ce9bdcaa65906018eb0e8517'
     assert output.restore_input(frozen, ctx.source_sha256, old.processing_run_id, 1)[2] == old
-    current = output.piece_input(native, ctx.source_sha256, old.processing_run_id, 1)
+    current = output.piece_input(native, ctx.source_sha256, old.processing_run_id, 1, binding_version=output.V3_BINDING_VERSION)
     assert output.restore_input(current, ctx.source_sha256, old.processing_run_id, 1)[2] == fresh
     assert identity(current) != identity(frozen)
     with pytest.raises(ValueError, match='OUTPUT_INPUT_IDENTITY_MISMATCH'):

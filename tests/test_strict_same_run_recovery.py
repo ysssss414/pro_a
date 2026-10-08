@@ -22,6 +22,12 @@ from series_binding_helpers import Transport, rows, synthetic_providers, request
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
     monkeypatch.setattr('requests.sessions.Session.request', lambda *a, **k: pytest.fail('REAL_NETWORK_FORBIDDEN'))
+    # This operator's frozen scope is Series v2 / ProviderRecord v3.
+    from functools import partial
+    from pro_a.workbench.output_decomposition import OutputDecompositionRunner
+    monkeypatch.setattr(OutputDecompositionRunner, 'piece_input',
+        staticmethod(partial(output.piece_input, binding_version=output.V3_BINDING_VERSION)))
+    monkeypatch.setattr(OutputDecompositionRunner, 'provider_version', output.V3_PROVIDER_VERSION)
 
 class InvalidOutput(Transport):
     def __init__(self, mode='strict', *, call=2):
@@ -56,6 +62,7 @@ class InvalidOutput(Transport):
 
 def stopped(tmp_path, monkeypatch, *, counts=(33,), mode='strict'):
     value = topology(tmp_path, monkeypatch, counts=counts, accepted_retry=False)
+    value['output_binding_version'] = output.V3_BINDING_VERSION
     with synthetic_providers(value, InvalidOutput(mode)) as providers:
         result = resume(value, providers, key='strict-synthetic-initial-stop', ceiling=100)
         assert not result.get('bounded_complete')

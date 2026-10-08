@@ -45,7 +45,9 @@ def synthetic_providers(value,transport=None):
     with patch.dict(os.environ,{'PROA_SYNTHETIC_BOUNDED_KEY':'synthetic-fixture'}):
         cfg=LLMConfig(enabled=True,api_key_env='PROA_SYNTHETIC_BOUNDED_KEY',model='deepseek-flash',
                       max_retries=0,max_output_tokens=SEGMENT_OUTPUT_CEILING,timeout_seconds=value['cloud_profile'].timeout_seconds)
-        yield SyntheticProviders({'WHOLE_PIECE_OUTPUT_BATCH':OutputBatchProvider(cfg,transport=transport or Transport()),
+        binding = value.get('output_binding_version')
+        yield SyntheticProviders({'WHOLE_PIECE_OUTPUT_BATCH':OutputBatchProvider(cfg,transport=transport or Transport(),
+                                      **({'binding_version': binding} if binding else {})),
                                   'SEMANTIC_DECOMPOSITION':DeterministicFakeProvider()})
 
 
@@ -114,6 +116,9 @@ class Transport:
             value = __import__('json').loads(content)
             from lexical_record_helpers import from_wire
             record = from_wire(value['wire'])
+            if target.get('provider_record_version') == 'whole-piece-output-batch-provider-record-v4':
+                from provider_record_v4_helpers import from_valid_v3
+                record = from_valid_v3(record)
             if not whole:
                 record['evidence_acknowledgements'] = [{'evidence_ref': ref} for ref in target['assigned_evidence_refs']]
                 for family in ('node_candidates','source_references'):
@@ -126,6 +131,9 @@ class Transport:
 def batch_record(response, target):
     from lexical_record_helpers import from_wire
     record = from_wire(response['wire'])
+    if target.get('provider_record_version') == 'whole-piece-output-batch-provider-record-v4':
+        from provider_record_v4_helpers import from_valid_v3
+        record = from_valid_v3(record)
     record['evidence_acknowledgements'] = [{'evidence_ref': ref} for ref in target['assigned_evidence_refs']]
     for family in ('node_candidates','source_references'):
         for obj in record[family]:

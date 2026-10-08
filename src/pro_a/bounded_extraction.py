@@ -26,9 +26,12 @@ SOURCE_ANALYSIS_WIRE_V3_VERSION = "source-analysis-wire-v3"
 SOURCE_ANALYSIS_WIRE_V3_EXPANDER_VERSION = "source-analysis-wire-expander-v2"
 LEGACY_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v1"
 LEGACY_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v1"
-OUTPUT_SERIES_VERSION = "whole-piece-output-series-v2"
-OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v2"
-OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION)
+V2_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v2"
+V2_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v2"
+OUTPUT_SERIES_VERSION = "whole-piece-output-series-v3"
+OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v3"
+OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION)
+OUTPUT_24K_SERIES_VERSIONS = (V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION)
 OUTPUT_COVERAGE_VERSION = "whole-piece-output-coverage-v1"
 OUTPUT_SUBDIVISION_VERSION = "whole-piece-output-subdivision-v1"
 OUTPUT_POLICY_VERSION = "whole-piece-output-ownership-policy-v1"
@@ -96,7 +99,7 @@ def create_extraction_series(context: SourcePieceContext, catalog: SourceEvidenc
               "evidence_universe_sha256": universe, "eligible_evidence_refs": tuple(u.evidence_ref for u in catalog.units),
               "wire_contract_identity": SOURCE_ANALYSIS_WIRE_V3_VERSION,
               "task_policy_identity": OUTPUT_POLICY_VERSION if series_version in OUTPUT_SERIES_VERSIONS else BOUNDED_EXTRACTION_POLICY_VERSION,
-              "output_budget_identity": OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series_version == OUTPUT_SERIES_VERSION else "operation-output-budget-v1",
+              "output_budget_identity": OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1",
               "budget": asdict(budget)}
     series_id = "SERIES_" + identity(values)[:32].upper()
     sha = identity({**values, "series_id": series_id})
@@ -112,7 +115,7 @@ def _series(series: ExtractionSeries) -> None:
     if (series.series_version not in (BOUNDED_EXTRACTION_SERIES_VERSION, *OUTPUT_SERIES_VERSIONS)
             or series.wire_contract_identity != SOURCE_ANALYSIS_WIRE_V3_VERSION
             or series.task_policy_identity != (OUTPUT_POLICY_VERSION if series.series_version in OUTPUT_SERIES_VERSIONS else BOUNDED_EXTRACTION_POLICY_VERSION)
-            or series.output_budget_identity != (OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series.series_version == OUTPUT_SERIES_VERSION else "operation-output-budget-v1")
+            or series.output_budget_identity != (OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series.series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1")
             or len(set(series.eligible_evidence_refs)) != len(series.eligible_evidence_refs)
             or sid != "SERIES_" + identity(values)[:32].upper()
             or sha != identity({**values, "series_id": sid})):
@@ -141,12 +144,13 @@ def _segment(series: ExtractionSeries, lo: int, hi: int, path: tuple[int, ...],
              parent: ExtractionSegment | None = None) -> ExtractionSegment:
     refs = series.eligible_evidence_refs[lo:hi]
     values = {"segment_version": (OUTPUT_BATCH_VERSION if series.series_version == OUTPUT_SERIES_VERSION else
+              V2_OUTPUT_BATCH_VERSION if series.series_version == V2_OUTPUT_SERIES_VERSION else
               LEGACY_OUTPUT_BATCH_VERSION if series.series_version == LEGACY_OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_SEGMENT_VERSION), "series_id": series.series_id,
               "parent_segment_id": parent.segment_id if parent else None,
               "subdivision_depth": parent.subdivision_depth + 1 if parent else 0,
               "stable_path": path, "range_start": lo, "range_end": hi, "assigned_evidence_refs": refs,
               "assigned_evidence_sha256": identity(refs), "wire_schema_identity": series.wire_contract_identity,
-              "max_output_tokens": SEGMENT_OUTPUT_CEILING if series.series_version == OUTPUT_SERIES_VERSION else LEGACY_SEGMENT_OUTPUT_CEILING}
+              "max_output_tokens": SEGMENT_OUTPUT_CEILING if series.series_version in OUTPUT_24K_SERIES_VERSIONS else LEGACY_SEGMENT_OUTPUT_CEILING}
     seed = {**values, "series_sha256": series.series_sha256,
             "parent_segment_sha256": parent.segment_sha256 if parent else None,
             "subdivision_policy": OUTPUT_SUBDIVISION_VERSION if series.series_version in OUTPUT_SERIES_VERSIONS else BOUNDED_EXTRACTION_SUBDIVISION_VERSION}

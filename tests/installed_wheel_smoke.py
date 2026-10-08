@@ -87,7 +87,8 @@ def main():
     from pro_a import extraction_analysis_record, output_decomposition
     from pro_a.workbench import bounded_resume, source_operations
     assert repository_commit() == options.expected_commit
-    assert output_decomposition.RECORD_VERSION == 'whole-piece-output-batch-provider-record-v3'
+    assert output_decomposition.RECORD_VERSION == 'whole-piece-output-batch-provider-record-v4'
+    assert output_decomposition.V3_RECORD_VERSION == 'whole-piece-output-batch-provider-record-v3'
     assert extraction_analysis_record.VERSION == 'normalized-extraction-analysis-record-v1'
     assert bounded_resume.contract()['automatic_retry'] is False
     report.update(commit=options.expected_commit, source_checkout_access_denied=True,

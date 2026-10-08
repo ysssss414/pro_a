@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from pro_a import output_decomposition as output
-from pro_a.bounded_extraction import (OUTPUT_SERIES_VERSION, SeriesBudget, create_extraction_series,
+from pro_a.bounded_extraction import (V2_OUTPUT_SERIES_VERSION as OUTPUT_SERIES_VERSION, SeriesBudget, create_extraction_series,
     initial_extraction_plan, aggregate_segment_wires, expand_source_analysis_wire_v3, subdivide_extraction_plan)
 from pro_a.source_analysis_wire import build_source_evidence_catalog
 from lexical_record_helpers import from_wire
