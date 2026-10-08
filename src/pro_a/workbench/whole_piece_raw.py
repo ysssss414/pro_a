@@ -117,7 +117,7 @@ def evaluate(request, result, aliases):
             error, status = 'WHOLE_PIECE_COMPACT_OUTPUT_LIMIT', 'TRUNCATED'
         elif (result.finish_reason != 'tool_calls' or result.operation_kind != request.operation_kind
                 or result.attempt_number != request.attempt_number
-                or (result.output_tokens is not None and result.output_tokens > 12000)
+                or (result.output_tokens is not None and result.output_tokens > request.max_output_tokens)
                 or (result.usage_status == 'KNOWN' and result.input_tokens + result.output_tokens != result.total_tokens)):
             error, status = 'INVALID_PROVIDER_OUTCOME', 'FAIL'
         else:

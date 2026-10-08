@@ -184,7 +184,7 @@ def test_frozen_selective_semantic_and_separate_encoding_identities():
     assert set(schema['properties']['evidence_acknowledgements']['items']['properties'])=={'evidence_ref'}
     assert 'claim_refs' not in json.dumps(schema) .replace('supporting_claim_refs','')
     ctx,cat,series,plan=fixture(1);request=payload(ctx,cat,series,plan.leaves[0])['request']
-    assert (request['model'],request['temperature'],request['max_tokens'],request['thinking'])==('deepseek-flash',0.1,12000,{'type':'disabled'})
+    assert (request['model'],request['temperature'],request['max_tokens'],request['thinking'])==('deepseek-flash',0.1,24000,{'type':'disabled'})
 
 
 def test_multi_segment_and_relation_supporting_claim_refs_unchanged():

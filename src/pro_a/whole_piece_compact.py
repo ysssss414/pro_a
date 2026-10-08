@@ -17,6 +17,7 @@ from .evidence_binding import EVIDENCE_MODES
 from .source_analysis_provider_record import (VERSION as PROVIDER_RECORD_VERSION, TOOL_SCHEMA_VERSION,
     TOOL_NAME, record_schema, tool_schema_sha256, parse_object, provider_record_to_wire_v3)
 from .provider_diagnostics import safe_identifier, safe_request_id, safe_reasoning_tokens
+from .output_capacity import LEGACY_SEGMENT_OUTPUT_CEILING
 from .source_analysis_wire import (NODE_MATCH_ROLES, SOURCE_REFERENCE_RELATION_TYPES,
                                    SourcePieceContext, build_source_evidence_catalog)
 
@@ -64,7 +65,7 @@ def contract():
             'strict_tool_role': 'FORMAT_COMPLIANCE_ASSIST', 'authoritative_validator': 'LOCAL', 'wire': 'source-analysis-wire-v3',
             'evidence_binding': 'source-analysis-evidence-binding-v2',
             'expander': 'source-analysis-wire-expander-v2',
-            'max_output_tokens': 12000, 'automatic_extraction_retry': False,
+            'max_output_tokens': LEGACY_SEGMENT_OUTPUT_CEILING, 'automatic_extraction_retry': False,
             'system_prompt_sha256': hashlib.sha256(SYSTEM.encode()).hexdigest()}
 
 
@@ -90,7 +91,7 @@ def render(payload):
             'piece_id': ctx.piece.piece_id, 'piece_sha256': ctx.piece.source_sha256, **{k: v for k, v in contract().items() if k != 'tool_parameters'}}, sort_keys=True)
             + '\nScoped existing Nodes:\n' + json.dumps(payload['scoped_node_catalog'], ensure_ascii=False)
             + '\nComplete annotated SourcePiece:\n' + ''.join(parts))
-    return {'model': 'deepseek-flash', 'max_tokens': 12000, 'thinking': {'type': 'disabled'},
+    return {'model': 'deepseek-flash', 'max_tokens': LEGACY_SEGMENT_OUTPUT_CEILING, 'thinking': {'type': 'disabled'},
             'stream': False, 'temperature': 0.1,
             'tools': [{'type': 'function', 'function': {'name': TOOL_NAME, 'strict': True,
                 'description': '提交完整冻结SourcePiece的分析记录。', 'parameters': record_schema()}}],
@@ -111,15 +112,20 @@ def parse(content, payload):
 class WholePieceCompactProvider:
     provider_identity = 'deepseek'
     adapter_version = ADAPTER_VERSION
+    max_output_tokens = LEGACY_SEGMENT_OUTPUT_CEILING
+    # Offline qualified DeepSeek adapter capability, not an application policy.
+    output_capability_tokens = 393216
 
     def __init__(self, cfg, *, transport=None):
         self.cfg, self.transport = cfg, transport
         url = urlsplit(cfg.base_url)
         if (cfg.provider != 'deepseek' or cfg.model != 'deepseek-flash' or cfg.max_retries != 0
-                or cfg.max_output_tokens != 12000 or url.scheme != 'https' or url.username or url.password
+                or cfg.max_output_tokens != self.max_output_tokens or url.scheme != 'https' or url.username or url.password
                 or url.hostname != 'api.deepseek.com' or url.port not in (None, 443)
                 or url.query or url.fragment or url.path not in ('', '/', '/v1', '/v1/')):
             raise ValueError('WHOLE_PIECE_PROVIDER_CONFIGURATION_MISMATCH')
+        if self.output_capability_tokens < cfg.max_output_tokens:
+            raise ValueError('PROVIDER_OUTPUT_CAPABILITY_INSUFFICIENT')
 
     def invoke(self, request):
         from .cloud_contract import CloudResult, ProviderFailure, now, operation_contract, digest
@@ -127,7 +133,7 @@ class WholePieceCompactProvider:
         if (request.operation_kind != 'SOURCE_ANALYSIS_PIECE'
                 or digest(request.prompt_identity) != digest(operation_contract('SOURCE_ANALYSIS_PIECE'))
                 or request.requested_model != cfg.model or request.provider != self.provider_identity
-                or request.timeout_seconds != cfg.timeout_seconds or request.max_output_tokens != 12000
+                or request.timeout_seconds != cfg.timeout_seconds or request.max_output_tokens != LEGACY_SEGMENT_OUTPUT_CEILING
                 or cfg.max_retries != 0 or not cfg.enabled or not cfg.api_key):
             raise ProviderFailure('PROVIDER_CONFIGURATION_MISMATCH', retryable=False, external_outcome='NOT_DISPATCHED')
         body = render(request.payload)

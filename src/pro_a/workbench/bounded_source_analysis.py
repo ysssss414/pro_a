@@ -277,7 +277,7 @@ class BoundedSourceAnalysisRunner:
         elif state == "SUBDIVISION_REQUIRED":
             _require(allow_new_subdivision, "BOUNDED_SUBDIVISION_FORBIDDEN")
             _require(sr["provider_call_reservations"] + 2 <= self.ledger.read(segment.series_id)[0].budget.max_provider_calls
-                     and sr["output_liability"] + 24000 <= self.ledger.read(segment.series_id)[0].budget.max_cumulative_output_tokens,
+                     and sr["output_liability"] + 2 * segment.max_output_tokens <= self.ledger.read(segment.series_id)[0].budget.max_cumulative_output_tokens,
                      "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY")
             self.ledger.subdivide(segment.segment_id, owner, fence, expected_frontier_version=sr["frontier_version"])
 

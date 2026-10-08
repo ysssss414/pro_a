@@ -13,6 +13,7 @@ from .constants import STRUCTURED_JSON_REASONING_POLICY_VERSION, STRUCTURED_JSON
 from .llm import ChatLLM, LLMError
 from .provider_diagnostics import safe_reasoning_tokens
 from .prompts import SOURCE_ANALYSIS_SYSTEM, SOURCE_ANALYSIS_USER
+from .output_capacity import LEGACY_SEGMENT_OUTPUT_CEILING
 from .semantic_decomposition import (
     MODEL_RESULT_FIELDS,
     MODEL_UNIT_FIELDS,
@@ -39,7 +40,7 @@ OUTCOME_STATUSES = ("NOT_DISPATCHED", "KNOWN_FAILURE", "UNKNOWN")
 
 OPERATION_OUTPUT_BUDGET_POLICY_VERSION = "operation-output-budget-v1"
 OPERATION_MAX_OUTPUT_TOKENS = {
-    "SOURCE_ANALYSIS_PIECE": 12000,
+    "SOURCE_ANALYSIS_PIECE": LEGACY_SEGMENT_OUTPUT_CEILING,
     "SEMANTIC_DECOMPOSITION": 8192,
 }
 

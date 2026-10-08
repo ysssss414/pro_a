@@ -10,12 +10,16 @@ from . import whole_piece_compact as whole
 from . import extraction_analysis_record as normalized
 from . import output_decomposition_legacy as legacy
 from .bounded_extraction import (OUTPUT_SERIES_VERSION, OUTPUT_BATCH_VERSION, OUTPUT_COVERAGE_VERSION,
+    LEGACY_OUTPUT_SERIES_VERSION, LEGACY_OUTPUT_BATCH_VERSION, OUTPUT_SERIES_VERSIONS,
     OUTPUT_SUBDIVISION_VERSION, OUTPUT_POLICY_VERSION, SeriesBudget,
     create_extraction_series, _segment_contract)
 from .evidence_binding import identity, validate_catalog
+from .output_capacity import SEGMENT_OUTPUT_CEILING, LEGACY_SEGMENT_OUTPUT_CEILING, OPERATION_OUTPUT_BUDGET_POLICY_VERSION
 
-BINDING_VERSION = 'whole-piece-output-decomposition-binding-v1'
-PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v3'
+LEGACY_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v1'
+LEGACY_PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v3'
+BINDING_VERSION = 'whole-piece-output-decomposition-binding-v2'
+PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v4'
 PROMPT_VERSION = 'whole-piece-output-batch-lexical-tool-prompt-v3'
 RESPONSE_VERSION = 'whole-piece-output-batch-response-v3'
 RECORD_VERSION = 'whole-piece-output-batch-provider-record-v3'
@@ -41,40 +45,51 @@ def record_schema():
     return schema
 
 
-def contract():
-    return {**whole.contract(), 'binding_version': BINDING_VERSION, 'adapter_version': PROVIDER_VERSION,
-        'provider_version': PROVIDER_VERSION, 'prompt_version': PROMPT_VERSION, 'response_version': RESPONSE_VERSION,
+def contract(*, binding_version=BINDING_VERSION):
+    if binding_version not in (LEGACY_BINDING_VERSION, BINDING_VERSION):
+        raise ValueError('UNSUPPORTED_OUTPUT_CAPACITY_CONTRACT')
+    historical_capacity = binding_version == LEGACY_BINDING_VERSION
+    provider_version = LEGACY_PROVIDER_VERSION if historical_capacity else PROVIDER_VERSION
+    return {**whole.contract(), 'binding_version': binding_version, 'adapter_version': provider_version,
+        'provider_version': provider_version, 'prompt_version': PROMPT_VERSION, 'response_version': RESPONSE_VERSION,
         'provider_record_version': RECORD_VERSION, 'tool_schema_version': SCHEMA_VERSION,
         'tool_parameters': record_schema(), 'tool_schema_sha256': identity(record_schema()),
         'system_prompt_sha256': hashlib.sha256(SYSTEM.encode()).hexdigest(),
-        'series': OUTPUT_SERIES_VERSION, 'batch': OUTPUT_BATCH_VERSION, 'coverage': OUTPUT_COVERAGE_VERSION,
+        'series': LEGACY_OUTPUT_SERIES_VERSION if historical_capacity else OUTPUT_SERIES_VERSION,
+        'batch': LEGACY_OUTPUT_BATCH_VERSION if historical_capacity else OUTPUT_BATCH_VERSION, 'coverage': OUTPUT_COVERAGE_VERSION,
+        **({} if historical_capacity else {'output_budget_identity': OPERATION_OUTPUT_BUDGET_POLICY_VERSION}),
         'subdivision': OUTPUT_SUBDIVISION_VERSION, 'ownership_policy': OUTPUT_POLICY_VERSION,
         'claim_linkage_policy': CLAIM_LINKAGE_VERSION, 'research_semantic_contract': normalized.contract(),
         'normalized_analysis_record_version': normalized.VERSION,
         'provider_encoding_contract_version': ENCODING_VERSION,
         'provider_encoding_prompt_sha256': hashlib.sha256(ENCODING_SYSTEM.encode()).hexdigest(),
-        'budget': asdict(SeriesBudget()), 'semantic_context': 'COMPLETE_SOURCEPIECE',
+        'budget': asdict(SeriesBudget()),
+        'max_output_tokens': LEGACY_SEGMENT_OUTPUT_CEILING if historical_capacity else SEGMENT_OUTPUT_CEILING,
+        'semantic_context': 'COMPLETE_SOURCEPIECE',
         'evidence_segment_semantic_boundary': 'deprecated', 'output_ownership': 'EVIDENCE_BATCHED',
         'piece_hard_cap': historical.FROZEN_ACCEPTANCE_INITIAL_MAX_CHARS,
         'planner': historical.INITIAL_EXTRACTION_PLANNER_VERSION}
 
 
-def piece_input(native, source_sha256, processing_run_id, ordinal):
+def piece_input(native, source_sha256, processing_run_id, ordinal, *, binding_version=BINDING_VERSION):
     # Reuse historical immutable native-input validation without reusing its identity.
     old = historical.piece_input(native, source_sha256, processing_run_id, ordinal)
     context, catalog, _ = historical.restore_input(old, source_sha256, processing_run_id, ordinal)
-    series = create_extraction_series(context, catalog, processing_run_id, series_version=OUTPUT_SERIES_VERSION)
-    return {**old, 'binding_version': BINDING_VERSION, 'series_id': series.series_id,
+    series_version = contract(binding_version=binding_version)['series']
+    series = create_extraction_series(context, catalog, processing_run_id, series_version=series_version)
+    return {**old, 'binding_version': binding_version, 'series_id': series.series_id,
             'series_sha256': series.series_sha256}
 
 
 def restore_input(value, source_sha256, processing_run_id, ordinal):
-    expected = piece_input(value['native'], source_sha256, processing_run_id, ordinal)
+    binding_version = value['binding_version']
+    expected = piece_input(value['native'], source_sha256, processing_run_id, ordinal, binding_version=binding_version)
     if identity(value) != identity(expected):
         raise ValueError('OUTPUT_INPUT_IDENTITY_MISMATCH')
     native = value['native']
     context, catalog = whole.piece_context({**native, 'source_sha256': source_sha256})
-    return context, catalog, create_extraction_series(context, catalog, processing_run_id, series_version=OUTPUT_SERIES_VERSION)
+    return context, catalog, create_extraction_series(context, catalog, processing_run_id,
+        series_version=contract(binding_version=binding_version)['series'])
 
 
 def annotated_source(context, catalog, assigned):
@@ -92,16 +107,16 @@ def annotated_source(context, catalog, assigned):
 
 
 def segment_payload(value, context, catalog, series, segment):
-    if series.series_version != OUTPUT_SERIES_VERSION:
+    if series.series_version not in OUTPUT_SERIES_VERSIONS:
         raise ValueError('OUTPUT_SERIES_REQUIRED')
     _segment_contract(series, segment)
     target = {'series_id': series.series_id, 'segment_id': segment.segment_id,
         'segment_sha256': segment.segment_sha256, 'assigned_evidence_refs': list(segment.assigned_evidence_refs),
-        **{k:v for k,v in contract().items() if k != 'tool_parameters'}}
+        **{k:v for k,v in contract(binding_version=LEGACY_BINDING_VERSION if series.series_version == LEGACY_OUTPUT_SERIES_VERSION else BINDING_VERSION).items() if k != 'tool_parameters'}}
     user = ('Frozen target:\n' + json.dumps(target, sort_keys=True) + '\nScoped existing Nodes:\n'
         + json.dumps(value['native']['scoped_node_catalog'], ensure_ascii=False)
         + '\nComplete annotated SourcePiece:\n' + annotated_source(context, catalog, segment.assigned_evidence_refs))
-    request = {'model':'deepseek-flash', 'max_tokens':12000, 'thinking':{'type':'disabled'},
+    request = {'model':'deepseek-flash', 'max_tokens':segment.max_output_tokens, 'thinking':{'type':'disabled'},
         'stream':False, 'temperature':0.1,
         'tools':[{'type':'function','function':{'name':lexical.TOOL_NAME,'strict':True,
             'description':'读取完整SourcePiece，仅提交本批次归属单元的分析记录。','parameters':record_schema()}}],
@@ -137,6 +152,7 @@ def record_to_result(content, series, segment, catalog, context, *, record_versi
 
 class OutputBatchProvider(whole.WholePieceCompactProvider):
     adapter_version = PROVIDER_VERSION
+    max_output_tokens = SEGMENT_OUTPUT_CEILING
 
     @property
     def available(self):
@@ -144,7 +160,8 @@ class OutputBatchProvider(whole.WholePieceCompactProvider):
 
     def configuration(self):
         return {'contract':contract(), 'timeout_seconds':self.cfg.timeout_seconds,
-                'base_url':whole.BETA_ENDPOINT, 'automatic_retry':False}
+                'base_url':whole.BETA_ENDPOINT, 'automatic_retry':False,
+                'qualified_output_capability_tokens':self.output_capability_tokens}
 
     def invoke(self, payload):
         from .cloud_contract import ProviderFailure
@@ -152,7 +169,7 @@ class OutputBatchProvider(whole.WholePieceCompactProvider):
         if (not self.available or any(identity(target.get(k)) != identity(v) for k,v in contract().items() if k != 'tool_parameters')
                 or identity(body.get('tools')) != identity([{'type':'function','function':{'name':lexical.TOOL_NAME,
                     'strict':True,'description':'读取完整SourcePiece，仅提交本批次归属单元的分析记录。','parameters':record_schema()}}])
-                or body.get('model') != 'deepseek-flash' or body.get('max_tokens') != 12000
+                or body.get('model') != 'deepseek-flash' or body.get('max_tokens') != contract()['max_output_tokens']
                 or body.get('thinking') != {'type':'disabled'} or body.get('stream') is not False
                 or body.get('tool_choice') != {'type':'function','function':{'name':lexical.TOOL_NAME}}
                 or body['messages'][0] != {'role':'system','content':SYSTEM}):

@@ -85,6 +85,7 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
     """
     from pro_a.cloud_contract import SemanticBackendProvider
     from pro_a.output_decomposition import OutputBatchProvider, OPERATION as OUTPUT_OPERATION
+    from pro_a.output_capacity import SEGMENT_OUTPUT_CEILING
     from pro_a.llm import ChatLLM
     from pro_a.semantic_decomposition import ChatLLMSemanticBackend
 
@@ -103,7 +104,7 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile) -> dict[str,
                         max_retries=0)
     return {
         OUTPUT_OPERATION: OutputBatchProvider(
-            replace(effective, max_output_tokens=12000)),
+            replace(effective, max_output_tokens=SEGMENT_OUTPUT_CEILING)),
         SEMANTIC_OPERATION: SemanticBackendProvider(
             ChatLLMSemanticBackend(ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
                 SEMANTIC_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"]))),

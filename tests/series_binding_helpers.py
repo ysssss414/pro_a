@@ -41,9 +41,10 @@ class SyntheticProviders(dict):
 @contextmanager
 def synthetic_providers(value,transport=None):
     from pro_a.output_decomposition import OutputBatchProvider
+    from pro_a.output_capacity import SEGMENT_OUTPUT_CEILING
     with patch.dict(os.environ,{'PROA_SYNTHETIC_BOUNDED_KEY':'synthetic-fixture'}):
         cfg=LLMConfig(enabled=True,api_key_env='PROA_SYNTHETIC_BOUNDED_KEY',model='deepseek-flash',
-                      max_retries=0,max_output_tokens=12000,timeout_seconds=value['cloud_profile'].timeout_seconds)
+                      max_retries=0,max_output_tokens=SEGMENT_OUTPUT_CEILING,timeout_seconds=value['cloud_profile'].timeout_seconds)
         yield SyntheticProviders({'WHOLE_PIECE_OUTPUT_BATCH':OutputBatchProvider(cfg,transport=transport or Transport()),
                                   'SEMANTIC_DECOMPOSITION':DeterministicFakeProvider()})
 
@@ -92,7 +93,7 @@ class Transport:
         if mode == 'unknown':
             raise requests.ReadTimeout('SYNTHETIC_UNTRUSTED_EXCEPTION')
         if mode == 'truncated':
-            return response_type('{"wire":{"claims":[', 'length', 12000)
+            return response_type('{"wire":{"claims":[', 'length', json['max_tokens'])
         if mode == 'malformed':
             return response_type('SYNTHETIC_MALFORMED_PRIVATE_CONTENT')
         content=response_content(target, source, subdivision=mode=='subdivide')
