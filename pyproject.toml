@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "httpx>=0.27"]
+dev = ["pytest>=8.0", "httpx>=0.27", "jsonschema>=4.0"]
 
 [project.scripts]
 pro-a = "pro_a.cli:main"
