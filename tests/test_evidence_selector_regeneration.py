@@ -158,14 +158,13 @@ def test_crash_fence_concurrency_idempotency_and_full_lossless_path(historical, 
     service, token = value['service'], value['token']
     protected = {t: rows(value, t) for t in ('bounded_extraction_attempts', 'bounded_extraction_outcomes',
         'bounded_extraction_dispatches', 'bounded_extraction_segment_results', 'bounded_extraction_series_results')}
+    accepted_rows = [r for r in rows(value, 'bounded_extraction_segments') if r['state'] == 'SUCCEEDED_COMPLETE']
+    assert len(accepted_rows) == 6
     files = {p:p.read_bytes() for p in value['config'].artifact_root.rglob('*') if p.is_file()}
-    with service.store.connect(operator_write=True) as c:
-        last = dict(c.execute('SELECT * FROM source_processing_events WHERE processing_run_id=? ORDER BY sequence DESC LIMIT 1', (value['run_id'],)).fetchone())
+    with pytest.raises(sqlite3.IntegrityError, match='APPEND_ONLY'), service.store.connect(operator_write=True) as c:
+        last = c.execute('SELECT sequence FROM source_processing_events WHERE processing_run_id=? ORDER BY sequence DESC LIMIT 1', (value['run_id'],)).fetchone()
         c.execute("UPDATE source_processing_events SET event_json='{}' WHERE processing_run_id=? AND sequence=?", (value['run_id'], last['sequence']))
-    with pytest.raises(ValueError, match='SOURCE_EVENT_CHAIN_MISMATCH'):
-        service.output_batches.inputs(service.get_run(value['run_id']))
-    with service.store.connect(operator_write=True) as c:
-        c.execute('UPDATE source_processing_events SET event_json=? WHERE processing_run_id=? AND sequence=?', (last['event_json'], value['run_id'], last['sequence']))
+    service.output_batches.inputs(service.get_run(value['run_id']))
     first_sid = token.evidence['scope']['first_aggregate']['series_id']
     old_token_path = service.output_batches.ledger._path(first_sid, 'lossless-qualification.json')
     old_bytes = old_token_path.read_bytes()
@@ -209,12 +208,14 @@ def test_crash_fence_concurrency_idempotency_and_full_lossless_path(historical, 
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = [executor.submit(authorize, value) for _ in range(2)]
         answers = []
+        busy = 0
         for future in futures:
             try:
                 answers.append(future.result())
             except sqlite3.OperationalError as error:
                 assert error.sqlite_errorcode in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED)
-                answers.append(authorize(value))
+                busy += 1
+    answers.extend(authorize(value) for _ in range(busy))
     assert sorted(a['duplicate'] for a in answers) == [False, True]
     assert authorize(value)['duplicate']
     for key, reason in [('conflicting-key-0001', 'Offline synthetic exact-scope regeneration'), ('synthetic-selector-regeneration', 'Conflicting reason')]:
@@ -225,6 +226,7 @@ def test_crash_fence_concurrency_idempotency_and_full_lossless_path(historical, 
     assert all(p.read_bytes() == raw for p,raw in files.items())
     for table, original in protected.items():
         assert all(r in rows(value, table) for r in original)
+    assert all(r in rows(value, 'bounded_extraction_segments') for r in accepted_rows)
     assert sum(r['state'] == 'PLANNED' for r in rows(value, 'bounded_extraction_segments')) == 21
     # Restoring a committed token is the normal load_worker path, with no Git.
     with monkeypatch.context() as patch:
@@ -250,6 +252,7 @@ def test_crash_fence_concurrency_idempotency_and_full_lossless_path(historical, 
     assert transport.calls[0]['messages'][-1]['content'] == recovery.EVIDENCE_GUIDANCE
     assert all(call['messages'][-1]['content'] != recovery.EVIDENCE_GUIDANCE for call in transport.calls[1:])
     assert all(p.read_bytes() == raw for p,raw in files.items())
+    assert all(r in rows(value, 'bounded_extraction_segments') for r in accepted_rows)
     assert not rows(value, 'source_processing_jobs')
     bindings = service.output_batches.inputs(service.get_run(value['run_id']))
     aggregates = [service.output_batches.ledger.aggregate(b[3].series_id) for b in bindings]
