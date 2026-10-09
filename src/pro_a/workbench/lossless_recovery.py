@@ -417,6 +417,9 @@ def evidence_expected_request(ledger, connection, series, segment, attempt):
     grant = source[0]
     token = restore_continuation(json.loads(ledger._read_artifact(series.series_id, 'evidence-continuation.json', grant)), grant['qualification_identity'])
     proof = token.evidence['scope']
+    require(grant['contract'] == evidence_contract() and grant['original_qualification_identity'] == proof['original_token_identity']
+        and grant['original_grant_sha256'] == proof['original_grant']['event_sha256']
+        and grant['failed_attempt_id'] == proof['failed']['attempt_id'], 'EVIDENCE_REGENERATION_AUTHORIZATION_REQUIRED')
     require(proof['run_id'] == series.processing_run_id and proof['failed']['segment_id'] == segment.segment_id
         and proof['failed']['series_id'] == series.series_id and token.evidence['new_request']['attempt_id'] == attempt['attempt_id'])
     frozen = Domains(ledger.config).read(series.processing_run_id, connection=connection)

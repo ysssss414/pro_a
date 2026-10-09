@@ -299,9 +299,16 @@ def qualify_evidence_regeneration(service, run_id, failed_attempt_id, *, histori
     old_contract = {**runtime_contract(), 'module_sha256': {n:installed['manifest'][n] for n in sorted(CHANGED | ADDED)}}
     require(old['target_contract'] == old_contract and old['target_runtime']['lossless_aggregate_recovery'] == old_contract
         and old['target_runtime']['git_sha'] == CONTINUATION_RELEASE
+        and old['target_native']['repository_commit'] == CONTINUATION_RELEASE
+        and old['historical_runtime']['git_sha'] in (BASELINE, CONTINUATION_RELEASE)
+        and old['historical_native']['repository_commit'] == old['historical_runtime']['git_sha']
         and old['target_runtime']['domain_code_sha256'] == installed['domain_code_sha256']
         and old['target_runtime']['runtime_sha256'] == identity({k:v for k,v in old['target_runtime'].items() if k != 'runtime_sha256'}),
         'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    if old['historical_runtime']['git_sha'] == CONTINUATION_RELEASE:
+        require(old['historical_runtime']['domain_code_sha256'] == installed['domain_code_sha256']
+            and old['historical_runtime']['lossless_aggregate_recovery'] == old_contract,
+            'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
     # Only the operator/runtime integration may change. Research/Native/Binding
     # bytes are compared directly against both actual historical Git trees.
     allowed = {'workbench/lossless_recovery.py', 'workbench/lossless_compatibility.py'} | CHANGED
