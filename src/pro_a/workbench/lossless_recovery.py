@@ -308,7 +308,7 @@ def evidence_assessment(worker, connection, run_id, failed_attempt_id, bindings)
         events = list(connection.execute('SELECT * FROM bounded_extraction_events WHERE series_id=? ORDER BY sequence', (series.series_id,)))
         failures = [r for r in events if r['event_type'] == 'SERIES_FAILED']
         if index:
-            require(failures and json.loads(failures[-1]['body_json'])['code'] == ('INVALID_SEGMENT_RESPONSE' if index == 1 else 'UPSTREAM_SERIES_FAILED')
+            require(failures and json.loads(failures[-1]['body_json'])['code'] == ('BOUNDED_EXTRACTION_FAILED' if index == 1 else 'UPSTREAM_SERIES_FAILED')
                 and prior_row['created_at'] <= failures[-1]['created_at'] <= stops[-1]['created_at'])
         pending, raws = 0, set()
         for segment in plan.leaves:
