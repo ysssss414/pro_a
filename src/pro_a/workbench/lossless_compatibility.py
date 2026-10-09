@@ -113,7 +113,7 @@ def restore_token(evidence, expected_identity):
 
 
 def guard_cloud(historical, target, token):
-    evidence = validate_token(token)
+    evidence = validate_continuation(token) if isinstance(token, EvidenceQualification) else validate_token(token)
     require(dict(historical) == evidence['historical_runtime'] and dict(target) == evidence['target_runtime'],
             'LOSSLESS_QUALIFICATION_RUNTIME_MISMATCH')
     require(historical['runtime_sha256'] == identity({k: v for k, v in historical.items() if k != 'runtime_sha256'}),
@@ -127,7 +127,7 @@ def guard_cloud(historical, target, token):
 
 
 def guard_native(historical, target, token):
-    evidence = validate_token(token)
+    evidence = validate_continuation(token) if isinstance(token, EvidenceQualification) else validate_token(token)
     require(dict(historical) == evidence['historical_native'] and dict(target) == evidence['target_native'],
             'LOSSLESS_QUALIFICATION_NATIVE_MISMATCH')
     require({k:v for k,v in historical.items() if k != 'repository_commit'} ==
@@ -135,7 +135,7 @@ def guard_native(historical, target, token):
 
 
 def guard_context(frozen, current_basis, token):
-    evidence = validate_token(token)
+    evidence = validate_continuation(token) if isinstance(token, EvidenceQualification) else validate_token(token)
     require(frozen['context_sha256'] == evidence['scope']['frozen_context_sha256']
         and {k:v for k,v in frozen['basis'].items() if k != 'runtime'} ==
             {k:v for k,v in current_basis.items() if k != 'runtime'}, 'PROCESSING_RUN_CONTEXT_DRIFT')
@@ -147,7 +147,7 @@ def verify_worker(worker, run_id, token):
     from pro_a.phase4_orchestration import _compatible
     from pro_a.phase4_retry import RetryPolicy
     from .domains import Domains
-    evidence = validate_token(token, run_id=run_id)
+    evidence = validate_continuation(token, run_id=run_id) if isinstance(token, EvidenceQualification) else validate_token(token, run_id=run_id)
     run = worker.get_run(run_id)
     bindings = worker.output_batches.inputs(run)  # Full Source/event/raw/result chains.
     with worker.store.connect() as connection:
@@ -166,7 +166,164 @@ def verify_worker(worker, run_id, token):
             'LOSSLESS_NATIVE_CHECKPOINT_DRIFT')
     _compatible(root, row['native_execution_id'], load_config(worker.profile.phase4_config_path),
         RetryPolicy.FORBID_ALL, runtime_compatibility=token)
+    if isinstance(token, EvidenceQualification):
+        verify_original_lossless(worker, run_id, evidence)
     return bindings
+
+
+CONTINUATION_VERSION = 'lossless-evidence-regeneration-target-continuation-v1'
+CONTINUATION_RELEASE = '3cb834fd98f137883f79248292eb23305cce7235'
+_CONTINUATION_ISSUER = object()
+
+
+@dataclass(frozen=True)
+class EvidenceQualification:
+    evidence: dict
+    sealed_identity: str
+    issuer: object
+
+    @property
+    def identity(self):
+        return identity(self.evidence)
+
+
+def validate_continuation(token, *, run_id=None):
+    from .lossless_recovery import evidence_contract
+    require(isinstance(token, EvidenceQualification) and token.issuer is _CONTINUATION_ISSUER,
+        'EVIDENCE_CONTINUATION_QUALIFICATION_REQUIRED')
+    e = token.evidence
+    require(token.identity == token.sealed_identity and e.get('version') == CONTINUATION_VERSION,
+        'EVIDENCE_CONTINUATION_TOKEN_DRIFT')
+    require(e['code']['target_manifest'] == package_manifest() and e['code']['target_commit'] == repository_commit()
+        and e['target_contract'] == runtime_contract() and e['regeneration_contract'] == evidence_contract(),
+        'EVIDENCE_CONTINUATION_TARGET_DRIFT')
+    require(e['old_code']['target_commit'] == CONTINUATION_RELEASE and e['old_install']['manifest'] == e['old_code']['target_manifest']
+        and e['old_install']['commit'] == CONTINUATION_RELEASE, 'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    if run_id is not None:
+        require(e['scope']['run_id'] == run_id, 'EVIDENCE_CONTINUATION_SCOPE_MISMATCH')
+    return e
+
+
+def restore_continuation(evidence, expected_identity):
+    require(identity(evidence) == expected_identity, 'EVIDENCE_CONTINUATION_TOKEN_DRIFT')
+    token = EvidenceQualification(evidence, expected_identity, _CONTINUATION_ISSUER)
+    validate_continuation(token)
+    return token
+
+
+def released_install_evidence(repository_root, installed_package):
+    """Read the actual released Git tree and wheel RECORD, not a supplied manifest."""
+    import base64
+    import csv
+    import io
+    import zipfile
+    environment = {k:v for k,v in os.environ.items() if not k.startswith('GIT_')}
+    def git(*args):
+        return subprocess.check_output(['git', '--no-replace-objects', '-C', str(repository_root), *args], env=environment)
+    raw = git('archive', '--format=zip', CONTINUATION_RELEASE, 'src/pro_a')
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+        manifest = {n[len('src/pro_a/'):]: hashlib.sha256(archive.read(n)).hexdigest()
+            for n in archive.namelist() if n.endswith(('.py', '.sql'))}
+        cloud = archive.read('src/pro_a/workbench/cloud_jobs.py').decode()
+    package = Path(installed_package).resolve()
+    installed = {p.relative_to(package).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+        for p in package.rglob('*') if p.is_file() and p.suffix in ('.py', '.sql')}
+    require(installed == manifest, 'LOSSLESS_CONTINUATION_RELEASED_BYTES_MISMATCH')
+    records = list(package.parent.glob('pro_a-*.dist-info/RECORD'))
+    require(len(records) == 1, 'LOSSLESS_CONTINUATION_RELEASED_IDENTITY_INVALID')
+    rows = list(csv.reader(io.StringIO(records[0].read_text(encoding='utf-8'))))
+    for name in [*manifest, '_build_identity.json']:
+        matches = [r for r in rows if r[0] == 'pro_a/' + name]
+        content = (package/name).read_bytes()
+        encoded = base64.urlsafe_b64encode(hashlib.sha256(content).digest()).decode().rstrip('=')
+        require(len(matches) == 1 and matches[0][1:] == ['sha256='+encoded, str(len(content))],
+            'LOSSLESS_CONTINUATION_RELEASED_IDENTITY_INVALID')
+    build = json.loads((package/'_build_identity.json').read_bytes())
+    require(build == {'contract_version': 'pro-a-build-repository-identity-v1', 'repository': 'ysssss414/pro_a',
+        'repository_commit': CONTINUATION_RELEASE}, 'LOSSLESS_CONTINUATION_RELEASED_IDENTITY_INVALID')
+    function = next(n for n in ast.parse(cloud).body if isinstance(n, ast.FunctionDef) and n.name == 'runtime_identity')
+    names = [ast.literal_eval(n.value) for n in ast.walk(function) if isinstance(n, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == 'names' for t in n.targets)]
+    require(len(names) == 1)
+    return {'commit': CONTINUATION_RELEASE, 'manifest': manifest, 'build_identity_sha256': identity(build),
+        'record_sha256': hashlib.sha256(records[0].read_bytes()).hexdigest(),
+        'domain_code_sha256': identity({n:manifest[n] for n in names[0]})}
+
+
+def verify_original_lossless(worker, run_id, evidence):
+    from .lossless_recovery import original_lossless_grant
+    from .lossless_runtime import policy, resolution
+    ledger = worker.output_batches.ledger
+    scope = evidence['scope']
+    with worker.store.connect() as connection:
+        row, grant, old = original_lossless_grant(worker, connection, run_id)
+        require(row == scope['original_grant'] and identity(old) == scope['original_token_identity']
+            and old == evidence['original_qualification'], 'LOSSLESS_CONTINUATION_ORIGINAL_TOKEN_DRIFT')
+        for series in scope['series']:
+            sid = series['series_id']
+            policy_grant = policy(connection, sid)
+            require(policy_grant['qualification_identity'] == grant['qualification_identity']
+                and policy_grant['recovery_contract'] == 'bounded-lossless-aggregate-recovery-v1')
+            bound, _, _, _ = ledger._load(connection, sid)
+            authority = resolution(ledger, connection, bound)
+            validate_resolution(authority, bound_scope=old['scope']['authority_scope'])
+            require(authority['identity'] == scope['resolution_identity'], 'LOSSLESS_CONTINUATION_RESOLUTION_DRIFT')
+        first = scope['first_aggregate']
+        current = connection.execute('SELECT * FROM bounded_extraction_series_results WHERE series_id=?', (first['series_id'],)).fetchone()
+        require(current and dict(current) == first, 'LOSSLESS_CONTINUATION_AGGREGATE_DRIFT')
+        ledger._read_artifact(first['series_id'], 'aggregate.json', first)
+        failed = scope['failed']
+        attempt = connection.execute('SELECT * FROM bounded_extraction_attempts WHERE attempt_id=?', (failed['attempt_id'],)).fetchone()
+        outcome = connection.execute('SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?', (failed['attempt_id'],)).fetchone()
+        require(attempt and attempt['record_sha256'] == failed['attempt_record_sha256']
+            and outcome and outcome['artifact_sha256'] == failed['raw_sha256'], 'EVIDENCE_FAILED_ATTEMPT_DRIFT')
+        ledger._read_artifact(failed['series_id'], failed['attempt_id'] + '.raw.json', outcome)
+
+
+def qualify_evidence_regeneration(service, run_id, failed_attempt_id, *, historical_repository_root, released_installed_package):
+    from pro_a.phase4_orchestration import _runtime
+    from .lossless_recovery import evidence_assessment, original_lossless_grant, evidence_contract, evidence_request_material
+    worker = frozen_worker(service, run_id, None)
+    bindings = worker.output_batches.inputs(worker.get_run(run_id))
+    with worker.store.connect() as connection:
+        proof = evidence_assessment(worker, connection, run_id, failed_attempt_id, bindings)
+        _, _, old = original_lossless_grant(worker, connection, run_id)
+    code = git_evidence(historical_repository_root)
+    installed = released_install_evidence(historical_repository_root, released_installed_package)
+    require(old['version'] == VERSION and old['code']['baseline'] == BASELINE
+        and old['code']['target_commit'] == CONTINUATION_RELEASE
+        and old['code']['target_manifest'] == installed['manifest']
+        and old['code']['historical_manifest'] == code['historical_manifest']
+        and old['code']['historical_domain_code_sha256'] == code['historical_domain_code_sha256'],
+        'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    old_contract = {**runtime_contract(), 'module_sha256': {n:installed['manifest'][n] for n in sorted(CHANGED | ADDED)}}
+    require(old['target_contract'] == old_contract and old['target_runtime']['lossless_aggregate_recovery'] == old_contract
+        and old['target_runtime']['git_sha'] == CONTINUATION_RELEASE
+        and old['target_runtime']['domain_code_sha256'] == installed['domain_code_sha256']
+        and old['target_runtime']['runtime_sha256'] == identity({k:v for k,v in old['target_runtime'].items() if k != 'runtime_sha256'}),
+        'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    # Only the operator/runtime integration may change. Research/Native/Binding
+    # bytes are compared directly against both actual historical Git trees.
+    allowed = {'workbench/lossless_recovery.py', 'workbench/lossless_compatibility.py'} | CHANGED
+    require(set(installed['manifest']) == set(code['target_manifest'])
+        and all(code['target_manifest'][n] == h for n,h in installed['manifest'].items() if n not in allowed),
+        'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    for a in old['scope']['accepted']:
+        require(any(all(b.get(k) == v for k,v in a.items() if k != 'configuration_sha256') for b in proof['accepted']))
+    evidence = {'version': CONTINUATION_VERSION, 'scope': proof, 'original_qualification': old,
+        'old_code': old['code'], 'old_install': installed, 'code': code, 'target_contract': runtime_contract(),
+        'historical_runtime': old['historical_runtime'], 'target_runtime': worker.jobs.current_runtime(),
+        'historical_native': old['historical_native'], 'target_native': _runtime(), 'native_checkpoint': old['native_checkpoint'],
+        'regeneration_contract': evidence_contract(), 'change_classification': 'EXACT_SCOPE_TARGET_ONLY_CONTINUATION_NOT_SEMANTIC_EQUIVALENCE'}
+    omitted = {'git_sha', 'runtime_sha256', 'domain_code_sha256', 'lossless_aggregate_recovery'}
+    require({k:v for k,v in old['target_runtime'].items() if k not in omitted} ==
+        {k:v for k,v in evidence['target_runtime'].items() if k not in omitted}, 'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    require({k:v for k,v in old['target_native'].items() if k != 'repository_commit'} ==
+        {k:v for k,v in evidence['target_native'].items() if k != 'repository_commit'}, 'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    evidence['new_request'] = evidence_request_material(worker, proof, bindings)[0]
+    token = EvidenceQualification(evidence, identity(evidence), _CONTINUATION_ISSUER)
+    verify_worker(frozen_worker(service, run_id, token), run_id, token)
+    return token
 
 
 def qualify_recovery(service, run_id, resolution, *, historical_repository_root):

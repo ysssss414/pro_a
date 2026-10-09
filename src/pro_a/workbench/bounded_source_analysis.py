@@ -199,7 +199,7 @@ class BoundedSourceAnalysisRunner:
                     configuration = selected.configuration()
                     _require(configuration["timeout_seconds"] == self.service.jobs.profile.timeout_seconds, "BOUNDED_PROVIDER_CONFIGURATION_MISMATCH")
                     payload = self.segment_payload(value, context, catalog, series, segment)
-                    from .strict_recovery import dispatch_payload
+                    from .lossless_recovery import evidence_dispatch_payload as dispatch_payload
                     payload, prompt_name = dispatch_payload(self.ledger, segment.segment_id, payload)
                     with self.ledger._connection(True) as c:
                         segment_row, _ = self.ledger._segment_row(c, segment.segment_id)
