@@ -368,6 +368,9 @@ def bounded_attempt_for_dispatch(ledger, segment_id, owner, fence, *,
         if latest is not None and latest['attempt_number'] > 1:
             if 'regeneration_contract_version' in json.loads(latest['request_json']):
                 from .strict_recovery import expected_attempt_request
+                from .lossless_recovery import EVIDENCE_REQUEST, evidence_expected_request
+                if json.loads(latest['request_json'])['regeneration_contract_version'] == EVIDENCE_REQUEST:
+                    expected_attempt_request = evidence_expected_request
                 expected = expected_attempt_request(ledger, connection, series, segment, latest)
                 _require(json.loads(latest['request_json']) == expected
                          and latest['request_sha256'] == identity(expected)

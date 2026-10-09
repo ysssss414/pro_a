@@ -1010,6 +1010,13 @@ class SourceOperations:
         return authorize_recovery(self, run_id, resolution, qualification,
             idempotency_key=idempotency_key, worker_id=worker_id, reason=reason)
 
+    def authorize_evidence_selector_regeneration(self, run_id, failed_attempt_id, qualification, *,
+                                                idempotency_key, worker_id, reason):
+        """Explicit exact-scope continuation; reserve Attempt 2 without dispatch."""
+        from .lossless_recovery import authorize_evidence_regeneration
+        return authorize_evidence_regeneration(self, run_id, failed_attempt_id, qualification,
+            idempotency_key=idempotency_key, worker_id=worker_id, reason=reason)
+
     def advance_once(self, *, worker_id: str, provider: Any = None,
                      processing_run_id: str | None = None,
                      lease_seconds: int = 180) -> dict[str, Any] | None:

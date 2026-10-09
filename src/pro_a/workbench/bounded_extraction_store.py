@@ -145,6 +145,9 @@ class BoundedExtractionStore:
                 same_request = previous_request in (None, attempt["request_sha256"])
                 if 'regeneration_contract_version' in request:
                     from .strict_recovery import expected_attempt_request
+                    from .lossless_recovery import EVIDENCE_REQUEST, evidence_expected_request
+                    if request['regeneration_contract_version'] == EVIDENCE_REQUEST:
+                        expected_attempt_request = evidence_expected_request
                     expected = expected_attempt_request(self, connection, series, segment, attempt)
                     same_request = number == 2 and previous_request == request['original_request_sha256']
                 _require(number == attempt["attempt_number"] and request == expected
