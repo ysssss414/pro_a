@@ -48,6 +48,8 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "output_decomposition.py": None,
     "output_provider_record_v4.py": None,
     "output_provider_record_v5.py": None,
+    "output_provider_record_v6.py": None,
+    "workbench/output_qualification.py": None,
     "node_candidate_intent.py": None,
     "output_decomposition_legacy.py": None,
     "extraction_analysis_record.py": None,
@@ -83,7 +85,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "workbench/source_operations.py": (
         "_canonical", "_now", "_ExtractionReplay", "SourceProfile.validate",
         "SourceOperations.__init__", "SourceOperations.start", "SourceOperations._event",
-        "SourceOperations._start", "SourceOperations.start_qualification_reprocess",
+        "SourceOperations._start", "SourceOperations.start_qualification_reprocess", "build_source_providers",
         "SourceOperations._transition", "SourceOperations._community_bound",
         "SourceOperations._register_input", "SourceOperations._bind_job",
         "SourceOperations._jobs_for", "SourceOperations._propagate_job_state",

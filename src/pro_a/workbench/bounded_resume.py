@@ -51,8 +51,12 @@ def _worker(service, run_id):
     with service.store.connect() as c:
         row = c.execute('SELECT * FROM source_processing_runs WHERE processing_run_id=?',(run_id,)).fetchone()
         profile, cloud, _, _ = bounded_frozen_components(service.config,c,row)
-        worker = SourceOperations(service.config,profile,cloud,
-                                  runtime_compatibility=service.runtime_compatibility)
+        if json.loads(row['runtime_json']).get('output_operator_qualification'):
+            from .output_qualification import frozen_worker
+            worker = frozen_worker(service, run_id)
+        else:
+            worker = SourceOperations(service.config,profile,cloud,
+                                      runtime_compatibility=service.runtime_compatibility)
         if row['runtime_sha256'] != worker.jobs.current_runtime()['runtime_sha256'] and worker.runtime_compatibility is None:
             retries = list(_bounded_retry_events(c,run_id=run_id))
             from .strict_recovery import authorizations

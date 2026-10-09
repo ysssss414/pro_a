@@ -287,7 +287,8 @@ class _ExtractionReplay:
 
 class SourceOperations:
     def __init__(self, config: WorkbenchConfig, profile: SourceProfile,
-                 cloud_profile: CloudProfile | None = None, *, runtime_compatibility=None):
+                 cloud_profile: CloudProfile | None = None, *, runtime_compatibility=None,
+                 _output_binding_version=None):
         self.config = config
         self.profile = profile
         self.profile.validate()
@@ -299,10 +300,18 @@ class SourceOperations:
         self.jobs = CloudJobs(
             config, cloud_profile, runtime_compatibility=runtime_compatibility,
         )
+        self._output_binding_version = _output_binding_version
+        if _output_binding_version is not None:
+            from .cloud_jobs import runtime_identity
+            with self.store.connect() as connection:
+                version = schema_version(connection)
+            self.jobs._runtime_override = dict(runtime_identity(
+                cloud_profile.provider_adapter_version, workbench_schema_version=version,
+                output_binding_version=_output_binding_version))
         from .bounded_source_analysis import BoundedSourceAnalysisRunner
         self.bounded = BoundedSourceAnalysisRunner(self)
         from .output_decomposition import OutputDecompositionRunner
-        self.output_batches = OutputDecompositionRunner(self)
+        self.output_batches = OutputDecompositionRunner(self, binding_version=_output_binding_version)
         with self.store.connect() as connection:
             if schema_version(connection) not in ("8", "9", "10", "11", "12"):
                 raise SourceOperationError("SOURCE_OPERATIONS_SCHEMA_REQUIRED", 503)
@@ -1029,6 +1038,8 @@ class SourceOperations:
         with self.store.connect(operator_write=True) as connection:
             connection.execute("BEGIN IMMEDIATE")
             where = "processing_run_id=? AND " if processing_run_id else ""
+            if self._output_binding_version is None:
+                where += "json_extract(runtime_json,'$.output_operator_qualification') IS NULL AND "
             args = (processing_run_id, now.isoformat()) if processing_run_id else (now.isoformat(),)
             row = connection.execute(
                 f"SELECT * FROM source_processing_runs WHERE {where}state NOT IN "
@@ -1070,7 +1081,7 @@ class SourceOperations:
             row = connection.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?",
                                      (run_id,)).fetchone()
             from pro_a.output_decomposition import contract
-            if json.loads(row["runtime_json"]).get("whole_piece_output_decomposition") != contract():
+            if json.loads(row["runtime_json"]).get("whole_piece_output_decomposition") != contract(binding_version=self.output_batches.binding_version):
                 raise SourceOperationError("HISTORICAL_EXTRACTION_RUNTIME_INCOMPATIBLE")
             if schema_version(connection) != "12":
                 raise SourceOperationError("BOUNDED_SCHEMA_REQUIRED")
@@ -1152,6 +1163,10 @@ class SourceOperations:
             if provider is not None and (capacity["wip_state"] == "HARD_STOP" or capacity["unprojected_review_packets"] or capacity["intake_paused"]):
                 return self.get_run(run_id)
             if not self.output_batches.advance(self.get_run(run_id), provider, worker_id):
+                return self.get_run(run_id)
+            if self._output_binding_version is not None:
+                if row['stage'] != 'BOUNDED_EXTRACTION_COMPLETE':
+                    self._transition(run_id, 'EXTRACTION_PROCESSING', 'BOUNDED_EXTRACTION_COMPLETE')
                 return self.get_run(run_id)
             replay = self.output_batches.replay(self.get_run(run_id), load_config(self.profile.phase4_config_path).llm)
             result = resume_execution(

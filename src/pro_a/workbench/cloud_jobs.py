@@ -138,7 +138,8 @@ class CloudProfile:
 
 
 @lru_cache(maxsize=None)
-def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7") -> dict[str, Any]:
+def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7",
+                     output_binding_version: str | None = None) -> dict[str, Any]:
     """Identify code loaded by this process; a new process resolves changed code."""
     phase4 = phase4_runtime()
     value = {
@@ -164,7 +165,9 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'workbench/whole_piece_raw.py', 'source_analysis_provider_record.py',
                  'output_decomposition.py', 'workbench/output_decomposition.py',
                  'extraction_analysis_record.py', 'output_decomposition_legacy.py',
-                 'output_provider_record_v4.py', 'workbench/strict_recovery.py')
+                 'output_provider_record_v4.py', 'output_provider_record_v5.py', 'node_candidate_intent.py',
+                 'output_provider_record_v6.py', 'workbench/output_qualification.py',
+                 'workbench/bounded_resume.py', 'workbench/strict_recovery.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     if workbench_schema_version == "12":
@@ -172,6 +175,12 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
         value["whole_piece_output_decomposition"] = contract()
         from .lossless_compatibility import runtime_contract
         value["lossless_aggregate_recovery"] = runtime_contract()
+        if output_binding_version is not None:
+            from .output_qualification import qualification_contract
+            value['output_operator_qualification'] = qualification_contract(output_binding_version)
+            value['whole_piece_output_decomposition'] = contract(binding_version=output_binding_version)
+    elif output_binding_version is not None:
+        raise JobError('BOUNDED_SCHEMA_REQUIRED')
     value["runtime_sha256"] = digest(value)
     return value
 

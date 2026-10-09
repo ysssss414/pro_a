@@ -1,4 +1,4 @@
-# Semantic Intent / Deterministic Compiler R1
+# Semantic Intent / Deterministic Compiler R1 and R1.1
 
 Stage: `PROVIDER_SEMANTIC_INTENT_DETERMINISTIC_COMPILER_R1`.
 Base release: `26c3be797cbd502a6773332e014ae8a19473a349`.
@@ -181,3 +181,125 @@ The next separately authorized stage is
 `SEMANTIC_INTENT_COMPILER_RELEASE_AND_BOUNDED_LIVE_QUALIFICATION`, with finite
 real samples and measurements of format acceptance, Evidence validity, material
 information recall, cost and end-to-end usability.
+
+## R1.1 — Ownership provenance and Operator wiring
+
+Stage: `SEMANTIC_INTENT_OPERATOR_WIRING_AND_OWNERSHIP_R1`.
+This section supersedes the R1 next-stage recommendation above. The original
+v4/v5 schemas, prompts, normalization behavior and historical Raw remain frozen.
+
+### Observed root cause and limits
+
+The nine missing-ownership Candidates in the latest failed Run16 response were
+examined offline against the frozen SourcePiece, Segment and authoritative
+Evidence catalog. Only exact normalized canonical-name references in
+`Claim.related_candidate_names` and the Candidate's explicit active/preserved
+Evidence Selections count as support. Alias similarity, descriptions, proposed
+parents, mentions in free text and the first assigned Evidence do not count.
+
+| Class | Candidates |
+| --- | ---: |
+| Provable through explicit Candidate–Claim–Evidence relationships | 0 |
+| Provable through the Candidate's own valid Evidence Selection | 0 |
+| Multiple explicit Evidence sources requiring resolution | 0 |
+| No explicit support relationship or own Evidence Selection | 9 |
+
+The unsupported zero-based indices are 2, 3, 4, 5, 7, 8, 9, 10 and 11. Their
+types are four Company, one Technology, two Product, one Material and one
+Equipment. **Unresolved count: 9. Historical lossless repair coverage: 0/9.**
+This is missing semantic provenance, not merely repeated execution metadata.
+No source text, candidate names, private identifiers or credentials are published.
+The diagnostic never normalized, accepted, edited or retried the historical Raw.
+
+The minimum model input still required is an explicit relationship from a
+supported Claim to the Candidate, or a valid Candidate Evidence Selection. A
+Candidate need not cause a new Claim to be invented. Existing `evidence_properties`
+can carry its direct support independently of Claims. Adding a scalar ownership
+ID without semantic support is not a repair.
+
+### V6 deterministic rule
+
+V5 continues to require explicit scalar ownership. New ProviderRecord v6 removes
+only the Candidate scalar `ownership_evidence_ref`; source references retain
+their existing explicit ownership field. V6 has distinct schema, encoding,
+prompt, adapter, binding, Series and Batch identities:
+
+| Identity | Version |
+| --- | --- |
+| ProviderRecord / tool schema | v6 / v6 |
+| Encoding | deepseek-output-batch-semantic-intent-encoding-v2 |
+| Binding | whole-piece-output-decomposition-binding-v5 |
+| Provider adapter | whole-piece-output-batch-lexical-tool-provider-v7 |
+| Series / Batch | whole-piece-output-series-v5 / whole-piece-output-batch-v5 |
+| Provenance | candidate-support-set-ownership-v1 |
+
+For each Candidate, enumerate every explicit incoming Claim reference, retaining
+its Claim index and reference index, and every direct Evidence property. Resolve
+every Selection with `resolve_evidence_binding_v2` against the frozen catalog and
+context. One invalid or foreign source rejects the whole response; a valid
+alternative never masks an invalid support. Empty support also rejects the whole
+response without dropping the Candidate.
+
+Ownership is a **set-to-Segment proof**, not a chosen representative Evidence.
+The full nonempty set of validated supporting Evidence must be contained in the
+current Segment's assigned set. Thus multiple Evidence units are unambiguous
+for execution when they all belong to that same Segment. Sources spanning
+Segments are rejected. Sorted unique Evidence refs provide deterministic set
+serialization; original support paths, selection values and binding hashes
+remain in original relationship order. No lowest-ID, earliest-unit, majority or
+first-wins Evidence is selected. No semantic source is silently discarded.
+
+The existing Wire validator still gates all families, node semantics, references
+and Evidence. Candidate/property/Claim order and explicit false/empty values are
+preserved. `ownership_provenance` is persisted beside the accepted Segment result,
+bound to provider-record, Series, Segment and result hashes. The existing result
+artifact hash, append-only ledger record and event chain protect the proof. The
+Wire and aggregate retain their existing formats; older result artifacts omit
+this field and retain their exact identities. Recompiling the same frozen Raw
+and inputs reproduces both result and provenance.
+
+### Internal execution entry
+
+`pro_a.workbench.output_qualification` provides `start`, `providers`, `advance`
+and `resume` for an internal Operator. `start` accepts only explicit v5 or v6
+protocol identity and a validated reason/idempotency key, then uses the normal
+Source start transaction, intake/capacity checks and domain/config binding.
+It grants no run-window, historical-runtime, config or Evidence bypass.
+
+The selected contract and a stop-after-bounded qualification identity are frozen
+into `runtime_json` and its digest before the Run and domain context are created.
+The Runner uses that binding for SourcePiece inputs, Series, payloads and provider
+adapter checks. Reconstruction uses the frozen config path and digest, frozen
+CloudProfile and selected binding, then compares the entire recomputed current
+runtime with the frozen runtime. Compiler and Operator source bytes are included
+in the runtime code digest and compatibility dependency inventory.
+
+`providers` reconstructs the frozen worker before calling `build_source_providers`
+with its exact output binding. `advance` processes normal durable Segment work;
+`resume` uses the existing fenced, call-limited bounded resume path. Both stop
+before Semantic registration. Ordinary workers exclude qualification Runs, and
+ordinary production intake/provider construction still defaults to v4. There
+are no new Web/MCP request fields or endpoints. Read/replay of v4 stays supported;
+cross-release execution still requires the existing compatibility proof and is
+not silently authorized by selecting v5/v6.
+
+### R1.1 verification
+
+The new tests exercise synthetic PDF upload and standard Run creation through
+the Operator entry, actual provider construction with Fake Transport, v5/v6
+Series/schema/Attempt identity, durable acceptance, and continued processing in
+a fresh subprocess. V6 also resumes through the existing bounded-only entry.
+They compare frozen runtime, deterministic replay, provenance, old artifact
+bytes, append-only event/result rows, and unchanged Production bytes; no Semantic
+jobs are registered. They cover unsupported, forged and cross-Segment support,
+wrong v5 ownership, Candidate-only support, config drift, v4 restart routing and
+compiler-code identity coverage. Final test counts are recorded in the PR receipt.
+
+The observed Run16 omission remains unresolved. Engineering routing can be
+qualified offline, but this report does **not** declare the ownership root cause
+fixed or claim real-provider schema/format/Evidence success rates. Real Provider
+calls and Production/Current View writes remain zero; no release, merge or Stable
+activation is performed. The proposed next stage remains
+`SEMANTIC_INTENT_COMPILER_RELEASE_AND_BOUNDED_LIVE_QUALIFICATION`, pending an
+explicit decision on the unresolved semantic-input requirement and separate
+authorization for a very small number of real calls.

@@ -39,6 +39,11 @@ def candidate_schema():
 def compile_candidate(intent):
     """Compile only explicit semantics. Presence, false/empty values and order survive."""
     lexical.validate_shape(intent, candidate_schema())
+    return compile_properties(intent)
+
+
+def compile_properties(intent):
+    """Compile schema-validated properties; callers own their protocol shape gate."""
     active = _NODE_VARIANTS.get(intent['primary_type'], set())
     result = {k: copy.deepcopy(v) for k, v in intent.items() if k not in PROPERTY_FIELDS}
     result['confidence'] = lexical.confidence(result['confidence'])

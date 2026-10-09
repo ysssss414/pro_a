@@ -1,4 +1,5 @@
 """Schema12 Series runner for full-context output batches; no new call ledger."""
+from functools import partial
 from pro_a import output_decomposition as contract
 from .bounded_source_analysis import BoundedSourceAnalysisRunner
 
@@ -12,6 +13,20 @@ class OutputDecompositionRunner(BoundedSourceAnalysisRunner):
     piece_input = staticmethod(contract.piece_input)
     restore_input = staticmethod(contract.restore_input)
     segment_payload = staticmethod(contract.segment_payload)
+
+    def __init__(self, service, *, binding_version=None):
+        super().__init__(service)
+        self.binding_version = binding_version or contract.BINDING_VERSION
+        self.provider_version = contract.contract(binding_version=self.binding_version)['provider_version']
+        self.piece_input = partial(contract.piece_input, binding_version=self.binding_version)
+
+    def inputs(self, run):
+        bindings = super().inputs(run)
+        frozen = run['runtime_identity']['whole_piece_output_decomposition']
+        if any(contract.contract(binding_version=value['binding_version']) != frozen
+               for value, _, _, _ in bindings):
+            raise ValueError('OUTPUT_RUN_BINDING_MISMATCH')
+        return bindings
 
     def projection(self, connection, run_id):
         result = BoundedSourceAnalysisRunner.projection(self, connection, run_id)

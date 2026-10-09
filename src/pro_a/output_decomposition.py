@@ -11,10 +11,12 @@ from . import extraction_analysis_record as normalized
 from . import output_decomposition_legacy as legacy
 from . import output_provider_record_v4 as variant
 from . import output_provider_record_v5 as intent
+from . import output_provider_record_v6 as ownership
 from .bounded_extraction import (OUTPUT_SERIES_VERSION, OUTPUT_BATCH_VERSION, OUTPUT_COVERAGE_VERSION,
     LEGACY_OUTPUT_SERIES_VERSION, LEGACY_OUTPUT_BATCH_VERSION, OUTPUT_SERIES_VERSIONS,
     V2_OUTPUT_SERIES_VERSION, V2_OUTPUT_BATCH_VERSION,
     INTENT_OUTPUT_SERIES_VERSION, INTENT_OUTPUT_BATCH_VERSION,
+    OWNERSHIP_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_BATCH_VERSION,
     OUTPUT_SUBDIVISION_VERSION, OUTPUT_POLICY_VERSION, SeriesBudget,
     create_extraction_series, _segment_contract)
 from .evidence_binding import identity, validate_catalog
@@ -27,6 +29,7 @@ V3_PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v4'
 V3_RECORD_VERSION = 'whole-piece-output-batch-provider-record-v3'
 BINDING_VERSION = 'whole-piece-output-decomposition-binding-v3'
 INTENT_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v4'
+OWNERSHIP_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v5'
 PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v5'
 PROMPT_VERSION = 'whole-piece-output-batch-lexical-tool-prompt-v4'
 RESPONSE_VERSION = 'whole-piece-output-batch-response-v4'
@@ -45,13 +48,20 @@ SYSTEM = normalized.SEMANTIC_SYSTEM + ENCODING_SYSTEM
 INTENT_ENCODING_SYSTEM = (V3_ENCODING_SYSTEM[:V3_ENCODING_SYSTEM.index('\ncandidate 按')]
     + intent.nodes.ENCODING_GUIDANCE + V3_ENCODING_SYSTEM[V3_ENCODING_SYSTEM.index('\nrelation supporting_claim_refs'):])
 INTENT_SYSTEM = normalized.SEMANTIC_SYSTEM + INTENT_ENCODING_SYSTEM
+OWNERSHIP_ENCODING_SYSTEM = INTENT_ENCODING_SYSTEM.replace(intent.nodes.ENCODING_GUIDANCE, ownership.ENCODING_GUIDANCE)
+OWNERSHIP_SYSTEM = (normalized.SEMANTIC_SYSTEM.replace(
+    'candidate/source_reference 的 ownership_evidence_ref', 'source_reference 的 ownership_evidence_ref')
+    + OWNERSHIP_ENCODING_SYSTEM)
 
 
 def _system(record_version):
-    return {RECORD_VERSION: SYSTEM, V3_RECORD_VERSION: V3_SYSTEM, intent.VERSION: INTENT_SYSTEM}[record_version]
+    return {RECORD_VERSION: SYSTEM, V3_RECORD_VERSION: V3_SYSTEM, intent.VERSION: INTENT_SYSTEM,
+            ownership.VERSION: OWNERSHIP_SYSTEM}[record_version]
 
 
 def record_schema(*, record_version=RECORD_VERSION):
+    if record_version == ownership.VERSION:
+        return ownership.record_schema()
     if record_version == intent.VERSION:
         return intent.record_schema()
     if record_version == RECORD_VERSION:
@@ -70,6 +80,19 @@ def record_schema(*, record_version=RECORD_VERSION):
 
 
 def contract(*, binding_version=BINDING_VERSION):
+    if binding_version == OWNERSHIP_BINDING_VERSION:
+        schema = ownership.record_schema()
+        provider = 'whole-piece-output-batch-lexical-tool-provider-v7'
+        return {**contract(binding_version=INTENT_BINDING_VERSION), 'binding_version': binding_version,
+            'adapter_version': provider, 'provider_version': provider,
+            'prompt_version': 'whole-piece-output-batch-lexical-tool-prompt-v6',
+            'response_version': 'whole-piece-output-batch-response-v6', 'provider_record_version': ownership.VERSION,
+            'tool_schema_version': ownership.SCHEMA_VERSION, 'tool_parameters': schema, 'tool_schema_sha256': identity(schema),
+            'system_prompt_sha256': hashlib.sha256(OWNERSHIP_SYSTEM.encode()).hexdigest(),
+            'provider_encoding_contract_version': ownership.ENCODING_VERSION,
+            'provider_encoding_prompt_sha256': hashlib.sha256(OWNERSHIP_ENCODING_SYSTEM.encode()).hexdigest(),
+            'candidate_ownership_version': ownership.OWNERSHIP_VERSION,
+            'series': OWNERSHIP_OUTPUT_SERIES_VERSION, 'batch': OWNERSHIP_OUTPUT_BATCH_VERSION}
     if binding_version == INTENT_BINDING_VERSION:
         schema = intent.record_schema()
         provider = 'whole-piece-output-batch-lexical-tool-provider-v6'
@@ -114,11 +137,14 @@ def contract(*, binding_version=BINDING_VERSION):
 
 def binding_for_series(series_version):
     return {LEGACY_OUTPUT_SERIES_VERSION: LEGACY_BINDING_VERSION,
+            OWNERSHIP_OUTPUT_SERIES_VERSION: OWNERSHIP_BINDING_VERSION,
             INTENT_OUTPUT_SERIES_VERSION: INTENT_BINDING_VERSION,
             V2_OUTPUT_SERIES_VERSION: V3_BINDING_VERSION, OUTPUT_SERIES_VERSION: BINDING_VERSION}[series_version]
 
 
 def record_version_for_series(series_version):
+    if binding_for_series(series_version) == OWNERSHIP_BINDING_VERSION:
+        return ownership.VERSION
     if binding_for_series(series_version) == INTENT_BINDING_VERSION:
         return intent.VERSION
     return RECORD_VERSION if binding_for_series(series_version) == BINDING_VERSION else V3_RECORD_VERSION
@@ -181,6 +207,8 @@ def segment_payload(value, context, catalog, series, segment):
 
 def normalize_record(content, *, record_version=RECORD_VERSION):
     """DeepSeek lexical adapter -> provider-neutral native types, before binding."""
+    if record_version == ownership.VERSION:
+        raise ValueError('OWNERSHIP_CONTEXT_REQUIRED')
     if record_version == intent.VERSION:
         return intent.normalize_record(content)
     if record_version == RECORD_VERSION:
@@ -203,8 +231,12 @@ def record_to_result(content, series, segment, catalog, context, *, record_versi
     # Selection is frozen by Attempt identity, never inferred from response shape.
     if record_version is None:
         record_version = record_version_for_series(series.series_version)
-    if series.series_version == INTENT_OUTPUT_SERIES_VERSION and record_version != intent.VERSION:
+    if series.series_version in (INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION) and record_version != record_version_for_series(series.series_version):
         raise ValueError('PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+    if record_version == ownership.VERSION:
+        if series.series_version != OWNERSHIP_OUTPUT_SERIES_VERSION:
+            raise ValueError('PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+        return ownership.compile_result(content, series, segment, catalog, context)[0]
     if record_version in (legacy.V1, legacy.RECORD_VERSION):
         return legacy.record_to_result(content, series, segment, catalog, context, record_version=record_version)
     if record_version not in (V3_RECORD_VERSION, RECORD_VERSION, intent.VERSION):
