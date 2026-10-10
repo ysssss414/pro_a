@@ -400,6 +400,11 @@ class BoundedExtractionStore:
 
     def _result(self, series_id, row):
         value = json.loads(self._read_artifact(series_id, row["segment_id"] + ".result.json", row))
+        provenance = value.pop('ownership_provenance', None)
+        if provenance is not None:
+            from pro_a.output_provider_record_v6 import OWNERSHIP_VERSION
+            _require(provenance['version'] == OWNERSHIP_VERSION and provenance['result_sha256'] == row['result_sha256'],
+                     'OWNERSHIP_PROVENANCE_IDENTITY_MISMATCH')
         sha = value.pop("result_sha256")
         _require(identity(value) == sha == row["result_sha256"] and value["segment_id"] == row["segment_id"], "SEGMENT_RESULT_IDENTITY_MISMATCH")
         result = SegmentWireResult(**{**value, "dispositions": tuple(EvidenceDisposition(**d) for d in value["dispositions"])}, result_sha256=sha)
@@ -409,6 +414,7 @@ class BoundedExtractionStore:
 
     def accept_result(self, attempt_id, owner, fence, catalog, context):
         failure = None
+        provenance = None
         with self._connection(True) as connection:
             attempt, row, (series, plan, _, _) = self._attempt(connection, attempt_id, owner, fence)
             existing = connection.execute("SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?", (row["segment_id"],)).fetchone()
@@ -451,6 +457,9 @@ class BoundedExtractionStore:
                             _require(hashlib.sha256(prompt).hexdigest() == request['payload_sha256'], 'HISTORICAL_PROMPT_IDENTITY_MISMATCH')
                             version = json.loads(prompt)['target']['provider_record_version']
                         result = record_to_result(body.decode('utf-8'), series, segment, catalog, context, record_version=version)
+                        from pro_a import output_provider_record_v6 as ownership
+                        if version == ownership.VERSION:
+                            result, provenance = ownership.compile_result(body.decode('utf-8'), series, segment, catalog, context)
                     else:
                         document = json.loads(body)
                         _require(type(document) is dict and set(document) == {"wire", "dispositions"}, "INVALID_SEGMENT_RESPONSE")
@@ -467,7 +476,10 @@ class BoundedExtractionStore:
                     connection.execute("UPDATE bounded_extraction_series SET state='RECOVERY_REQUIRED',updated_at=? WHERE series_id=?", (_now(), series.series_id))
                 _event(connection, series.series_id, "SEGMENT_" + state, attempt_id=attempt_id, classification=failure)
             else:
-                relative, digest = self._artifact(series.series_id, row["segment_id"] + ".result.json", canonical(asdict(result)).encode("utf-8"))
+                document = asdict(result)
+                if provenance is not None:
+                    document['ownership_provenance'] = provenance
+                relative, digest = self._artifact(series.series_id, row["segment_id"] + ".result.json", canonical(document).encode("utf-8"))
                 kind = "SUBDIVISION_REQUIRED" if any(d.disposition == "SUBDIVISION_REQUIRED" for d in result.dispositions) else "COMPLETE"
                 accepted = _record(connection, "segment_results", {"segment_id": row["segment_id"], "attempt_id": attempt_id,
                     "result_type": kind, "result_sha256": result.result_sha256, "artifact_relative": relative,

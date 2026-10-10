@@ -30,8 +30,12 @@ V2_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v2"
 V2_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v2"
 OUTPUT_SERIES_VERSION = "whole-piece-output-series-v3"
 OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v3"
-OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION)
-OUTPUT_24K_SERIES_VERSIONS = (V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION)
+INTENT_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v4"
+INTENT_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v4"
+OWNERSHIP_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v5"
+OWNERSHIP_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v5"
+OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION, INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION)
+OUTPUT_24K_SERIES_VERSIONS = (V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION, INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION)
 OUTPUT_COVERAGE_VERSION = "whole-piece-output-coverage-v1"
 OUTPUT_SUBDIVISION_VERSION = "whole-piece-output-subdivision-v1"
 OUTPUT_POLICY_VERSION = "whole-piece-output-ownership-policy-v1"
@@ -143,7 +147,9 @@ class ExtractionSegment:
 def _segment(series: ExtractionSeries, lo: int, hi: int, path: tuple[int, ...],
              parent: ExtractionSegment | None = None) -> ExtractionSegment:
     refs = series.eligible_evidence_refs[lo:hi]
-    values = {"segment_version": (OUTPUT_BATCH_VERSION if series.series_version == OUTPUT_SERIES_VERSION else
+    values = {"segment_version": (OWNERSHIP_OUTPUT_BATCH_VERSION if series.series_version == OWNERSHIP_OUTPUT_SERIES_VERSION else
+              INTENT_OUTPUT_BATCH_VERSION if series.series_version == INTENT_OUTPUT_SERIES_VERSION else
+              OUTPUT_BATCH_VERSION if series.series_version == OUTPUT_SERIES_VERSION else
               V2_OUTPUT_BATCH_VERSION if series.series_version == V2_OUTPUT_SERIES_VERSION else
               LEGACY_OUTPUT_BATCH_VERSION if series.series_version == LEGACY_OUTPUT_SERIES_VERSION else BOUNDED_EXTRACTION_SEGMENT_VERSION), "series_id": series.series_id,
               "parent_segment_id": parent.segment_id if parent else None,
