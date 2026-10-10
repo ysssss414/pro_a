@@ -38,6 +38,7 @@ class Stage1Limits:
 
 
 LIMITS = Stage1Limits()
+QUALIFICATION_RUNS_PER_24H = 10
 
 
 def _canonical(value: Any) -> str:

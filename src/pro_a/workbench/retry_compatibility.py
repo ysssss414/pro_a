@@ -87,6 +87,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
         "_canonical", "_now", "_ExtractionReplay", "SourceProfile.validate",
         "SourceOperations.__init__", "SourceOperations.start", "SourceOperations._event",
         "SourceOperations._start", "SourceOperations.start_qualification_reprocess", "build_source_providers",
+        "SourceOperations.start_qualification_intake",
         "SourceOperations._transition", "SourceOperations._community_bound",
         "SourceOperations._register_input", "SourceOperations._bind_job",
         "SourceOperations._jobs_for", "SourceOperations._propagate_job_state",
