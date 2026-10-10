@@ -785,7 +785,7 @@ def _runtime_comparison(historical: Mapping[str, Any], target: Mapping[str, Any]
         # Only qualified Operator code changed. Aggregate/replay contracts and
         # all other module hashes stay exact; SourceOperations execution methods
         # are compared independently by the unchanged semantic-surface manifest.
-        left, right = historical['lossless_aggregate_recovery'], target['lossless_aggregate_recovery']
+        left, right = historical.get('lossless_aggregate_recovery', {}), target.get('lossless_aggregate_recovery', {})
         old_hashes, new_hashes = left.get('module_sha256', {}), right.get('module_sha256', {})
         changed = {k for k in set(old_hashes) | set(new_hashes) if old_hashes.get(k) != new_hashes.get(k)}
         if ({k:v for k,v in left.items() if k != 'module_sha256'} != {k:v for k,v in right.items() if k != 'module_sha256'}

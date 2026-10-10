@@ -126,6 +126,8 @@ def test_runtime_surface_only_operator_hashes_can_differ():
     assert not compare()['compatible']
     target = deepcopy(original); target['lossless_aggregate_recovery']['module_sha256']['lossless_aggregate.py'] = 'c'*64
     assert not compare()['compatible']
+    target = {}
+    assert not compare()['compatible']
 
 
 def test_actual_stable_frozen_run_qualifies_and_reaches_packet(tmp_path,monkeypatch):
@@ -136,7 +138,7 @@ def test_actual_stable_frozen_run_qualifies_and_reaches_packet(tmp_path,monkeypa
     env = {k:v for k,v in os.environ.items() if k != 'PYTHONPATH'}
     child = subprocess.run([interpreter,'-B','-X','utf8',str(Path(__file__).with_name('v4_single_evidence_fixture.py')),
         str(root),'1c1ad9871f6f3c9a9a061afc12f9918a3f04b25b',
-        str(Path(sys.executable).resolve().parents[1]/'Lib/site-packages')],env=env,capture_output=True,timeout=240)
+        str(Path(pytest.__file__).resolve().parents[1])],env=env,capture_output=True,timeout=240)
     assert child.returncode == 0, child.stderr.decode(errors='replace')
     saved = json.loads((root/'fixture.json').read_text())
     for key in ('state_db','artifact_root','knowledge_db'): saved['config'][key] = Path(saved['config'][key])
