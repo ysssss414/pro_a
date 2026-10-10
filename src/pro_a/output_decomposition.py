@@ -12,11 +12,13 @@ from . import output_decomposition_legacy as legacy
 from . import output_provider_record_v4 as variant
 from . import output_provider_record_v5 as intent
 from . import output_provider_record_v6 as ownership
+from . import output_provider_record_v7 as evidence_intent
 from .bounded_extraction import (OUTPUT_SERIES_VERSION, OUTPUT_BATCH_VERSION, OUTPUT_COVERAGE_VERSION,
     LEGACY_OUTPUT_SERIES_VERSION, LEGACY_OUTPUT_BATCH_VERSION, OUTPUT_SERIES_VERSIONS,
     V2_OUTPUT_SERIES_VERSION, V2_OUTPUT_BATCH_VERSION,
     INTENT_OUTPUT_SERIES_VERSION, INTENT_OUTPUT_BATCH_VERSION,
     OWNERSHIP_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_BATCH_VERSION,
+    EVIDENCE_INTENT_OUTPUT_SERIES_VERSION, EVIDENCE_INTENT_OUTPUT_BATCH_VERSION,
     OUTPUT_SUBDIVISION_VERSION, OUTPUT_POLICY_VERSION, SeriesBudget,
     create_extraction_series, _segment_contract)
 from .evidence_binding import identity, validate_catalog
@@ -30,6 +32,7 @@ V3_RECORD_VERSION = 'whole-piece-output-batch-provider-record-v3'
 BINDING_VERSION = 'whole-piece-output-decomposition-binding-v3'
 INTENT_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v4'
 OWNERSHIP_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v5'
+EVIDENCE_INTENT_BINDING_VERSION = 'whole-piece-output-decomposition-binding-v6'
 PROVIDER_VERSION = 'whole-piece-output-batch-lexical-tool-provider-v5'
 PROMPT_VERSION = 'whole-piece-output-batch-lexical-tool-prompt-v4'
 RESPONSE_VERSION = 'whole-piece-output-batch-response-v4'
@@ -52,14 +55,19 @@ OWNERSHIP_ENCODING_SYSTEM = INTENT_ENCODING_SYSTEM.replace(intent.nodes.ENCODING
 OWNERSHIP_SYSTEM = (normalized.SEMANTIC_SYSTEM.replace(
     'candidate/source_reference 的 ownership_evidence_ref', 'source_reference 的 ownership_evidence_ref')
     + OWNERSHIP_ENCODING_SYSTEM)
+EVIDENCE_INTENT_ENCODING_SYSTEM = ('\n以下 v7 表示规则替代上文 JSON 格式、Evidence 字段名、acknowledgement 与执行归属字段名；研究语义规则全部保留。\n'
+    + ownership.ENCODING_GUIDANCE + evidence_intent.ENCODING_GUIDANCE)
+EVIDENCE_INTENT_SYSTEM = normalized.SEMANTIC_SYSTEM + EVIDENCE_INTENT_ENCODING_SYSTEM
 
 
 def _system(record_version):
     return {RECORD_VERSION: SYSTEM, V3_RECORD_VERSION: V3_SYSTEM, intent.VERSION: INTENT_SYSTEM,
-            ownership.VERSION: OWNERSHIP_SYSTEM}[record_version]
+            ownership.VERSION: OWNERSHIP_SYSTEM, evidence_intent.VERSION: EVIDENCE_INTENT_SYSTEM}[record_version]
 
 
 def record_schema(*, record_version=RECORD_VERSION):
+    if record_version == evidence_intent.VERSION:
+        return evidence_intent.record_schema()
     if record_version == ownership.VERSION:
         return ownership.record_schema()
     if record_version == intent.VERSION:
@@ -80,6 +88,20 @@ def record_schema(*, record_version=RECORD_VERSION):
 
 
 def contract(*, binding_version=BINDING_VERSION):
+    if binding_version == EVIDENCE_INTENT_BINDING_VERSION:
+        schema = evidence_intent.record_schema()
+        provider = 'whole-piece-output-batch-lexical-tool-provider-v8'
+        return {**contract(binding_version=OWNERSHIP_BINDING_VERSION), 'binding_version': binding_version,
+            'adapter_version': provider, 'provider_version': provider,
+            'prompt_version': 'whole-piece-output-batch-lexical-tool-prompt-v7',
+            'response_version': 'whole-piece-output-batch-response-v7', 'provider_record_version': evidence_intent.VERSION,
+            'tool_schema_version': evidence_intent.SCHEMA_VERSION, 'tool_parameters': schema, 'tool_schema_sha256': identity(schema),
+            'system_prompt_sha256': hashlib.sha256(EVIDENCE_INTENT_SYSTEM.encode()).hexdigest(),
+            'provider_encoding_contract_version': evidence_intent.ENCODING_VERSION,
+            'provider_encoding_prompt_sha256': hashlib.sha256(EVIDENCE_INTENT_ENCODING_SYSTEM.encode()).hexdigest(),
+            'evidence_intent_version': evidence_intent.INTENT_VERSION, 'research_review_version': evidence_intent.REVIEW_VERSION,
+            'semantic_authorization': 'HUMAN_REVIEW_REQUIRED',
+            'series': EVIDENCE_INTENT_OUTPUT_SERIES_VERSION, 'batch': EVIDENCE_INTENT_OUTPUT_BATCH_VERSION}
     if binding_version == OWNERSHIP_BINDING_VERSION:
         schema = ownership.record_schema()
         provider = 'whole-piece-output-batch-lexical-tool-provider-v7'
@@ -137,12 +159,15 @@ def contract(*, binding_version=BINDING_VERSION):
 
 def binding_for_series(series_version):
     return {LEGACY_OUTPUT_SERIES_VERSION: LEGACY_BINDING_VERSION,
+            EVIDENCE_INTENT_OUTPUT_SERIES_VERSION: EVIDENCE_INTENT_BINDING_VERSION,
             OWNERSHIP_OUTPUT_SERIES_VERSION: OWNERSHIP_BINDING_VERSION,
             INTENT_OUTPUT_SERIES_VERSION: INTENT_BINDING_VERSION,
             V2_OUTPUT_SERIES_VERSION: V3_BINDING_VERSION, OUTPUT_SERIES_VERSION: BINDING_VERSION}[series_version]
 
 
 def record_version_for_series(series_version):
+    if binding_for_series(series_version) == EVIDENCE_INTENT_BINDING_VERSION:
+        return evidence_intent.VERSION
     if binding_for_series(series_version) == OWNERSHIP_BINDING_VERSION:
         return ownership.VERSION
     if binding_for_series(series_version) == INTENT_BINDING_VERSION:
@@ -196,6 +221,20 @@ def segment_payload(value, context, catalog, series, segment):
     user = ('Frozen target:\n' + json.dumps(target, sort_keys=True) + '\nScoped existing Nodes:\n'
         + json.dumps(value['native']['scoped_node_catalog'], ensure_ascii=False)
         + '\nComplete annotated SourcePiece:\n' + annotated_source(context, catalog, segment.assigned_evidence_refs))
+    if selected['provider_record_version'] == evidence_intent.VERSION:
+        native = value['native']
+        # Preserve the original request verbatim, including filename/mode, full
+        # scoped Node records and research fields. Regions retain exact Source
+        # text and separate Assigned/Context provenance. No IDs-only substitute.
+        user = json.dumps({'frozen_target': target,
+            'native_input_metadata': {k: v for k, v in native.items()
+                if k not in ('source_text', 'source_piece', 'scoped_node_catalog', 'user_prompt')},
+            'source_piece_metadata': {k: v for k, v in native['source_piece'].items()
+                if k not in ('source_text', 'prompt_text')},
+            'original_research_user_prompt': native['user_prompt'],
+            'scoped_node_catalog': native['scoped_node_catalog'],
+            'source_sha256': context.source_sha256, 'series_sha256': series.series_sha256,
+            'source_regions': evidence_intent.source_regions(catalog, context, segment)}, ensure_ascii=False)
     request = {'model':'deepseek-flash', 'max_tokens':segment.max_output_tokens, 'thinking':{'type':'disabled'},
         'stream':False, 'temperature':0.1,
         'tools':[{'type':'function','function':{'name':lexical.TOOL_NAME,'strict':True,
@@ -207,7 +246,7 @@ def segment_payload(value, context, catalog, series, segment):
 
 def normalize_record(content, *, record_version=RECORD_VERSION):
     """DeepSeek lexical adapter -> provider-neutral native types, before binding."""
-    if record_version == ownership.VERSION:
+    if record_version in (ownership.VERSION, evidence_intent.VERSION):
         raise ValueError('OWNERSHIP_CONTEXT_REQUIRED')
     if record_version == intent.VERSION:
         return intent.normalize_record(content)
@@ -231,8 +270,12 @@ def record_to_result(content, series, segment, catalog, context, *, record_versi
     # Selection is frozen by Attempt identity, never inferred from response shape.
     if record_version is None:
         record_version = record_version_for_series(series.series_version)
-    if series.series_version in (INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION) and record_version != record_version_for_series(series.series_version):
+    if series.series_version in (INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION, EVIDENCE_INTENT_OUTPUT_SERIES_VERSION) and record_version != record_version_for_series(series.series_version):
         raise ValueError('PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+    if record_version == evidence_intent.VERSION:
+        if series.series_version != EVIDENCE_INTENT_OUTPUT_SERIES_VERSION:
+            raise ValueError('PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+        return evidence_intent.compile_result(content, series, segment, catalog, context)[0]
     if record_version == ownership.VERSION:
         if series.series_version != OWNERSHIP_OUTPUT_SERIES_VERSION:
             raise ValueError('PROVIDER_RECORD_SERIES_VERSION_MISMATCH')

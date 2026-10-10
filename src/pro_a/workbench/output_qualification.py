@@ -12,16 +12,17 @@ VERSION = 'semantic-intent-operator-qualification-v1'
 
 
 def qualification_contract(binding_version):
-    if binding_version not in (output.INTENT_BINDING_VERSION, output.OWNERSHIP_BINDING_VERSION):
+    if binding_version not in (output.INTENT_BINDING_VERSION, output.OWNERSHIP_BINDING_VERSION, output.EVIDENCE_INTENT_BINDING_VERSION):
         raise SourceOperationError('UNSUPPORTED_OUTPUT_QUALIFICATION_BINDING')
-    return {'version': VERSION, 'binding_version': binding_version,
+    return {'version': 'evidence-intent-operator-qualification-v2' if binding_version == output.EVIDENCE_INTENT_BINDING_VERSION else VERSION, 'binding_version': binding_version,
             'completion_boundary': 'STOP_AFTER_BOUNDED_EXTRACTION', 'semantic_registration_allowed': False}
 
 
 def start(service, source_id, *, record_version, reason, idempotency_key):
     _validate_retry_request(reason, idempotency_key)
     bindings = {output.intent.VERSION: output.INTENT_BINDING_VERSION,
-                output.ownership.VERSION: output.OWNERSHIP_BINDING_VERSION}
+                output.ownership.VERSION: output.OWNERSHIP_BINDING_VERSION,
+                output.evidence_intent.VERSION: output.EVIDENCE_INTENT_BINDING_VERSION}
     if record_version not in bindings:
         raise SourceOperationError('UNSUPPORTED_OUTPUT_QUALIFICATION_BINDING')
     worker = SourceOperations(service.config, service.profile, service.jobs.profile,

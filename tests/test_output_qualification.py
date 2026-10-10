@@ -12,6 +12,7 @@ import pytest
 
 from pro_a import output_decomposition as output
 from pro_a import output_provider_record_v5 as v5, output_provider_record_v6 as v6
+from pro_a import output_provider_record_v7 as v7
 from pro_a.workbench import output_qualification as operator
 from pro_a.workbench.source_operations import SourceOperations, SourceOperationError
 from pro_a.workbench.cloud_jobs import CloudProfile
@@ -28,13 +29,19 @@ class FakeTransport:
     def __call__(self, endpoint, **kwargs):
         request = kwargs['json']
         self.calls.append(copy.deepcopy(request))
-        target, source = request_parts(request)
+        if request['messages'][1]['content'].startswith('{'):
+            document = json.loads(request['messages'][1]['content'])
+            target = document['frozen_target']
+            source = ''.join('['+r['evidence_ref']+']'+r['text']+'[/'+r['evidence_ref']+']'
+                if r['role'] == 'ASSIGNED' else r['text'] for r in document['source_regions'])
+        else:
+            target, source = request_parts(request)
         version = target['provider_record_version']
         record = batch_record(json.loads(response_content(target, source)),
                               {**target, 'provider_record_version': output.RECORD_VERSION})
-        if version in (v5.VERSION, v6.VERSION):
+        if version in (v5.VERSION, v6.VERSION, v7.VERSION):
             record = from_valid_v4(record)
-        if version == v6.VERSION:
+        if version in (v6.VERSION, v7.VERSION):
             for candidate in record['node_candidates']:
                 del candidate['ownership_evidence_ref']
         if self.mutation == 'unsupported':
@@ -50,6 +57,49 @@ class FakeTransport:
             selection = record['claims'][0]['evidence']
             record['claims'] = []
             record['node_candidates'][0]['evidence_properties'] = [{'field': 'evidence_ref', 'value': selection}]
+        if version == v7.VERSION:
+            from test_evidence_intent_v7 import new_record
+            from types import SimpleNamespace
+            # This inverse is solely a synthetic fixture. Production only
+            # compiles explicit new records and never reinterprets frozen Raw.
+            units = [SimpleNamespace(evidence_ref=r['evidence_ref']) for r in document['source_regions'] if 'anchor_id' in r]
+            catalog = SimpleNamespace(units=units)
+            anchors = {r['evidence_ref']: r['anchor_id'] for r in document['source_regions'] if 'anchor_id' in r}
+            from unittest.mock import patch
+            with patch.object(v7, 'unit_anchor', lambda u: anchors.get(u.evidence_ref, 'EA_FORGED')):
+                # Include the forged ref so it reaches the real compiler's
+                # unknown-anchor rejection rather than failing in the fixture.
+                if self.mutation == 'forged':
+                    catalog.units.append(SimpleNamespace(evidence_ref='EV_FORGED'))
+                record = new_record(record, catalog)
+            claim = record['claims'][0] if record['claims'] else None
+            if claim:
+                claim['evidence'].update(selection_mode='RAW_SUBSPAN', quote=claim['statement'])
+                context = next(r for r in document['source_regions'] if r['role'] == 'CONTEXT' and 'anchor_id' in r)
+                claim['research_review'] = {'context_dependencies': [{
+                    'evidence': {'kind': 'UNIT_SELECTION', 'unit_anchor': context['anchor_id'],
+                        'selection_mode': 'WHOLE_UNIT', 'quote': '', 'occurrence': '1'},
+                    'relationship': 'BACKGROUND', 'reason': 'Synthetic context remains unproved.'}],
+                    'review_reasons': ['Human review required.']}
+                if self.mutation == 'foreign_context_invalid':
+                    claim['research_review']['context_dependencies'][0]['evidence']['unit_anchor'] = 'EA_FORGED'
+                elif self.mutation == 'semantic_authorization':
+                    claim['research_review']['semantic_truth'] = 'CONFIRMED'
+                elif self.mutation == 'missing_occurrence':
+                    claim['evidence']['occurrence'] = ''
+                from pro_a.analyzer import canonicalize_text
+                record['claims'][-1]['evidence'].update(selection_mode='NORMALIZED_SUBSPAN',
+                    quote=canonicalize_text(record['claims'][-1]['statement']))
+                nodes = document['scoped_node_catalog']
+                assert len(nodes) == 2 and all(n['aliases'] and n['canonical_name'] and n['primary_type'] for n in nodes)
+                claim['related_node_ids'] = [n['node_id'] for n in nodes]
+                record['node_matches'] = [{'node_id': n['node_id'], 'role': 'related', 'confidence': '0.9',
+                    'reason': 'Explicit synthetic mention.', 'evidence': copy.deepcopy(claim['evidence'])} for n in nodes]
+                product = next(n for n in nodes if n['canonical_name'] == 'Synthetic Product')
+                capacity = next(n for n in nodes if n['canonical_name'] == 'Synthetic Capacity')
+                record['relation_candidates'] = [{'from_node_id': product['node_id'], 'to_node_id': capacity['node_id'],
+                    'relation_type': 'uses', 'scope': 'Synthetic', 'confidence': '0.9',
+                    'reason': 'Explicit uses in one synthetic fact.', 'supporting_claim_refs': ['C1']}]
         assert request['tools'][0]['function']['parameters'] == output.record_schema(record_version=version)
         return ToolResponse(json.dumps(record))
 
@@ -69,7 +119,14 @@ def fixture(tmp_path, monkeypatch, version=v6.VERSION):
     path.write_text(content, encoding='utf-8')
     cloud = CloudProfile('deepseek', 'deepseek-flash')
     value['service'] = SourceOperations(value['config'], value['source_profile'], cloud)
-    source = upload(value, clean_pdf(tmp_path, text=text(18)))
+    source_text = text(18)
+    if version == v7.VERSION:
+        from pro_a.db import Database
+        db = Database(value['config'].knowledge_db)
+        for name in ('Synthetic Product', 'Synthetic Capacity'):
+            db.add_node(name, 'Product', aliases=[name + ' Alias'], description='Synthetic scoped catalog description.')
+        source_text = '\n'.join(f'Synthetic Company product {i:03d} states Synthetic Product uses Synthetic Capacity with capacity {i+1} units.' for i in range(18))
+    source = upload(value, clean_pdf(tmp_path, text=source_text))
     service = value['service']
     if version == output.RECORD_VERSION:
         run = service.start(source['source_id'], idempotency_key='synthetic-default-run-0001')['run']
@@ -86,7 +143,7 @@ def advance(value, rid, transport=None):
     return operator.advance(value['service'], rid, worker_id='synthetic-operator', provider=providers)
 
 
-@pytest.mark.parametrize('version', [v5.VERSION, v6.VERSION])
+@pytest.mark.parametrize('version', [v5.VERSION, v6.VERSION, v7.VERSION])
 def test_operator_run_binding_durable_restart_and_stop(tmp_path, monkeypatch, version):
     value, run = fixture(tmp_path, monkeypatch, version)
     rid = run['processing_run_id']; frozen = run['runtime_identity']
@@ -101,6 +158,23 @@ def test_operator_run_binding_durable_restart_and_stop(tmp_path, monkeypatch, ve
     assert all(b[0]['binding_version'] == selected['binding_version'] and b[3].series_version == selected['series'] for b in inputs)
     provider = operator.providers(value['service'], rid)[output.OPERATION]
     assert provider.configuration()['contract'] == selected
+    if version == v7.VERSION:
+        from pro_a.prompts import SOURCE_ANALYSIS_SYSTEM
+        from pro_a.evidence_binding import identity
+        binding, ctx, catalog, series = inputs[0]
+        _, plan, _, accounting = worker.output_batches.ledger.read(series.series_id)
+        payload = output.segment_payload(binding, ctx, catalog, series, plan.leaves[0])
+        research = json.loads(payload['request']['messages'][1]['content']); native = binding['native']
+        assert research['scoped_node_catalog'] == native['scoped_node_catalog']
+        assert len(research['scoped_node_catalog']) == 2
+        assert research['original_research_user_prompt'] == native['user_prompt']
+        assert ''.join(r['text'] for r in research['source_regions']) == ctx.piece.source_text
+        assert research['source_piece_metadata'] == {k: v for k, v in native['source_piece'].items() if k not in ('source_text', 'prompt_text')}
+        assert research['native_input_metadata'] == {k: v for k, v in native.items() if k not in ('source_text', 'source_piece', 'scoped_node_catalog', 'user_prompt')}
+        assert SOURCE_ANALYSIS_SYSTEM in payload['request']['messages'][0]['content']
+        assert selected['tool_schema_sha256'] == identity(v7.record_schema())
+        assert payload['request']['max_tokens'] == plan.leaves[0].max_output_tokens == output.SEGMENT_OUTPUT_CEILING
+        assert provider.configuration()['automatic_retry'] is False and accounting.provider_call_count == 0
     transport = FakeTransport()
     run = advance(value, rid, transport)
     assert run['accepted_leaf_calls'] == 1, run.get('error')
@@ -127,7 +201,7 @@ service=SourceOperations(WorkbenchConfig(**data['config']),SourceProfile(**data[
 assert operator.frozen_worker(service,data['run_id']).jobs.current_runtime()==data['runtime']
 fake=FakeTransport()
 for _ in range(8):
- if data['runtime']['whole_piece_output_decomposition']['provider_record_version'].endswith('-v6'):
+ if data['runtime']['whole_piece_output_decomposition']['provider_record_version'].endswith(('-v6','-v7')):
   providers=operator.providers(service,data['run_id'])
   providers['WHOLE_PIECE_OUTPUT_BATCH'].transport=fake
   receipt=operator.resume(service,data['run_id'],worker_id='restart-worker',idempotency_key='synthetic-restart-0001',max_new_calls=1,provider=providers)
@@ -166,12 +240,25 @@ print('RESTART_COMPLETE',len(fake.calls))
                 assert document['ownership_provenance'] == proof
                 assert len(proof['candidates'][0]['evidence_refs']) > 1
                 assert len(proof['candidates'][0]['supports']) == len(json.loads(body)['claims'])
+            elif version == v7.VERSION:
+                replay, review = v7.compile_result(body.decode(), series, segment, binding[2], binding[1], plan=plan)
+                attachment = document['research_review_attachment']
+                assert json.loads(ledger._read_artifact(series.series_id, segment.segment_id+'.review.json', attachment)) == review
+                assert document['ownership_provenance'] == review['candidate_ownership']
+                assert review['claims'][0]['statuses'] == ['LOCATION_VERIFIED', 'CONTEXT_DEPENDENCY_DECLARED', 'SEMANTIC_REVIEW_REQUIRED']
+                assert review['claims'][0]['context_dependencies'][0]['relationship_authorization'] == 'NOT_ESTABLISHED'
+                assert review['semantic_authorization'] == 'NOT_ESTABLISHED' and review['canonical_permission'] is False
+                assert 'research_review' not in replay.wire_json
+                assert review['review_required_paths'] == [['node_matches', 0], ['node_matches', 1], ['node_candidates', 0], ['relation_candidates', 0]]
+                assert review['bindings'][0]['binding']['mode'] == 'RAW_SUBSPAN'
+                assert any(b['binding']['mode'] == 'NORMALIZED_SUBSPAN' for b in review['bindings'])
             else:
                 assert 'ownership_provenance' not in document
 
 
 @pytest.mark.parametrize('mutation,version', [('unsupported', v6.VERSION), ('forged', v6.VERSION),
-    ('foreign', v6.VERSION), ('wrong_owner', v5.VERSION)])
+    ('foreign', v6.VERSION), ('wrong_owner', v5.VERSION), ('unsupported', v7.VERSION), ('forged', v7.VERSION),
+    ('foreign', v7.VERSION), ('foreign_context_invalid', v7.VERSION), ('semantic_authorization', v7.VERSION), ('missing_occurrence', v7.VERSION)])
 def test_operator_rejects_invalid_ownership_without_acceptance(tmp_path, monkeypatch, mutation, version):
     value, run = fixture(tmp_path, monkeypatch, version); rid = run['processing_run_id']
     advance(value, rid)
@@ -186,8 +273,9 @@ def test_operator_rejects_invalid_ownership_without_acceptance(tmp_path, monkeyp
     assert not rows(value, 'source_processing_jobs')
 
 
-def test_own_selection_and_frozen_config_drift(tmp_path, monkeypatch):
-    value, run = fixture(tmp_path, monkeypatch); rid = run['processing_run_id']
+@pytest.mark.parametrize('version', [v6.VERSION, v7.VERSION])
+def test_own_selection_and_frozen_config_drift(tmp_path, monkeypatch, version):
+    value, run = fixture(tmp_path, monkeypatch, version); rid = run['processing_run_id']
     advance(value, rid)
     run = advance(value, rid, FakeTransport('own_selection'))
     assert run['accepted_leaf_calls'] == 1, run.get('error')
@@ -214,7 +302,7 @@ def test_default_v4_run_remains_v4_after_restart(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize('module', ['node_candidate_intent.py', 'output_provider_record_v5.py',
-    'output_provider_record_v6.py', 'workbench/output_qualification.py'])
+    'output_provider_record_v6.py', 'output_provider_record_v7.py', 'workbench/output_qualification.py'])
 def test_compiler_and_operator_bytes_are_in_runtime_identity(monkeypatch, module):
     from pro_a.workbench import cloud_jobs, retry_compatibility
     assert module in retry_compatibility._CLOUD_EXECUTION_DEPENDENCIES
