@@ -211,6 +211,19 @@ def restore_continuation(evidence, expected_identity):
     return token
 
 
+def read_continuation_evidence(evidence, expected_identity):
+    """Verify durable historical proof without issuing execution authority."""
+    from .lossless_recovery import evidence_contract
+    require(identity(evidence) == expected_identity and evidence.get('version') == CONTINUATION_VERSION,
+        'EVIDENCE_CONTINUATION_TOKEN_DRIFT')
+    require(evidence['old_code']['target_commit'] == CONTINUATION_RELEASE
+        and evidence['old_install']['manifest'] == evidence['old_code']['target_manifest']
+        and evidence['old_install']['commit'] == CONTINUATION_RELEASE,
+        'STOP_LOSSLESS_CONTINUATION_RUNTIME_INCOMPATIBLE')
+    require(evidence['regeneration_contract'] == evidence_contract(), 'EVIDENCE_CONTINUATION_TARGET_DRIFT')
+    return evidence
+
+
 def released_install_evidence(repository_root, installed_package):
     """Read the actual released Git tree and wheel RECORD, not a supplied manifest."""
     import base64
