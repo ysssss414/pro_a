@@ -51,11 +51,21 @@
     "focused_related_regression": "98 passed",
     "final_prototype_after_anchor_uniqueness_check": "22 passed",
     "larger_regression_attempt": "INTERRUPTED_DURING_UNRELATED_RUN13_FULL_TOPOLOGY; NO_COMPLETE_RESULT_CLAIMED",
-    "isolated_installed_wheel": "PENDING",
+    "isolated_installed_wheel": "39 passed; SOURCE_CHECKOUT_DENIED; NO_GIT_IDENTITY_PASS",
     "privacy": "PASS; NO_REAL_SOURCE_FRAGMENTS_PRIVATE_IDENTIFIERS_OR_CREDENTIALS"
+  },
+  "CANDIDATE_PACKAGE_VERIFICATION": {
+    "code_commit": "c1367dea00b84ad8bfcbaa1b7992bd3601e11b43",
+    "code_tree": "b7e9a8fc9c33732d99d0134e0d4a5435d805ddaa",
+    "wheel_sha256": "953a5d8847041a3c636f17fe2217f2ec66c5c9239268f50a0de954fde2766c6d",
+    "git_wheel_installed_source_files_equal": 163,
+    "reused_existing_candidate": true,
+    "stable_installed_or_activated": false
   },
   "REQUEST_SIZE_PROXY": {
     "prototype_over_original_user_plus_schema_character_ratio": 0.9377587634556998,
+    "complete_research_request_equivalence": "NOT_QUALIFIED; PROTOTYPE_NODE_IDS_DO_NOT_REPLACE_FULL_SCOPED_NODE_CATALOG",
+    "cost_gate": "NOT_ESTABLISHED_BY_CHARACTER_PROXY",
     "actual_token_change": "NOT_OBSERVED",
     "extra_provider_calls_required_by_binding": 0
   },

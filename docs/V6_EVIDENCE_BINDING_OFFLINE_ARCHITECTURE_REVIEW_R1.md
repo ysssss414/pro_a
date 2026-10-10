@@ -180,15 +180,27 @@ review-envelope replay are exercised. A separate schema12 synthetic ledger test
 proves that the frozen runtime rejects the new protocol with zero Accepted
 Segments, zero Semantic jobs and unchanged synthetic Production.
 
-Related regression and isolated wheel verification results are recorded in the
-companion receipt. Tests use existing D-drive environments and synthetic fixtures.
-No additional worktree, schema migration or disk cleanup is performed.
+Focused related regression: **98 passed**. After the final anchor uniqueness
+check, the 22 prototype tests passed again. Isolated installed wheel checks:
+**39 passed**, with checkout access denied, independent no-Git identity validation,
+and Git/wheel/installed equality for 163 source/SQL files. The candidate package
+was built from code commit `c1367dea00b84ad8bfcbaa1b7992bd3601e11b43`; only this
+report/receipt changes after that build. Package details are in the companion
+receipt. A larger regression attempt was stopped during the unrelated historical
+Run13 full-topology case; no completed result is claimed for that attempt.
+Tests use existing D-drive environments and synthetic fixtures. No additional
+worktree, schema migration or disk cleanup is performed.
 
 For the real frozen input, read-only request-size inspection found the new user
 payload plus strict schema character count at **93.8%** of the original v6 pair.
-This excludes system prompting/tokenizer effects and is a character proxy, not
-a measured Token/cost saving. Actual Provider acceptance, output richness and Token
-changes are `NOT_OBSERVED`. The binding compiler requires zero added calls.
+This is **not an equivalent complete research request comparison**: the prototype
+envelope carries known Node IDs, while the existing request also carries the
+scoped Node catalog and fuller frozen-target metadata. A formal request must
+retain the original research catalog, rather than interpret its omission as a
+cost saving. System prompting/tokenizer effects are also excluded. No Token/cost
+saving or full cost gate is proven. Actual Provider acceptance, output richness
+and Token changes are `NOT_OBSERVED`. The binding compiler requires zero added
+calls; complete request-context/cost parity remains integration qualification.
 
 Stable stays at the released baseline. Exact protected-state comparison and
 sealed request/Raw/HTTP hash checks pass; schema12 integrity/foreign-key checks
