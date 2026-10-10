@@ -400,6 +400,17 @@ class BoundedExtractionStore:
 
     def _result(self, series_id, row):
         value = json.loads(self._read_artifact(series_id, row["segment_id"] + ".result.json", row))
+        attachment = value.pop('research_review_attachment', None)
+        if attachment is not None:
+            from pro_a.output_provider_record_v7 import REVIEW_VERSION, VERSION
+            review = json.loads(self._read_artifact(series_id, row['segment_id'] + '.review.json', attachment))
+            _require(review['version'] == REVIEW_VERSION and review['protocol_version'] == VERSION
+                     and review['result_sha256'] == row['result_sha256']
+                     and review['segment_sha256'] == value['segment_sha256']
+                     and review['series_id'] == series_id
+                     and review['authority'] == 'NON_AUTHORITATIVE_RESEARCH_REVIEW'
+                     and review['semantic_authorization'] == 'NOT_ESTABLISHED'
+                     and review['canonical_permission'] is False, 'RESEARCH_REVIEW_IDENTITY_MISMATCH')
         provenance = value.pop('ownership_provenance', None)
         if provenance is not None:
             from pro_a.output_provider_record_v6 import OWNERSHIP_VERSION
@@ -415,6 +426,7 @@ class BoundedExtractionStore:
     def accept_result(self, attempt_id, owner, fence, catalog, context):
         failure = None
         provenance = None
+        review = None
         with self._connection(True) as connection:
             attempt, row, (series, plan, _, _) = self._attempt(connection, attempt_id, owner, fence)
             existing = connection.execute("SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?", (row["segment_id"],)).fetchone()
@@ -456,10 +468,19 @@ class BoundedExtractionStore:
                             prompt = checked_path(self._path(series.series_id, segment.segment_id + '.prompt.json')).read_bytes()
                             _require(hashlib.sha256(prompt).hexdigest() == request['payload_sha256'], 'HISTORICAL_PROMPT_IDENTITY_MISMATCH')
                             version = json.loads(prompt)['target']['provider_record_version']
-                        result = record_to_result(body.decode('utf-8'), series, segment, catalog, context, record_version=version)
-                        from pro_a import output_provider_record_v6 as ownership
-                        if version == ownership.VERSION:
+                        from pro_a import output_provider_record_v6 as ownership, output_provider_record_v7 as evidence_intent
+                        if version == evidence_intent.VERSION:
+                            # Enforce the frozen series/record pairing before generating
+                            # the separate attachment. The compiler verifies active leaves.
+                            from pro_a.output_decomposition import record_version_for_series
+                            _require(version == record_version_for_series(series.series_version), 'PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+                            result, review = evidence_intent.compile_result(body.decode('utf-8'), series, segment, catalog, context, plan=plan)
+                            provenance = review['candidate_ownership']
+                        elif version == ownership.VERSION:
+                            result = record_to_result(body.decode('utf-8'), series, segment, catalog, context, record_version=version)
                             result, provenance = ownership.compile_result(body.decode('utf-8'), series, segment, catalog, context)
+                        else:
+                            result = record_to_result(body.decode('utf-8'), series, segment, catalog, context, record_version=version)
                     else:
                         document = json.loads(body)
                         _require(type(document) is dict and set(document) == {"wire", "dispositions"}, "INVALID_SEGMENT_RESPONSE")
@@ -479,6 +500,11 @@ class BoundedExtractionStore:
                 document = asdict(result)
                 if provenance is not None:
                     document['ownership_provenance'] = provenance
+                if review is not None:
+                    # Published before the accepted result, then hash-bound through
+                    # its existing immutable artifact/receipt. No schema migration.
+                    review_relative, review_sha = self._artifact(series.series_id, row['segment_id'] + '.review.json', canonical(review).encode('utf-8'))
+                    document['research_review_attachment'] = {'artifact_relative': review_relative, 'artifact_sha256': review_sha}
                 relative, digest = self._artifact(series.series_id, row["segment_id"] + ".result.json", canonical(document).encode("utf-8"))
                 kind = "SUBDIVISION_REQUIRED" if any(d.disposition == "SUBDIVISION_REQUIRED" for d in result.dispositions) else "COMPLETE"
                 accepted = _record(connection, "segment_results", {"segment_id": row["segment_id"], "attempt_id": attempt_id,

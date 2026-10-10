@@ -49,6 +49,7 @@ _CLOUD_EXECUTION_DEPENDENCIES = {
     "output_provider_record_v4.py": None,
     "output_provider_record_v5.py": None,
     "output_provider_record_v6.py": None,
+    "output_provider_record_v7.py": None,
     "workbench/output_qualification.py": None,
     "node_candidate_intent.py": None,
     "output_decomposition_legacy.py": None,
