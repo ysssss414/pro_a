@@ -2,7 +2,9 @@
   "STAGE": "EVIDENCE_INTENT_SEMANTIC_AND_SPAN_QUALIFICATION_OFFLINE",
   "BASE_STABLE": "3e2e690690d0b847cef3fc455b41ee47e52bcd14",
   "START_HEAD": "a634b4fc0b311c0bad47da7bb421b6999e89cc47",
-  "STAGE_RESULT": "SOURCE_GATES_PASS; ISOLATED_INSTALL_QUALIFICATION_PENDING",
+  "STAGE_RESULT": "OFFLINE_QUALIFICATION_PASS",
+  "CODE_COMMIT": "d0af7357f8fc179f5637168b522bdd58cebadcbc",
+  "CODE_COMMIT_TREE": "ca31a428efa60c0611ba3d60ee5c75a5f0ca0fea",
   "SPAN_PARITY": "PASS: COMPLETE_LEGAL_V2_CURRENT_LEAF_UNIT_SELECTION_RANGE",
   "REPEATED_OCCURRENCE_COVERAGE": "PASS: WITHIN_UNIT_OVERLAPPING_AND_ACROSS_UNITS_EXPLICIT_SELECTION",
   "NORMALIZED_SPAN_COVERAGE": "PASS: UNCHANGED_V2_MODE_AND_RAW_ORIGIN",
@@ -17,8 +19,28 @@
     "gate_a_b_before_formal_integration": 20,
     "final_focused": 42,
     "related_regression": 87,
-    "isolated_installed": "PENDING",
+    "isolated_installed": 41,
+    "final_failures": 0,
+    "final_errors": 0,
+    "initial_broader_install_round": "INTERRUPTED; NO_COMPLETED_RESULT_CLAIMED",
+    "temporary_path_and_orphan_worker_conflicts": "RESOLVED_BY_SHORT_FRESH_TEST_PATH; APPLICATION_CODE_UNCHANGED",
     "unrelated_full_repository_tests": "NOT_RUN"
+  },
+  "ISOLATED_PACKAGE": {
+    "wheel_sha256": "6b8f60c334687d10fc6214ed8e2cdedbc6f893dca48342e9a2f4e743bb7f263d",
+    "source_files": 164,
+    "git_wheel_installed_source_bytes_equal": true,
+    "source_checkout_fallback_denied": true,
+    "no_git_identity_check": "PASS",
+    "pip_check": "PASS",
+    "candidate_and_smoke_harness_reused": true,
+    "stable_install_or_activation": false,
+    "followup_commits": "DOCS_RECEIPT_ONLY; CODE_BYTES_IDENTICAL_TO_CODE_COMMIT"
+  },
+  "PROTECTED_REAL_STATE": {
+    "tables_artifacts_native_current_views_and_installed_stable": "EXACT_BEFORE_AFTER",
+    "raw_request_response_and_accepted_event_chains": "UNCHANGED",
+    "schema12_integrity_and_foreign_keys": "PASS"
   },
   "PROTOCOL": {
     "provider_record": "whole-piece-output-batch-provider-record-v7",
@@ -42,5 +64,5 @@
   "PRIVATE_SOURCE_RAW_OR_CREDENTIALS_COMMITTED": false,
   "REAL_SCHEMA_ACCEPTANCE_AND_TOKEN_COST": "NOT_OBSERVED",
   "DRAFT_PR_STATUS": "PR121_DRAFT_OPEN_UNMERGED",
-  "NEXT_STAGE": "PENDING_ISOLATED_INSTALL_QUALIFICATION"
+  "NEXT_STAGE": "EVIDENCE_INTENT_RELEASE_AND_BOUNDED_LIVE_QUALIFICATION"
 }

@@ -154,6 +154,26 @@ fake response with durable Raw and zero accepted results.
 
 ## Validation receipt
 
+`STAGE_RESULT=OFFLINE_QUALIFICATION_PASS`. All three gates pass within the
+location/ownership and non-authoritative review boundary described above.
+The final runs passed **42 focused source checks, 87 related regressions and
+41 isolated installed-package checks**, with zero final failures/errors.
+Gate A/B's initial 20 checks passed before formal integration began.
+
+The isolated package is built from code commit
+`d0af7357f8fc179f5637168b522bdd58cebadcbc`; Wheel SHA256 is
+`6b8f60c334687d10fc6214ed8e2cdedbc6f893dca48342e9a2f4e743bb7f263d`.
+All 164 packaged Python/SQL source files match Git and installed bytes.
+Follow-up report/receipt commits change documentation only. No-Git identity,
+dependency consistency, checkout denial and installed v7/default-v4 Operator
+checks passed. Historical identity vectors are also checked in the installation.
+
+An initial wider installed-test round was interrupted; no complete result is
+claimed. Windows left its child worker running, causing temporary-directory
+locks in a subsequent round. Only identified task workers were stopped. The
+final selected installed suite passed in a fresh short directory using the
+same wheel, with no application-code change to accommodate those errors.
+
 Final source-gate and isolated-wheel counts, commit identity and integrity
 results are recorded in the companion machine-readable receipt. The isolated
 installation reuses the existing candidate environment and smoke harness;
@@ -170,3 +190,5 @@ Raw, requests, credentials and integrity inventories remain local.
 CURRENT_VIEW_WRITES=0`. PR #121 stays Draft, open and unmerged. Further live
 qualification requires a separate authorization; no production-stability or
 real-provider schema acceptance is inferred from Fake Provider tests.
+
+`NEXT_STAGE=EVIDENCE_INTENT_RELEASE_AND_BOUNDED_LIVE_QUALIFICATION`.
