@@ -18,7 +18,8 @@ def qualification_contract(binding_version):
             'completion_boundary': 'STOP_AFTER_BOUNDED_EXTRACTION', 'semantic_registration_allowed': False}
 
 
-def start(service, source_id, *, record_version, reason, idempotency_key):
+def start(service, source_id, *, record_version, reason, idempotency_key,
+          qualification_reason=None):
     _validate_retry_request(reason, idempotency_key)
     bindings = {output.intent.VERSION: output.INTENT_BINDING_VERSION,
                 output.ownership.VERSION: output.OWNERSHIP_BINDING_VERSION,
@@ -27,6 +28,9 @@ def start(service, source_id, *, record_version, reason, idempotency_key):
         raise SourceOperationError('UNSUPPORTED_OUTPUT_QUALIFICATION_BINDING')
     worker = SourceOperations(service.config, service.profile, service.jobs.profile,
                               _output_binding_version=bindings[record_version])
+    if qualification_reason is not None:
+        return worker.start_qualification_intake(source_id, idempotency_key=idempotency_key,
+            reprocess_reason=reason, qualification_reason=qualification_reason)
     # The standard intake, idempotency, config and domain guards all still apply.
     return worker.start(source_id, idempotency_key=idempotency_key, reprocess_reason=reason)
 

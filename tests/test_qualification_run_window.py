@@ -175,7 +175,8 @@ def test_no_public_api_frontend_or_mcp_override_exposure():
         public += [p for p in (root / directory).rglob('*') if p.is_file()]
     for path in public:
         text = path.read_text(encoding='utf-8')
-        assert not any(name in text for name in ('bypass_run_window', 'start_qualification_reprocess', 'qualification_reason'))
+        assert not any(name in text for name in ('bypass_run_window', 'start_qualification_reprocess',
+                                                'start_qualification_intake', 'qualification_reason'))
 
 
 def test_creation_dependencies_and_intake_guard_are_closed_and_bound():
@@ -185,6 +186,7 @@ def test_creation_dependencies_and_intake_guard_are_closed_and_bound():
     assert specification['workbench/stage1_scale.py'] is None
     assert {'SourceOperations._start', 'SourceOperations.start_qualification_reprocess'} <= set(
         specification['workbench/source_operations.py'])
+    assert 'SourceOperations.start_qualification_intake' in specification['workbench/source_operations.py']
     sources = {name: (package / name).read_bytes() for name in specification}
     original = compatibility._surface_manifest(sources, specification)
     for name, marker in [('workbench/source_operations.py', b'INVALID_QUALIFICATION_REASON'),
@@ -219,3 +221,98 @@ def test_registration_does_not_waive_another_unrepresented_creation_dependency()
     assert changed != sources
     with pytest.raises(compatibility.RetryCompatibilityError, match='DEPENDENCY_UNCLOSED'):
         compatibility._surface_manifest(changed, specification)
+
+
+def test_v7_test_intake_first_source_and_ten_run_ceiling(full_window, tmp_path):
+    from pro_a import output_provider_record_v7 as v7
+    from pro_a.workbench import output_qualification as operator
+    from pro_a.workbench.stage1_scale import QUALIFICATION_RUNS_PER_24H
+    value = full_window
+    source = upload(value, clean_pdf(tmp_path, 'new-test-intake.pdf', 'Independent synthetic source for first intake.'))
+    kwargs = {'record_version': v7.VERSION, 'reason': REPROCESS,
+              'qualification_reason': REASON, 'idempotency_key': 'new-v7-test-intake-0001'}
+    created = operator.start(value['service'], source['source_id'], **kwargs)
+    rid = created['run']['processing_run_id']
+    runtime = created['run']['runtime_identity']
+    assert runtime['whole_piece_output_decomposition']['provider_record_version'] == v7.VERSION
+    assert operator.start(value['service'], source['source_id'], **kwargs)['duplicate']
+    restarted = SourceOperations(value['config'], value['source_profile'], value['cloud_profile'])
+    assert operator.frozen_worker(restarted, rid).jobs.current_runtime() == runtime
+    event = json.loads(bypasses(value)[-1]['event_json'])
+    assert event['qualification_limit'] == QUALIFICATION_RUNS_PER_24H == 10
+    assert event['runs_last_24h_at_creation'] == 3
+    assert event['bypass_scope'] == 'RUN_WINDOW_ONLY'
+    value['service']._transition(rid, 'BLOCKED', 'SYNTHETIC_QUALIFICATION')
+    for index in range(6):
+        result = value['service'].start_qualification_intake(source['source_id'],
+            idempotency_key=f'test-intake-top-up-{index:04d}', qualification_reason=REASON,
+            reprocess_reason=REPROCESS)
+        value['service']._transition(result['run']['processing_run_id'], 'BLOCKED', 'SYNTHETIC_QUALIFICATION')
+    with pytest.raises(SourceOperationError, match='STAGE1_QUALIFICATION_RUN_WINDOW_LIMIT'):
+        value['service'].start_qualification_intake(source['source_id'],
+            idempotency_key='test-intake-eleventh-0001', qualification_reason=REASON, reprocess_reason=REPROCESS)
+    assert operator.start(value['service'], source['source_id'], **kwargs)['duplicate']
+    with pytest.raises(SourceOperationError, match='IDEMPOTENCY_CONFLICT'):
+        operator.start(value['service'], source['source_id'], **{**kwargs, 'qualification_reason': 'Changed reason'})
+    with Store(value['config']).connect() as connection:
+        assert stage1_capacity(connection)['runs_last_24h'] == 10
+        assert not stage1_capacity(connection)['new_intake_allowed']
+        assert connection.execute('select count(*) from cloud_jobs').fetchone()[0] == 0
+        assert connection.execute('select count(*) from bounded_extraction_attempts').fetchone()[0] == 0
+    assert len(bypasses(value)) == 7 and LIMITS.runs_per_24h == 3
+
+
+@pytest.mark.parametrize('change,error', [
+    ({'intake_paused': True}, 'STAGE1_INTAKE_PAUSED'),
+    ({'wip_state': 'HARD_STOP'}, 'STAGE1_REVIEW_WIP_HARD_LIMIT'),
+    ({'unprojected_review_packets': 1}, 'STAGE1_REVIEW_PROJECTION_INCOMPLETE'),
+])
+def test_new_test_intake_keeps_other_guards(full_window, monkeypatch, change, error):
+    original = stage1_capacity
+    monkeypatch.setattr('pro_a.workbench.stage1_scale.stage1_capacity',
+                        lambda connection: {**original(connection), **change})
+    with pytest.raises(SourceOperationError, match=error):
+        full_window['service'].start_qualification_intake(full_window['source_id'],
+            idempotency_key='new-test-intake-guard-0001', qualification_reason=REASON,
+            reprocess_reason=REPROCESS)
+    assert not bypasses(full_window)
+
+
+def test_new_test_intake_audit_is_atomic(full_window, monkeypatch):
+    original = full_window['service']._event
+    def fail_audit(connection, run_id, event_type, payload=None):
+        if event_type == 'STAGE1_RUN_WINDOW_BYPASS':
+            raise RuntimeError('SYNTHETIC_AUDIT_FAILURE')
+        return original(connection, run_id, event_type, payload)
+    monkeypatch.setattr(full_window['service'], '_event', fail_audit)
+    with pytest.raises(RuntimeError, match='SYNTHETIC_AUDIT_FAILURE'):
+        full_window['service'].start_qualification_intake(full_window['source_id'],
+            idempotency_key='new-test-intake-audit-0001', qualification_reason=REASON,
+            reprocess_reason=REPROCESS)
+    with Store(full_window['config']).connect() as connection:
+        assert connection.execute('select count(*) from source_processing_runs').fetchone()[0] == 3
+    assert not bypasses(full_window)
+
+
+def test_new_test_intake_concurrent_tenth_slot(full_window, tmp_path):
+    value = full_window
+    for index in range(6):
+        result = value['service'].start_qualification_intake(value['source_id'],
+            idempotency_key=f'concurrent-test-top-up-{index:04d}', qualification_reason=REASON,
+            reprocess_reason=REPROCESS)
+        value['service']._transition(result['run']['processing_run_id'], 'BLOCKED', 'SYNTHETIC_QUALIFICATION')
+    sources = [upload(value, clean_pdf(tmp_path, f'first-intake-{i}.pdf',
+               f'Distinct synthetic first intake number {i}.'))['source_id'] for i in range(2)]
+    def start(index):
+        try:
+            return value['service'].start_qualification_intake(sources[index],
+                idempotency_key=f'concurrent-first-test-{index:04d}', qualification_reason=REASON)
+        except SourceOperationError as error:
+            return str(error)
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(start, range(2)))
+    assert sum(isinstance(r, dict) and not r['duplicate'] for r in results) == 1
+    assert results.count('STAGE1_QUALIFICATION_RUN_WINDOW_LIMIT') == 1
+    with Store(value['config']).connect() as connection:
+        assert stage1_capacity(connection)['runs_last_24h'] == 10
+    assert len(bypasses(value)) == 7

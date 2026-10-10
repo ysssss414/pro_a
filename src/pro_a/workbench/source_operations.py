@@ -489,11 +489,24 @@ class SourceOperations:
                            company_material_intent=company_material_intent, community_event=community_event,
                            qualification_reason=qualification_reason)
 
+    def start_qualification_intake(self, source_id: str, *, idempotency_key: str,
+                                   qualification_reason: str,
+                                   reprocess_reason: str = "") -> dict[str, Any]:
+        """Internal test intake, including first processing; ten total Runs per 24h."""
+        if (not isinstance(qualification_reason, str) or not qualification_reason
+                or qualification_reason != qualification_reason.strip() or len(qualification_reason) > 1000
+                or re.search(r"[\x00-\x1f\x7f]", qualification_reason)):
+            raise SourceOperationError("INVALID_QUALIFICATION_INTAKE_REASON", 422)
+        return self._start(source_id, idempotency_key=idempotency_key,
+                           reprocess_reason=reprocess_reason,
+                           qualification_reason=qualification_reason, qualification_intake=True)
+
     def _start(self, source_id: str, *, idempotency_key: str,
                reprocess_reason: str = "",
                company_material_intent: Mapping[str, Any] | None = None,
                community_event: Mapping[str, Any] | None = None,
-               qualification_reason: str | None = None) -> dict[str, Any]:
+               qualification_reason: str | None = None,
+               qualification_intake: bool = False) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
             raise SourceOperationError("INVALID_IDEMPOTENCY_KEY", 422)
         if len(reprocess_reason) > 1000 or reprocess_reason != reprocess_reason.strip():
@@ -551,13 +564,17 @@ class SourceOperations:
                     ).fetchone()
                     if bypass is None or json.loads(bypass["event_json"])["reason"] != qualification_reason:
                         raise SourceOperationError("IDEMPOTENCY_CONFLICT")
+                    if qualification_intake:
+                        from .stage1_scale import QUALIFICATION_RUNS_PER_24H
+                        if json.loads(bypass["event_json"]).get("qualification_limit") != QUALIFICATION_RUNS_PER_24H:
+                            raise SourceOperationError("IDEMPOTENCY_CONFLICT")
                 return {"run": self._project_run(connection, prior_key["processing_run_id"]),
                         "duplicate": True}
             rows = list(connection.execute(
                 "SELECT * FROM source_processing_runs WHERE source_id=? ORDER BY created_at DESC",
                 (source_id,),
             ))
-            if qualification_reason is not None and not rows:
+            if qualification_reason is not None and not rows and not qualification_intake:
                 raise SourceOperationError("QUALIFICATION_REPROCESS_HISTORY_REQUIRED", 422)
             for row in rows:
                 frozen_intent = read_bound(connection, row["processing_run_id"])
@@ -585,6 +602,10 @@ class SourceOperations:
                 except BoundaryError as error:
                     raise SourceOperationError(str(error)) from None
                 qualification_capacity = stage1_capacity(connection) if qualification_reason is not None else None
+                if qualification_intake:
+                    from .stage1_scale import QUALIFICATION_RUNS_PER_24H
+                    if qualification_capacity["runs_last_24h"] >= QUALIFICATION_RUNS_PER_24H:
+                        raise SourceOperationError("STAGE1_QUALIFICATION_RUN_WINDOW_LIMIT")
             run_id = "SOURCE_RUN_" + uuid4().hex.upper()
             created = _now()
             connection.execute(
@@ -604,13 +625,16 @@ class SourceOperations:
             self._event(connection, run_id, "PROCESSING_QUEUED",
                         {"runtime_sha256": runtime_sha, "source_id": source_id})
             if qualification_reason is not None:
-                self._event(connection, run_id, "STAGE1_RUN_WINDOW_BYPASS", {
+                payload = {
                     "processing_run_id": run_id, "source_id": source_id, "reason": qualification_reason,
                     "policy_version": STAGE1_POLICY_VERSION, "normal_limit": LIMITS.runs_per_24h,
                     "runs_last_24h_at_creation": qualification_capacity["runs_last_24h"],
                     "bypass_scope": "RUN_WINDOW_ONLY", "created_at": created,
                     "created_under_qualification_window_bypass": True,
-                })
+                }
+                if qualification_intake:
+                    payload["qualification_limit"] = QUALIFICATION_RUNS_PER_24H
+                self._event(connection, run_id, "STAGE1_RUN_WINDOW_BYPASS", payload)
             return {"run": self._project_run(connection, run_id), "duplicate": False}
 
     @staticmethod
