@@ -1,0 +1,71 @@
+{
+  "STAGE": "V6_EVIDENCE_BINDING_OFFLINE_ARCHITECTURE_REVIEW",
+  "BASE_STABLE": "3e2e690690d0b847cef3fc455b41ee47e52bcd14",
+  "STAGE_RESULT": "OFFLINE_BINDING_PROTOTYPE_PASS; FORMAL_INTEGRATION_STOP",
+  "REAL_FAILURE_CLASSIFICATION": ["EVIDENCE_ID_SELECTOR_MISMATCH", "SUPPORT_OUTSIDE_ASSIGNED_SEGMENT"],
+  "SOURCE_WIDE_ANCHOR_UNIQUENESS": {
+    "claim_14_literal_occurrences": 1,
+    "claim_14_matching_units": 1,
+    "normalized_matching_units": 1,
+    "raw_and_normalized_span_equal": true,
+    "actual_unit_ordinal": 18,
+    "actual_initial_leaf_one_based": 2,
+    "case_specific_only": true
+  },
+  "CROSS_SEGMENT_DEPENDENCY": {
+    "claim_14_support_is_foreign": true,
+    "claim_14_question_required_for_explicit_subject_and_measurements": false,
+    "true_owner_lossless_representation_possible": true,
+    "other_context_dependency_claim_numbers": [8, 11],
+    "historical_response_repaired_or_readmitted": false
+  },
+  "NODE_MATCH_COMPARISON": {
+    "same_piece_and_assignment": true,
+    "old": 5,
+    "new": 3,
+    "shared": 3,
+    "old_only": 2,
+    "new_only": 0,
+    "shared_match_narrow_anchor_support_risk_count": 1,
+    "quality_degradation_inferred": false,
+    "statistical_comparison": false
+  },
+  "ARCHITECTURE_A_RESULT": "LOCATION_AND_REPRESENTATION_PASS; SEMANTIC_AND_FULL_SPAN_REPLACEMENT_UNQUALIFIED",
+  "ARCHITECTURE_B_RESULT": "LOCATION_DIAGNOSTIC_PASS; AUTOMATIC_ROUTING_NOT_QUALIFIED",
+  "SELECTED_MINIMAL_DESIGN": "ASSIGNED_EVIDENCE_FIRST_WITH_COMPLETE_CONTEXT_AND_SINGLE_INTENT; FOREIGN_SUPPORT_UNRESOLVED",
+  "PROTOTYPE_VERSION": "evidence-intent-offline-prototype-v1",
+  "PROTOTYPE_SCHEMA_VERSION": "evidence-intent-offline-tool-schema-v1",
+  "DETERMINISTIC_BINDING_PROOF": "UNIQUE_EXACT_SPAN_TO_VERIFIED_UNIT_TO_ACTIVE_LEAF; REPLAYABLE_EXISTING_V2_BINDING_AND_V6_SUPPORT_SET",
+  "SEMANTIC_AUTHORIZATION_LIMIT": "NOT_ESTABLISHED; EXACT_BINDING_DOES_NOT_PROVE_ENTAILMENT_ATTRIBUTION_OR_ANTECEDENT",
+  "FAKE_PROVIDER_END_TO_END": {
+    "offline_tool_schema_compiler_wire_native_and_process_replay": "PASS",
+    "formal_new_operator_integration": "NOT_INTEGRATED",
+    "prototype_accepted_segments": 0,
+    "frozen_v6_ledger_rejects_new_raw": "PASS",
+    "semantic_counterexamples": "NOT_AUTHORIZED; NO_TRUTH_ORACLE_CLAIMED"
+  },
+  "CANONICAL_IDENTITY_PARITY": "PASS_FOR_TESTED_UNIQUE_RAW_SUBSPAN_AND_WHOLE_UNIT; REPEATED_AND_NORMALIZED_SPAN_COMPLETENESS_NOT_QUALIFIED",
+  "HISTORICAL_COMPATIBILITY": "V1_V6_FILES_UNCHANGED; FROZEN_RESULT_SCHEMA_PROMPT_VECTORS_PASS; REAL_PROTECTED_STATE_EQUAL",
+  "TEST_RESULTS": {
+    "prototype": "22 passed",
+    "focused_related_regression": "98 passed",
+    "final_prototype_after_anchor_uniqueness_check": "22 passed",
+    "larger_regression_attempt": "INTERRUPTED_DURING_UNRELATED_RUN13_FULL_TOPOLOGY; NO_COMPLETE_RESULT_CLAIMED",
+    "isolated_installed_wheel": "PENDING",
+    "privacy": "PASS; NO_REAL_SOURCE_FRAGMENTS_PRIVATE_IDENTIFIERS_OR_CREDENTIALS"
+  },
+  "REQUEST_SIZE_PROXY": {
+    "prototype_over_original_user_plus_schema_character_ratio": 0.9377587634556998,
+    "actual_token_change": "NOT_OBSERVED",
+    "extra_provider_calls_required_by_binding": 0
+  },
+  "QUARANTINED_OBSERVATIONS": "EVALUATED_NOT_IMPLEMENTED; MUST_NOT_CLOSE_COVERAGE_OR_COUNT_AS_ACCEPTED",
+  "SCHEMA12_STATUS": "UNCHANGED; INTEGRITY_AND_FOREIGN_KEY_CHECK_PASS",
+  "STABLE_ACTIVATED_OR_MERGED": false,
+  "NEW_REAL_RUNS": 0,
+  "REAL_PROVIDER_CALLS": 0,
+  "SEMANTIC_JOBS": 0,
+  "PRODUCTION_WRITES": 0,
+  "CURRENT_VIEW_WRITES": 0,
+  "NEXT_STAGE": "EVIDENCE_INTENT_SEMANTIC_AND_SPAN_QUALIFICATION_OFFLINE"
+}
