@@ -149,7 +149,16 @@ Installed qualification reuses the existing isolated candidate and smoke
 harness. It checks exact Git/Wheel/installed Python+SQL bytes, no-Git build
 identity, dependency consistency, source-checkout denial, the new MVP, frozen
 v7 bounded resume, default v4 restart, historical v1–v6 identities and package
-resources. Its final result is recorded after the installation round.
+resources. All **41 installed checks pass**. The qualified code commit is
+`bc8dfc6f995dfd10ca00a693bd9fb2ed7e29f9a2`; its wheel SHA256 is
+`67ed63f0a9c0295f709d8cc8736e55520fd68f0036edc85f2250c54f85b31865`.
+All 166 packaged Python/SQL files match exact Git and installed bytes. This
+receipt's follow-up commit changes documentation only. The installed reader
+also reproduces the real 25 accepted objects and nine quarantined prefix Claims
+with code-checkout access denied, no actual ledger writes and no provider calls.
+The old private bootstrap's MCP import encounters the already-known Windows
+pywintypes limitation in the isolated environment; direct frozen Workbench
+reader configuration avoids that unrelated import without changing MCP.
 
 Real qualification uses read-only SQLite connections plus a write-denying
 authorizer and an audit guard that permits outputs only in the private report
@@ -166,5 +175,6 @@ Public material contains only sanitized code, synthetic tests and this report.
 Private Source/Raw/requests/responses, credentials, identities and user filesystem
 paths stay local. No Stable release, merge, historical repair or new protocol.
 
-After installed and integrity gates pass:
+`STAGE_RESULT=PASS`. Installed, private historical integrity and privacy gates
+pass within the non-authoritative research boundary described above.
 `NEXT_STAGE=PARTIAL_REVIEW_RELEASE_AND_REAL_SOURCE_ACCUMULATION`.
