@@ -804,6 +804,13 @@ class SourceOperations:
         return retry_failed_extraction(self, run_id, failed_attempt_id,
                                        retry_reason=retry_reason, idempotency_key=idempotency_key)
 
+    def authorize_single_evidence_retry(self, run_id: str, failed_attempt_id: str, *,
+                                       retry_reason: str, idempotency_key: str) -> dict[str, Any]:
+        """Internal zero-dispatch v4 qualification; no Web or MCP route."""
+        from .extraction_retry import authorize_single_evidence_retry
+        return authorize_single_evidence_retry(self, run_id, failed_attempt_id,
+            retry_reason=retry_reason, idempotency_key=idempotency_key)
+
     def _jobs_for(self, run_id: str, operation: str) -> list[dict[str, Any]]:
         from .extraction_retry import effective_job_ids
         with self.store.connect() as connection:

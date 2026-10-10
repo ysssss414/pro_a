@@ -33,7 +33,7 @@ TABLE = "retry_compatibility_qualifications"
 _BOUNDED_QUALIFICATION_EVENT = "BOUNDED_RETRY_COMPATIBILITY_QUALIFIED"
 _CLOUD_METADATA_FIELDS = frozenset(("git_sha", "runtime_sha256"))
 _NATIVE_METADATA_FIELDS = frozenset(("repository_commit",))
-_CLOUD_SURFACE_FIELDS = frozenset(("domain_code_sha256", "phase4_processing_code_sha256"))
+_CLOUD_SURFACE_FIELDS = frozenset(("domain_code_sha256", "phase4_processing_code_sha256", "lossless_aggregate_recovery"))
 _NATIVE_SURFACE_FIELDS = frozenset(("processing_code_sha256",))
 _CLOUD_EXECUTION_ROOTS = {
     "workbench/cloud_jobs.py": ("CloudJobs.run_once",),
@@ -781,6 +781,17 @@ def _runtime_comparison(historical: Mapping[str, Any], target: Mapping[str, Any]
     surface_differences = [
         key for key in different if key in surface_fields and surface_compatible
     ]
+    if 'lossless_aggregate_recovery' in surface_differences:
+        # Only qualified Operator code changed. Aggregate/replay contracts and
+        # all other module hashes stay exact; SourceOperations execution methods
+        # are compared independently by the unchanged semantic-surface manifest.
+        left, right = historical['lossless_aggregate_recovery'], target['lossless_aggregate_recovery']
+        old_hashes, new_hashes = left.get('module_sha256', {}), right.get('module_sha256', {})
+        changed = {k for k in set(old_hashes) | set(new_hashes) if old_hashes.get(k) != new_hashes.get(k)}
+        if ({k:v for k,v in left.items() if k != 'module_sha256'} != {k:v for k,v in right.items() if k != 'module_sha256'}
+                or set(old_hashes) != set(new_hashes)
+                or not changed <= {'workbench/extraction_retry.py','workbench/retry_compatibility.py','workbench/source_operations.py'}):
+            surface_differences.remove('lossless_aggregate_recovery')
     semantic_differences = [
         key for key in different
         if key not in metadata_fields and key not in surface_differences
@@ -1281,17 +1292,18 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                                        bounded_only_resume: bool = False,
                                        bounded_truncation_recovery: bool = False,
                                        bounded_strict_recovery: bool = False,
+                                       bounded_single_evidence_retry: bool = False,
                                        historical_repository_root: Path | None = None) -> dict[str, Any]:
     """Qualify an exact-scope bounded Attempt; recovery is a separate opt-in."""
     from pro_a.evidence_binding import identity
     from .bounded_extraction_store import BoundedExtractionStore, _event
     from .cloud_jobs import runtime_identity
     from .extraction_retry import (
-        _json_syntax_diagnostic, bounded_frozen_components,
+        _json_syntax_diagnostic, _single_evidence_diagnostic, bounded_frozen_components,
     )
     from .source_operations import SourceOperations, build_source_providers
 
-    if sum((bounded_only_resume, bounded_truncation_recovery, bounded_strict_recovery)) > 1:
+    if sum((bounded_only_resume, bounded_truncation_recovery, bounded_strict_recovery, bounded_single_evidence_retry)) > 1:
         raise RetryCompatibilityError('INCOMPATIBLE_QUALIFICATION_SCOPES')
 
     dimensions: dict[str, Any] = {}
@@ -1349,7 +1361,8 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             ).fetchone(),
         ))
         scope_ok = (
-            chain_ok and run["state"] == "BLOCKED" and run["stage"] == "ORCHESTRATION"
+            chain_ok and run["state"] == "BLOCKED" and run["stage"] in
+            (('ORCHESTRATION','BOUNDED_ONLY_RESUME') if bounded_single_evidence_retry else ('ORCHESTRATION',))
             and run["error_code"] == "BOUNDED_EXTRACTION_FAILED"
             and run["lease_owner"] is None and attempt["series_run_id"] == run_id
             and attempt["series_state"] == "FAILED" and attempt["segment_state"] == "FAILED"
@@ -1462,6 +1475,11 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
                 envelope, body = ledger._decode_envelope(attempt, content)
                 diagnostic = (strict_proof['diagnostic'] if bounded_strict_recovery and strict_proof else
                               None if bounded_truncation_recovery else _json_syntax_diagnostic(body))
+                if bounded_single_evidence_retry and worker is not None:
+                    matches = [b for b in worker.output_batches.inputs(worker.get_run(run_id)) if b[3].series_id == series_id]
+                    if len(matches) == 1:
+                        _, context, catalog, _ = matches[0]
+                        diagnostic = _single_evidence_diagnostic(body,series,segment,catalog,context)
                 raw_ok = (
                     envelope["http_status"] == 200
                     and (strict_proof is not None and envelope['finish_reason'] == 'tool_calls'
@@ -1475,14 +1493,15 @@ def assess_bounded_retry_compatibility(config, run_id: str, failed_attempt_id: s
             "EXACT_IDENTITY_REQUIRED", "PASS" if raw_ok else "FAIL",
             "The immutable raw envelope is hash-bound and HTTP 200.",
         )
-        dimensions['strict_output_failure_family' if bounded_strict_recovery else 'durable_truncation' if bounded_truncation_recovery else "malformed_json_syntax_only"] = _dimension(
+        dimensions['single_v4_evidence_selector_failure' if bounded_single_evidence_retry else 'strict_output_failure_family' if bounded_strict_recovery else 'durable_truncation' if bounded_truncation_recovery else "malformed_json_syntax_only"] = _dimension(
             "EXACT_IDENTITY_REQUIRED", "PASS" if (raw_ok if bounded_truncation_recovery else diagnostic is not None) else "FAIL",
-            ("Exact lexical variant failure plus same-response candidate references; all Evidence gates independently pass."
+            ("Exactly one original v4 Claim or Node Match selector is unresolved; strict acceptance is unchanged."
+             if bounded_single_evidence_retry else "Exact lexical variant failure plus same-response candidate references; all Evidence gates independently pass."
              if bounded_strict_recovery else "Durable TRUNCATED outcome and length finish; partial JSON is never parsed."
              if bounded_truncation_recovery else "Strict UTF-8 decoding succeeds and json.loads fails with JSONDecodeError."),
         )
         if not raw_ok:
-            blockers.append('BLOCKED_FAILURE_NOT_STRICT_RECOVERY_SCOPE' if bounded_strict_recovery else 'BLOCKED_FAILURE_NOT_TRUNCATION' if bounded_truncation_recovery else "BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
+            blockers.append('BLOCKED_FAILURE_NOT_SINGLE_V4_EVIDENCE_SELECTOR' if bounded_single_evidence_retry else 'BLOCKED_FAILURE_NOT_STRICT_RECOVERY_SCOPE' if bounded_strict_recovery else 'BLOCKED_FAILURE_NOT_TRUNCATION' if bounded_truncation_recovery else "BLOCKED_FAILURE_NOT_MALFORMED_PROVIDER_JSON")
 
         input_ok = prompt_ok = provider_ok = False
         if worker is not None:
