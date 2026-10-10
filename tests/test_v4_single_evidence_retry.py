@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import sqlite3
 import subprocess
-import sys
 
 import pytest
 

@@ -75,6 +75,19 @@ Semantic/Review Packet continuation. The cross-release case creates its failed
 fixture using the actual installed baseline interpreter; it never invents an old
 Git/runtime identity or prior historical recovery grant.
 
+Qualification completed: all six new focused tests and all nineteen existing
+malformed-JSON retry regression cases passed. The original missing-runtime
+regression was repaired and its exact case rerun; failed or interrupted earlier
+runs are not counted as passes. Cross-release qualification and native continuation
+used the installed baseline dependency versions; dependency drift remains blocked.
+Both same-release and actual-baseline cross-release fixtures reached a registered
+formal Review Packet after four accepted leaves, without changing the synthetic
+Production database. These are synthetic results, not real accepted research.
+
+This policy does not improve or certify a future model response. It permits one
+explicit fresh complete response with unchanged input, prompt and strict gates;
+that response may fail again and then must stop.
+
 All real Source, Raw, request, response, local paths, and operational receipts
 remain outside this document and the public Git commit. This qualification does
 not authorize a real retry, merge, Stable activation, Semantic execution, review
