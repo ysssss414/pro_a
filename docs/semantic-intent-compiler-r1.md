@@ -184,6 +184,16 @@ information recall, cost and end-to-end usability.
 
 ## R1.1 — Ownership provenance and Operator wiring
 
+Release qualification found that reading a historical Evidence regeneration
+Attempt restored an execution token bound to the old installed commit. A new
+release therefore rejected read-only Run projection with
+`EVIDENCE_CONTINUATION_TARGET_DRIFT`. Durable request verification now reads the
+sealed historical evidence as data, retaining identity, lineage, contract,
+scope, artifact and request checks. It does not issue an execution token.
+Actual regeneration dispatch explicitly restores and validates the active
+execution token, preserving the exact target commit and package checks. No
+historical records are changed or reaccepted by this repair.
+
 Stage: `SEMANTIC_INTENT_OPERATOR_WIRING_AND_OWNERSHIP_R1`.
 This section supersedes the R1 next-stage recommendation above. The original
 v4/v5 schemas, prompts, normalization behavior and historical Raw remain frozen.

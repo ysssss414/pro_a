@@ -407,7 +407,7 @@ def evidence_request_material(worker, proof, bindings, connection=None):
 
 
 def evidence_expected_request(ledger, connection, series, segment, attempt):
-    from .lossless_compatibility import restore_continuation
+    from .lossless_compatibility import read_continuation_evidence
     require(attempt['attempt_number'] == 2, 'EVIDENCE_REGENERATION_ATTEMPT_LIMIT')
     committed = evidence_grants(connection, series.processing_run_id)
     grants = [json.loads(r[0]) for r in connection.execute('SELECT body_json FROM bounded_extraction_events WHERE series_id=? AND event_type=?', (series.series_id, EVIDENCE_AUTHORIZED))]
@@ -415,13 +415,13 @@ def evidence_expected_request(ledger, connection, series, segment, attempt):
     require(len(committed) == len(grants) == len(source) == 1 and {**grants[0], 'series_id': series.series_id} == source[0] == committed[0]['grant'],
         'EVIDENCE_REGENERATION_AUTHORIZATION_REQUIRED')
     grant = source[0]
-    token = restore_continuation(json.loads(ledger._read_artifact(series.series_id, 'evidence-continuation.json', grant)), grant['qualification_identity'])
-    proof = token.evidence['scope']
+    evidence = read_continuation_evidence(json.loads(ledger._read_artifact(series.series_id, 'evidence-continuation.json', grant)), grant['qualification_identity'])
+    proof = evidence['scope']
     require(grant['contract'] == evidence_contract() and grant['original_qualification_identity'] == proof['original_token_identity']
         and grant['original_grant_sha256'] == proof['original_grant']['event_sha256']
         and grant['failed_attempt_id'] == proof['failed']['attempt_id'], 'EVIDENCE_REGENERATION_AUTHORIZATION_REQUIRED')
     require(proof['run_id'] == series.processing_run_id and proof['failed']['segment_id'] == segment.segment_id
-        and proof['failed']['series_id'] == series.series_id and token.evidence['new_request']['attempt_id'] == attempt['attempt_id'])
+        and proof['failed']['series_id'] == series.series_id and evidence['new_request']['attempt_id'] == attempt['attempt_id'])
     frozen = Domains(ledger.config).read(series.processing_run_id, connection=connection)
     require(frozen['context_sha256'] == proof['frozen_context_sha256'])
     original = connection.execute('SELECT * FROM bounded_extraction_attempts WHERE segment_id=? AND attempt_number=1', (segment.segment_id,)).fetchone()
@@ -431,7 +431,7 @@ def evidence_expected_request(ledger, connection, series, segment, attempt):
     regenerated = canonical(evidence_payload(json.loads(content), proof)).encode()
     prompt_sha = hashlib.sha256(regenerated).hexdigest()
     request = evidence_request(ledger, series, segment, original, proof, prompt_sha)
-    require(token.evidence['new_request'] == {'attempt_id': attempt['attempt_id'], 'request': request,
+    require(evidence['new_request'] == {'attempt_id': attempt['attempt_id'], 'request': request,
         'request_sha256': identity(request), 'prompt_sha256': prompt_sha}
         and ledger._path(series.series_id, attempt['attempt_id'] + '.prompt.json').read_bytes() == regenerated,
         'EVIDENCE_REGENERATION_REQUEST_DRIFT')
@@ -440,12 +440,17 @@ def evidence_expected_request(ledger, connection, series, segment, attempt):
 
 def evidence_dispatch_payload(ledger, segment_id, original_payload):
     from .strict_recovery import dispatch_payload
+    from .lossless_compatibility import restore_continuation
     with ledger._connection() as connection:
         attempt = connection.execute('SELECT * FROM bounded_extraction_attempts WHERE segment_id=? ORDER BY attempt_number DESC LIMIT 1', (segment_id,)).fetchone()
         if attempt is None or json.loads(attempt['request_json']).get('regeneration_contract_version') != EVIDENCE_REQUEST:
             return dispatch_payload(ledger, segment_id, original_payload)
         _, (series, plan, _, _) = ledger._segment_row(connection, segment_id)
         segment = next(s for s in plan.leaves if s.segment_id == segment_id)
+        committed = evidence_grants(connection, series.processing_run_id)
+        require(len(committed) == 1, 'EVIDENCE_REGENERATION_AUTHORIZATION_REQUIRED')
+        grant = committed[0]['grant']
+        restore_continuation(json.loads(ledger._read_artifact(series.series_id, 'evidence-continuation.json', grant)), grant['qualification_identity'])
         expected = evidence_expected_request(ledger, connection, series, segment, attempt)
         original = connection.execute('SELECT * FROM bounded_extraction_attempts WHERE segment_id=? AND attempt_number=1', (segment_id,)).fetchone()
         require(identity(original_payload) == json.loads(original['request_json'])['payload_sha256'] and json.loads(attempt['request_json']) == expected)
