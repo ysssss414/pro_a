@@ -1,0 +1,243 @@
+{
+  "stage": "BOUNDED_SOURCE_ANALYSIS_NON_OWNING_CONTEXT_DEPENDENCY_R1",
+  "status": "STOP",
+  "phase": "B0_DIAGNOSTIC_FALSIFICATION_MILESTONE",
+  "base_main_stable": "6e1135c4371a6a3d1b6a491a433576b3eda9efbe",
+  "diagnostic_commit": "d548913be8933a28855d8e19f7123f5c76eff1ec",
+  "blocker": "CONTEXT_GRAPH_SEMANTIC_EDGE_AUTHORIZATION_UNPROVEN",
+  "CONTEXT_DEPENDENCY_CONTRACT": "NOT_QUALIFIED",
+  "NON_OWNING_CONTEXT_MODEL": "NOT_QUALIFIED",
+  "CONTEXT_GRAPH_DURABILITY": "NOT_QUALIFIED",
+  "CONTEXT_GRAPH_DURABILITY_REQUIRES_SCHEMA13": null,
+  "schema13_conclusion": "UNDETERMINED: dedicated attempts require Segment, but generic immutable Series events remain a candidate. No necessity proof or schema change.",
+  "examined_kinds": [
+    "REFERENT_RESOLUTION"
+  ],
+  "qualified_kinds": [],
+  "deferred_kinds": [
+    "SPEAKER_ATTRIBUTION",
+    "TEMPORAL_CONTEXT",
+    "SECTION_SCOPE"
+  ],
+  "tests": {
+    "passed": 34,
+    "failed": 0,
+    "seconds": 8.77,
+    "earlier_subset_passed": 29,
+    "counts_additive": false,
+    "diagnostic_only": true,
+    "negative_semantic_findings": [
+      "Explicitly excluded wrong antecedent passes lexical proof",
+      "Either ambiguous antecedent passes lexical proof"
+    ]
+  },
+  "limited_demonstrations": {
+    "selector_binding": "Existing binding v2 used; structural negative cases reject.",
+    "namespace": "Opaque CTX independent of EV spelling; provider view omits foreign EV identities in fixtures.",
+    "direct_ref_guard": "Generic diagnostic helper only; no production field integration.",
+    "projection": "Validated selector text only; no whole foreign Evidence body.",
+    "initial_and_subdivision_equivalence": "Four correct hand-authored graph fixtures (2 companies x 2 boundaries) pass aggregate, expansion, native canonical equality and permanent ID.",
+    "statement_leakage": "Both requested synthetic leakage fixtures reject extra statement content with exact substitution.",
+    "overall_leakage_guard": "NOT_QUALIFIED: semantic edge, undeclared use and all canonical fields not qualified.",
+    "provenance_identity": "Canonical content unchanged for correct fixtures; full envelope persistence/review metadata not implemented."
+  },
+  "budget": {
+    "max_leaves": 16,
+    "actual_synthetic_tree_calls": 31,
+    "actual_max_depth": 4,
+    "candidate_resolver_calls": 1,
+    "combined_max_calls": 32,
+    "candidate_resolver_ceiling_at_most": 12000,
+    "combined_max_output_liability": 384000,
+    "limits_raised": false,
+    "forest_formula": "1 + 2*L - R <= 32 for 1 <= R <= L <= 16, one call per node, no retry",
+    "current_accounting_accepts_resolver": false,
+    "durable_accounting_qualified": false,
+    "real_initial_extraction_calls_if_replanned": 27,
+    "candidate_initial_calls_including_resolvers": 32,
+    "candidate_call_counts_are_theoretical_not_authorization": true
+  },
+  "offline_census": {
+    "provider_calls": 0,
+    "real_state_unchanged": true,
+    "interpretation": "Structural lexical census only; no dependency truth inferred. Pattern categories may overlap; Node matches are exact substrings, not disambiguated entities.",
+    "pattern_definitions": {
+      "pronoun_demonstrative": "\u8be5\u516c\u53f8|\u8be5\u4f01\u4e1a|\u8be5\u96c6\u56e2|\u8be5\u9879\u76ee|\u8be5\u4ea7\u54c1|\u8be5\u4e1a\u52a1|\u4e0a\u8ff0|\u524d\u8ff0|\u5176|\u672c\u516c\u53f8|\u672c\u96c6\u56e2|\u8fd9\u5bb6|\u8fd9\u4e00|\u8fd9\u4e9b|\\b(?:it|its|they|their|this|these|that|those)\\b",
+      "speaker_label": "(?m)^[ \\t]*(?:\u4e3b\u6301\u4eba|\u4e13\u5bb6|\u53d1\u8a00\u4eba|\u8bf4\u8bdd\u4eba|\u63d0\u95ee\u8005|\u56de\u7b54\u8005|\u95ee|\u7b54|Speaker\\s+\\d+)[\uff1a:]",
+      "timestamp": "(?m)^[ \\t]*\\[?\\d{1,2}:\\d{2}(?::\\d{2})?\\]?",
+      "section_label_candidate": "(?m)^[ \\t]*[^\u3002\uff01\uff1f!?\uff1a:\\r\\n]+[\uff1a:]",
+      "paragraph_break": "\\r?\\n[ \\t]*\\r?\\n"
+    },
+    "pieces": [
+      {
+        "piece_ordinal": 1,
+        "evidence_units": 77,
+        "initial_segments": 5,
+        "current_segments": 5,
+        "cross_segment_adjacent_pairs": 4,
+        "adjacent_right_units_with_pattern": 0,
+        "units_with_pronoun_demonstrative_pattern": 25,
+        "frozen_node_catalog_size": 6,
+        "units_with_exact_node_mention": 23,
+        "exact_node_mentions": 30,
+        "distinct_mentioned_frozen_nodes": 6,
+        "block_count": 5,
+        "parser_block_start_regex_matches": 8,
+        "pattern_counts": {
+          "pronoun_demonstrative": 32,
+          "speaker_label": 0,
+          "timestamp": 0,
+          "section_label_candidate": 5,
+          "paragraph_break": 3
+        }
+      },
+      {
+        "piece_ordinal": 2,
+        "evidence_units": 93,
+        "initial_segments": 6,
+        "current_segments": 6,
+        "cross_segment_adjacent_pairs": 5,
+        "adjacent_right_units_with_pattern": 1,
+        "units_with_pronoun_demonstrative_pattern": 18,
+        "frozen_node_catalog_size": 5,
+        "units_with_exact_node_mention": 11,
+        "exact_node_mentions": 11,
+        "distinct_mentioned_frozen_nodes": 5,
+        "block_count": 5,
+        "parser_block_start_regex_matches": 8,
+        "pattern_counts": {
+          "pronoun_demonstrative": 19,
+          "speaker_label": 0,
+          "timestamp": 0,
+          "section_label_candidate": 5,
+          "paragraph_break": 3
+        }
+      },
+      {
+        "piece_ordinal": 3,
+        "evidence_units": 83,
+        "initial_segments": 6,
+        "current_segments": 6,
+        "cross_segment_adjacent_pairs": 5,
+        "adjacent_right_units_with_pattern": 0,
+        "units_with_pronoun_demonstrative_pattern": 19,
+        "frozen_node_catalog_size": 7,
+        "units_with_exact_node_mention": 25,
+        "exact_node_mentions": 34,
+        "distinct_mentioned_frozen_nodes": 7,
+        "block_count": 6,
+        "parser_block_start_regex_matches": 9,
+        "pattern_counts": {
+          "pronoun_demonstrative": 23,
+          "speaker_label": 0,
+          "timestamp": 0,
+          "section_label_candidate": 6,
+          "paragraph_break": 3
+        }
+      },
+      {
+        "piece_ordinal": 4,
+        "evidence_units": 82,
+        "initial_segments": 6,
+        "current_segments": 6,
+        "cross_segment_adjacent_pairs": 5,
+        "adjacent_right_units_with_pattern": 2,
+        "units_with_pronoun_demonstrative_pattern": 23,
+        "frozen_node_catalog_size": 11,
+        "units_with_exact_node_mention": 22,
+        "exact_node_mentions": 29,
+        "distinct_mentioned_frozen_nodes": 10,
+        "block_count": 3,
+        "parser_block_start_regex_matches": 6,
+        "pattern_counts": {
+          "pronoun_demonstrative": 26,
+          "speaker_label": 0,
+          "timestamp": 0,
+          "section_label_candidate": 3,
+          "paragraph_break": 3
+        }
+      },
+      {
+        "piece_ordinal": 5,
+        "evidence_units": 52,
+        "initial_segments": 4,
+        "current_segments": 4,
+        "cross_segment_adjacent_pairs": 3,
+        "adjacent_right_units_with_pattern": 1,
+        "units_with_pronoun_demonstrative_pattern": 17,
+        "frozen_node_catalog_size": 5,
+        "units_with_exact_node_mention": 8,
+        "exact_node_mentions": 9,
+        "distinct_mentioned_frozen_nodes": 5,
+        "block_count": 3,
+        "parser_block_start_regex_matches": 4,
+        "pattern_counts": {
+          "pronoun_demonstrative": 18,
+          "speaker_label": 0,
+          "timestamp": 0,
+          "section_label_candidate": 3,
+          "paragraph_break": 1
+        }
+      }
+    ],
+    "totals": {
+      "evidence_units": 387,
+      "initial_segments": 27,
+      "current_segments": 27,
+      "cross_segment_adjacent_pairs": 22,
+      "adjacent_right_units_with_pattern": 4,
+      "units_with_pronoun_demonstrative_pattern": 102,
+      "frozen_node_catalog_size": 34,
+      "units_with_exact_node_mention": 89,
+      "exact_node_mentions": 113,
+      "distinct_mentioned_frozen_nodes": 33,
+      "block_count": 22,
+      "parser_block_start_regex_matches": 35
+    },
+    "source_pieces": 5,
+    "workbench_sha256": "5d0b0defb8e09814bb5b533629249be33c243229896b144cb22f7d384c2261fc",
+    "production_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1"
+  },
+  "state": {
+    "before_after_exact_equal": true,
+    "snapshot_sha256": "7416e52287221dc0b8b84a972b83417ffa74cd86e3aed10829477d01063d8999",
+    "schema": "12",
+    "PROVIDER_CALLS": 0,
+    "RUN8_MUTATED": false,
+    "RUN9_CREATED": false,
+    "RUN8_RAW_STILL_REJECTED": true,
+    "run8_lifetime_calls": 1,
+    "invalid_roles": 5,
+    "foreign_bindings": 47,
+    "foreign_claim_bindings": 44,
+    "foreign_node_match_bindings": 3,
+    "distinct_foreign_refs": 45,
+    "historical_runs_unchanged": true,
+    "historical_queued_jobs_unchanged": 14,
+    "production_unchanged": true,
+    "current_view_unchanged": true,
+    "review_promotion_unchanged": true,
+    "WIRE_VALIDATOR_RELAXED": false,
+    "AUTHORIZATION_REQUIRED_FOR_LIVE_RUN9": true,
+    "run9_ready": false
+  },
+  "pr100": {
+    "state": "OPEN",
+    "draft": true,
+    "merged": false,
+    "head": "2bddb930af0e993bee39e7cd6cf5598f3e2b295c",
+    "files": "One diagnostic test file and two sanitized evidence files; unchanged."
+  },
+  "not_performed": [
+    "production implementation",
+    "provider resolver",
+    "real graph acceptance",
+    "schema13",
+    "migration",
+    "full regression",
+    "build/install qualification",
+    "stable activation",
+    "merge"
+  ],
+  "next_contract_requirement": "Machine-checkable Source-local semantic edge authorization, or explicitly narrow supported language with fail-closed admission; do not substitute durable model assertions for proof."
+}
