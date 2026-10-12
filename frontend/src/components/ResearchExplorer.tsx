@@ -265,7 +265,7 @@ function ResearchPage({ route, data, csrf, navigate, setCursor }:
 
   if (route.kind === "claim") {
     const claim = data.claim;
-    return <div className="research-content"><Identity label={claim.statement} id={claim.claim_id} meta={`${claim.nature} · ${claim.status}`} />
+    return <div className="research-content"><Identity label={claim.statement} id={claim.claim_id} meta={`${claim.nature} · ${claim.status} · ${claim.admission_semantics} · ${claim.reality_support} · ${claim.current_view_use}`} />
       <section className="research-section evidence-focus"><div className="research-section-heading"><h2>Evidence</h2><span>{claim.fact_time || claim.publication_time || "date unknown"}</span></div><blockquote>{claim.evidence_excerpt || "No evidence excerpt recorded."}</blockquote><dl><dt>Pointer</dt><dd>{claim.evidence_pointer || "not recorded"}</dd><dt>Locator</dt><dd>{claim.source_locator?.locator ?? claim.source_locator?.status ?? "not recorded"}</dd><dt>Scope</dt><dd>{claim.scope || "not recorded"}</dd></dl></section>
       <section className="research-section"><div className="research-section-heading"><h2>Source</h2><span>{data.source.source_rank}</span></div><button className="research-row" onClick={() => navigate({ kind: "source", id: data.source.source_id }, { from_node: new URLSearchParams(window.location.search).get("from_node") ?? "" })}><strong>{data.source.title}</strong><small>{data.source.source_type} · {data.source.organization} · {data.source.publication_time}</small></button></section>
       <section className="research-section"><div className="research-section-heading"><h2>Explicit Node attribution</h2><span>recorded links only</span></div>{data.linked_nodes.length ? data.linked_nodes.map((node: Data) => <button className="research-row" key={node.node_id} onClick={() => go("node", node.node_id)}><strong>{node.canonical_name}</strong><small>{node.primary_type} · role {node.role}</small></button>) : <Empty>No explicit Claim–Node link.</Empty>}</section>
@@ -315,7 +315,7 @@ export function ResearchNodeInspector({ data, csrf, navigate, domainContext }:
 function ClaimList({ page, navigate }: { page: Data; navigate: (route: Route) => void }) {
   if (!page.items.length) return <Empty>No Claims match these filters.</Empty>;
   return <div className="research-card-list">{page.items.map((claim: Data) => <button className="research-card research-card-button" key={claim.claim_id} onClick={() => navigate({ kind: "claim", id: claim.claim_id })}>
-    <strong>{claim.statement}</strong><span>{claim.nature} · {claim.status} · {claim.business_date}</span><small>{claim.source_title} · {claim.linked_nodes.length} explicit Node links · {claim.official_view_citations.length} official View citations</small>
+    <strong>{claim.statement}</strong><span>{claim.nature} · {claim.status} · {claim.admission_semantics} · {claim.reality_support} · {claim.current_view_use} · {claim.business_date} ({claim.date_basis})</span><small>{claim.source_title} · {claim.linked_nodes.length} explicit Node links · {claim.official_view_citations.length} official View citations</small>
   </button>)}</div>;
 }
 

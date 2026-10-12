@@ -1119,12 +1119,15 @@ def _row_equal(actual: Mapping[str, Any], expected: Mapping[str, Any]) -> bool:
 def _expected_replay_counts(payload: Mapping[str, Any]) -> dict[str, int]:
     counts = dict((payload.get("metadata") or {}).get("production_counts") or {})
     for mutation in payload.get("intended_mutations") or []:
+        if mutation["table"] == "sources" and payload.get("source", {}).get("reuse_existing_row"):
+            continue
         counts[mutation["table"]] = counts.get(mutation["table"], 0) + 1
     return counts
 
 
 def _replay_state(connection: sqlite3.Connection, payload: Mapping[str, Any]) -> str:
     present = 0
+    reused = 0
     for mutation in payload.get("intended_mutations") or []:
         actual = _row_for_key(connection, mutation["table"], mutation["key"])
         if actual is None:
@@ -1132,7 +1135,9 @@ def _replay_state(connection: sqlite3.Connection, payload: Mapping[str, Any]) ->
         present += 1
         if not _row_equal(actual, mutation["row"]):
             return "CONFLICT"
-    if present == 0:
+        if mutation["table"] == "sources" and payload.get("source", {}).get("reuse_existing_row"):
+            reused += 1
+    if present == reused:
         return "NEW"
     if present != len(payload.get("intended_mutations") or []):
         return "CONFLICT"
@@ -1181,6 +1186,11 @@ def _write_authorizer(allowed_tables: set[str]):
 def _insert_mutation(connection: sqlite3.Connection, mutation: Mapping[str, Any]) -> None:
     table = mutation["table"]
     row = mutation["row"]
+    if table == 'sources':
+        existing = connection.execute('SELECT * FROM sources WHERE source_id=?', (row['source_id'],)).fetchone()
+        if existing is not None:
+            _require(dict(existing) == row, 'SOURCE_REUSE_ROW_CONFLICT')
+            return
     columns = list(row)
     placeholders = ",".join("?" for _ in columns)
     column_sql = ",".join(f'"{column}"' for column in columns)
@@ -1283,12 +1293,15 @@ def _apply_verified_payload(payload, shadow_path, *, inject_failure_after=None,
         connection.close()
 
     changed = _diff_rows(before_rows, after_rows)
-    _require(set(changed) == allowed_tables, f"UNEXPECTED_CHANGED_TABLES:{sorted(changed)}")
     expected_added: dict[str, set[str]] = {table: set() for table in allowed_tables}
     for mutation in payload["intended_mutations"]:
         expected_added[mutation["table"]].add(
             json.dumps(mutation["row"], ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         )
+    for table in expected_added:
+        expected_added[table] -= before_rows.get(table, set())
+    _require(set(changed) == {t for t, rows in expected_added.items() if rows},
+             f"UNEXPECTED_CHANGED_TABLES:{sorted(changed)}")
     for table, delta in changed.items():
         _require(not delta["removed"], f"UNEXPECTED_ROW_REMOVAL:{table}")
         _require(set(delta["added"]) == expected_added[table], f"UNEXPECTED_ROW_DELTA:{table}")

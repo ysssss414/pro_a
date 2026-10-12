@@ -173,7 +173,7 @@ export function SourceDetailPanel({
               <p className="empty-inline">No Claims belong to this Source.</p>
             ) : source.claims.map((claim) => (
               <article className="source-claim-card" key={claim.claim_id}>
-                <div className="card-badges"><span>{claim.nature}</span><span>{claim.status}</span><span>{formatConfidence(claim.confidence)}</span></div>
+                <div className="card-badges"><span>{claim.nature}</span><span>{claim.status}</span><span>{claim.admission_semantics ?? "LEGACY_UNKNOWN"}</span><span>{claim.reality_support ?? "LEGACY_UNKNOWN"}</span><span>{claim.current_view_use ?? "LEGACY_UNKNOWN"}</span><span>{formatConfidence(claim.confidence)}</span></div>
                 <h4>{claim.statement}</h4>
                 <blockquote>{claim.evidence_excerpt || "No evidence excerpt recorded."}</blockquote>
                 <SourceLocatorLabel locator={claim.source_locator} />

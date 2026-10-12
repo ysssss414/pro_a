@@ -15,6 +15,7 @@ from .config import BoundaryError
 from .review import require_safe_projection
 from .review_store import schema_version
 from .store import Store
+from .advisory_review import required as required_advice
 
 GROUPS = ('claims', 'nodes', 'relations')
 
@@ -156,6 +157,11 @@ class ReviewWorkbench:
             validation = validate_completed_review_packet(completed, run)
         except ReviewCompletionError:
             raise ReviewError('RECOVERY_REQUIRED') from None
+        if required_advice(blank):
+            from .advisory_review import validate_promotable
+            opinions = decoded['completion_receipt'].get('candidate_advisories', {})
+            validate_promotable(completed, opinions)
+            validation['candidate_advisories'] = opinions
         if decoded['completion_receipt'] != validation:
             raise ReviewError('RECOVERY_REQUIRED')
         return {'objects': [{key: row[key] for key in ('kind', 'object_id', 'sha256')} for row in objects],
@@ -260,6 +266,8 @@ class ReviewWorkbench:
         from .foundation_import import is_foundation
         if is_foundation(blank):
             raise ReviewError('FOUNDATION_NATIVE_REVIEW_REQUIRED')
+        if required_advice(blank) and identity.get('principal_type') != 'HUMAN_USER':
+            raise ReviewError('HUMAN_USER_REQUIRED')
         if request['basis_id'] != basis:
             raise ReviewError('IMMUTABLE_FIELD_DRIFT')
         for key in ('reviewer', 'reason'):
@@ -336,6 +344,11 @@ class ReviewWorkbench:
                     validation = validate_completed_review_packet(completed, run)
                 except ReviewCompletionError as error:
                     raise ReviewError('VALIDATION_ERROR', status=422, native_code=error.code) from None
+                if required_advice(blank):
+                    from .advisory_review import AdvisoryReview
+                    validation['candidate_advisories'] = AdvisoryReview(self).read(blank, handle=handle)
+                    from .advisory_review import validate_promotable
+                    validate_promotable(completed, validation['candidate_advisories'])
                 response['objects'] = [self._publish(connection, handle, 'completed_packet', completed),
                                        self._publish(connection, handle, 'completion_receipt', validation)]
                 response['production_authorized'] = False
@@ -369,7 +382,12 @@ class ReviewWorkbench:
             if revision != expected_revision:
                 raise ReviewError('REVISION_CONFLICT', current_revision=revision)
             try:
-                validation = validate_completed_review_packet(compose(blank, states, draft['reviewer'] if draft else ''), run)
+                completed = compose(blank, states, draft['reviewer'] if draft else '')
+                validation = validate_completed_review_packet(completed, run)
+                if required_advice(blank):
+                    from .advisory_review import AdvisoryReview, validate_promotable
+                    opinions = AdvisoryReview(self).read(blank, handle=handle)
+                    validate_promotable(completed, opinions)
             except ReviewCompletionError as error:
                 raise ReviewError('VALIDATION_ERROR', status=422, native_code=error.code) from None
         return {'revision': revision, 'validation': validation, 'production_authorized': False}

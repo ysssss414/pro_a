@@ -148,8 +148,13 @@ class BoundedSourceAnalysisRunner:
         from .source_operations import SourceOperationError
         owner = "worker_" + hashlib.sha256(owner.encode()).hexdigest()[:24]
         bindings = self.inputs(run)
-        chosen = next((b for b in bindings if self.ledger.read(b[3].series_id)[2]["state"] != "SUCCEEDED_COMPLETE"), None)
+        from pro_a.candidate_origin import POLICY
+        isolate = run.get('failure_isolation_policy') == POLICY
+        ignored = ('SUCCEEDED_COMPLETE', 'FAILED') if isolate else ('SUCCEEDED_COMPLETE',)
+        chosen = next((b for b in bindings if self.ledger.read(b[3].series_id)[2]['state'] not in ignored), None)
         if chosen is None:
+            if any(self.ledger.read(b[3].series_id)[2]['state'] == 'FAILED' for b in bindings):
+                raise SourceOperationError('BOUNDED_EXTRACTION_PARTIAL_COVERAGE_FAILED')
             return True
         value, context, catalog, series = chosen
         _, plan, sr, _ = self.ledger.read(series.series_id)
@@ -174,7 +179,7 @@ class BoundedSourceAnalysisRunner:
         try:
             with self.ledger._connection() as c:
                 states = {r["segment_id"]: r["state"] for r in c.execute("SELECT segment_id,state FROM bounded_extraction_segments WHERE series_id=?", (series.series_id,))}
-            pending = sorted((s for s in plan.leaves if states[s.segment_id] != "SUCCEEDED_COMPLETE"), key=lambda s: (s.range_start, s.stable_path))
+            pending = sorted((s for s in plan.leaves if states[s.segment_id] not in (("SUCCEEDED_COMPLETE", "FAILED") if isolate else ("SUCCEEDED_COMPLETE",))), key=lambda s: (s.range_start, s.stable_path))
             if pending:
                 segment = pending[0]
                 try:
@@ -229,6 +234,9 @@ class BoundedSourceAnalysisRunner:
             _, plan, sr, _ = self.ledger.read(series.series_id)
             with self.ledger._connection() as c:
                 closed = all(c.execute("SELECT state FROM bounded_extraction_segments WHERE segment_id=?", (s.segment_id,)).fetchone()[0] == "SUCCEEDED_COMPLETE" for s in plan.leaves)
+            if isolate and not pending and any(state == 'FAILED' for state in states.values()):
+                self.ledger.fail_series(series.series_id, owner, sf, 'LOCAL_SEGMENT_COVERAGE_FAILED')
+                return False
             if closed:
                 self.ledger.finalize(series.series_id, owner, sf, expected_frontier_version=sr["frontier_version"], catalog=catalog, context=context)
             return all(self.ledger.read(b[3].series_id)[2]["state"] == "SUCCEEDED_COMPLETE" for b in bindings)
@@ -242,8 +250,17 @@ class BoundedSourceAnalysisRunner:
             if self.mode == 'WHOLE_PIECE_OUTPUT_DECOMPOSITION' and str(error) in (
                     'SOURCE_METADATA_CONFLICT', 'NODE_CANDIDATE_CONFLICT', 'OUTPUT_OWNERSHIP_VIOLATION'):
                 code = str(error)
-            self.ledger.fail_series(series.series_id, owner, sf, code)
-            self._terminate_pending(bindings,owner)
+            if isolate and str(error) == 'INVALID_SEGMENT_RESPONSE':
+                with self.ledger._connection() as connection:
+                    remaining = connection.execute("SELECT 1 FROM bounded_extraction_segments WHERE series_id=? AND state NOT IN ('FAILED','SUCCEEDED_COMPLETE','SUPERSEDED_BY_CHILDREN')", (series.series_id,)).fetchone()
+                if remaining:
+                    return False
+                self.ledger.fail_series(series.series_id, owner, sf, code)
+                if any(b[3].series_id != series.series_id and self.ledger.read(b[3].series_id)[2]['state'] == 'OPEN' for b in bindings):
+                    return False
+            else:
+                self.ledger.fail_series(series.series_id, owner, sf, code)
+                self._terminate_pending(bindings,owner)
             raise SourceOperationError(code) from None
         finally:
             self.ledger.release(series.series_id, owner, series_fence=sf,

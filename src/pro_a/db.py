@@ -68,7 +68,7 @@ class Database:
             with sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro", uri=True) as existing:
                 has_meta = existing.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='meta'").fetchone()
                 version = existing.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone() if has_meta else None
-                if version and version[0] == "0.2.3":
+                if version and version[0] in ("0.2.3", "0.2.4"):
                     from .foundation_schema_preparation import require_execution_schema
                     require_execution_schema(existing)
                     return

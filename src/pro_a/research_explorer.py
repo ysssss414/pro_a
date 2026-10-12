@@ -239,12 +239,13 @@ class ResearchExplorer:
         return clauses, args
 
     def _claim_page(self, conn: sqlite3.Connection, filters: dict, cursor: str | None, limit: int) -> dict:
+        from .admission_schema import select_fields, date_basis
         offset, limit = _page(cursor, limit)
         clauses, args = self._claim_filters(filters)
         join = ' LEFT JOIN claim_node_links cnl ON cnl.claim_id=c.claim_id '
         where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
         total = int(conn.execute(f'SELECT COUNT(DISTINCT c.claim_id) FROM claims c{join}{where}', args).fetchone()[0])
-        rows = [dict(row) for row in conn.execute(f'''SELECT DISTINCT c.claim_id,c.statement,c.nature,c.fact_time,
+        rows = [dict(row) for row in conn.execute(f'''SELECT DISTINCT {select_fields(conn)},c.claim_id,c.statement,c.nature,c.fact_time,
                 c.publication_time,c.ingestion_time,c.status,c.confidence,c.scope,c.attributed_to,
                 c.evidence_pointer,c.evidence_excerpt,c.source_id,s.title AS source_title,
                 COALESCE(NULLIF(c.fact_time,''),NULLIF(c.publication_time,''),NULLIF(c.ingestion_time,''),c.created_at) business_date
@@ -271,6 +272,7 @@ class ResearchExplorer:
                     WHERE j.value IN ({marks}) ORDER BY j.value,v.view_rank,v.node_id,v.view_id''', ids):
                 citations[row['claim_id']].append(dict(row))
         for row in rows:
+            row['date_basis'] = date_basis(row)
             row['linked_nodes'] = nodes[row['claim_id']]
             row['official_view_citations'] = citations[row['claim_id']]
         return _page_result(rows, total, offset, limit)
@@ -281,8 +283,9 @@ class ResearchExplorer:
         return self._with_snapshot(value)
 
     def claim(self, claim_id: str) -> dict:
+        from .admission_schema import select_fields, projection, date_basis
         with self.connect() as conn:
-            row = conn.execute('''SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,c.ingestion_time,
+            row = conn.execute(f'''SELECT {select_fields(conn)},c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,c.ingestion_time,
                     c.status,c.confidence,c.scope,c.attributed_to,c.evidence_pointer,c.evidence_excerpt,c.structured_json,
                     s.source_id,s.title,s.source_type,s.source_rank,s.origin_type,s.author,s.organization,
                     s.publication_time source_publication_time,s.ingested_at,s.ingestion_mode,s.analysis_mode,
@@ -292,6 +295,8 @@ class ResearchExplorer:
                 raise ResearchError('CLAIM_NOT_FOUND', 404)
             claim = {key: row[key] for key in ('claim_id','statement','nature','fact_time','publication_time',
                 'ingestion_time','status','confidence','scope','attributed_to','evidence_pointer','evidence_excerpt')}
+            claim.update(projection(row))
+            claim['date_basis'] = date_basis(row)
             claim['source_locator'] = _json(row['structured_json'], {}).get('validation', {}).get('source_locator')
             source = {'source_id': row['source_id'], 'title': row['title'], 'source_type': row['source_type'],
                 'source_rank': row['source_rank'], 'origin_type': row['origin_type'], 'author': row['author'],

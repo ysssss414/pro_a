@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { mutateReview, WorkbenchError } from "../api/workbench";
 import type { DecisionOperation, NativeItem, PersistentReview as Review, ReviewOperation, ReviewPacket, ReviewRow } from "../api/workbench";
+import { CandidateAdvice } from "./CandidateAdvice";
 import { ReviewItemDetail, showNative } from "./ReviewItemDetail";
 
 type Props = { packet: ReviewPacket; review: Review; csrf: string; refresh: () => Promise<ReviewPacket> };
@@ -141,6 +142,7 @@ export function PersistentReview(props: Props) {
 
   return <section aria-label="Persistent Review Workbench">
     <h2>Persistent Review Workbench · {review.status}</h2>
+    {review.status !== "SEALED" && packet.items.some(item => item.content.candidate_origin) && <CandidateAdvice handle={packet.artifact_id} csrf={csrf} />}
     <p>Review {review.review_id} · revision {review.revision}</p>
     <label>Reviewer <input value={reviewer} maxLength={200} disabled={Boolean(review.reviewer)} onChange={event => setReviewer(event.target.value)} /></label>
     <section aria-label="Review progress"><h3>Saved review progress</h3>

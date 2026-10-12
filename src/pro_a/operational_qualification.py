@@ -34,7 +34,7 @@ def adapter_mutations(core, sidecar):
     mutations = copy.deepcopy(payload['intended_mutations'])
     for item in mutations:
         if item['table'] == 'node_aliases': item['key'] = {'alias': item['row']['alias']}
-        if item['table'] == 'sources':
+        if item['table'] == 'sources' and not payload['source'].get('reuse_existing_row'):
             # The generic shadow archive intent is never represented as materialized.
             item['row']['archived_path'] = 'operational_sources/' + payload['source']['source_sha256']
             metadata = json.loads(item['row']['metadata_json'])
@@ -42,6 +42,17 @@ def adapter_mutations(core, sidecar):
             metadata['phase42_operational'] = {'adapter_version': VERSION, 'attribution_id': sidecar['object_id'],
                                               'source_sha256': payload['source']['source_sha256'], 'materialization': 'EXTERNAL_OPERATOR_REQUIRED'}
             item['row']['metadata_json'] = encode(metadata)
+        if item['table'] == 'claims':
+            candidate = json.loads(item['row']['structured_json']).get('candidate_origin')
+            if candidate:
+                from .candidate_origin import GOVERNANCE, VERSION as ORIGIN_VERSION
+                require(payload['metadata']['production_schema_version'] == '0.2.4', 'B_LITE_SCHEMA_REQUIRED')
+                require(candidate.get('version') == ORIGIN_VERSION and
+                        candidate.get('proposed_governance') == GOVERNANCE, 'CANDIDATE_GOVERNANCE_INVALID')
+                item['row'].update(GOVERNANCE)
+                item['row']['admission_basis_sha256'] = canonical_sha256({
+                    'native': payload['human_authorization'],
+                    'attribution': sidecar['sha256'], 'candidate': candidate})
     for claim_id, decision in sorted(sidecar['decisions'].items()):
         for link in sorted(decision['links'], key=lambda r: r['node_id']):
             row = {'claim_id': claim_id, 'node_id': link['node_id'], 'role': link['role']}
@@ -115,7 +126,7 @@ def package_projection(envelope):
     changes = []
     for action, entries in (('INSERT', diff['inserts']), ('UNCHANGED', diff['unchanged'])):
         for item in entries:
-            private_columns = {'original_name', 'archived_path', 'metadata_json'}
+            private_columns = {'original_name', 'archived_path', 'metadata_json', 'structured_json'}
             if item['table'] == 'sources': private_columns |= {'title', 'author', 'organization'}
             values = {key: value for key, value in item['row'].items() if key not in private_columns}
             withheld = {key: canonical_sha256(value) for key, value in item['row'].items() if key not in values}

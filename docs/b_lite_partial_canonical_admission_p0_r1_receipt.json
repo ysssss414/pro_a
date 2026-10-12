@@ -1,0 +1,238 @@
+{
+  "task": "PRO_A_B_LITE_PARTIAL_CANONICAL_ADMISSION_P0_R1",
+  "status": "ENGINEERING_QUALIFIED_SYNTHETIC_ONLY",
+  "recorded_at_utc": "2026-10-12T06:26:19.209221+00:00",
+  "baseline_commit": "93776ffffe7e7c2327a1722c692e9e5df1852172",
+  "branch": "codex/b-lite-partial-canonical-admission-p0-r1",
+  "product_file_manifest_sha256": "b0f676c6656dfe92ef396d581d5bb5e944e52a22c1b70c4f4d34209040ace405",
+  "implementation_files": {
+    "frontend/src/api/sourceOperations.ts": "600cf35d0e9dd46da886826db61acadda5ffbf4c2b5a879afaa788b34fa10f32",
+    "frontend/src/api/types.ts": "975646d68c318c013ab6f0b345bf38e809d09be5a82382f1c4d2ed68fc979381",
+    "frontend/src/components/CandidateAdmission.test.tsx": "9cbfefa692a7ad3b5a91b7e681291a961df49340795bc17a4e82d5a6f829b3c1",
+    "frontend/src/components/CandidateAdvice.tsx": "555d4fc0430d604f82d3958c45e6e1e1420eb7c105d58bb8e9bd3a89df76797a",
+    "frontend/src/components/CandidateRange.tsx": "d1154da8d2884a12437bc9a645dc0af62dcb37d9f9c6c6d3f09fbb850c61d072",
+    "frontend/src/components/NodeDetailPanel.test.tsx": "91c22d45faa900d31c13efb69369857b14a635aff86e642712e31903cd707255",
+    "frontend/src/components/NodeDetailPanel.tsx": "d91b3aa89765605722f1d79ccbb3a13d6ceeb4530b1912e2cda9c0ef57dc8543",
+    "frontend/src/components/PersistentReview.tsx": "1021392189a1ba141bcf53c79134031c307280c3e6093671eeba35c83920122f",
+    "frontend/src/components/ResearchExplorer.tsx": "dcc9b1e93ba337a58de9e8d3a0862b32f372cbfc0bb331b1d0f50fbcff19c5ea",
+    "frontend/src/components/SourceDetailPanel.tsx": "5bd0d467e725dd1e5e0f154f7f178aa1875d0ccee1d25683c4fb69c92d4ad95a",
+    "frontend/src/components/SourceOperationsWorkbench.tsx": "dce78697b0f69c1e24f5e949374ce53f51a29e32736a2e18b80eef240e59e2ab",
+    "frontend/src/components/UnifiedResearchInspector.tsx": "79a029154154de18afbd3cc76ab3858f8320d6f33fb380d9fcb3826ad7f7366c",
+    "frontend/src/components/inspectorSelection.ts": "a86156333874292053c31ce6f1c238fdd2faec213006e58d41b9aaee4702ae4c",
+    "src/pro_a/admission_schema.py": "a797f97d4657433b8013dfbe106218c576df897c387da12c11f0489748f9462a",
+    "src/pro_a/analyzer.py": "2ff3d505846d315dea5907b7a62391da9bea3e30b42dfb2c3586e45f0e294676",
+    "src/pro_a/candidate_origin.py": "b45d282baa17353bd5bde3364ca4308ce35dceb35591152a11dcb9be7744566c",
+    "src/pro_a/current_view_workbench.py": "af6c390f95d62b9888445cdcb67194afeaed45c88dba18408a4bc30b403187e2",
+    "src/pro_a/db.py": "b7014122e95ed531672ff8ab3cc6e90387dc1ce43c547b676726ae1a75c06a16",
+    "src/pro_a/direct_impact.py": "30b3011971c130ba6966900b6f15d278e10d9ee57f1af1564c7523560e0e62da",
+    "src/pro_a/foundation_schema_preparation.py": "18604b40a0608aa2082492268afc3cdcba578eb32de390742a0c8350d17c19b4",
+    "src/pro_a/mcp/__init__.py": "e1306ae8005967d5ff8f7f43313b3cad54ec3bf04ace84ea9caa193dce216e11",
+    "src/pro_a/mcp/review_schemas.py": "5a26d1640e1a81563e05b37f280ea3c7feb55fa5c9e6727866839d6afe1adf52",
+    "src/pro_a/mcp/schemas.py": "f71ef60fb2041e74cdd2d290161671c023ac7ea1c94d24662fd48c2f2fbbdc48",
+    "src/pro_a/mcp/service.py": "8555d48aff9d4904d2fc31224818093a47bb6032c47e091755a00d001705a9c1",
+    "src/pro_a/operational_contract.py": "e37418ad047fd3efd1dd9900d09a90d7c2f1edffae3fefa7b393ac681d08e904",
+    "src/pro_a/operational_ingestion.py": "9a124bf5c1d360e2b8e749e121e10c6304df56b5a584ba05397eff5f73f7f36c",
+    "src/pro_a/operational_qualification.py": "b59c161438a307deac49e5cf6d468473a5efece56cf5b79a1e1becbd4abe5898",
+    "src/pro_a/phase3f_operational_handoff.py": "10d0bff6fb76123bdf8d2b907fafe41434d584a75d792326e4726d5c5d256bd2",
+    "src/pro_a/phase3f_review_completion.py": "0c6f215d290de93dc2fa390f681ddd6248ebac8ccc26a248cfc1eabc88ee3760",
+    "src/pro_a/phase4_orchestration.py": "e40d4e84e01310362541b7412374094f92e732eee430df56df1063498de43978",
+    "src/pro_a/production_promotion.py": "f66b8b6110a735e16584b898a10195a3667fe856edaf192ea467b571c1b7c6e3",
+    "src/pro_a/propagation.py": "3ce26cb703916bc912fce2304096ed3894057b30e0f94068f2cfd9439a0503c6",
+    "src/pro_a/query.py": "e314b9c749090dde593691324bec6e29bc1df8713c2283527bc31bd3603fc2fc",
+    "src/pro_a/research_explorer.py": "ba8db30ebb49d5d95664e663dbbdaedc77f651dce174b5dda4b75889381e1347",
+    "src/pro_a/workbench/advisory_review.py": "7e4f0d9f9bc02ad08f8c99e05bf27a0873d26e317e2f5dd3272592ef2c37b424",
+    "src/pro_a/workbench/api.py": "5968867e50cc33fc7818040a314075b5d5dfa87abb6b3794127cb8f6fff80173",
+    "src/pro_a/workbench/artifacts.py": "ec3a0d46facbd6adf6899b2aef178b350f4dd82fbfe671bae515957fde6e9800",
+    "src/pro_a/workbench/attribution.py": "b96115af9939635582d73ca4dfa95b210df0979ac50798c130ef815153c5b664",
+    "src/pro_a/workbench/bounded_source_analysis.py": "4f729a5d4c5c5c90d0191dd891014b4a1a8ff704ae6486751022d38b13f8f6ac",
+    "src/pro_a/workbench/candidate_inputs.py": "cb2d3020d2b4e58d62d3356b65eecd1864b4b0aa0fff43ff3a7838a2d61fc635",
+    "src/pro_a/workbench/cloud_jobs.py": "a146d32587fe9e2cfc90ca6ebec036e897c119962af7c53b41c25740196beeee",
+    "src/pro_a/workbench/review_workbench.py": "1e01ce212c8722d95239402f76fe90800052b078509f9b12970958a4dfea9a6e",
+    "src/pro_a/workbench/source_operations.py": "b5348d9f6e2c926de2c4617d4ac7f3176b22d8e0da7037d2b37fefe67a2ee9ba",
+    "tests/test_admission_schema.py": "4d1a0b3e7d4c8528ac21988120e790f663f740ea28e7691eb4c3f469055df4eb",
+    "tests/test_bounded_only_resume.py": "8d7a3b135f9f00fd1d2d0d163f163ccdd002f225b3178905218c2fb022958391",
+    "tests/test_candidate_origin.py": "ba3525a32bb0ba3e2e2ed4b97f6432c3e6b1630548c7743d12069e685065e350",
+    "tests/test_mcp_stage3.py": "dfec9a34ab780564aaf5e9e66ea49304ea9772fe261584c688f3e05021738abe",
+    "tests/test_output_decomposition_durability.py": "2b9e24f045fd668ee183041f712ee20ca595668d404a3d20c6dc5a5b6248d33f"
+  },
+  "contracts": {
+    "candidate_origin": "source-candidate-set-v1",
+    "failure_isolation": "independent-candidate-isolation-v1",
+    "canonical_before": "0.2.3",
+    "canonical_after": "0.2.4",
+    "workbench_schema": "12",
+    "workbench_migration_required": false,
+    "operational": "phase42-operational-v2",
+    "operational_contract_sha256": "0f9269ae5338e98bcba916e681c6511e9c3da7923626ca974c955bc493479338",
+    "operational_runtime_code_sha256": "51a27b7d2f95e014c0bead095c96b3430eedb1199453f604d9bcb94842bafa71",
+    "mcp": "pro-a-mcp-stage3-v2",
+    "mcp_tools": 14,
+    "mcp_writes": 0
+  },
+  "gates": {
+    "G1": "PASS_SYNTHETIC",
+    "G2": "PASS_SYNTHETIC",
+    "G3": "PASS_SYNTHETIC"
+  },
+  "tests": [
+    {
+      "group": "candidate_origin_migration_and_full_v4",
+      "files": [
+        "tests/test_candidate_origin.py",
+        "tests/test_admission_schema.py",
+        "tests/test_provider_record_v4.py"
+      ],
+      "passed": 54,
+      "failed": 0,
+      "duration_seconds": 220.0
+    },
+    {
+      "group": "native_attribution_operator_and_current_view_authority",
+      "files": [
+        "tests/test_workbench_stage2.py",
+        "tests/test_workbench_stage2_guards.py",
+        "tests/test_workbench_stage3.py"
+      ],
+      "passed": 72,
+      "failed": 0,
+      "duration_seconds": 582.38
+    },
+    {
+      "group": "durable_ledger_and_readonly_regressions",
+      "files": [
+        "tests/test_output_decomposition_durability.py",
+        "tests/test_mcp_stage0.py",
+        "tests/test_mcp_stage3.py",
+        "tests/test_mcp_bounded_reads.py",
+        "tests/test_stability_propagation.py",
+        "tests/test_stability_current_view.py"
+      ],
+      "passed": 116,
+      "failed_remaining": 0,
+      "initial_passed": 113,
+      "targeted_rerun_passed": 3,
+      "rerun_details": "Updated the ordinary new-run expectation to exactly its preplanned Segment count; exposed local src/tests through PYTHONPATH to the two child-process tests. Product code stayed frozen.",
+      "targeted_rerun_duration_seconds": 21.53
+    },
+    {
+      "group": "historical_authorization_and_frozen_frontier",
+      "file": "tests/test_bounded_only_resume.py",
+      "selection": "boundary_contract_schema or boundary_refuses_preexisting or accepted_retry_resume_qualification or cross_release_accepted_retry or compatibility_normalization or frozen_root_validation or existing_frozen_subdivision or candidate_contract_does_not_inherit",
+      "passed": 16,
+      "failed": 0,
+      "deselected": 29,
+      "duration_seconds": 53.21
+    },
+    {
+      "group": "frontend",
+      "files": [
+        "frontend/src/components/CandidateAdmission.test.tsx",
+        "frontend/src/components/NodeDetailPanel.test.tsx",
+        "frontend/src/components/SourceDetailPanel.test.tsx",
+        "frontend/src/components/UnifiedResearchInspector.test.tsx",
+        "frontend/src/components/ResearchExplorer.test.tsx",
+        "frontend/src/components/SourceOperationsWorkbench.test.tsx",
+        "frontend/src/PersistentReview.test.tsx"
+      ],
+      "passed": 51,
+      "failed": 0,
+      "duration_seconds": 34.35,
+      "typescript": "PASS",
+      "vite_build": "PASS",
+      "dependencies": "Existing dependencies used read-only; no frontend dependency installation.",
+      "build_warning": "One shared JavaScript bundle is 879.14 kB, exceeding the 500 kB advisory threshold."
+    }
+  ],
+  "backend_unique_targeted_tests_passed": 258,
+  "additional_observation_not_in_totals": "The full 27-Segment Run13 topology and first-new-failure malformed case completed successfully before the longer historical sweep was stopped in favor of the targeted boundary set; no full historical-suite pass is claimed.",
+  "synthetic_vertical_evidence": {
+    "ordinary_authenticated_workbench_entry": true,
+    "mixed_complete_v4": true,
+    "title_assertion_rejected_by_both_reviewers_and_human": true,
+    "missing_nature_and_invalid_entity_dependents_isolated": true,
+    "original_raw_unchanged": true,
+    "original_failed_coverage_and_accepted_ledger_unchanged": true,
+    "two_actual_stub_advisory_submissions": true,
+    "native_and_attribution_human_gates": true,
+    "missing_precise_apply_grant_denied": true,
+    "node_operations": [
+      "CREATE",
+      "REUSE"
+    ],
+    "attribution_outcomes": [
+      "NO_LINK",
+      "LINK"
+    ],
+    "first_and_second_batch_promoted": true,
+    "same_source_canonical_claims_after_second_batch": 3,
+    "existing_source_entire_row_preserved": true,
+    "repeat_zero_increment": true,
+    "recoverable_operator_receipt": true,
+    "mcp_and_explorer_b_lite_labels": true,
+    "official_view_insert_update_purpose_gates": true,
+    "exact_range_revision_and_unchanged_advice_reuse": true,
+    "split_chinese_word_preserves_raw": true
+  },
+  "limits": [
+    "Complete v4 JSON only; no corrupt-prefix admission or fuzzy span repair.",
+    "No BASIS_ELIGIBLE grant workflow, multi-source truth evolution, complex Relation promotion or automatic Current View publishing.",
+    "Normal intake and model budgets remain enforced.",
+    "No whole-repository test-suite pass claimed."
+  ],
+  "release_boundary": {
+    "draft_pr_only": true,
+    "real_source_runs_created_or_resumed": 0,
+    "real_provider_calls": 0,
+    "real_databases_written_or_migrated": 0,
+    "real_human_authorizations_signed": 0,
+    "stable_activated": false,
+    "runtime_installation_switched": false,
+    "production_ready_claimed": false,
+    "real_trial_requires_separate_human_authorization": true
+  },
+  "manifest_scope": "SHA-256 of tested worktree file bytes; paths are repository-relative. Documentation and transient outputs are excluded.",
+  "dependency_closure_revalidation": {
+    "files": [
+      "tests/test_candidate_origin.py",
+      "tests/test_admission_schema.py",
+      "tests/test_mcp_stage3.py"
+    ],
+    "passed": 68,
+    "failed": 0,
+    "duration_seconds": 237.31,
+    "counted_again_in_unique_total": false,
+    "evidence": "Native entity content binds supporting Claim revisions; existing parent placement binds child Node revision. A revised supporting Claim invalidates entity advice while unrelated Claim advice can be explicitly reused."
+  },
+  "original_checkout_verification": {
+    "tracked_files_unchanged": true,
+    "head": "5f540e315fc0fea2b50a7b07ad89505002b17c51",
+    "branch": "codex/run13-bounded-only-resume-operator-boundary-r1"
+  },
+  "privacy_check": {
+    "delivery_files_scanned": 50,
+    "actual_user_paths_or_attachment_ids_found": 0,
+    "credential_shaped_literals_found": 0,
+    "temporary_helper_files_removed": 5
+  },
+  "line_endings": {
+    "new_files_normalized_to": "LF",
+    "python_ast_unchanged": true,
+    "files": [
+      "docs/B_LITE_PARTIAL_CANONICAL_ADMISSION_P0_R1.md",
+      "docs/b_lite_partial_canonical_admission_p0_r1_receipt.json",
+      "src/pro_a/admission_schema.py",
+      "tests/test_candidate_origin.py"
+    ]
+  },
+  "final_byte_identity_revalidation": {
+    "tests": [
+      "tests/test_candidate_origin.py::test_durable_failed_attempt_input_does_not_change_history[False]",
+      "tests/test_admission_schema.py"
+    ],
+    "passed": 3,
+    "failed": 0,
+    "duration_seconds": 84.75,
+    "counted_again_in_unique_total": false,
+    "evidence": "Final LF-normalized file bytes verified through both synthetic promotion batches and explicit migration/purpose guards."
+  }
+}

@@ -143,6 +143,12 @@ class Locator(BaseModel):
 
 
 class Claim(BaseModel):
+    admission_semantics: Literal['LEGACY_UNKNOWN', 'SOURCE_ASSERTION', 'FACTUAL_KNOWLEDGE'] = 'LEGACY_UNKNOWN'
+    reality_support: Literal['LEGACY_UNKNOWN', 'UNVERIFIED', 'OFFICIAL_SUPPORTED', 'INDEPENDENTLY_SUPPORTED', 'DISPUTED'] = 'LEGACY_UNKNOWN'
+    current_view_use: Literal['LEGACY_UNKNOWN', 'CLUE_ONLY', 'BASIS_ELIGIBLE'] = 'LEGACY_UNKNOWN'
+    admission_basis_sha256: str = ''
+    ingestion_time: str = ''
+    date_basis: Literal['FACT_TIME', 'PUBLICATION_TIME', 'INGESTION_TIME', 'UNKNOWN'] = 'UNKNOWN'
     claim_id: str
     statement: str
     nature: str
@@ -182,7 +188,15 @@ class Evidence(BaseModel):
     next_source_cursor: str | None
 
 
+class SourceClaim(Claim):
+    source_id: str = ''
+    link_role: str = ''
+    source: SourceMetadata | None = None
+
+
 class CanonicalSource(SourceMetadata):
+    claims: list[SourceClaim] = Field(default_factory=list)
+    next_claim_cursor: str | None = None
     origin_type: str
     ingested_at: str
     ingestion_mode: str

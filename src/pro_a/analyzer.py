@@ -1803,6 +1803,9 @@ class Analyzer:
         return self._validate_compare_output(data, new_claims, history)
 
     def review_impact(self, node: dict[str, Any], current_view_md: str, evidence: list[dict[str, Any]], context: dict[str, Any]) -> dict[str, Any]:
+        from .admission_schema import basis_eligible
+        if any('current_view_use' in item and not basis_eligible(item) for item in evidence):
+            raise ValueError('IMPACT_REVIEWED_BASIS_REQUIRED')
         if not self.available:
             raise LLMError("LLM unavailable")
         user = IMPACT_USER.format(

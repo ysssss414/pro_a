@@ -52,13 +52,30 @@ def test_inventory_compatibility_and_protocol(case, mode):
             definitions = [tool.model_dump(mode='json', by_alias=True) for tool in (await client.list_tools()).tools]
             assert len(definitions) == 14 and {t['name'] for t in definitions} == set(TOOLS)
             old = deepcopy([tool for tool in definitions if tool['name'] in baseline])
-            # Only the optional output-decomposition projection extends Stage0.
-            # Removing that addition must reproduce every historical tool byte.
+            # Remove only declared additive B-lite and output-decomposition fields;
+            # every historical tool byte must still match the fixed baseline.
             additions = {
                 'get_processing_run':'1c02eeab53e8d67721ec274f8bbc3c56c02778eb85aa41ee51058d227af4929a',
                 'get_source':'e9add1e2873dce4a67b710725bcf81e429537f8c25ef60d1edbd19274521f75e',
             }
             for tool in old:
+                schema = tool['outputSchema']
+                if tool['name'] == 'get_node_evidence':
+                    assert canonical_sha256(tool) == '05609c8d95fa6209a45d3a4a4cc8a455772a51effb8ab376c589358cdaae8b24'
+                    claim = schema['$defs']['Claim']
+                    for field in ('admission_semantics', 'reality_support', 'current_view_use',
+                                  'admission_basis_sha256', 'ingestion_time', 'date_basis'):
+                        assert field not in claim['required']
+                        claim['properties'].pop(field)
+                if tool['name'] == 'get_source':
+                    assert canonical_sha256(tool) == '94d5fb7455f22e046c3deb0b4f260d6b778bc44c5075be67e62a949a31a3f066'
+                    for field in ('claim_limit', 'claim_cursor'):
+                        assert field not in tool['inputSchema']['required']
+                        tool['inputSchema']['properties'].pop(field)
+                    for field in ('claims', 'next_claim_cursor'):
+                        schema['$defs']['CanonicalSource']['properties'].pop(field)
+                    for name in ('SourceClaim', 'SourceMetadata', 'Locator'):
+                        schema['$defs'].pop(name)
                 if tool['name'] in additions:
                     assert canonical_sha256(tool)==additions[tool['name']]
                     schema=tool['outputSchema']
@@ -69,7 +86,7 @@ def test_inventory_compatibility_and_protocol(case, mode):
             assert {t['name']: canonical_sha256(t) for t in old} == baseline
             assert canonical_sha256(old) == '89935a23c094aa551d02357a10b11e5cd18cee2a6c7612789e41a0812e5fc1fc'
             assert all(t['annotations']['readOnlyHint'] and not t['annotations']['destructiveHint'] for t in definitions)
-            assert CONTRACT_VERSION == 'pro-a-mcp-stage3-v1'
+            assert CONTRACT_VERSION == 'pro-a-mcp-stage3-v2'
             for name, args in [('list_review_queue', {}), ('get_review_context', {'artifact_id': case['handle']}),
                                ('get_review_item_context', {'artifact_id': case['handle'], 'candidate_id': NODE})]:
                 result = await client.call_tool(name, args)

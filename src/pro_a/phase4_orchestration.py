@@ -233,13 +233,14 @@ def _advance(root: Path, identity: dict, config_path: Path, stop_after: str, *,
                 raise ExecutionBlocked("SOURCE_INPUT_CHANGED")
             run_operational_ingestion(source, stop_after="source", frozen_extraction_path=(
                 root / "inputs/extraction.json" if replay is not None else None),
+                candidate_input_path=(root / 'inputs/candidates.json' if identity.get('candidate_origin') else None),
                 llm_factory=factory, semantic_replay=replay, **kwargs)
             _commit(root, identity, "SOURCE_READY")
             state = "SOURCE_READY"
         if stop_after == "SOURCE_READY":
             return _result(root)
-        if state == "SOURCE_READY" and identity["mode"] == "DURABLE_CLOUD_JOB":
-            if extraction_llm_factory is None:
+        if state == "SOURCE_READY" and identity["mode"] in ("DURABLE_CLOUD_JOB", "DURABLE_CANDIDATE_INPUT"):
+            if extraction_llm_factory is None and not identity.get('candidate_origin'):
                 return _result(root)
             _commit(root, identity, "PROCESSING", code="EXTRACTION_AND_EVIDENCE_INPUT")
             run_operational_ingestion(
@@ -295,7 +296,7 @@ def _advance(root: Path, identity: dict, config_path: Path, stop_after: str, *,
 def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"),
                     retry_policy: RetryPolicy = RetryPolicy.FORBID_ALL,
                     replay_run: Path | None = None, stop_after: str = "REVIEW_READY",
-                    external_semantic: bool = False) -> dict:
+                    external_semantic: bool = False, candidate_input_path: Path | None = None) -> dict:
     if stop_after not in CHECKPOINTS:
         raise ValueError("INVALID_STOP_CHECKPOINT")
     policy = RetryPolicy(retry_policy)
@@ -304,6 +305,8 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
     source_sha = sha256_file(source)
     if replay_run is not None and external_semantic:
         raise ExecutionBlocked("EXTERNAL_SEMANTIC_REPLAY_CONFLICT")
+    if candidate_input_path is not None and (replay_run is not None or not external_semantic):
+        raise ExecutionBlocked('CANDIDATE_EXECUTION_MODE_INVALID')
     capture = frozen_replay_inputs(Path(replay_run)) if replay_run is not None else None
     if capture is not None and capture["source_sha256"] != source_sha:
         raise ExecutionBlocked("REPLAY_SOURCE_MISMATCH")
@@ -324,6 +327,12 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
                  "DURABLE_CLOUD_JOB" if external_semantic else "CONFIGURED_PROVIDER"),
         "replay_origin": capture["origin_manifest_sha256"] if capture else None,
     }
+    if candidate_input_path is not None:
+        from .candidate_origin import VERSION, semantic_projection
+        document = read_json(Path(candidate_input_path))
+        semantic_projection(document['documents'], document.get('excluded_keys', ()))
+        identity['mode'] = 'DURABLE_CANDIDATE_INPUT'
+        identity['candidate_origin'] = {'version': VERSION, 'sha256': sha256_file(Path(candidate_input_path))}
     root.mkdir(parents=True)
     for name in ("commits", "inputs", "attempts"):
         (root / name).mkdir()
@@ -335,6 +344,11 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
         (root / "inputs/extraction.json").write_bytes(extraction.read_bytes())
         if sha256_file(root / "inputs/extraction.json") != capture["extraction_sha256"]:
             raise ExecutionBlocked("REPLAY_EXTRACTION_CHANGED_DURING_COPY")
+    if candidate_input_path is not None:
+        target = root / 'inputs/candidates.json'
+        target.write_bytes(Path(candidate_input_path).read_bytes())
+        if sha256_file(target) != identity['candidate_origin']['sha256']:
+            raise ExecutionBlocked('CANDIDATE_INPUT_DRIFT')
     _commit(root, identity, "CREATED")
     return resume_execution(root, execution_id=execution_id, config_path=config_path,
                             retry_policy=policy, stop_after=stop_after)

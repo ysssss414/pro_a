@@ -87,6 +87,9 @@ export interface ParseDiagnostics {
 }
 
 export interface ClaimResult {
+  admission_semantics?: string;
+  reality_support?: string;
+  current_view_use?: string;
   claim_id: string;
   statement: string;
   nature: string;
@@ -266,6 +269,9 @@ export interface SourceClaimNode extends NodeSummary {
 }
 
 export interface SourceClaim {
+  admission_semantics?: string;
+  reality_support?: string;
+  current_view_use?: string;
   claim_id: string;
   statement: string;
   nature: string;

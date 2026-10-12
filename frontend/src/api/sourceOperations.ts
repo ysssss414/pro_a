@@ -11,6 +11,7 @@ export type BoundCompanyMaterialIntent = CompanyMaterialIntent & {
 };
 
 export type SourceRun = {
+  candidate_origin?: { version: string; identity: string } | null;
   processing_run_id: string;
   company_material_intent?: BoundCompanyMaterialIntent | null;
   company_material_intent_sha256?: string | null;
@@ -100,6 +101,11 @@ export const uploadSource = (file: File, csrf: string, signal: AbortSignal) =>
     method: "POST",
     headers: { "Content-Type": "application/pdf", "X-Source-Filename": encodeURIComponent(file.name), "X-CSRF-Token": csrf },
     body: file,
+  });
+export const prepareSourceCandidates = (runId: string, csrf: string, signal: AbortSignal) =>
+  request<{ status?: string; reason?: string; duplicate: boolean }>("/source-operations/runs/" + encodeURIComponent(runId) + "/candidates", signal, {
+    method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+    body: JSON.stringify({ idempotency_key: `candidate-${crypto.randomUUID()}` }),
   });
 export const startSourceProcessing = (sourceId: string, body: object, csrf: string, signal: AbortSignal) =>
   request<{ run: SourceRun; duplicate: boolean }>("/source-operations/" + encodeURIComponent(sourceId) + "/process", signal, {

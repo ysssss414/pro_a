@@ -446,11 +446,12 @@ class ReadOnlyQuery:
         }
 
     def node_claims(self, node_id: str) -> list[dict[str, Any]] | None:
+        from .admission_schema import select_fields, projection, date_basis
         with self.connect() as conn:
             if self._get_node(conn, node_id) is None:
                 return None
             rows = conn.execute(
-                """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
+                f"""SELECT {select_fields(conn)},c.ingestion_time,c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
                           c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
                           c.evidence_pointer,c.evidence_excerpt,c.source_id,c.structured_json,
                           cnl.role AS link_role,
@@ -488,6 +489,8 @@ class ReadOnlyQuery:
                     "link_role",
                 )
             }
+            claim.update(projection(row))
+            claim.update(ingestion_time=row["ingestion_time"], date_basis=date_basis(row))
             claim["source"] = self._source_metadata(row)
             claim["source_locator"] = self._source_locator(row["structured_json"])
             claims.append(claim)
@@ -756,6 +759,7 @@ class ReadOnlyQuery:
             return view_proposal_detail(conn, proposal_id)
 
     def source_detail(self, source_id: str) -> dict[str, Any] | None:
+        from .admission_schema import select_fields, projection, date_basis
         with self.connect() as conn:
             source = conn.execute(
                 """SELECT source_id,title,original_name,source_type,source_rank,
@@ -783,7 +787,7 @@ class ReadOnlyQuery:
                 (source_id,),
             ).fetchall()
             claim_rows = conn.execute(
-                """SELECT c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
+                f"""SELECT {select_fields(conn)},c.ingestion_time,c.claim_id,c.statement,c.nature,c.fact_time,c.publication_time,
                           c.status,c.confidence,c.novelty_level,c.attributed_to,c.scope,
                           c.evidence_pointer,c.evidence_excerpt,c.structured_json,
                           n.node_id,n.canonical_name,n.primary_type,cnl.role AS node_role
@@ -809,6 +813,8 @@ class ReadOnlyQuery:
             claim_id = row["claim_id"]
             if claim_id not in claims_by_id:
                 claim = {key: row[key] for key in claim_fields}
+                claim.update(projection(row))
+                claim.update(ingestion_time=row["ingestion_time"], date_basis=date_basis(row))
                 claim["source_locator"] = self._source_locator(row["structured_json"])
                 claim["linked_nodes"] = []
                 claims_by_id[claim_id] = claim

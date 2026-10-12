@@ -152,6 +152,38 @@ class CloudJobSubmission(BaseModel):
     operation_kind: str = Field(pattern=r'^SEMANTIC_DECOMPOSITION$')
 
 
+class CandidateProcessRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
+
+
+class CandidateRangeRevision(CandidateProcessRequest):
+    input_identity: str = Field(pattern=r'^[0-9a-f]{64}$')
+    observation_id: str = Field(pattern=r'^OBS_[0-9a-f]{64}$')
+    evidence_ref: str = Field(min_length=1, max_length=100)
+    source_start: int = Field(ge=0)
+    source_end: int = Field(gt=0)
+    reason: str = Field(min_length=1, max_length=8000)
+
+
+class CandidateAdviceItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    candidate_id: str = Field(min_length=1, max_length=200)
+    content_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    judgment: str = Field(pattern=r'^(SUPPORTED|UNSUPPORTED|UNCERTAIN)$')
+    reason: str = Field(min_length=1, max_length=8000)
+
+
+class CandidateAdviceRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    slot: str = Field(pattern=r'^[AB]$')
+    context_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    reviewer_type: str = Field(pattern=r'^(MODEL|HUMAN_REVIEWER)$')
+    reviewer_id: str = Field(min_length=1, max_length=200)
+    items: list[CandidateAdviceItem] = Field(min_length=0, max_length=500)
+    reuse_from: str | None = Field(default=None, pattern=r'^ART_[0-9a-f]{32}$')
+
+
 class SourceProcessRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
@@ -225,6 +257,8 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
                 return denied('SESSION_REQUIRED', 401)
             if unsafe and not login and not hmac.compare_digest(request.headers.get('x-csrf-token', ''), identity['csrf_token']):
                 return denied('CSRF_REQUIRED')
+            if identity is not None:
+                identity['principal_type'] = 'HUMAN_USER'
             request.state.identity = identity
             config.check_knowledge()
             return await call_next(request)
@@ -340,6 +374,20 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.get(PREFIX + '/reviews/{artifact_id}/projection/{candidate_id}')
     def review_projection_item(artifact_id: str, candidate_id: str):
         return reviews.projected_item(artifact_id, candidate_id)
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/advice-context')
+    def candidate_advice_context(artifact_id: str):
+        from pro_a.mcp.service import ReadService
+        from pro_a.mcp.review_context import basis
+        context, candidates, nodes = basis(ReadService(config), artifact_id, 'blind', None)
+        return {'context': context.model_dump(mode='json'),
+                'candidates': [c.model_dump(mode='json') for c in candidates],
+                'canonical_nodes': [nodes[key].model_dump(mode='json') for key in sorted(nodes)]}
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/advice')
+    def submit_candidate_advice(artifact_id: str, body: CandidateAdviceRequest):
+        from .advisory_review import AdvisoryReview
+        return AdvisoryReview(reviews).submit(artifact_id, body.model_dump())
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):
@@ -656,6 +704,28 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.get(PREFIX + '/source-operations/runs/{processing_run_id}')
     def source_processing_run(processing_run_id: str):
         return source_service().get_run(processing_run_id)
+
+    @app.get(PREFIX + '/source-operations/runs/{processing_run_id}/candidate-inputs')
+    def candidate_inputs(processing_run_id: str):
+        from .candidate_inputs import CandidateInputs
+        return CandidateInputs(source_service()).inspect(processing_run_id)
+
+    @app.post(PREFIX + '/source-operations/runs/{processing_run_id}/attempts/{attempt_id}/candidate-range')
+    def candidate_range(processing_run_id: str, attempt_id: str, body: CandidateRangeRevision, request: Request):
+        from .candidate_inputs import CandidateInputs, inspect_attempt
+        service = source_service()
+        if request.state.identity.get('principal_type') != 'HUMAN_USER':
+            raise BoundaryError('HUMAN_USER_REQUIRED')
+        if inspect_attempt(service, processing_run_id, attempt_id)['identity'] != body.input_identity:
+            raise BoundaryError('CANDIDATE_ORIGIN_DRIFT')
+        revision = {k: getattr(body, k) for k in ('evidence_ref', 'source_start', 'source_end', 'reason')}
+        revision['reviewer'] = request.state.identity['actor']
+        reference = CandidateInputs(service).publish(processing_run_id, attempt_id, {body.observation_id: revision})
+        return service.start_candidates([reference], idempotency_key=body.idempotency_key)
+
+    @app.post(PREFIX + '/source-operations/runs/{processing_run_id}/candidates')
+    def prepare_candidates(processing_run_id: str, body: CandidateProcessRequest):
+        return source_service().prepare_candidates(processing_run_id, **body.model_dump())
 
     @app.get(PREFIX + '/source-operations/runs/{processing_run_id}/events')
     def source_processing_events(processing_run_id: str, cursor: str | None = None,

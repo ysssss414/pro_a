@@ -13,10 +13,11 @@ from .foundation_schema_preparation import require_execution_schema
 from .production_promotion import canonical_sha256, database_identity, nfkc_casefold
 from .workbench.config import BoundaryError, checked_path
 
-VERSION = 'phase42-operational-v1'
+VERSION = 'phase42-operational-v2'
 ENTRY_VERSION = 'phase42-operator-v1'
 WEB_REQUEST = ContextVar('pro_a_unprivileged_web_request', default=False)
-CONTRACT_SHA = '6d2dc5bf1d2d5c8e2945da86cd5bd25f0f4b3bb306e2946ad67738fdc9e16a7c'
+CONTRACT_SHA = canonical_sha256({'version': VERSION, 'schemas': ['0.2.3', '0.2.4'],
+    'source_reuse': 'exact-existing-row', 'candidate_admission': 'sealed-source-assertion-v1'})
 KEYS = {'sources': ('source_id',), 'claims': ('claim_id',), 'nodes': ('node_id',),
         'node_aliases': ('alias',), 'node_relations': ('relation_id',), 'claim_node_links': ('claim_id', 'node_id')}
 
@@ -41,7 +42,9 @@ def runtime_identity():
     root = Path(__file__).resolve().parent
     names = ('operational_contract.py', 'operational_qualification.py', 'operational_operator.py',
              'workbench/attribution.py', 'phase3f_operational_handoff.py', 'phase3f_review_completion.py',
-             'claim_attribution_semantics.py', 'foundation_schema_preparation.py', 'production_promotion.py')
+             'claim_attribution_semantics.py', 'foundation_schema_preparation.py', 'production_promotion.py',
+             'admission_schema.py', 'candidate_origin.py', 'workbench/candidate_inputs.py',
+             'workbench/advisory_review.py', 'workbench/artifacts.py', 'workbench/review_workbench.py')
     return canonical_sha256({name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names})
 
 
@@ -121,7 +124,7 @@ def verify_envelope(envelope):
     verify(envelope, 'OPERATIONAL')
     require(envelope.get('adapter_version') == VERSION and envelope.get('contract_sha256') == CONTRACT_SHA, 'ADAPTER_VERSION_MISMATCH')
     require(envelope.get('runtime_identity') == runtime_identity(), 'RUNTIME_IDENTITY_MISMATCH')
-    require(envelope.get('baseline', {}).get('schema_version') == '0.2.3', 'SCHEMA_MISMATCH')
+    require(envelope.get('baseline', {}).get('schema_version') in ('0.2.3', '0.2.4'), 'SCHEMA_MISMATCH')
     verify(envelope['attribution'], 'ATTRIBUTION')
     verify(envelope['predicted_diff'], 'DIFF')
     require(envelope.get('production_authorized') is False, 'QUALIFICATION_NOT_AUTHORIZATION')

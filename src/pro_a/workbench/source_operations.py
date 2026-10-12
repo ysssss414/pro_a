@@ -506,7 +506,8 @@ class SourceOperations:
                company_material_intent: Mapping[str, Any] | None = None,
                community_event: Mapping[str, Any] | None = None,
                qualification_reason: str | None = None,
-               qualification_intake: bool = False) -> dict[str, Any]:
+               qualification_intake: bool = False,
+               candidate_origin: Mapping[str, Any] | None = None) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
             raise SourceOperationError("INVALID_IDEMPOTENCY_KEY", 422)
         if len(reprocess_reason) > 1000 or reprocess_reason != reprocess_reason.strip():
@@ -522,7 +523,7 @@ class SourceOperations:
                                         (source_id,)).fetchone()
             if source is None:
                 raise SourceOperationError("SOURCE_NOT_FOUND", 404)
-            if source["canonical_source_id"]:
+            if source["canonical_source_id"] and candidate_origin is None:
                 raise SourceOperationError("SOURCE_ALREADY_EXISTS_IN_PRODUCTION")
             from pro_a.company_material_intent import CompanyMaterialError, read_bound, validate
             try:
@@ -533,6 +534,8 @@ class SourceOperations:
                      if schema_version(connection) in ("9", "10", "11", "12") else None)
 
             def equivalent(row):
+                if self._candidate_origin(connection, row['processing_run_id']) != candidate_origin:
+                    return False
                 if row["runtime_sha256"] != runtime_sha:
                     return False
                 bound_community = self._community_bound(connection, row["processing_run_id"])
@@ -593,7 +596,7 @@ class SourceOperations:
                 if same_runtime["state"] not in ("FAILED", "BLOCKED") or not reprocess_reason:
                     return {"run": self._project_run(connection, same_runtime["processing_run_id"]),
                             "duplicate": True}
-            if rows and same_runtime is None and not reprocess_reason:
+            if rows and same_runtime is None and not reprocess_reason and candidate_origin is None:
                 raise SourceOperationError("EXPLICIT_RUNTIME_REPROCESS_REASON_REQUIRED", 422)
             if schema_version(connection) in ("10", "11", "12"):
                 from .stage1_scale import LIMITS, STAGE1_POLICY_VERSION, require_stage1_intake, stage1_capacity
@@ -620,6 +623,11 @@ class SourceOperations:
                 domains.bind_run(connection, run_id, basis, self.profile, created, reprocess_reason)
             if community_event is not None:
                 self._event(connection, run_id, "KNOWLEDGE_COMMUNITY_BUNDLE_BOUND", community_event)
+            if candidate_origin is not None:
+                self._event(connection, run_id, 'CANDIDATE_ORIGIN_BOUND', candidate_origin)
+            else:
+                from pro_a.candidate_origin import POLICY
+                self._event(connection, run_id, 'FAILURE_ISOLATION_POLICY_BOUND', {'version': POLICY})
             if intent is not None:
                 self._event(connection, run_id, "COMPANY_MATERIAL_INTENT_BOUND", intent)
             self._event(connection, run_id, "PROCESSING_QUEUED",
@@ -638,6 +646,101 @@ class SourceOperations:
             return {"run": self._project_run(connection, run_id), "duplicate": False}
 
     @staticmethod
+    def _candidate_origin(connection, run_id):
+        rows = list(connection.execute("SELECT event_json FROM source_processing_events WHERE processing_run_id=? "
+                                       "AND event_type='CANDIDATE_ORIGIN_BOUND'", (run_id,)))
+        if len(rows) > 1:
+            raise SourceOperationError('CANDIDATE_ORIGIN_DRIFT')
+        return json.loads(rows[0][0]) if rows else None
+
+    def prepare_candidates(self, run_id, *, idempotency_key):
+        """Ordinary Workbench action: review complete durable responses as one batch."""
+        from .candidate_inputs import CandidateInputs
+        run = self.get_run(run_id)
+        if run.get('candidate_origin') or run['state'] not in ('FAILED', 'BLOCKED', 'HUMAN_REVIEW_REQUIRED'):
+            raise SourceOperationError('CANDIDATE_EXTRACTION_NOT_CLOSED')
+        with self.store.connect() as connection:
+            attempts = list(connection.execute('''SELECT a.attempt_id FROM bounded_extraction_attempts a
+                JOIN bounded_extraction_segments s ON s.segment_id=a.segment_id
+                JOIN bounded_extraction_series b ON b.series_id=s.series_id
+                JOIN bounded_extraction_outcomes o ON o.attempt_id=a.attempt_id
+                WHERE b.processing_run_id=? ORDER BY a.attempt_id''', (run_id,)))
+        references = []
+        for attempt in attempts:
+            try:
+                references.append(CandidateInputs(self).publish(run_id, attempt['attempt_id']))
+            except ValueError as error:
+                if str(error) != 'CANDIDATE_COMPLETE_JSON_REQUIRED':
+                    raise
+        if not references:
+            raise SourceOperationError('CANDIDATE_NO_COMPLETE_RESPONSES')
+        return self.start_candidates(references, idempotency_key=idempotency_key)
+
+    def start_candidates(self, references, *, idempotency_key):
+        from .candidate_inputs import CandidateInputs
+        from pro_a.candidate_origin import VERSION, semantic_projection
+        documents = [CandidateInputs(self).read(ref) for ref in references]
+        from pro_a.operational_contract import readonly
+        from pro_a.admission_schema import require_schema
+        from pro_a.production_promotion import deterministic_id
+        from contextlib import closing
+        analysis = semantic_projection(documents)
+        source_id = documents[0]['scope']['source_id']
+        excluded = []
+        rejected = set()
+        # A previous Human DROP plus two unsupported judgments closes only that
+        # exact candidate. Supported-but-deferred objects remain reviewable.
+        from .review_workbench import ReviewWorkbench
+        with self.store.connect() as connection:
+            handles = [r[0] for r in connection.execute('''SELECT r.packet_artifact_id
+                FROM source_processing_runs r JOIN review_drafts d ON d.artifact_id=r.packet_artifact_id
+                WHERE r.source_id=? AND d.status='SEALED' ''', (source_id,))]
+        for handle in handles:
+            reviewed = ReviewWorkbench(self.config).read(handle)
+            opinions = reviewed['review']['sealed']['validation'].get('candidate_advisories')
+            if not opinions:
+                continue
+            decisions = {r['candidate_id']: r['state']['decision'] for r in reviewed['review']['rows']}
+            for item in reviewed['items']:
+                candidate = item['content'].get('candidate_origin')
+                if candidate and decisions[item['candidate_id']] == 'DROP' and all(
+                    next(i for i in advice['items'] if i['candidate_id'] == item['candidate_id'])['judgment'] == 'UNSUPPORTED'
+                    for advice in opinions.values()):
+                    rejected.add(candidate['candidate_key'])
+        with closing(readonly(self.config.knowledge_db)) as connection:
+            require_schema(connection)
+            for claim in analysis.claims:
+                key = claim['candidate_key']
+                claim_id = deterministic_id('CLM', {'candidate_key': key})
+                prior = connection.execute('SELECT * FROM claims WHERE claim_id=?', (claim_id,)).fetchone()
+                if prior is not None:
+                    recorded = json.loads(prior['structured_json']).get('candidate_origin') or {}
+                    if (prior['source_id'] != source_id or recorded.get('candidate_key') != key
+                            or prior['admission_semantics'] != 'SOURCE_ASSERTION'
+                            or len(prior['admission_basis_sha256']) != 64):
+                        raise SourceOperationError('CANONICAL_CANDIDATE_COLLISION')
+                    excluded.append(key)
+                elif key in rejected:
+                    excluded.append(key)
+        if len(excluded) == len(analysis.claims):
+            return {'status': 'ZERO_INCREMENT', 'reason': ('NO_NEW_CANDIDATES_AFTER_SEALED_REVIEW'
+                    if set(excluded) & rejected else 'ALL_EXACT_CANDIDATES_ALREADY_ADMITTED'),
+                    'rejected_count': len(set(excluded) & rejected),
+                    'source_id': source_id, 'candidate_count': len(excluded), 'run': None, 'duplicate': True}
+        body = {'version': VERSION, 'references': list(references), 'excluded_keys': sorted(excluded)}
+        origin = {**body, 'identity': canonical_sha256(body)}
+        from pro_a.company_material_intent import FIELDS, read_bound
+        with self.store.connect() as connection:
+            parents = sorted({d['scope']['run_id'] for d in documents})
+            intents = [read_bound(connection, parent) for parent in parents]
+            communities = [self._community_bound(connection, parent) for parent in parents]
+        if len({canonical_sha256(v) for v in intents}) != 1 or len({canonical_sha256(v) for v in communities}) != 1:
+            raise SourceOperationError('CANDIDATE_SOURCE_CONTEXT_CONFLICT')
+        return self._start(source_id, idempotency_key=idempotency_key, candidate_origin=origin,
+            company_material_intent={k: intents[0][k] for k in FIELDS} if intents[0] else None,
+            community_event=communities[0])
+
+    @staticmethod
     def _community_bound(connection: sqlite3.Connection, run_id: str) -> dict[str, Any] | None:
         rows = list(connection.execute(
             "SELECT event_json FROM source_processing_events WHERE processing_run_id=? "
@@ -647,7 +750,8 @@ class SourceOperations:
             raise SourceOperationError("COMMUNITY_SOURCE_DRIFT")
         return json.loads(rows[0][0]) if rows else None
 
-    def _event(self, connection: sqlite3.Connection, run_id: str, event_type: str,
+    @staticmethod
+    def _event(connection: sqlite3.Connection, run_id: str, event_type: str,
                payload: Mapping[str, Any] | None = None) -> None:
         previous_row = connection.execute(
             "SELECT sequence,event_sha256 FROM source_processing_events "
@@ -721,6 +825,10 @@ class SourceOperations:
             "payload": dict(payload), "payload_sha256": canonical_sha256(payload),
             "checkpoint": dict(checkpoint),
         }
+        if run.get('candidate_origin'):
+            body['schema_version'] = '2'
+            with self.store.connect() as connection:
+                body['candidate_origin'] = self._candidate_origin(connection, run['processing_run_id'])
         sha = canonical_sha256(body)
         artifact_id = "ART_" + sha[:32]
         run_storage_id = canonical_sha256(run["processing_run_id"])[:16]
@@ -1118,6 +1226,7 @@ class SourceOperations:
                 raise SourceOperationError("BOUNDED_SCHEMA_REQUIRED")
             source = connection.execute("SELECT * FROM private_sources WHERE source_id=?",
                                         (row["source_id"],)).fetchone()
+            candidate_origin = self._candidate_origin(connection, run_id)
             from pro_a.company_material_intent import read_bound
             intent = read_bound(connection, run_id)
             community = self._community_bound(connection, run_id)
@@ -1148,6 +1257,19 @@ class SourceOperations:
             except Exception:
                 self._transition(run_id, "BLOCKED", "RUNTIME_PREFLIGHT", error="RUNTIME_DRIFT")
                 return self.get_run(run_id)
+        candidate_path = None
+        if candidate_origin:
+            from .candidate_inputs import CandidateInputs
+            from .bounded_extraction_persistence import write_once
+            documents = [CandidateInputs(self).read(ref) for ref in candidate_origin['references']]
+            if canonical_sha256({k: v for k, v in candidate_origin.items() if k != 'identity'}) != candidate_origin['identity']:
+                raise SourceOperationError('CANDIDATE_ORIGIN_DRIFT')
+            candidate_path = checked_path(self.config.artifact_root / 'candidate-inputs' /
+                                          (candidate_origin['identity'] + '.batch.json'), missing=True)
+            with self.store.connect(operator_write=True) as connection:
+                connection.execute('BEGIN IMMEDIATE')
+                write_once(candidate_path, _canonical({'documents': documents,
+                    'excluded_keys': candidate_origin['excluded_keys']}).encode('utf-8'))
         if row["state"] == "QUEUED":
             self._transition(run_id, "PARSING", "NATIVE_SOURCE_REGISTRATION")
             stored_source = self.artifacts.resolve(source["storage_relative"])
@@ -1159,6 +1281,7 @@ class SourceOperations:
                 config_path=self.profile.phase4_config_path,
                 retry_policy=RetryPolicy.FORBID_ALL,
                 stop_after="SOURCE_READY", external_semantic=True,
+                candidate_input_path=candidate_path,
             )
             if result["state"] != "SOURCE_READY":
                 raise SourceOperationError(result.get("code") or "NATIVE_SOURCE_REGISTRATION_FAILED")
@@ -1168,6 +1291,8 @@ class SourceOperations:
             self._transition(run_id, "EXTRACTION_PROCESSING", "WHOLE_PIECE_OUTPUT_DECOMPOSITION",
                              values={"native_execution_id": result["execution_id"],
                                      "native_root_relative": relative})
+            if candidate_origin:
+                return self.get_run(run_id)
             plan = plan_external_source_analysis(native_root / "engine",
                                                  config_path=self.profile.phase4_config_path)
             if not plan["pieces"]:
@@ -1183,6 +1308,8 @@ class SourceOperations:
 
         if row["state"] == "EXTRACTION_PROCESSING":
             native_root = self._native_root(row)
+            if candidate_origin:
+                return self._candidate_semantic_input(run_id, row, native_root)
             plan = plan_external_source_analysis(native_root / "engine", config_path=self.profile.phase4_config_path)
             checkpoint = {"native_state": "SOURCE_READY", "execution_id": row["native_execution_id"],
                           "run_id": plan["run_id"], "plan_sha256": plan["plan"]["initial_extraction_plan_sha256"],
@@ -1214,52 +1341,7 @@ class SourceOperations:
             from .lossless_runtime import guard_native_admission
             guard_native_admission(self, self.get_run(run_id), native_root, document,
                                    worker_id=worker_id, fence=row['fence'])
-            checkpoint = {"native_state": "SEMANTIC_INPUT_READY",
-                          "execution_id": row["native_execution_id"],
-                          "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],
-                          "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
-            claims = list(document["payload"].get("claims") or [])
-            semantic_budget = budget_for_operation(SEMANTIC_OPERATION, self.jobs.profile.max_total_tokens)
-            input_token_budget = (
-                semantic_budget["max_total_tokens"] - semantic_budget["max_output_tokens"]
-            )
-            try:
-                batches = partition_semantic_claims(
-                    claims,
-                    max_parents=SEMANTIC_MAX_PARENTS_PER_BATCH,
-                    max_input_tokens=input_token_budget,
-                )
-            except (SemanticDecompositionError, ValueError) as error:
-                raise SourceOperationError(str(error)) from None
-            extraction_jobs = len(self.output_batches.inputs(self.get_run(run_id)))
-            if extraction_jobs + len(batches) > MAX_STAGE1_JOBS_PER_RUN:
-                raise SourceOperationError("SOURCE_JOB_BUDGET_EXCEEDED")
-            current = self.get_run(run_id)
-            partition_identity = canonical_sha256({
-                "payload_sha256": document["payload_sha256"],
-                "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
-                "input_token_budget": input_token_budget,
-                "batches": [[claim["claim_id"] for claim in batch] for batch in batches],
-            })
-            for ordinal, batch in enumerate(batches, 1):
-                batch_checkpoint = {
-                    **checkpoint,
-                    "semantic_partition": {
-                        "partition_sha256": partition_identity,
-                        "batch_index": ordinal,
-                        "batch_count": len(batches),
-                        "parent_claim_ids": [claim["claim_id"] for claim in batch],
-                        "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
-                        "input_token_budget": input_token_budget,
-                    },
-                }
-                artifact = self._register_input(
-                    current, SEMANTIC_OPERATION, ordinal,
-                    {"claims": batch}, batch_checkpoint,
-                )
-                self._bind_job(run_id, SEMANTIC_OPERATION, ordinal, artifact)
-            self._transition(run_id, "SEMANTIC_PROCESSING", "SEMANTIC_JOB")
-            return self.get_run(run_id)
+            return self._register_semantic_batches(run_id, row, document)
 
         if row["state"] == "SEMANTIC_PROCESSING":
             jobs = self._run_pending_jobs(self._jobs_for(run_id, SEMANTIC_OPERATION),
@@ -1318,6 +1400,65 @@ class SourceOperations:
             return self.get_run(run_id)
         return self.get_run(run_id)
 
+    def _register_semantic_batches(self, run_id, row, document):
+        checkpoint = {"native_state": "SEMANTIC_INPUT_READY",
+                      "execution_id": row["native_execution_id"],
+                      "run_id": document["run_id"], "payload_sha256": document["payload_sha256"],
+                      "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}
+        claims = list(document["payload"].get("claims") or [])
+        semantic_budget = budget_for_operation(SEMANTIC_OPERATION, self.jobs.profile.max_total_tokens)
+        input_token_budget = (
+            semantic_budget["max_total_tokens"] - semantic_budget["max_output_tokens"]
+        )
+        try:
+            batches = partition_semantic_claims(
+                claims,
+                max_parents=SEMANTIC_MAX_PARENTS_PER_BATCH,
+                max_input_tokens=input_token_budget,
+            )
+        except (SemanticDecompositionError, ValueError) as error:
+            raise SourceOperationError(str(error)) from None
+        extraction_jobs = (0 if self.get_run(run_id).get("candidate_origin") else
+                           len(self.output_batches.inputs(self.get_run(run_id))))
+        if extraction_jobs + len(batches) > MAX_STAGE1_JOBS_PER_RUN:
+            raise SourceOperationError("SOURCE_JOB_BUDGET_EXCEEDED")
+        current = self.get_run(run_id)
+        partition_identity = canonical_sha256({
+            "payload_sha256": document["payload_sha256"],
+            "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
+            "input_token_budget": input_token_budget,
+            "batches": [[claim["claim_id"] for claim in batch] for batch in batches],
+        })
+        for ordinal, batch in enumerate(batches, 1):
+            batch_checkpoint = {
+                **checkpoint,
+                "semantic_partition": {
+                    "partition_sha256": partition_identity,
+                    "batch_index": ordinal,
+                    "batch_count": len(batches),
+                    "parent_claim_ids": [claim["claim_id"] for claim in batch],
+                    "parent_cap": SEMANTIC_MAX_PARENTS_PER_BATCH,
+                    "input_token_budget": input_token_budget,
+                },
+            }
+            artifact = self._register_input(
+                current, SEMANTIC_OPERATION, ordinal,
+                {"claims": batch}, batch_checkpoint,
+            )
+            self._bind_job(run_id, SEMANTIC_OPERATION, ordinal, artifact)
+        self._transition(run_id, "SEMANTIC_PROCESSING", "SEMANTIC_JOB")
+        return self.get_run(run_id)
+
+    def _candidate_semantic_input(self, run_id, row, native_root):
+        result = resume_execution(
+            native_root, execution_id=row['native_execution_id'],
+            config_path=self.profile.phase4_config_path, retry_policy=RetryPolicy.FORBID_ALL,
+            stop_after='SEMANTIC_INPUT_READY', runtime_compatibility=self.runtime_compatibility)
+        if result['state'] != 'SEMANTIC_INPUT_READY':
+            raise SourceOperationError(result.get('code') or 'CANDIDATE_NATIVE_INPUT_FAILED')
+        document = json.loads((native_root / 'engine/evidence/stage6_semantic_input.json').read_text(encoding='utf-8'))
+        return self._register_semantic_batches(run_id, row, document)
+
     def _project_run(self, connection: sqlite3.Connection, run_id: str) -> dict[str, Any]:
         row = connection.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?",
                                  (run_id,)).fetchone()
@@ -1332,8 +1473,15 @@ class SourceOperations:
         from pro_a.company_material_intent import read_bound
         intent = read_bound(connection, run_id)
         community = SourceOperations._community_bound(connection, run_id)
+        from pro_a.candidate_origin import POLICY
+        policies = [json.loads(r[0]) for r in connection.execute("SELECT event_json FROM source_processing_events WHERE processing_run_id=? AND event_type='FAILURE_ISOLATION_POLICY_BOUND'", (run_id,))]
+        if policies and policies != [{'version': POLICY}]:
+            raise SourceOperationError('FAILURE_POLICY_DRIFT')
         result = {
+            "failure_isolation_policy": POLICY if policies else None,
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
+            "candidate_origin": ({k: v for k, v in origin.items() if k in ('version', 'identity')}
+                                 if (origin := SourceOperations._candidate_origin(connection, run_id)) else None),
             "company_material_intent": intent,
             "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
             "community_provenance": community,

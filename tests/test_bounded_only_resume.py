@@ -35,7 +35,15 @@ def topology(tmp_path, monkeypatch, counts=(65,81,81,81,49), *, accepted_retry=T
     cloud = CloudProfile('deepseek','deepseek-flash')
     service = SourceOperations(value['config'],value['source_profile'],cloud)
     source = upload(value,clean_pdf(tmp_path))
-    run_id = service.start(source['source_id'],idempotency_key='bounded-only-synthetic-start')['run']['processing_run_id']
+    # This suite models the historical Run13 contract, before policy opt-in.
+    original_event = SourceOperations._event
+    def historical_event(connection, run_id, event_type, payload=None):
+        if event_type != 'FAILURE_ISOLATION_POLICY_BOUND':
+            original_event(connection, run_id, event_type, payload)
+    with monkeypatch.context() as historical:
+        historical.setattr(SourceOperations, '_event', staticmethod(historical_event))
+        run_id = service.start(source['source_id'],idempotency_key='bounded-only-synthetic-start')['run']['processing_run_id']
+    assert service.get_run(run_id)['failure_isolation_policy'] is None
     pieces = []
     plan_sha = digest({'synthetic_counts':counts})
     for ordinal,count in enumerate(counts,1):
@@ -300,15 +308,14 @@ def test_capacity_stops_before_dispatch_without_subdivision(tmp_path,monkeypatch
 
 
 @pytest.mark.parametrize('kind',['cloud','native'])
-def test_r2_does_not_inherit_old_boundary_cloud_authorization(kind):
+def test_candidate_contract_does_not_inherit_historical_execution_authorization(kind):
     from pro_a.workbench.retry_compatibility import _execution_surface_comparison
     _execution_surface_comparison.cache_clear()
     result=_execution_surface_comparison(kind,'1d700d95cc394174120ae55144660c769b4efc51')
-    # R2 changes the response contract; only unchanged native research execution
-    # stays exact. The historical boundary qualification cannot authorize V3.
-    assert result['compatible'] is (kind=='native'),result
-    # The qualification creation helper is now bound; old cloud code lacks it.
-    assert result['reason']==('SEMANTIC_SURFACE_EXACT' if kind=='native'
+    # P0 adds an independently validated Origin to Native execution. Neither
+    # changed surface may inherit the old execution authorization.
+    assert result['compatible'] is False,result
+    assert result['reason']==('SEMANTIC_SURFACE_CHANGED' if kind=='native'
                              else 'EXECUTION_SURFACE_UNAVAILABLE:RetryCompatibilityError'),result
 
 

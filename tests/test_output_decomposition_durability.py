@@ -128,7 +128,10 @@ def test_series_orchestration_synthetic_only(tmp_path,mode):
         assert run['subdivision_count']==int(mode=='truncated')
     else:
         assert run['state']=='RECOVERY_REQUIRED' if mode=='unknown' else run['state']=='BLOCKED'
-        assert len(transport.calls)==1 and run['subdivision_count']==0
+        expected_calls = run['initial_output_batch_count'] if mode == 'malformed' else 1
+        assert len(transport.calls)==expected_calls and run['subdivision_count']==0
+        if mode == 'malformed':
+            assert run['coverage_status'] == 'FAILED'
 
 
 def test_fresh_process_raw_recovery_and_aggregate_crash(tmp_path,monkeypatch):

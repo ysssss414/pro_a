@@ -32,6 +32,7 @@ const claims: ClaimResult[] = [{
   link_role: "subject",
   statement: "EML is used in high-speed optical transmitters.",
   nature: "fact",
+  admission_semantics: "SOURCE_ASSERTION", reality_support: "UNVERIFIED", current_view_use: "CLUE_ONLY",
   fact_time: "2026-01-10",
   publication_time: "2026-01-15",
   status: "current",
@@ -117,6 +118,9 @@ describe("NodeDetailPanel", () => {
 
   it("renders Claim, exact Evidence, and Source metadata", () => {
     renderPanel("claims");
+    expect(screen.getByText("SOURCE_ASSERTION")).toBeInTheDocument();
+    expect(screen.getByText("UNVERIFIED")).toBeInTheDocument();
+    expect(screen.getByText("CLUE_ONLY")).toBeInTheDocument();
     expect(screen.getByText("Subject")).toBeInTheDocument();
     expect(screen.getByText("Source locator: Page 3")).toBeInTheDocument();
     expect(screen.getByText("p.3")).toBeInTheDocument();

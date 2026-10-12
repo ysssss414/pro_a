@@ -48,7 +48,7 @@ def runtime_identity():
     root = Path(__file__).resolve().parent
     names = ('current_view_workbench.py', 'view_operator.py', 'current_view.py',
              'current_view_compare.py', 'current_view_pilot.py', 'human_review_intake.py',
-             'query.py', 'workbench/view_store.py')
+             'query.py', 'workbench/view_store.py', 'admission_schema.py')
     return canonical_sha256({name: hashlib.sha256((root / name).read_bytes()).hexdigest()
                              for name in names})
 
@@ -70,6 +70,7 @@ def _views(connection, node_id, status):
 
 
 def _evidence(connection, node_id):
+    from .admission_schema import basis_eligible
     rows = connection.execute('''SELECT c.*,l.role,s.title AS source_title,
               s.publication_time AS source_publication_time,s.source_rank,s.source_type,s.organization,s.sha256 AS source_sha256,
               s.origin_type,s.underlying_source_id
@@ -99,7 +100,8 @@ def _evidence(connection, node_id):
                        'source_type': row['source_type'], 'organization': row['organization'],
                        'sha256': row['source_sha256']},
             'business_date': business_date, 'freshness_basis': basis,
-            'primary_eligible': row['role'] == 'subject' and row['status'].strip().lower() in PRIMARY_STATUSES,
+            'primary_eligible': row['role'] == 'subject' and row['status'].strip().lower() in PRIMARY_STATUSES
+                and ('current_view_use' not in row or basis_eligible(row)),
         })
     return result
 
@@ -153,7 +155,7 @@ class CurrentViewWorkbench:
     def read(self, node_id):
         node, official, history, baselines, evidence, basis = self._context(node_id)
         with self.store.connect() as connection:
-            require(schema_version(connection) in ('4', '5', '6', '7', '8', '9', '10', '11'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('4', '5', '6', '7', '8', '9', '10', '11', '12'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
             draft = _draft(connection, node_id, basis)
             packages = [json.loads(row[0]) for row in connection.execute(
                 'SELECT body FROM view_activation_packages WHERE node_id=? ORDER BY object_id', (node_id,))]
@@ -229,7 +231,7 @@ class CurrentViewWorkbench:
         fingerprint = canonical_sha256({'action': 'SAVE', 'request': request, 'actor': identity['actor']})
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            require(schema_version(connection) in ('4', '5', '6', '7', '8', '9', '10', '11'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
+            require(schema_version(connection) in ('4', '5', '6', '7', '8', '9', '10', '11', '12'), 'CURRENT_VIEW_SCHEMA_REQUIRED')
             old = connection.execute('SELECT * FROM view_drafts WHERE node_id=?', (node_id,)).fetchone()
             operation = connection.execute('SELECT request_sha256,response_json FROM view_draft_events WHERE node_id=? AND operation_id=?', (node_id, request['operation_id'])).fetchone()
             if operation:
