@@ -21,6 +21,8 @@ MALFORMED_JSON_RETRY_POLICY_VERSION = "malformed-provider-json-same-batch-retry-
 MALFORMED_JSON_RETRY_REASON = "MALFORMED_PROVIDER_JSON"
 MAX_MALFORMED_JSON_RETRIES = 1
 _BOUNDED_RETRY_EVENT = "MALFORMED_PROVIDER_JSON_RETRY_AUTHORIZED"
+SINGLE_EVIDENCE_RETRY_POLICY_VERSION = "v4-single-evidence-same-batch-retry-v1"
+_SINGLE_EVIDENCE_RETRY_EVENT = "V4_SINGLE_EVIDENCE_RETRY_AUTHORIZED"
 
 
 def installed(connection):
@@ -315,7 +317,7 @@ def frozen_bounded_service(service, run_id, failed_attempt_id):
 
 
 def _bounded_retry_events(connection, *, run_id=None, series_id=None):
-    where, args = ["e.event_type=?"], [_BOUNDED_RETRY_EVENT]
+    where, args = ["e.event_type IN (?,?)"], [_BOUNDED_RETRY_EVENT, _SINGLE_EVIDENCE_RETRY_EVENT]
     if run_id is not None:
         where.append("s.processing_run_id=?")
         args.append(run_id)
@@ -350,6 +352,56 @@ def _json_syntax_diagnostic(body):
     except UnicodeError:
         return None
     return None
+
+
+def _single_evidence_diagnostic(body, series, segment, catalog, context):
+    """Original v4 selections only; diagnostics never repair or admit a record."""
+    from collections import Counter
+    from pro_a import output_decomposition as output
+    from pro_a.evidence_binding import EVIDENCE_SELECTION_FIELDS, resolve_evidence_binding_v2
+    try:
+        if output.record_version_for_series(series.series_version) != output.RECORD_VERSION:
+            return None
+        record = output.normalize_record(body.decode('utf-8'), record_version=output.RECORD_VERSION)
+        try:
+            output.record_to_result(body.decode('utf-8'), series, segment, catalog, context)
+        except ValueError as error:
+            if str(error) != 'EVIDENCE_SELECTOR_NOT_FOUND':
+                return None
+        else:
+            return None
+        owned, violations = set(segment.assigned_evidence_refs), []
+        if Counter(a['evidence_ref'] for a in record['evidence_acknowledgements']) != Counter(owned):
+            return None
+        names = {n['canonical_name'] for n in record['node_candidates']}
+        for family in ('claims', 'node_matches', 'node_candidates', 'source_references'):
+            for index, obj in enumerate(record[family]):
+                if family in ('node_candidates', 'source_references') and obj['ownership_evidence_ref'] not in owned:
+                    return None
+                if (set(obj.get('related_node_ids', [obj['node_id']] if family == 'node_matches' else [])) - set(context.known_node_ids)
+                        or set(obj.get('suggested_parent_node_ids', [])) - set(context.known_node_ids)
+                        or set(obj.get('related_candidate_names', [])) - names):
+                    return None
+                for selected in (obj, obj.get('preserved_fields', {})):
+                    if 'evidence_ref' not in selected:
+                        continue
+                    if selected['evidence_ref'] not in owned:
+                        return None
+                    try:
+                        resolve_evidence_binding_v2({k:v for k,v in selected.items() if k in EVIDENCE_SELECTION_FIELDS}, catalog, context)
+                    except ValueError as error:
+                        if str(error) != 'EVIDENCE_SELECTOR_NOT_FOUND' or family not in ('claims', 'node_matches'):
+                            return None
+                        violations.append({'path':f'$.{family}[{index}].evidence.selector','code':str(error)})
+        for relation in record['relation_candidates']:
+            refs = relation['supporting_claim_refs']
+            if ({relation['from_node_id'],relation['to_node_id']} - set(context.known_node_ids)
+                    or not refs or len(refs) != len(set(refs))
+                    or set(refs) - {f'C{i+1}' for i in range(len(record['claims']))}):
+                return None
+        return {'first_error':'EVIDENCE_SELECTOR_NOT_FOUND','violations':violations} if len(violations) == 1 else None
+    except (ValueError, TypeError, KeyError):
+        return None
 
 
 def bounded_attempt_for_dispatch(ledger, segment_id, owner, fence, *,
@@ -408,6 +460,18 @@ def bounded_attempt_for_dispatch(ledger, segment_id, owner, fence, *,
 def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
                                     retry_reason, idempotency_key):
     """Authorize exactly one same-Batch malformed-JSON retry, without dispatch."""
+    return _retry_failed_bounded_extraction(service, run_id, failed_attempt_id,
+        retry_reason=retry_reason, idempotency_key=idempotency_key)
+
+
+def authorize_single_evidence_retry(service, run_id, failed_attempt_id, *, retry_reason, idempotency_key):
+    """Internal Operator only; one v4 Attempt 2 with the exact original request."""
+    return _retry_failed_bounded_extraction(service, run_id, failed_attempt_id,
+        retry_reason=retry_reason, idempotency_key=idempotency_key, single_evidence=True)
+
+
+def _retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
+                                    retry_reason, idempotency_key, single_evidence=False):
     from pro_a.config import load_config
     from pro_a.evidence_binding import identity
     from . import bounded_extraction_persistence as persistence
@@ -427,7 +491,8 @@ def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
         ) if event['idempotency_key'] == idempotency_key), None)
         if prior:
             if (prior['processing_run_id'], prior['retry_of_attempt_id'],
-                    prior['operator_reason']) != (run_id, failed_attempt_id, retry_reason):
+                    prior['operator_reason'], prior['policy_version']) != (run_id, failed_attempt_id, retry_reason,
+                    SINGLE_EVIDENCE_RETRY_POLICY_VERSION if single_evidence else MALFORMED_JSON_RETRY_POLICY_VERSION):
                 raise SourceOperationError('IDEMPOTENCY_CONFLICT')
             attempt = connection.execute(
                 'SELECT * FROM bounded_extraction_attempts WHERE attempt_id=?',
@@ -472,7 +537,7 @@ def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
         ) if event['segment_id'] == segment_id]
         if authorized:
             raise SourceOperationError('RETRY_LIMIT_EXCEEDED')
-        if (run['state'] != 'BLOCKED' or run['stage'] != 'ORCHESTRATION'
+        if (run['state'] != 'BLOCKED' or run['stage'] not in (('ORCHESTRATION','BOUNDED_ONLY_RESUME') if single_evidence else ('ORCHESTRATION',))
                 or run['error_code'] != 'BOUNDED_EXTRACTION_FAILED'
                 or run['lease_owner'] is not None
                 or series_row is None or series_row['state'] != 'FAILED'
@@ -513,10 +578,27 @@ def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
             series_id, failed_attempt_id + '.raw.json', outcome,
         )
         envelope, body = ledger._decode_envelope(attempt, content)
-        diagnostic = _json_syntax_diagnostic(body)
+        diagnostic = (_single_evidence_diagnostic(body,series,segment,catalog,context)
+                      if single_evidence else _json_syntax_diagnostic(body))
         if (diagnostic is None or envelope['http_status'] != 200
                 or hashlib.sha256(content).hexdigest() != outcome['artifact_sha256']):
             raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+
+        if single_evidence:
+            _, plan, _, _ = ledger._load(connection, series_id)
+            if plan.superseded_segment_ids:
+                raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+            untouched = [s for s in plan.leaves if not connection.execute(
+                'SELECT 1 FROM bounded_extraction_attempts WHERE segment_id=?',(s.segment_id,)).fetchone()]
+            events = [json.loads(r[0]) | {'event_type':r[1]} for r in connection.execute(
+                'SELECT body_json,event_type FROM bounded_extraction_events WHERE series_id=?',(series_id,))]
+            for leaf in untouched:
+                if [e['event_type'] for e in events if e.get('segment_id',e.get('object_id')) == leaf.segment_id] != ['SEGMENT_CREATED']:
+                    raise SourceOperationError('RETRY_NOT_ELIGIBLE')
+            if (series_row['provider_call_reservations'] + 1 + len(untouched) > series.budget.max_provider_calls
+                    or series_row['output_liability'] + segment.max_output_tokens + sum(s.max_output_tokens for s in untouched)
+                    > series.budget.max_cumulative_output_tokens):
+                raise SourceOperationError('RETRY_BUDGET_INSUFFICIENT')
 
         payload = worker.output_batches.segment_payload(
             value, context, catalog, series, segment,
@@ -598,24 +680,24 @@ def retry_failed_bounded_extraction(service, run_id, failed_attempt_id, *,
                    retry_of_attempt_id=failed_attempt_id)
         token = worker.runtime_compatibility
         retry = {
-            'policy_version': MALFORMED_JSON_RETRY_POLICY_VERSION,
+            'policy_version': SINGLE_EVIDENCE_RETRY_POLICY_VERSION if single_evidence else MALFORMED_JSON_RETRY_POLICY_VERSION,
             'processing_run_id': run_id, 'series_id': series_id,
             'segment_id': segment_id, 'retry_of_attempt_id': failed_attempt_id,
             'new_attempt_id': new_attempt_id, 'retry_number': 1,
-            'retry_reason_code': MALFORMED_JSON_RETRY_REASON,
+            'retry_reason_code': 'EVIDENCE_SELECTOR_NOT_FOUND' if single_evidence else MALFORMED_JSON_RETRY_REASON,
             'operator_reason': retry_reason, 'idempotency_key': idempotency_key,
             'context_sha256': Domains(worker.config).read(
                 run_id, connection=connection,
             )['context_sha256'],
             'request_sha256': attempt['request_sha256'],
             'original_raw_sha256': outcome['artifact_sha256'],
-            'json_diagnostic': diagnostic,
+            ('evidence_diagnostic' if single_evidence else 'json_diagnostic'): diagnostic,
             'compatibility_qualification_id': (
                 token.record['qualification_id'] if token is not None else 'EXACT_RUNTIME'
             ),
         }
         _event(
-            connection, series_id, _BOUNDED_RETRY_EVENT,
+            connection, series_id, _SINGLE_EVIDENCE_RETRY_EVENT if single_evidence else _BOUNDED_RETRY_EVENT,
             **{key: value for key, value in retry.items() if key != 'series_id'},
         )
         _event(connection, series_id, 'ATTEMPT_RESERVED',
