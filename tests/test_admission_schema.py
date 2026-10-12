@@ -24,9 +24,9 @@ def test_explicit_migration_preserves_history_and_guards_every_sql_write(tmp_pat
     apply_synthetic_migration(path, configured_production_path=tmp_path / 'unused-production', expected_sha256=sha256_file(path))
     before = path.read_bytes()
     with pytest.raises(PromotionError, match='BASELINE_MISMATCH'):
-        migrate(path, expected_sha256='0' * 64, backup_path=tmp_path / 'wrong-backup')
+        migrate(path, expected_sha256='0' * 64, backup_path=tmp_path / 'wrong-backup', configured_production_path=path)
     assert path.read_bytes() == before
-    receipt = migrate(path, expected_sha256=sha256_file(path), backup_path=tmp_path / 'backup.sqlite3')
+    receipt = migrate(path, expected_sha256=sha256_file(path), backup_path=tmp_path / 'backup.sqlite3', configured_production_path=path)
     assert receipt['schema_version'] == '0.2.4'
     assert (tmp_path / 'backup.sqlite3').read_bytes() == before
     frozen = path.read_bytes()

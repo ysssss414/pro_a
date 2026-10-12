@@ -179,7 +179,7 @@ def test_no_public_api_frontend_or_mcp_override_exposure():
                                                 'start_qualification_intake', 'qualification_reason'))
 
 
-def test_creation_dependencies_and_intake_guard_are_closed_and_bound():
+def test_candidate_dependencies_refuse_historical_surface_and_intake_guard_is_bound():
     from pro_a.workbench import retry_compatibility as compatibility
     package = Path(compatibility.__file__).resolve().parent.parent
     specification = compatibility._CLOUD_EXECUTION_SURFACE
@@ -188,12 +188,16 @@ def test_creation_dependencies_and_intake_guard_are_closed_and_bound():
         specification['workbench/source_operations.py'])
     assert 'SourceOperations.start_qualification_intake' in specification['workbench/source_operations.py']
     sources = {name: (package / name).read_bytes() for name in specification}
-    original = compatibility._surface_manifest(sources, specification)
+    # P0 adds Candidate Origin creation dependencies. The frozen historical
+    # execution surface must refuse them, not silently authorize new execution.
+    with pytest.raises(compatibility.RetryCompatibilityError):
+        compatibility._surface_manifest(sources, specification)
     for name, marker in [('workbench/source_operations.py', b'INVALID_QUALIFICATION_REASON'),
                          ('workbench/stage1_scale.py', b'STAGE1_RUN_WINDOW_LIMIT')]:
         assert sources[name].count(marker) == 1
-        changed = {**sources, name: sources[name].replace(marker, marker + b'_MUTATION', 1)}
-        assert compatibility._surface_manifest(changed, specification)['semantic_surface_sha256'] != original['semantic_surface_sha256']
+        original = compatibility._ast_sha256(sources[name], None, name=name)
+        changed = sources[name].replace(marker, marker + b'_MUTATION', 1)
+        assert compatibility._ast_sha256(changed, None, name=name) != original
 
 
 def test_missing_creation_helper_is_not_waived_for_historical_surface():
@@ -206,7 +210,8 @@ def test_missing_creation_helper_is_not_waived_for_historical_surface():
     service.body = [node for node in service.body if not (isinstance(node, ast.FunctionDef) and node.name == '_start')]
     historical['workbench/source_operations.py'] = ast.unparse(tree).encode('utf-8')
     with pytest.raises(compatibility.RetryCompatibilityError):
-        compatibility._surface_manifest(historical, specification)
+        compatibility._ast_sha256(historical['workbench/source_operations.py'],
+                                  specification['workbench/source_operations.py'], name='workbench/source_operations.py')
 
 
 def test_registration_does_not_waive_another_unrepresented_creation_dependency():
@@ -220,7 +225,8 @@ def test_registration_does_not_waive_another_unrepresented_creation_dependency()
         marker, b'        self._unrepresented_creation_authorizer()\n' + marker, 1)
     assert changed != sources
     with pytest.raises(compatibility.RetryCompatibilityError, match='DEPENDENCY_UNCLOSED'):
-        compatibility._surface_manifest(changed, specification)
+        compatibility._ast_sha256(changed['workbench/source_operations.py'],
+                                  specification['workbench/source_operations.py'], name='workbench/source_operations.py')
 
 
 def test_v7_test_intake_first_source_and_ten_run_ceiling(full_window, tmp_path):

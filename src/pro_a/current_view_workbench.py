@@ -106,9 +106,9 @@ def _evidence(connection, node_id):
     return result
 
 
-def _basis(node, official, evidence):
+def _basis(node, official, evidence, canonical_schema):
     return canonical_sha256({'node': node, 'official': official, 'evidence': evidence,
-                             'schema': '0.2.3', 'runtime': runtime_identity()})
+                             'schema': canonical_schema, 'runtime': runtime_identity()})
 
 
 def _uncertainty(content, evidence):
@@ -150,7 +150,8 @@ class CurrentViewWorkbench:
             history = _views(connection, node_id, 'official')
             baselines = _views(connection, node_id, 'baseline')
             evidence = _evidence(connection, node_id)
-        return node, official, history, baselines, evidence, _basis(node, official, evidence)
+            canonical_schema = connection.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()[0]
+        return node, official, history, baselines, evidence, _basis(node, official, evidence, canonical_schema)
 
     def read(self, node_id):
         node, official, history, baselines, evidence, basis = self._context(node_id)

@@ -190,7 +190,7 @@
     "production_ready_claimed": false,
     "real_trial_requires_separate_human_authorization": true
   },
-  "manifest_scope": "SHA-256 of tested worktree file bytes; paths are repository-relative. Documentation and transient outputs are excluded.",
+  "manifest_scope": "Original P0 qualification file bytes at qualification_commit; this manifest and the original 258/51 results are historical evidence, not the release-preflight retest. See release_preflight for current validation.",
   "dependency_closure_revalidation": {
     "files": [
       "tests/test_candidate_origin.py",
@@ -234,5 +234,135 @@
     "duration_seconds": 84.75,
     "counted_again_in_unique_total": false,
     "evidence": "Final LF-normalized file bytes verified through both synthetic promotion batches and explicit migration/purpose guards."
+  },
+  "qualification_commit": "94bf6c010c8f47b41dcde055510d5a434a1b2a4d",
+  "release_preflight": {
+    "task": "PRO_A_P0_RELEASE_PREFLIGHT_AND_TARGETED_FIX_R1",
+    "recorded_at_utc": "2026-10-12T07:03:22.734551+00:00",
+    "reviewed_pr_head": "94bf6c010c8f47b41dcde055510d5a434a1b2a4d",
+    "remote_and_local_head_matched": true,
+    "result": "PASS_WITH_LIMITATIONS_FOR_HUMAN_RELEASE_REVIEW",
+    "areas": {
+      "MIGRATION_AND_BACKUP": "PASS",
+      "CURRENT_VIEW_COMPATIBILITY": "PASS_WITH_EXPLICIT_LIMITATION",
+      "RUN_CAPACITY_AND_DERIVED_ADMISSION": "PASS_WITH_EXPLICIT_LIMITATION",
+      "ORIGIN_REVIEW_PROMOTION_INTEGRITY": "PASS",
+      "SOURCE_REUSE_AND_IDEMPOTENCY": "PASS",
+      "B_LITE_QUERY_AND_USAGE_GUARDS": "PASS"
+    },
+    "fixes": [
+      "Durable verified exclusive backup publication before DDL; configured target, DELETE journal, source integrity, sole-writer lock and rollback-byte guards.",
+      "Current View basis binds actual Canonical schema instead of a fixed 0.2.3 value."
+    ],
+    "tests": {
+      "unique_targeted_passed": 133,
+      "failed_remaining": 0,
+      "migration_backup_schema12_and_purpose_guards": {
+        "passed": 18,
+        "duration_seconds": 7.71
+      },
+      "explicit_migration_cli": {
+        "passed": 1,
+        "duration_seconds": 0.47
+      },
+      "origin_full_v4_and_view_regressions": {
+        "passed": 74,
+        "files": [
+          "tests/test_candidate_origin.py",
+          "tests/test_provider_record_v4.py",
+          "tests/test_workbench_stage3.py"
+        ]
+      },
+      "capacity_and_historical_authorization": {
+        "passed": 30,
+        "duration_seconds": 68.74
+      },
+      "promotion_collision_and_crash_recovery": {
+        "passed": 10,
+        "duration_seconds": 114.16
+      },
+      "initial_regression_sweep": {
+        "passed": 92,
+        "failed": 1,
+        "duration_seconds": 258.3,
+        "explanation": "An old test assumed the historical Retry surface could describe the new Candidate runtime. The corrected test requires rejection; guard mutation and missing-dependency checks remain. Only tests changed; production Retry compatibility was not relaxed. The 18 passing intake tests from this sweep are included in the later 30, not counted twice."
+      },
+      "new_test_development_corrections": [
+        "Expected PromotionError is RuntimeError, not ValueError.",
+        "Historical evidence comparison excludes only the deliberately changed primary_eligible flag; all historical content remains equal."
+      ],
+      "frontend_retested": false,
+      "frontend_reason": "No frontend changes; prior 51 tests/type/build remain historical evidence only.",
+      "whole_repository_suite_claimed": false
+    },
+    "real_canonical_copy": {
+      "status": "PASS_REAL_CANONICAL_COPY_ONLY",
+      "schema_before": "0.2.3",
+      "schema_after": "0.2.4",
+      "before_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+      "after_sha256": "3f5b979c7e289b47f900b6f44f2ba2754aa0f81cbbf3e3f79d411423d4863148",
+      "backup_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+      "restored_sha256": "6e5a303ccee9c192c350c2550cc232649e56ffee939b7a09cd6b170cc1c8fba1",
+      "integrity_before_after_restored": "ok",
+      "foreign_key_violations": 0,
+      "all_historical_rows_and_relationships_preserved": true,
+      "all_legacy_claims_unknown": true,
+      "nodes_read_via_query_workbench_mcp": 327,
+      "sources_read_via_mcp": 36,
+      "schema12_isolated_workbench": true,
+      "current_view_new_primary_eligible_claims": 0,
+      "negative_checks": {
+        "wrong_baseline": "B_LITE_MIGRATION_BASELINE_MISMATCH",
+        "repeat": "B_LITE_MIGRATION_SOURCE_VERSION"
+      },
+      "incomplete_backup_rejected_by_restore_hash_check": true,
+      "canonical_read_checks_changed_bytes": false,
+      "core_counts_before_and_after": {
+        "nodes": 327,
+        "node_relations": 208,
+        "sources": 36,
+        "claims": 159,
+        "current_views": 3
+      },
+      "view_status_counts": {
+        "official": 2,
+        "baseline": 1
+      },
+      "real_multiversion_comparison": "NOT_AVAILABLE_IN_THIS_COPY; covered with synthetic history",
+      "copy_method": "Read-only Windows file handle denying write/delete sharing; no SQLite open of the original; absent sidecars and matching complete-byte hashes.",
+      "backup_restore_destination": "Separate private local copy; never the original database"
+    },
+    "limits": {
+      "current_view": "All existing legacy Claims and new clue-only Claims lack BASIS_ELIGIBLE. Both existing official Views remain readable, but new official initial/minor/material/thesis operations, including ordinary updates, are frozen. Draft save and history remain available. Human release review must accept this freeze; otherwise release must stop for separately scoped purpose qualification.",
+      "run_capacity": "Unchanged 3 Runs/rolling 24h. Original extraction plus two Candidate batches consume 1+1+1. Zero increment consumes 0. Candidate preparation performs no extraction, but subsequent Semantic jobs still require budget. Additional revisions or other material must wait if the window is full.",
+      "qualification": "Internal start_qualification_intake has a 10 total Runs/24h ceiling; no Candidate override endpoint. Legacy start_qualification_reprocess does not have that ceiling and is not an authorization for unlimited use. No real exception used.",
+      "durability": "Windows publication path tested; POSIX directory-sync branch not executed on this host. Physical power loss/hardware/network filesystem durability not independently tested."
+    },
+    "validated_changed_files": {
+      "src/pro_a/admission_schema.py": "b325b10991fb7fe9911e7993903a0ed3e042cc5b293c2526d6b2d9fb24886cfb",
+      "src/pro_a/current_view_workbench.py": "0967c7877e15676a44388f2a9e523883d7c71a76407bebe77e43fd37ec034c9a",
+      "tests/test_admission_schema.py": "6cd4fb560b28e77227c102d3f05381753ecc490357b64f1cbfeba35d93ac203a",
+      "tests/test_candidate_origin.py": "9b914ab82228b7cefc50690da45ed5d78e195e1c2299b84c2b50e5f4e3c2ba11",
+      "tests/test_p0_release_preflight.py": "42e8c7b244b175d8a1b4c0ce9dbc340b0f382da3fc2724cd8024854fe786c49b",
+      "tests/test_qualification_run_window.py": "293aec0eb957d29c84330a15adbba1c7ad5e81931583d0fb72ac7ffe0ac0b8dc"
+    },
+    "operational_runtime_code_sha256": "adac55be68722a58ae1d3b6c16b990f3ca94182395f043ddcd73580976b32e66",
+    "actual_operations": {
+      "external_provider_calls": 0,
+      "real_source_runs_or_attempts": 0,
+      "real_workbench_production_current_view_writes": 0,
+      "real_production_migrations": 0,
+      "real_human_review_seal_attribution_promotion": 0,
+      "real_operator_apply": 0,
+      "real_canonical_copy_migrations": 1,
+      "real_canonical_copy_restore_drills": 1,
+      "product_modules_modified": 2,
+      "stable_or_installation_switches": 0,
+      "pr_merged": false
+    },
+    "delivery": "One release-fix commit and one sanitized PR-description update on PR #125; Draft retained. Exact delivered commit is the PR head.",
+    "private_evidence": "Database copies, paths and detailed evidence retained only in the ignored local validation directory.",
+    "original_database_verified_unchanged_at_completion": true,
+    "original_checkout_verified_unchanged": true
   }
 }

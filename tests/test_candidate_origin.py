@@ -137,7 +137,7 @@ def test_durable_failed_attempt_input_does_not_change_history(tmp_path, monkeypa
     from pro_a.admission_schema import migrate
     from pro_a.production_promotion import sha256_file
     migrate(value['config'].knowledge_db, expected_sha256=sha256_file(value['config'].knowledge_db),
-            backup_path=tmp_path / 'before-b-lite.sqlite3')
+            backup_path=tmp_path / 'before-b-lite.sqlite3', configured_production_path=value['config'].knowledge_db)
     from series_binding_helpers import text, upload, clean_pdf
     source = upload(value, clean_pdf(tmp_path, text='Synthetic anonymous interview title.\n' + text(3)))
     run_id = value['service'].start(source['source_id'], idempotency_key='candidate-mixed-source-0001')['run']['processing_run_id']
@@ -189,6 +189,9 @@ def test_durable_failed_attempt_input_does_not_change_history(tmp_path, monkeypa
     child = response.json()['run']
     child_id = child['processing_run_id']
     assert child_id != run_id and child['candidate_origin']['version'] == origin.VERSION
+    from pro_a.workbench.stage1_scale import stage1_capacity
+    with service.store.connect() as connection:
+        assert stage1_capacity(connection)['runs_last_24h'] == 2
     service.advance_once(worker_id='candidate-test', processing_run_id=child_id)
     child = service.advance_once(worker_id='candidate-test', processing_run_id=child_id)
     assert child['state'] == 'SEMANTIC_PROCESSING', child
@@ -377,6 +380,9 @@ def test_durable_failed_attempt_input_does_not_change_history(tmp_path, monkeypa
     assert operator.execute(eid, confirm=eid)['status'] == 'EXECUTED'
     zero = service.start_candidates([reference], idempotency_key='candidate-synthetic-zero-0003')
     assert zero['status'] == 'ZERO_INCREMENT' and zero['rejected_count'] == len(title_claims)
+    with service.store.connect() as connection:
+        capacity = stage1_capacity(connection)
+        assert capacity['runs_last_24h'] == 3 and not capacity['new_intake_allowed']
     assert all('999999' not in c['row']['statement'] for c in second_envelope['mutations'] if c['table'] == 'claims')
     with closing(readonly(value['config'].knowledge_db)) as connection:
         assert source_before == dict(connection.execute('SELECT * FROM sources WHERE source_id=?', (result['scope']['source_id'],)).fetchone())
