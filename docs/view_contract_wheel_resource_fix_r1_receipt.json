@@ -1,0 +1,38 @@
+{
+  "task": "PRO_A_P0_VIEW_CONTRACT_WHEEL_RESOURCE_FIX_R1",
+  "base_main": "ca368c988dafc8ea4a83abfbc06fe329ca2bdc95",
+  "fix_code_commit": "aec55a605b0febdc07a9956e171b47f1adf0d681",
+  "scope": "Immutable Current View JSON package resource, package-local loader, installed regression tests only.",
+  "resource_member": "pro_a/resources/PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json",
+  "original_and_packaged_contract_sha256": "f9df5a24a269258d528efead16c43ceb8d2c955358c4fdeacb36aa5e82a1ddd1",
+  "contract_versions": [
+    "phase42-view-v1",
+    "phase42-view-operator-v1"
+  ],
+  "current_view_runtime_before": "ff8512ea9c0eadf67588c21d22dc56b1b3de3926f9e9ccf9ccbd4c03f6b0bf76",
+  "current_view_runtime_after": "b425a3e908c5ea54377492604fc538ac31c42f9059faaeb5f6fb15d983ceb9b5",
+  "operational_runtime_unchanged": "adac55be68722a58ae1d3b6c16b990f3ca94182395f043ddcd73580976b32e66",
+  "installed_qualification": {
+    "result": "PASS",
+    "original_smoke_cases_passed": 23,
+    "additional_resource_and_import_cases_passed": 6,
+    "failed": 0,
+    "deselected": 0,
+    "conditions": "Fresh non-editable venv outside source checkouts; no source PYTHONPATH, docs directory or Git required; checkout access denied; external network denied.",
+    "resource_faults": "Missing resource fails; changed bytes fail CURRENT_VIEW_CONTRACT_SHA_MISMATCH.",
+    "identity": "171 Python/SQL/JSON files match Git, wheel and installed bytes. Exact final-head commit and wheel digest are recorded in the PR release receipt."
+  },
+  "limits_unchanged": [
+    "Official Current View creation/update remains frozen without BASIS_ELIGIBLE.",
+    "3 Runs per rolling 24h; original plus two Candidate batches consume three; zero increment consumes none."
+  ],
+  "real_operations": {
+    "provider_calls": 0,
+    "migrations": 0,
+    "apply": 0,
+    "canonical_writes": 0,
+    "workbench_writes": 0,
+    "runtime_switches": 0
+  },
+  "delivery": "Draft PR only. No merge or Stable activation. PASS permits the next HUMAN_USER merge/release review only."
+}
