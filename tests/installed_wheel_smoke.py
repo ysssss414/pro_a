@@ -13,6 +13,8 @@ import sys
 
 
 RESOURCES = {
+    'resources/PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json':
+        'f9df5a24a269258d528efead16c43ceb8d2c955358c4fdeacb36aa5e82a1ddd1',
     'schema.sql': '7df9b6ed87d04fd0e79f7df9ae5367c2caf32d2acfb34f454161c648ee90ff9e',
     'migrations/foundation_0_2_3_relation_native.sql':
         '17d0706380a4ba57c78081b9aeb37141115564b2f8210671194358d338b8e4f0',

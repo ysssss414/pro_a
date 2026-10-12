@@ -1,0 +1,49 @@
+{
+  "document_type": "phase42_stage3_view_activation_contract",
+  "schema_version": "1",
+  "adapter_version": "phase42-view-v1",
+  "operator_entry_version": "phase42-view-operator-v1",
+  "source_stage2_adapter_changed": false,
+  "supported_node_types": ["Company", "Product"],
+  "canonical_mutations": {
+    "tables": ["current_views"],
+    "actions": ["INSERT"],
+    "status": ["official"],
+    "rows_per_execution": 1
+  },
+  "preconditions": {
+    "update": ["exact current official View identity", "exact predecessor identity"],
+    "initial": ["NO_EXISTING_VIEW"],
+    "both": [
+      "exact Node identity and active status",
+      "exact canonical baseline identity",
+      "exact primary and context Claim/role/Source-hash evidence identity",
+      "subject-only primary evidence",
+      "existing frozen Current View quality validation",
+      "nonempty deterministic structured change",
+      "registered immutable package",
+      "explicit full package confirmation"
+    ]
+  },
+  "excluded": [
+    "UPDATE",
+    "DELETE",
+    "schema mutation",
+    "proposals",
+    "side_effect_jobs",
+    "IMA state",
+    "propagation state",
+    "research_questions",
+    "knowledge_gaps",
+    "node or relation mutation",
+    "Stage 2 package mutation",
+    "browser activation",
+    "automatic impact inference"
+  ],
+  "authorization": {
+    "web_canonical_access": "read_only",
+    "web_activation": false,
+    "real_production_activation_authorized": false,
+    "stage3_acceptance_target": "disposable canonical database only"
+  }
+}

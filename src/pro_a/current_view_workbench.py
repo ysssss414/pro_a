@@ -26,8 +26,10 @@ VERSION = 'phase42-view-v1'
 ENTRY_VERSION = 'phase42-view-operator-v1'
 SUPPORTED_TYPES = ('Company', 'Product')
 CHANGE_LEVELS = ('initial', 'minor', 'material', 'thesis')
-CONTRACT = Path(__file__).resolve().parents[2] / 'docs/PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json'
+CONTRACT = Path(__file__).resolve().parent / 'resources/PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json'
 CONTRACT_SHA = hashlib.sha256(CONTRACT.read_bytes()).hexdigest()
+if CONTRACT_SHA != 'f9df5a24a269258d528efead16c43ceb8d2c955358c4fdeacb36aa5e82a1ddd1':
+    raise ValueError('CURRENT_VIEW_CONTRACT_SHA_MISMATCH')
 CONTENT_FIELDS = ('one_line_conclusion', 'core_logic', 'key_facts', 'core_disagreements',
                   'assumptions_to_verify', 'investment_implication', 'major_risks',
                   'knowledge_gaps', 'key_watch_items', 'recent_change',

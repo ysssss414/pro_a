@@ -86,3 +86,40 @@ def test_source_operations_bounded_construction(tmp_path, package):
         assert connection.execute("SELECT value FROM workbench_meta WHERE key='schema_version'").fetchone()[0] == '12'
         assert connection.execute('SELECT count(*) FROM source_processing_runs').fetchone()[0] == 0
         assert connection.execute('SELECT count(*) FROM bounded_extraction_attempts').fetchone()[0] == 0
+
+
+def test_installed_view_contract_path_and_versions(package):
+    from pro_a.current_view_workbench import CONTRACT, CONTRACT_SHA, VERSION, ENTRY_VERSION
+    name = 'resources/PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json'
+    assert CONTRACT == package / name
+    assert CONTRACT_SHA == RESOURCES[name]
+    assert VERSION == 'phase42-view-v1'
+    assert ENTRY_VERSION == 'phase42-view-operator-v1'
+
+
+@pytest.mark.parametrize('fault,expected', [
+    ('missing', 'SYNTHETIC_VIEW_RESOURCE_MISSING'),
+    ('corrupt', 'CURRENT_VIEW_CONTRACT_SHA_MISMATCH'),
+])
+def test_installed_view_contract_fails_closed(package, fault, expected):
+    # Simulate resource faults in a fresh interpreter without editing the install.
+    code = """
+from pathlib import Path
+from unittest.mock import patch
+original = Path.read_bytes
+fault = FAULT
+
+def read(path):
+    if path.name == 'PHASE4_STAGE42_STAGE3_VIEW_CONTRACT.json':
+        if fault == 'missing':
+            raise FileNotFoundError('SYNTHETIC_VIEW_RESOURCE_MISSING')
+        return b'{}'
+    return original(path)
+
+with patch.object(Path, 'read_bytes', read):
+    import pro_a.current_view_workbench
+""".replace('FAULT', repr(fault))
+    result = subprocess.run([sys.executable, '-I', '-B', '-c', code],
+                            cwd=Path.cwd(), env={**os.environ, 'PATH': '', 'PYTHONPATH': ''},
+                            capture_output=True, text=True)
+    assert result.returncode != 0 and expected in result.stderr
