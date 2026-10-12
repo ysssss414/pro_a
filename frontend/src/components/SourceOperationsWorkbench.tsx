@@ -1,7 +1,8 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
+import { CandidateRange } from "./CandidateRange";
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
-import { getCommunityDomains, getOperationalCapacity, getSourceOperation, importCommunity, listSourceOperations, previewCommunity, startSourceProcessing, uploadSource, type CommunityPreview, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
+import { getCommunityDomains, getOperationalCapacity, getSourceOperation, importCommunity, listSourceOperations, previewCommunity, prepareSourceCandidates, startSourceProcessing, uploadSource, type CommunityPreview, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
 import { getResearchCompany, searchResearchCompanies, type CompanyMaterialsPage } from "../api/research";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
@@ -120,6 +121,17 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
       await refresh(selected.source_id);
     } catch (reason) { setError((reason as Error).message); } finally { setBusy(false); }
   }
+  async function prepareCandidates() {
+    const run = selected?.latest_run;
+    if (!run || !session?.csrf_token) return;
+    setBusy(true); setError("");
+    try {
+      const response = await prepareSourceCandidates(run.processing_run_id, session.csrf_token, new AbortController().signal);
+      setMessage(response.status === "ZERO_INCREMENT" ? "No new reviewable candidates; previous admissions and rejected items are retained."
+        : "Candidate batch queued for Semantic and independent review. Original extraction coverage is unchanged.");
+      await refresh(selected.source_id);
+    } catch (error) { setError((error as Error).message); } finally { setBusy(false); }
+  }
   function choose(value: PrivateSource) {
     setSelectedId(value.source_id); setSelected(null); setError("");
     window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}${contextId ? `?company=${encodeURIComponent(contextId)}` : ""}`);
@@ -223,6 +235,8 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
           <div><dt>Provenance</dt><dd>Provider = zsxq · ZSXQ model routing metadata is private operational metadata.</dd></div>
           <div><dt>Trust</dt><dd>{run.community_provenance.trust_policy} · {run.community_provenance.topic_count} topics</dd></div>
           <div><dt>Group / dates</dt><dd>{run.community_provenance.group_id} · {run.community_provenance.date_min ?? "Unknown"} to {run.community_provenance.date_max ?? "Unknown"}</dd></div></dl>}
+        {run && !run.candidate_origin && ["FAILED", "BLOCKED", "HUMAN_REVIEW_REQUIRED"].includes(run.state) && <button disabled={busy} onClick={() => void prepareCandidates()}>Prepare eligible candidate batch</button>}
+        {run && !run.candidate_origin && ["FAILED", "BLOCKED", "HUMAN_REVIEW_REQUIRED"].includes(run.state) && <CandidateRange runId={run.processing_run_id} csrf={session.csrf_token ?? ""} refresh={() => refresh(selected.source_id)} />}
         {run?.error && <div className="recovery-banner" role="alert"><strong>{run.error.code}</strong><p>Failed at {run.error.stage}. Retry safe: {String(run.error.retry_safe)}.</p><p>{run.error.operator_action}</p></div>}
         <ol className="source-stage-list">{stages.map((stage) => <li key={stage}>{stage}</li>)}</ol>
         <dl className="job-facts"><div><dt>Source / processing run</dt><dd><code>{selected.source_id}</code><br/><code>{run?.processing_run_id ?? "Not started"}</code></dd></div>

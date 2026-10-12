@@ -167,7 +167,9 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'extraction_analysis_record.py', 'output_decomposition_legacy.py',
                  'output_provider_record_v4.py', 'output_provider_record_v5.py', 'node_candidate_intent.py',
                  'output_provider_record_v6.py', 'output_provider_record_v7.py', 'workbench/output_qualification.py',
-                 'workbench/bounded_resume.py', 'workbench/strict_recovery.py')
+                 'workbench/bounded_resume.py', 'workbench/strict_recovery.py',
+                 'candidate_origin.py', 'workbench/candidate_inputs.py', 'workbench/advisory_review.py',
+                 'admission_schema.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})
     if workbench_schema_version == "12":
@@ -371,9 +373,19 @@ class CloudJobs:
                     "source_sha256", "processing_run_id", "native_execution_id",
                     "payload", "payload_sha256", "checkpoint",
                 }
+                if document.get('schema_version') == '2':
+                    required.add('candidate_origin')
+                    from .source_operations import SourceOperations
+                    from .candidate_inputs import CandidateArchive, CandidateInputs
+                    with self.store.connect() as connection:
+                        frozen_origin = SourceOperations._candidate_origin(connection, document['processing_run_id'])
+                    if not frozen_origin or document.get('candidate_origin') != frozen_origin:
+                        raise JobError('CANDIDATE_ORIGIN_DRIFT')
+                    for reference in frozen_origin['references']:
+                        CandidateInputs(CandidateArchive(self.config)).read(reference)
                 if (not isinstance(document, dict) or set(document) != required
                         or document["document_type"] != "phase42_stage7_cloud_input"
-                        or document["schema_version"] != "1"
+                        or document["schema_version"] not in ("1", "2")
                         or document["operation_kind"] != source_input["operation_kind"]
                         or document["source_id"] != source_input["source_id"]
                         or document["processing_run_id"] != source_input["processing_run_id"]

@@ -1,6 +1,7 @@
 import type { Note } from "../api/research";
 
 export type InspectorClaim = {
+  admission_semantics?: string; reality_support?: string; current_view_use?: string; date_basis?: string;
   claim_id: string; statement: string; business_date: string; status: string;
   source_id: string; source_title: string; evidence_excerpt?: string | null;
   confidence?: number | null; linked_nodes: { node_id: string; role: string }[];

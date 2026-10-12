@@ -193,7 +193,19 @@ def _load_frozen_run(run_root: Path) -> dict[str, Any]:
     bundle = artifacts["evidence_bound_extraction_bundle"]
 
     _require(manifest.get("document_type") == "phase3e_operational_ingestion_manifest", "MANIFEST_TYPE_INVALID")
-    _require(manifest.get("schema_version") == "1", "MANIFEST_VERSION_INVALID")
+    _require(manifest.get("schema_version") in ("1", "2"), "MANIFEST_VERSION_INVALID")
+    if manifest.get('schema_version') == '2':
+        from .candidate_origin import VERSION, semantic_projection
+        origin = manifest.get('candidate_origin') or {}
+        candidate_path = run_root / 'extraction/candidate_input.json'
+        _require(origin.get('version') == VERSION and candidate_path.is_file()
+                 and sha256_file(candidate_path) == origin.get('sha256'), 'CANDIDATE_ORIGIN_DRIFT')
+        candidate_input = _read_json(candidate_path)
+        documents = candidate_input['documents']
+        semantic_projection(documents, candidate_input.get('excluded_keys', ()))
+        _require(origin['set_identities'] == [d['identity'] for d in documents], 'CANDIDATE_ORIGIN_DRIFT')
+    else:
+        _require('candidate_origin' not in manifest, 'CANDIDATE_MANIFEST_VERSION_REQUIRED')
     run_id = manifest.get("run_id")
     _require(isinstance(run_id, str) and RUN_ID.fullmatch(run_id), "RUN_ID_INVALID")
     _require(manifest.get("stage_status") == "HUMAN_REVIEW_REQUIRED", "RUN_NOT_AT_HUMAN_REVIEW_GATE")
@@ -243,7 +255,7 @@ def _load_frozen_run(run_root: Path) -> dict[str, Any]:
         id_prefix="NODE_REVIEW",
     )
     nodes = node_review.get("records") or []
-    _require(isinstance(nodes, list) and nodes, "NODE_REVIEW_EMPTY")
+    _require(isinstance(nodes, list) and (nodes or manifest.get("candidate_origin")), "NODE_REVIEW_EMPTY")
     _require(all(item.get("review_decision") == "PENDING" for item in nodes), "NODE_DECISION_ALREADY_PRESENT")
     _require(all(item.get("advisory_only") is True for item in nodes), "NODE_SUGGESTION_NOT_ADVISORY")
 
@@ -445,6 +457,12 @@ def build_blank_review_packet(run_root: str | Path) -> dict[str, Any]:
             "duplicate_reconciliation": item.get("duplicate_reconciliation"),
             "current_operational_decision": item.get("human_decision"),
         }
+        if manifest.get('candidate_origin'):
+            original = next(c for c in frozen['bundle']['claims'] if c['claim_id'] == item['claim_id'])
+            for key in ('nature', 'attributed_to', 'fact_time', 'publication_time', 'ingestion_time', 'scope', 'assumption_text'):
+                content[key] = copy.deepcopy(original.get(key, ''))
+            content['candidate_origin'] = copy.deepcopy(original['structured']['candidate_origin'])
+            content['source_metadata'] = copy.deepcopy(frozen['bundle']['proposed_source_metadata'])
         claims.append(_record(
             candidate_type="CLAIM",
             candidate_id=item["claim_id"],
@@ -493,6 +511,9 @@ def build_blank_review_packet(run_root: str | Path) -> dict[str, Any]:
             "current_operational_decision": item.get("review_decision"),
             "parent_placement_suggestion": copy.deepcopy(item.get("parent_placement_suggestion") or {}),
         }
+        if manifest.get('candidate_origin'):
+            content['supporting_claim_revisions'] = {c['candidate_id']: c['content_sha256']
+                for c in claims if c['candidate_id'] in content['supporting_claim_ids']}
         nodes.append(_record(
             candidate_type="NODE",
             candidate_id=item["operation_candidate_id"],
@@ -534,6 +555,9 @@ def build_blank_review_packet(run_root: str | Path) -> dict[str, Any]:
             "current_operational_decision": item.get("human_decision"),
             "executable": item.get("executable"),
         }
+        if manifest.get('candidate_origin'):
+            content['child_node_revision'] = next(n['content_sha256'] for n in nodes
+                if n['candidate_id'] == content['child_node_candidate_id'])
         relations.append(_record(
             candidate_type="PARENT_PLACEMENT",
             candidate_id=item["suggestion_id"],

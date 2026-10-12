@@ -152,6 +152,9 @@ function ClaimsTab({
           <div className="card-badges">
             <span>{claim.link_role === "subject" ? "Subject" : claim.link_role === "context" ? "Context" : "Related"}</span>
             <span>{claim.nature}</span>
+            <span>{claim.admission_semantics ?? "LEGACY_UNKNOWN"}</span>
+            <span>{claim.reality_support ?? "LEGACY_UNKNOWN"}</span>
+            <span>{claim.current_view_use ?? "LEGACY_UNKNOWN"}</span>
             <span>{claim.status}</span>
             <span>{claim.novelty_level}</span>
           </div>

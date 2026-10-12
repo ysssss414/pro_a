@@ -287,8 +287,11 @@ def migration_sql():
 def require_execution_schema(connection):
     version = connection.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()
     marker = connection.execute("SELECT value FROM meta WHERE key='foundation_execution_contract_sha256'").fetchone()
-    if not version or version[0] != NEXT_SCHEMA_VERSION or not marker or marker[0] != CONTRACT_SHA256:
+    if not version or version[0] not in (NEXT_SCHEMA_VERSION, '0.2.4') or not marker or marker[0] != CONTRACT_SHA256:
         raise PromotionError("FOUNDATION_EXECUTION_SCHEMA_REQUALIFICATION_REQUIRED")
+    if version[0] == '0.2.4':
+        from .admission_schema import require_schema
+        require_schema(connection)
     require_baseline_guards(connection)
     for name, sql in governance_guards().items():
         row = connection.execute("SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?", (name,)).fetchone()

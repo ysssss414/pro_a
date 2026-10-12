@@ -133,6 +133,9 @@ class Attribution:
 
     def mutate(self, handle, action, request, identity):
         context = self.context(handle)
+        from .advisory_review import required
+        if required(context['blank']):
+            require(identity.get('principal_type') == 'HUMAN_USER', 'HUMAN_USER_REQUIRED')
         require(request['basis_id'] == context['basis_id'], 'ATTRIBUTION_BASIS_MISMATCH')
         for key in ('reviewer', 'reason'):
             require(bool(request.get(key)) and request[key] == request[key].strip(), 'VALIDATION_ERROR')

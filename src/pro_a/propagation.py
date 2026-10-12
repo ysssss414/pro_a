@@ -90,6 +90,9 @@ class PropagationManager:
 
     @staticmethod
     def _independence_key(claim: dict[str, Any]) -> str:
+        if claim.get('admission_semantics') in ('SOURCE_ASSERTION', 'LEGACY_UNKNOWN'):
+            # Unknown/reprinted origin does not manufacture source independence.
+            return claim.get('underlying_source_id') or ''
         return claim.get("underlying_source_id") or claim.get("evidence_source_id") or claim.get("source_id") or ""
 
     def _evidence_profile(self, evidence: list[dict[str, Any]]) -> dict[str, Any]:
@@ -749,6 +752,9 @@ class PropagationManager:
     def _programmatic_evidence_sufficiency(
         self, level: str, evidence: list[dict[str, Any]], semantic: dict[str, Any]
     ) -> tuple[bool, str]:
+        from .admission_schema import basis_eligible
+        if any('current_view_use' in item and not basis_eligible(item) for item in evidence):
+            return False, 'CURRENT_VIEW_REVIEWED_BASIS_REQUIRED'
         if level == "initial":
             profile = self._evidence_profile(evidence)
             if profile["evidence_source_count"] >= 1:

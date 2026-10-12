@@ -480,6 +480,8 @@ def _build_live_extraction(
     adaptive_retry_policy: str = "allow",
     initial_plan_path: Path | None = None,
     llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
+    candidate_documents: list[dict] | None = None,
+    excluded_candidate_keys: list[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
@@ -490,13 +492,15 @@ def _build_live_extraction(
         if initial_plan_path is not None:
             _write_json(initial_plan_path, plan)
 
-    analysis = analyzer.analyze_source(
-        manifest["source"]["filename"],
-        semantic_text,
-        "deep",
-        adaptive_retry_policy=adaptive_retry_policy,
-        initial_plan_sink=persist_initial_plan,
-    )
+    if candidate_documents is None:
+        analysis = analyzer.analyze_source(
+            manifest["source"]["filename"], semantic_text, "deep",
+            adaptive_retry_policy=adaptive_retry_policy,
+            initial_plan_sink=persist_initial_plan,
+        )
+    else:
+        from .candidate_origin import semantic_projection
+        analysis = semantic_projection(candidate_documents, excluded_candidate_keys or ())
     raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
     initial_plan = copy.deepcopy(analyzer.last_initial_extraction_plan)
 
@@ -519,17 +523,27 @@ def _build_live_extraction(
                 },
             },
         )
+        if candidate_documents is not None:
+            claim_id = deterministic_id('CLM', {'candidate_key': claim['candidate_key']})
         record = build_claim_record(
             claim_id,
             source_id,
             claim,
             analysis.source_metadata.get("publication_time") or "",
             parsed.text,
-            ingestion_time=frozen_timestamp,
+            ingestion_time=(candidate_documents[0]['scope']['source_ingestion_time']
+                            if candidate_documents is not None else frozen_timestamp),
             created_at=frozen_timestamp,
         )
         if record is None:
             continue
+        if candidate_documents is not None:
+            from .candidate_origin import GOVERNANCE, VERSION
+            record['structured']['candidate_origin'] = {
+                'version': VERSION, 'candidate_key': claim['candidate_key'],
+                'observations': copy.deepcopy(claim['candidate_observations']),
+                'proposed_governance': dict(GOVERNANCE),
+            }
         for key in (
             "origin_chunk_index",
             "origin_split_path",
@@ -686,7 +700,21 @@ def _run_extraction(
     bundle_path = extraction_dir / "extraction_bundle.json"
     raw_path = extraction_dir / "raw_analysis.json"
     fixture_path = extraction_dir / "frozen_extraction_input.json"
-    if fixture_path.is_file():
+    candidate_path = extraction_dir / 'candidate_input.json'
+    if manifest.get('candidate_origin'):
+        if sha256_file(candidate_path) != manifest['candidate_origin']['sha256']:
+            raise OperationalIngestionError('CANDIDATE_INPUT_HASH_MISMATCH')
+        candidate_input = _load_json(candidate_path)
+        raw_analysis, bundle = _build_live_extraction(
+            cfg=cfg, manifest=manifest, parsed=parsed, production_path=production_path,
+            layout_sidecar_relative='extraction/source_layout_sidecar.json',
+            candidate_documents=candidate_input['documents'],
+            excluded_candidate_keys=candidate_input.get('excluded_keys', []))
+        bundle['candidate_origin'] = copy.deepcopy(manifest['candidate_origin'])
+        _write_json(bundle_path, bundle)
+        manifest['model']['extraction_mode'] = 'VERIFIED_CANDIDATE_ORIGIN'
+        manifest['model']['llm_invoked'] = False
+    elif fixture_path.is_file():
         bundle = _load_json(fixture_path)
         if bundle.get("document_type") != BUNDLE_DOCUMENT_TYPE:
             raise OperationalIngestionError("FROZEN_EXTRACTION_DOCUMENT_TYPE_INVALID")
@@ -1728,6 +1756,7 @@ def _start_new_run(
     run_dir: Path | None,
     frozen_extraction_path: Path | None,
     adaptive_retry_policy: str,
+    candidate_input_path: Path | None = None,
 ) -> tuple[RunPaths, dict[str, Any]]:
     source_path = source_path.resolve()
     if not source_path.is_file():
@@ -1814,6 +1843,20 @@ def _start_new_run(
             "production_changed": False,
         },
     }
+    if candidate_input_path is not None:
+        from .candidate_origin import VERSION, semantic_projection
+        if frozen_extraction_path is not None:
+            raise OperationalIngestionError('CANDIDATE_FIXTURE_CONFLICT')
+        candidate_input = _load_json(candidate_input_path)
+        semantic_projection(candidate_input['documents'], candidate_input.get('excluded_keys', ()))
+        if any(d['scope']['source_sha256'] != source_sha or d['scope']['source_id'] != source_id
+               for d in candidate_input['documents']):
+            raise OperationalIngestionError('CANDIDATE_SOURCE_BINDING_MISMATCH')
+        target = paths.path('extraction/candidate_input.json')
+        target.write_bytes(Path(candidate_input_path).read_bytes())
+        manifest['schema_version'] = '2'
+        manifest['candidate_origin'] = {'version': VERSION, 'sha256': sha256_file(target),
+                                        'set_identities': [d['identity'] for d in candidate_input['documents']]}
     _save_manifest(paths, manifest)
     _complete_stage(
         paths,
@@ -1876,6 +1919,7 @@ def run_operational_ingestion(
     semantic_max_split_depth: int = 4,
     external_semantic_checkpoint: bool = False,
     semantic_execution_metadata: Mapping[str, Any] | None = None,
+    candidate_input_path: Path | None = None,
 ) -> dict[str, Any]:
     """Run or resume the clean-PDF workflow through a non-executable preview.
 
@@ -1911,10 +1955,11 @@ def run_operational_ingestion(
                 Path(frozen_extraction_path) if frozen_extraction_path else None
             ),
             adaptive_retry_policy=adaptive_retry_policy,
+            candidate_input_path=candidate_input_path,
         )
     production_path = cfg.db_path.resolve()
     fixture_replay = paths.path("extraction/frozen_extraction_input.json").is_file()
-    if manifest["source"]["existing_production_source_ids"] and not fixture_replay:
+    if manifest["source"]["existing_production_source_ids"] and not fixture_replay and not manifest.get("candidate_origin"):
         exc = OperationalIngestionError("SOURCE_ALREADY_EXISTS_IN_PRODUCTION")
         _record_failure(paths, manifest, "SOURCE_REJECTED", exc)
         raise exc

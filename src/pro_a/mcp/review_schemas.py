@@ -74,7 +74,40 @@ class ExactResolution(BaseModel):
     candidate_target_node_ids: list[str] = Field(default_factory=list)
 
 
+class CandidateObservation(BaseModel):
+    set_identity: str
+    observation_id: str
+    revision_sha256: str
+    dependencies: list[list[str]]
+
+
+class CandidateGovernance(BaseModel):
+    admission_semantics: Literal['SOURCE_ASSERTION']
+    reality_support: Literal['UNVERIFIED']
+    current_view_use: Literal['CLUE_ONLY']
+
+
+class CandidateOrigin(BaseModel):
+    version: Literal['source-candidate-set-v1']
+    candidate_key: str
+    observations: list[CandidateObservation]
+    proposed_governance: CandidateGovernance
+
+
+class CandidateSource(BaseModel):
+    title: str
+    publication_time: str
+    source_rank: str
+    source_origin_type: str
+    author: str = ''
+    organization: str = ''
+
+
 class CandidateContent(BaseModel):
+    candidate_origin: CandidateOrigin | None = None
+    source_metadata: CandidateSource | None = None
+    ingestion_time: str | None = None
+    assumption_text: str | None = None
     statement: str | None = None
     nature: str | None = None
     fact_time: str | None = None
@@ -94,12 +127,14 @@ class CandidateContent(BaseModel):
     proposed_aliases: list[str] = Field(default_factory=list)
     prospective_node_id: str | None = None
     supporting_claim_ids: list[str] = Field(default_factory=list)
+    supporting_claim_revisions: dict[str, str] = Field(default_factory=dict)
     supporting_evidence: list[SupportingEvidence] = Field(default_factory=list)
     phase3c_validation_state: Diagnostic | None = None
     current_defer_reason: str | None = None
     exact_production_resolution: ExactResolution | None = None
     collision_diagnostics: Collisions | None = None
     child_node_candidate_id: str | None = None
+    child_node_revision: str | None = None
     prospective_child_node_id: str | None = None
     parent_node_id: str | None = None
     relation_type: str | None = None

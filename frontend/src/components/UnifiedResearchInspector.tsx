@@ -93,7 +93,7 @@ export function UnifiedResearchInspector({ data, domainContext, navigate, notesS
     <Section title="Key Claims" meta={`${visible(claims, "claims").length} visible of ${data.claims.total} linked`}>
       {!claims.length ? <p className="research-empty">No explicit Claims linked.</p> : visible(claims, "claims").map(({ claim, label }) =>
         <article className="inspector-row" key={claim.claim_id}><span className="inspector-tag">{label}</span>
-          <strong>{claim.statement}</strong><small>{claim.business_date} · {claim.status}</small>
+          <strong>{claim.statement}</strong><small>{claim.business_date} ({claim.date_basis}) · {claim.status} · {claim.admission_semantics ?? "LEGACY_UNKNOWN"} · {claim.reality_support ?? "LEGACY_UNKNOWN"} · {claim.current_view_use ?? "LEGACY_UNKNOWN"}</small>
           <button onClick={() => open("claim", claim.claim_id)}>Open Claim</button></article>)}
       {data.claims.total > data.claims.items.length && <p className="inspector-bounded">Showing selection from {data.claims.items.length} of {data.claims.total} returned Claims; official trigger details outside this page are unavailable.</p>}
       <More total={claims.length} limit={LIMIT.claims} expanded={!!expanded.claims} onClick={() => toggle("claims")} noun="Claims" />
@@ -104,7 +104,7 @@ export function UnifiedResearchInspector({ data, domainContext, navigate, notesS
       {!evidence.length ? <p className="research-empty">No recent Evidence available.</p> : visible(evidence, "evidence").map((claim) =>
         <article className="inspector-row" key={claim.claim_id}><strong>{claim.statement}</strong>
           {claim.evidence_excerpt && <p>{claim.evidence_excerpt}</p>}
-          <small>{claim.business_date} · {claim.status} · {claim.source_title}{sourceById.get(claim.source_id)?.source_rank ? ` · ${sourceById.get(claim.source_id)?.source_rank}` : ""}</small>
+          <small>{claim.business_date} ({claim.date_basis}) · {claim.status} · {claim.admission_semantics ?? "LEGACY_UNKNOWN"} · {claim.reality_support ?? "LEGACY_UNKNOWN"} · {claim.current_view_use ?? "LEGACY_UNKNOWN"} · {claim.source_title}{sourceById.get(claim.source_id)?.source_rank ? ` · ${sourceById.get(claim.source_id)?.source_rank}` : ""}</small>
           <div className="inspector-actions"><button onClick={() => open("claim", claim.claim_id)}>Open Claim</button><button onClick={() => open("source", claim.source_id)}>Open Source</button></div></article>)}
       {data.claims.total > data.claims.items.length && <p className="inspector-bounded">Latest Evidence is selected from {data.claims.items.length} of {data.claims.total} linked Claims in the bounded Node page.</p>}
       <More total={evidence.length} limit={LIMIT.evidence} expanded={!!expanded.evidence} onClick={() => toggle("evidence")} noun="Evidence" />

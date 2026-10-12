@@ -243,10 +243,16 @@ class ReadService:
         return self._run_projection(self.operations.get_run(processing_run_id))
 
     @read_operation
-    def get_source(self, source_id: Identifier) -> s.Source:
+    def get_source(self, source_id: Identifier, claim_limit: Limit = 20,
+                   claim_cursor: Cursor | None = None) -> s.Source:
         identifier(source_id)
+        page(claim_limit, claim_cursor)
         self._production()
         canonical = self.query.source_detail(source_id)
+        if canonical is not None:
+            claims, following = portion(canonical['claims'], claim_limit, claim_cursor)
+            canonical['claims'] = [{**c, 'source_id': source_id} for c in claims]
+            canonical['next_claim_cursor'] = following
         operational = None
         warnings = []
         try:

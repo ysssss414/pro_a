@@ -804,7 +804,11 @@ def _phase3d_validation(
                 f'SELECT 1 FROM "{mutation["table"]}" WHERE {where} LIMIT 1',
                 tuple(mutation["key"].values()),
             ).fetchone()
-            _require(found is None, "PRODUCTION_ROW_ALREADY_EXISTS", mutation["mutation_id"])
+            if found is not None and mutation['table'] == 'sources' and payload['source'].get('reuse_existing_row'):
+                source = connection.execute('SELECT * FROM sources WHERE source_id=?', (payload['source']['source_id'],)).fetchone()
+                _require(dict(source) == mutation['row'], 'SOURCE_REUSE_ROW_CONFLICT')
+            else:
+                _require(found is None, "PRODUCTION_ROW_ALREADY_EXISTS", mutation["mutation_id"])
     finally:
         connection.close()
 
@@ -937,11 +941,18 @@ def build_handoff_core(
         for claim_id, claim in bundle_claims.items()
     }
     existing_claim_ids = _existing_ids(production_path, "claims", "claim_id")
-    _require(
-        source_id not in _existing_ids(production_path, "sources", "source_id"),
-        "SOURCE_ID_COLLISION",
-        source_id,
-    )
+    connection = _readonly_connection(production_path)
+    try:
+        matches = list(connection.execute('SELECT * FROM sources WHERE source_id=? OR sha256=?',
+                                          (source_id, source_sha256)))
+    finally:
+        connection.close()
+    existing_source = dict(matches[0]) if matches else None
+    if existing_source:
+        _require(bundle.get('candidate_origin') and len(matches) == 1
+                 and existing_source['source_id'] == source_id
+                 and existing_source['sha256'] == source_sha256,
+                 'SOURCE_ID_COLLISION')
 
     claim_items: list[dict[str, Any]] = []
     accepted_claim_ids: set[str] = set()
@@ -1071,7 +1082,7 @@ def build_handoff_core(
         "mapping_sha256": mapping_hash,
     }
 
-    source_row = _source_row(packet, bundle, timestamp, bindings, policy)
+    source_row = existing_source or _source_row(packet, bundle, timestamp, bindings, policy)
     mutations = [
         _mutation(
             "sources",
@@ -1085,6 +1096,9 @@ def build_handoff_core(
         key=lambda value: value["claim_id"],
     ):
         row = _claim_row(item["immutable_claim"], timestamp)
+        if production["schema_version"] == "0.2.4":
+            from .admission_schema import projection
+            row.update(projection(row))
         mutations.append(
             _mutation(
                 "claims",
@@ -1193,6 +1207,7 @@ def build_handoff_core(
             "source_id": source_id,
             "source_sha256": source_sha256,
             "qualification_only_lineage_insert": policy.qualification_only,
+            "reuse_existing_row": bool(existing_source),
             "production_source_authorization": False,
         },
         "sources": [

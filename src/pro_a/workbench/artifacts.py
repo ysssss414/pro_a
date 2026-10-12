@@ -70,7 +70,13 @@ class Artifacts:
                 if self.inventory(packet_relative, run_relative) != inventory:
                     raise BoundaryError('ARTIFACT_CHANGED_DURING_READ')
                 return dto, inventory, packet
-            validation = validate_blank_review_packet(packet, run_root=self.resolve(run_relative))
+            run = self.resolve(run_relative)
+            manifest = read_review_packet(run / 'run_manifest.json')
+            if manifest.get('candidate_origin'):
+                from .candidate_inputs import verify_documents
+                candidate = read_review_packet(run / 'extraction/candidate_input.json')
+                verify_documents(self.config, candidate['documents'])
+            validation = validate_blank_review_packet(packet, run_root=run)
             if self.config.mode == 'DEMO' and packet['source']['source_type'] != 'SYNTHETIC_TEXT':
                 raise BoundaryError('ARTIFACT_MODE_MISMATCH')
             dto = project(packet, validation, artifact_id, inventory[packet_relative], self.config.mode)
