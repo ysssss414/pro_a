@@ -2,7 +2,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 import { CandidateRange } from "./CandidateRange";
 import { getSession, loginWorkbench, WorkbenchError } from "../api/workbench";
-import { getCommunityDomains, getOperationalCapacity, getSourceOperation, importCommunity, listSourceOperations, previewCommunity, prepareSourceCandidates, startSourceProcessing, uploadSource, type CommunityPreview, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
+import { getCommunityDomains, getOperationalCapacity, getSourceOperation, importCommunity, listSourceOperations, previewCommunity, prepareSourceCandidates, replaceSourceCandidates, startSourceProcessing, uploadSource, type CommunityPreview, type OperationalCapacity, type PrivateSource } from "../api/sourceOperations";
 import { getResearchCompany, searchResearchCompanies, type CompanyMaterialsPage } from "../api/research";
 
 type Session = { actor: string; mode: string; csrf_token?: string };
@@ -23,6 +23,9 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [replacementReason, setReplacementReason] = useState("");
+  const [localFailureConfirmed, setLocalFailureConfirmed] = useState(false);
+  const replacementRequest = useRef<{ runId: string; reason: string; key: string } | null>(null);
   const contextId = new URLSearchParams(window.location.search).get("company") ?? "";
   const communityMode = new URLSearchParams(window.location.search).get("community") === "1";
   const [communityFile, setCommunityFile] = useState<File | null>(null);
@@ -132,8 +135,26 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
       await refresh(selected.source_id);
     } catch (error) { setError((error as Error).message); } finally { setBusy(false); }
   }
+  async function replaceCandidates() {
+    const run = selected?.latest_run;
+    if (!run || !session?.csrf_token || !localFailureConfirmed || !replacementReason.trim()) return;
+    const reason = replacementReason.trim();
+    if (replacementRequest.current?.runId !== run.processing_run_id || replacementRequest.current.reason !== reason) {
+      replacementRequest.current = { runId: run.processing_run_id, reason, key: operationId() };
+    }
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const response = await replaceSourceCandidates(run.processing_run_id, {
+        idempotency_key: replacementRequest.current.key, reason, confirm_local_failure: true,
+      }, session.csrf_token, new AbortController().signal);
+      setMessage(response.duplicate ? "Existing replacement returned; no new run was created."
+        : "One replacement queued with the same candidates. The failed run is retained and the normal run limit applies.");
+      await refresh(selected.source_id);
+    } catch (error) { setError((error as Error).message); } finally { setBusy(false); }
+  }
   function choose(value: PrivateSource) {
     setSelectedId(value.source_id); setSelected(null); setError("");
+    setReplacementReason(""); setLocalFailureConfirmed(false);
     window.history.pushState(null, "", `/source-operations/${encodeURIComponent(value.source_id)}${contextId ? `?company=${encodeURIComponent(contextId)}` : ""}`);
     void refresh(value.source_id);
   }
@@ -237,6 +258,15 @@ export function SourceOperationsWorkbench({ onAuthenticated = noopAuthenticated 
           <div><dt>Group / dates</dt><dd>{run.community_provenance.group_id} · {run.community_provenance.date_min ?? "Unknown"} to {run.community_provenance.date_max ?? "Unknown"}</dd></div></dl>}
         {run && !run.candidate_origin && ["FAILED", "BLOCKED", "HUMAN_REVIEW_REQUIRED"].includes(run.state) && <button disabled={busy} onClick={() => void prepareCandidates()}>Prepare eligible candidate batch</button>}
         {run && !run.candidate_origin && ["FAILED", "BLOCKED", "HUMAN_REVIEW_REQUIRED"].includes(run.state) && <CandidateRange runId={run.processing_run_id} csrf={session.csrf_token ?? ""} refresh={() => refresh(selected.source_id)} />}
+        {run?.candidate_origin && !run.candidate_replacement && ["FAILED", "BLOCKED"].includes(run.state)
+          && run.stage === "ORCHESTRATION" && run.error?.code === "SOURCE_ORCHESTRATION_BLOCKED"
+          && !run.error.manual_recovery_required && !run.packet_id && run.jobs.length === 0 && <section aria-label="Candidate replacement">
+            <p>A confirmed local execution failure before model processing may receive one replacement with the same candidates.</p>
+            <label>Replacement reason<input maxLength={1000} value={replacementReason} onChange={event => setReplacementReason(event.target.value)} /></label>
+            <label><input type="checkbox" checked={localFailureConfirmed} onChange={event => setLocalFailureConfirmed(event.target.checked)} />I verified the local execution failure and corrected the execution guard.</label>
+            <button disabled={busy || !localFailureConfirmed || !replacementReason.trim() || capacity?.new_intake_allowed === false} onClick={() => void replaceCandidates()}>Create one candidate replacement</button>
+          </section>}
+        {run?.candidate_replacement && <p>Replaces <code>{run.candidate_replacement.previous_run_id}</code>: {run.candidate_replacement.reason}</p>}
         {run?.error && <div className="recovery-banner" role="alert"><strong>{run.error.code}</strong><p>Failed at {run.error.stage}. Retry safe: {String(run.error.retry_safe)}.</p><p>{run.error.operator_action}</p></div>}
         <ol className="source-stage-list">{stages.map((stage) => <li key={stage}>{stage}</li>)}</ol>
         <dl className="job-facts"><div><dt>Source / processing run</dt><dd><code>{selected.source_id}</code><br/><code>{run?.processing_run_id ?? "Not started"}</code></dd></div>

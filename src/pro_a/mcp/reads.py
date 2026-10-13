@@ -105,6 +105,7 @@ class BoundedReads:
 
 
 class OperationalReads:
+    _candidate_replacement = staticmethod(SourceOperations._candidate_replacement)
     _project_run = SourceOperations._project_run
     _post_processing = SourceOperations._post_processing
     _source_projection = staticmethod(SourceOperations._source_projection)

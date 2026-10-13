@@ -107,7 +107,10 @@ def test_provider_cannot_grant_governance_and_missing_nature_does_not_default():
 
 
 @pytest.mark.parametrize('local_revision', [False, True])
-def test_durable_failed_attempt_input_does_not_change_history(tmp_path, monkeypatch, local_revision):
+def test_durable_failed_attempt_input_does_not_change_history(tmp_path_factory, monkeypatch, local_revision):
+    # Advice publication adds a packet hash and a UUID pending filename.
+    # Keep the synthetic root short enough for ordinary Windows paths.
+    tmp_path = tmp_path_factory.mktemp('candidate')
     from series_binding_helpers import case, start, Transport, synthetic_providers, rows
     from pro_a.workbench.candidate_inputs import CandidateInputs
     monkeypatch.setattr('requests.sessions.Session.request', lambda *a, **k: pytest.fail('NETWORK_FORBIDDEN'))

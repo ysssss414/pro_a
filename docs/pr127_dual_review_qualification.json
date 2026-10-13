@@ -1,0 +1,27 @@
+{
+  "task": "PRO_A_P0_CANDIDATE_REPLACEMENT_AND_DUAL_REVIEW_RELEASE_R1",
+  "base_commit": "c6e907cf814f4e6278800521915887671028cb44",
+  "replacement_commit": "df6f1ca78c9930f3dbbef499178dbd999bcdb141",
+  "advice_failure": {
+    "stage": "first A submission, before publication and event registration",
+    "exception": "FileNotFoundError (errno 2)",
+    "stack": [
+      "AdvisoryReview.submit -> write_once -> Path.open"
+    ],
+    "parent_exists": true,
+    "final_path_characters": 227,
+    "pending_path_characters": 261,
+    "diagnosis": "Windows ordinary-path length exceeded by the previous synthetic fixture; not a missing parent-directory defect.",
+    "correction": "write_once already creates parents. Use a short named temporary test root; leave product publication and path protections unchanged.",
+    "stable_short_path_regression": "2 passed",
+    "new_installed_advice_regression": "3 passed on the unchanged PR product code",
+    "faults": [
+      "publication failure cleans pending file and registers no event",
+      "event failure rolls back registration; orphan file cannot authorize read/seal; exact replay can register it"
+    ]
+  },
+  "scope": "Existing bounded Candidate replacement, its read-only MCP projection binding, and test-only A/B fixture and regression changes.",
+  "installed_integration_correction": "Run projection now calls _candidate_replacement. Bind that read-only helper on OperationalReads; cover get_processing_run for old/new runs and get_source. No mutation method is exposed.",
+  "release_gates": "Final Head and Merge SHA each require installed replacement/resource/advice checks before activation. Final evidence is recorded in the PR and private release receipt.",
+  "real_business_operations": 0
+}

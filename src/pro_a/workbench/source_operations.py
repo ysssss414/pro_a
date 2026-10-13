@@ -507,7 +507,8 @@ class SourceOperations:
                community_event: Mapping[str, Any] | None = None,
                qualification_reason: str | None = None,
                qualification_intake: bool = False,
-               candidate_origin: Mapping[str, Any] | None = None) -> dict[str, Any]:
+               candidate_origin: Mapping[str, Any] | None = None,
+               candidate_replacement: Mapping[str, Any] | None = None) -> dict[str, Any]:
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", idempotency_key):
             raise SourceOperationError("INVALID_IDEMPOTENCY_KEY", 422)
         if len(reprocess_reason) > 1000 or reprocess_reason != reprocess_reason.strip():
@@ -532,6 +533,9 @@ class SourceOperations:
                 raise SourceOperationError(str(error), error.status) from None
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
                      if schema_version(connection) in ("9", "10", "11", "12") else None)
+            if candidate_replacement is not None:
+                self._validate_candidate_replacement(connection, source_id, candidate_origin,
+                                                     candidate_replacement, basis)
 
             def equivalent(row):
                 if self._candidate_origin(connection, row['processing_run_id']) != candidate_origin:
@@ -560,6 +564,8 @@ class SourceOperations:
                         or not equivalent(prior_key)
                         or prior_key["reprocess_reason"] != reprocess_reason):
                     raise SourceOperationError("IDEMPOTENCY_CONFLICT")
+                if self._candidate_replacement(connection, prior_key['processing_run_id']) != candidate_replacement:
+                    raise SourceOperationError('IDEMPOTENCY_CONFLICT')
                 if qualification_reason is not None:
                     bypass = connection.execute(
                         "SELECT event_json FROM source_processing_events WHERE processing_run_id=? "
@@ -573,6 +579,13 @@ class SourceOperations:
                             raise SourceOperationError("IDEMPOTENCY_CONFLICT")
                 return {"run": self._project_run(connection, prior_key["processing_run_id"]),
                         "duplicate": True}
+            if candidate_replacement is not None:
+                replacements = connection.execute('''SELECT e.event_json FROM source_processing_events e
+                    JOIN source_processing_runs r ON r.processing_run_id=e.processing_run_id
+                    WHERE r.source_id=? AND e.event_type='CANDIDATE_REPLACEMENT_BOUND' ''', (source_id,))
+                if any(json.loads(r[0])['previous_run_id'] == candidate_replacement['previous_run_id']
+                       for r in replacements):
+                    raise SourceOperationError('CANDIDATE_REPLACEMENT_LIMIT_REACHED')
             rows = list(connection.execute(
                 "SELECT * FROM source_processing_runs WHERE source_id=? ORDER BY created_at DESC",
                 (source_id,),
@@ -625,6 +638,8 @@ class SourceOperations:
                 self._event(connection, run_id, "KNOWLEDGE_COMMUNITY_BUNDLE_BOUND", community_event)
             if candidate_origin is not None:
                 self._event(connection, run_id, 'CANDIDATE_ORIGIN_BOUND', candidate_origin)
+                if candidate_replacement is not None:
+                    self._event(connection, run_id, 'CANDIDATE_REPLACEMENT_BOUND', candidate_replacement)
             else:
                 from pro_a.candidate_origin import POLICY
                 self._event(connection, run_id, 'FAILURE_ISOLATION_POLICY_BOUND', {'version': POLICY})
@@ -653,6 +668,93 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_ORIGIN_DRIFT')
         return json.loads(rows[0][0]) if rows else None
 
+    @staticmethod
+    def _candidate_replacement(connection, run_id):
+        rows = list(connection.execute("SELECT event_json FROM source_processing_events WHERE processing_run_id=? "
+                                       "AND event_type='CANDIDATE_REPLACEMENT_BOUND'", (run_id,)))
+        if len(rows) > 1:
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_DRIFT')
+        return json.loads(rows[0][0]) if rows else None
+
+    def _validate_candidate_replacement(self, connection, source_id, origin, replacement, basis):
+        if (set(replacement) != {'previous_run_id', 'reason', 'failure_kind'}
+                or replacement['failure_kind'] != 'LOCAL_EXECUTION_GUARD_GETHOSTNAME_BLOCKED'
+                or not isinstance(replacement['reason'], str) or not replacement['reason'].strip()):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_CONFIRMATION_REQUIRED', 422)
+        previous_id = replacement['previous_run_id']
+        row = connection.execute('SELECT * FROM source_processing_runs WHERE processing_run_id=?',
+                                 (previous_id,)).fetchone()
+        if (row is None or row['source_id'] != source_id or origin is None
+                or self._candidate_origin(connection, previous_id) != origin):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_ORIGIN_MISMATCH')
+        if self._candidate_replacement(connection, previous_id) is not None:
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_LIMIT_REACHED')
+        if (row['state'] not in ('FAILED', 'BLOCKED') or not row['ended_at']
+                or row['manual_recovery_required'] or row['stage'] != 'ORCHESTRATION'
+                or row['error_code'] != 'SOURCE_ORCHESTRATION_BLOCKED'):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_FAILURE_NOT_ELIGIBLE')
+        if (row['packet_id'] or row['packet_artifact_id']
+                or connection.execute('SELECT 1 FROM domain_packet_bindings WHERE processing_run_id=?',
+                                      (previous_id,)).fetchone()):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_PACKET_EXISTS')
+        if any(connection.execute('SELECT 1 FROM ' + table + ' WHERE processing_run_id=?',
+                                  (previous_id,)).fetchone()
+               for table in ('source_processing_jobs', 'source_cloud_inputs')):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_EXECUTION_ALREADY_STARTED')
+        from .extraction_retry import installed
+        if installed(connection) and connection.execute(
+                'SELECT 1 FROM extraction_retries WHERE processing_run_id=?', (previous_id,)).fetchone():
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_EXECUTION_ALREADY_STARTED')
+        context = Domains(self.config).read(previous_id, connection=connection)
+        if (not context or basis is None or
+                {k: v for k, v in context['basis'].items() if k != 'runtime'} !=
+                {k: v for k, v in basis.items() if k != 'runtime'}):
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_CONTEXT_DRIFT')
+        # Only the independently confirmed, pre-Semantic operator guard failure.
+        from pro_a.phase4_orchestration import _inventory
+        from .candidate_inputs import CandidateInputs
+        expected_input = {'documents': [CandidateInputs(self).read(ref) for ref in origin['references']],
+                          'excluded_keys': origin['excluded_keys']}
+        try:
+            root = self._native_root(row)
+            def read(relative):
+                return json.loads((root / relative).read_text(encoding='utf-8'))
+            identity, manifest = read('execution_identity.json'), read('execution_manifest.json')
+            engine = read('engine/run_manifest.json')
+            valid = (root.name == identity['execution_id'] == manifest['execution_id'] == row['native_execution_id']
+                and canonical_sha256(identity) == read('commits/000000.json')['identity_sha256']
+                and manifest == read(f"commits/{manifest['sequence']:06}.json")
+                and len(list((root / 'commits').iterdir())) == manifest['sequence'] + 1
+                and manifest['inventory'] == _inventory(root)
+                and identity['mode'] == 'DURABLE_CANDIDATE_INPUT'
+                and read('inputs/candidates.json') == expected_input
+                and sha256_file(root / 'inputs/candidates.json') == identity['candidate_origin']['sha256']
+                and identity['source_sha256'] == basis['source_sha256']
+                and sha256_file(root / 'engine' / engine['source']['frozen_relative_path']) == basis['source_sha256']
+                and manifest['state'] == 'FAILED' and manifest['last_successful_state'] == 'SOURCE_READY'
+                and manifest['code'] == 'RuntimeError:NETWORK_FORBIDDEN_DURING_INPUT_FREEZE'
+                and manifest['production_write_count'] == 0
+                and engine['stage_status'] == 'EXTRACTION_FAILED'
+                and engine['completed_stages'] == ['SOURCE_FROZEN']
+                and engine['last_error'] == {'type': 'RuntimeError', 'message': 'NETWORK_FORBIDDEN_DURING_INPUT_FREEZE'}
+                and not (root / 'review').exists())
+        except (OSError, ValueError, KeyError, TypeError):
+            valid = False
+        if not valid:
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_NATIVE_FAILURE_UNVERIFIED')
+
+    def replace_candidates(self, run_id, *, idempotency_key, reason, confirm_local_failure):
+        if confirm_local_failure is not True or not isinstance(reason, str) or not reason.strip():
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_CONFIRMATION_REQUIRED', 422)
+        with self.store.connect() as connection:
+            origin = self._candidate_origin(connection, run_id)
+        if origin is None:
+            raise SourceOperationError('CANDIDATE_REPLACEMENT_ORIGIN_REQUIRED')
+        replacement = {'previous_run_id': run_id, 'reason': reason,
+                       'failure_kind': 'LOCAL_EXECUTION_GUARD_GETHOSTNAME_BLOCKED'}
+        return self.start_candidates(origin['references'], idempotency_key=idempotency_key,
+                                     _replacement=replacement)
+
     def prepare_candidates(self, run_id, *, idempotency_key):
         """Ordinary Workbench action: review complete durable responses as one batch."""
         from .candidate_inputs import CandidateInputs
@@ -676,7 +778,7 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_NO_COMPLETE_RESPONSES')
         return self.start_candidates(references, idempotency_key=idempotency_key)
 
-    def start_candidates(self, references, *, idempotency_key):
+    def start_candidates(self, references, *, idempotency_key, _replacement=None):
         from .candidate_inputs import CandidateInputs
         from pro_a.candidate_origin import VERSION, semantic_projection
         documents = [CandidateInputs(self).read(ref) for ref in references]
@@ -723,6 +825,8 @@ class SourceOperations:
                 elif key in rejected:
                     excluded.append(key)
         if len(excluded) == len(analysis.claims):
+            if _replacement is not None:
+                raise SourceOperationError('CANDIDATE_REPLACEMENT_ORIGIN_MISMATCH')
             return {'status': 'ZERO_INCREMENT', 'reason': ('NO_NEW_CANDIDATES_AFTER_SEALED_REVIEW'
                     if set(excluded) & rejected else 'ALL_EXACT_CANDIDATES_ALREADY_ADMITTED'),
                     'rejected_count': len(set(excluded) & rejected),
@@ -738,7 +842,8 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_SOURCE_CONTEXT_CONFLICT')
         return self._start(source_id, idempotency_key=idempotency_key, candidate_origin=origin,
             company_material_intent={k: intents[0][k] for k in FIELDS} if intents[0] else None,
-            community_event=communities[0])
+            community_event=communities[0], candidate_replacement=_replacement,
+            reprocess_reason=_replacement['reason'] if _replacement else '')
 
     @staticmethod
     def _community_bound(connection: sqlite3.Connection, run_id: str) -> dict[str, Any] | None:
@@ -1482,6 +1587,7 @@ class SourceOperations:
             "processing_run_id": row["processing_run_id"], "source_id": row["source_id"],
             "candidate_origin": ({k: v for k, v in origin.items() if k in ('version', 'identity')}
                                  if (origin := SourceOperations._candidate_origin(connection, run_id)) else None),
+            "candidate_replacement": self._candidate_replacement(connection, run_id),
             "company_material_intent": intent,
             "company_material_intent_sha256": intent["intent_sha256"] if intent else None,
             "community_provenance": community,
