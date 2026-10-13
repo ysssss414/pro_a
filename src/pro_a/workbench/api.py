@@ -87,6 +87,12 @@ class ObjectReference(BaseModel):
     object_id: str = Field(min_length=1, max_length=150)
 
 
+class BatchApproval(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    proposal_id: str = Field(pattern=r'^[0-9a-f]{64}$')
+    confirm: bool
+
+
 class ViewDraftSave(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     basis_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
@@ -397,6 +403,26 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):
         return reviews.mutate(artifact_id, 'decision', body.model_dump(), request.state.identity)
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/batches/{proposal_id}')
+    def review_batch(artifact_id: str, proposal_id: str):
+        from .review_batch import ReviewBatch
+        batches = ReviewBatch(config)
+        result = batches.read(artifact_id, proposal_id)
+        binding, state, context, _, opinions = batches.snapshot(artifact_id, result['proposal']['kind'])
+        result.update(binding_matches=binding == result['proposal']['binding'],
+                      current_revision=state['revision'], status=state['status'], advice=opinions)
+        if result['proposal']['kind'] == 'native':
+            result['evidence'] = [{k: r[k] for k in ('candidate_id', 'content_sha256', 'content')}
+                                  for group in ('claims', 'nodes', 'relations') for r in context[group]]
+        else:
+            result['evidence'] = {'claims': list(context['claims'].values()), 'nodes': list(context['nodes'].values())}
+        return result
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/batch-approval')
+    def approve_review_batch(artifact_id: str, body: BatchApproval, request: Request):
+        from .review_batch import ReviewBatch
+        return ReviewBatch(config).approve(artifact_id, body.proposal_id, request.state.identity, confirm=body.confirm)
 
     @app.post(PREFIX + '/reviews/{artifact_id}/undo')
     def undo(artifact_id: str, body: Undo, request: Request):

@@ -4,6 +4,7 @@ import type { PacketSummary, ReviewPacket } from "../api/workbench";
 import { ReviewItemDetail } from "./ReviewItemDetail";
 import { PersistentReview } from "./PersistentReview";
 import { AttributionReview } from "./AttributionReview";
+import { ReviewBatch } from "./ReviewBatch";
 import "./ReviewRoute.css";
 
 const show = (value: unknown) => value === undefined || value === null || value === "" ? "Not provided in native packet" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -111,6 +112,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
       <section aria-label="Native counts"><h2>Native item counts</h2><dl>
         {Object.entries(packet.summary).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}
       </dl></section>
+      <ReviewBatch key={packet.artifact_id + '-batch'} handle={packet.artifact_id} csrf={csrf} refresh={refresh} />
       <section aria-label="Exclusions"><h2>Excluded / non-reviewable</h2>
         <p>{packet.excluded_relation_inventory.count} excluded functional relations · review reopened: {String(packet.excluded_relation_inventory.relation_review_reopened)}</p>
         <p>{packet.excluded_relation_inventory.policy}</p>
