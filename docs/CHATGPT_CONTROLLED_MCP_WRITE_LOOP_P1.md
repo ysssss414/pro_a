@@ -117,8 +117,32 @@ The batch is deliberately a sequence of native transactions, not an atomic bulk
 transaction. An interruption preserves the approved proposal and committed
 operations. A new Workbench process requires login again and resumes only those
 exact operation IDs/requests using the durable original audit identity. Concurrent
-replays converge through native idempotency; conflicting edits or another plan
-cause revision/binding failure. An error never returns a successful batch receipt.
+replays converge through native idempotency. Approval ownership is checked under
+`BEGIN IMMEDIATE` for the same Artifact, stage (`native` / `attribution`), Basis
+and frozen Revision, before appending any approval. A different proposal fails
+with `BATCH_APPROVAL_CONFLICT`, including when the owner has not executed its
+first decision or is recovering partial progress. Native database state is refreshed
+through the existing `_state` / `state` validators while holding that write lock,
+so a stale pre-lock Revision cannot authorize a new plan. Full evidence/file
+snapshots stay outside the short approval transaction and bindings are rechecked
+before each native step. Native revision, audit and Seal semantics are unchanged.
+An error never returns a successful batch receipt.
+
+Existing v1 approval records are resolved through their immutable prepared
+proposals without adding fields or migrating Schema12. A single valid legacy
+approval remains resumable. If an earlier runtime already recorded competing
+approvals for the same key, both fail closed; this change does not choose a
+winner, delete history or automatically repair that state. Missing or corrupted
+prepared records require recovery. The uniqueness key is the frozen Revision,
+not a global lease across future revisions or direct native edits.
+
+`tests/test_review_batch_hardening.py` exercises both stages with separate Python
+processes synchronized before approval, actual `os._exit(73)` after approval
+commit and after one native decision, a competing proposal during recovery,
+concurrent identical retries, legacy approvals, and a native write immediately
+before acquiring the approval lock. The existing 12-candidate fixture remains
+part of qualification. These tests use disposable databases and no Provider or
+Canonical Apply calls.
 
 ## Qualification and limits
 

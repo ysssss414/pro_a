@@ -148,19 +148,37 @@ class ReviewBatch:
     def approve(self, handle, proposal_id, identity, *, confirm):
         require(identity.get('principal_type') == 'HUMAN_USER' and confirm is True, 'HUMAN_USER_REQUIRED')
         proposal = self.read(handle, proposal_id)['proposal']
-        binding, state, _, _, _ = self.snapshot(handle, proposal['kind'])
+        binding, _, context, _, _ = self.snapshot(handle, proposal['kind'])
         require(binding == proposal['binding'], 'BATCH_BINDING_DRIFT')
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
             _, approvals = self.events(connection, handle, 'MCP_BATCH_APPROVED')
+            _, prepared = self.events(connection, handle, 'MCP_BATCH_PREPARED')
+            # Resolve legacy v1 approvals through their immutable proposals; no new schema.
+            for approved in approvals:
+                matches = [p['proposal'] for p in prepared if p['proposal_id'] == approved['proposal_id']]
+                require(len(matches) == 1, 'RECOVERY_REQUIRED')
+                other = matches[0]
+                require(digest(other) == approved['proposal_id'] and other['binding']['artifact_id'] == handle, 'RECOVERY_REQUIRED')
+                same_basis = all(other[k] == proposal[k] for k in ('kind', 'basis_id', 'expected_revision'))
+                require(not same_basis or approved['proposal_id'] == proposal_id, 'BATCH_APPROVAL_CONFLICT')
             previous = [a for a in approvals if a['proposal_id'] == proposal_id]
             if previous:
                 approval = previous[0]
                 require(approval['actor'] == identity['actor'], 'APPROVAL_ACTOR_MISMATCH')
             else:
-                require(state['revision'] == proposal['expected_revision'] and state['status'] == 'DRAFT', 'REVISION_CONFLICT')
+                # Refresh native DB state under this lock, without holding it for file reads.
+                if proposal['kind'] == 'native':
+                    draft, _, _ = self.reviews._state(connection, handle, proposal['basis_id'])
+                    revision = draft['revision'] if draft else 0
+                    reviewer = draft['reviewer'] if draft else ''
+                    sealed = bool(draft and draft['status'] == 'SEALED')
+                else:
+                    events, _, reviewer, sidecar = Attribution(self.config).state(connection, handle, context)
+                    revision, sealed = len(events), bool(sidecar)
+                require(revision == proposal['expected_revision'] and not sealed, 'REVISION_CONFLICT')
                 approval = {'proposal_id': proposal_id, 'actor': identity['actor'],
-                            'session_id': identity['session_id'], 'reviewer': state['reviewer'] or identity['actor']}
+                            'session_id': identity['session_id'], 'reviewer': reviewer or identity['actor']}
                 self.record(connection, handle, 'MCP_BATCH_APPROVED', approval)
         # Each step has its own durable native transaction. Exact retries replay operations.
         service = self.reviews if proposal['kind'] == 'native' else Attribution(self.config)
