@@ -157,6 +157,11 @@ class CandidateProcessRequest(BaseModel):
     idempotency_key: str = Field(pattern=r'^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$')
 
 
+class CandidateReplacementRequest(CandidateProcessRequest):
+    reason: str = Field(min_length=1, max_length=1000)
+    confirm_local_failure: bool
+
+
 class CandidateRangeRevision(CandidateProcessRequest):
     input_identity: str = Field(pattern=r'^[0-9a-f]{64}$')
     observation_id: str = Field(pattern=r'^OBS_[0-9a-f]{64}$')
@@ -726,6 +731,10 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.post(PREFIX + '/source-operations/runs/{processing_run_id}/candidates')
     def prepare_candidates(processing_run_id: str, body: CandidateProcessRequest):
         return source_service().prepare_candidates(processing_run_id, **body.model_dump())
+
+    @app.post(PREFIX + '/source-operations/runs/{processing_run_id}/candidate-replacement')
+    def replace_candidates(processing_run_id: str, body: CandidateReplacementRequest):
+        return source_service().replace_candidates(processing_run_id, **body.model_dump())
 
     @app.get(PREFIX + '/source-operations/runs/{processing_run_id}/events')
     def source_processing_events(processing_run_id: str, cursor: str | None = None,

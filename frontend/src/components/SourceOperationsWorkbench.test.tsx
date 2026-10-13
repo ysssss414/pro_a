@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getSession } from "../api/workbench";
-import { getOperationalCapacity, getSourceOperation, listSourceOperations } from "../api/sourceOperations";
+import { getOperationalCapacity, getSourceOperation, listSourceOperations, replaceSourceCandidates, type SourceRun } from "../api/sourceOperations";
 import { SourceOperationsWorkbench } from "./SourceOperationsWorkbench";
 
 vi.mock("../api/workbench", async () => {
@@ -12,6 +12,7 @@ vi.mock("../api/workbench", async () => {
 vi.mock("../api/sourceOperations", () => ({
   listSourceOperations: vi.fn(), getSourceOperation: vi.fn(), uploadSource: vi.fn(),
   startSourceProcessing: vi.fn(), getOperationalCapacity: vi.fn(),
+  replaceSourceCandidates: vi.fn(),
 }));
 
 const source = {
@@ -140,5 +141,50 @@ describe("Source Operations product surface", () => {
     expect(await screen.findByText("Industry routing is intentionally deferred until the extracted evidence is reviewed.")).toBeInTheDocument();
     expect(screen.getByText("Shared Core")).toBeInTheDocument();
     expect(screen.getByText("Pending")).toBeInTheDocument();
+  });
+
+  const candidateRun: SourceRun = {
+    processing_run_id: "SOURCE_RUN_CANDIDATE", source_id: source.source_id,
+    source_sha256: source.source_sha256, state: "BLOCKED", stage: "ORCHESTRATION",
+    candidate_origin: { version: "source-candidate-set-v1", identity: "c".repeat(64) },
+    runtime_identity: {}, native_execution_id: "EXEC_SYNTHETIC",
+    native_checkpoint: { available: true, completed_stage: "SOURCE_READY" },
+    packet_id: null, packet_artifact_id: null, jobs: [],
+    error: { code: "SOURCE_ORCHESTRATION_BLOCKED", stage: "ORCHESTRATION", retry_safe: false,
+      manual_recovery_required: false, operator_action: "Inspect local failure." },
+    usage: { status: "UNKNOWN", input_tokens: null, output_tokens: null, total_tokens: null, attempts: 0 },
+    review: null, attribution: null, qualification: null, activation_receipt: null,
+    lineage: [], created_at: "2026-10-13", updated_at: "2026-10-13",
+  };
+
+  it("requires confirmation and a reason, and retains the request key after a failed response", async () => {
+    window.history.replaceState(null, "", "/source-operations/SRC_STAGE7");
+    vi.mocked(getSourceOperation).mockResolvedValue({ ...source, latest_run: candidateRun });
+    vi.mocked(replaceSourceCandidates).mockRejectedValueOnce(new Error("Response unavailable"))
+      .mockResolvedValueOnce({ run: candidateRun, duplicate: true });
+    render(<SourceOperationsWorkbench />);
+    const button = await screen.findByRole("button", { name: "Create one candidate replacement" });
+    expect(button).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Replacement reason"), { target: { value: "Local guard corrected." } });
+    expect(button).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(button);
+    expect(await screen.findByText("Response unavailable")).toBeInTheDocument();
+    fireEvent.click(button);
+    await waitFor(() => expect(replaceSourceCandidates).toHaveBeenCalledTimes(2));
+    const calls = vi.mocked(replaceSourceCandidates).mock.calls;
+    expect(calls[0][0]).toBe(candidateRun.processing_run_id);
+    expect(calls[0][1]).toEqual(calls[1][1]);
+    expect(calls[0][1]).toMatchObject({ reason: "Local guard corrected.", confirm_local_failure: true });
+    expect(await screen.findByText("Existing replacement returned; no new run was created.")).toBeInTheDocument();
+  });
+
+  it("does not offer another replacement for a replacement run", async () => {
+    window.history.replaceState(null, "", "/source-operations/SRC_STAGE7");
+    vi.mocked(getSourceOperation).mockResolvedValue({ ...source, latest_run: { ...candidateRun,
+      candidate_replacement: { previous_run_id: "SOURCE_RUN_PREVIOUS", reason: "Local failure.", failure_kind: "LOCAL_EXECUTION_GUARD_GETHOSTNAME_BLOCKED" } } });
+    render(<SourceOperationsWorkbench />);
+    expect(await screen.findByText("SOURCE_RUN_PREVIOUS")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Create one candidate replacement" })).not.toBeInTheDocument();
   });
 });
