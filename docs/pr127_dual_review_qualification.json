@@ -20,7 +20,8 @@
       "event failure rolls back registration; orphan file cannot authorize read/seal; exact replay can register it"
     ]
   },
-  "scope": "Existing bounded Candidate replacement plus test-only A/B fixture and regression changes.",
+  "scope": "Existing bounded Candidate replacement, its read-only MCP projection binding, and test-only A/B fixture and regression changes.",
+  "installed_integration_correction": "Run projection now calls _candidate_replacement. Bind that read-only helper on OperationalReads; cover get_processing_run for old/new runs and get_source. No mutation method is exposed.",
   "release_gates": "Final Head and Merge SHA each require installed replacement/resource/advice checks before activation. Final evidence is recorded in the PR and private release receipt.",
   "real_business_operations": 0
 }

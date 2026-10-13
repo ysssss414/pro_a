@@ -123,7 +123,12 @@ def test_replacement_preserves_history_replays_and_reaches_registered_packet(blo
     review = ReviewWorkbench(value['config']).read(child['packet_artifact_id'])
     assert review['review']['status'] != 'SEALED'
     from pro_a.mcp.service import ReadService
-    assert ReadService(value['config']).get_review_context(child['packet_artifact_id'])
+    reads = ReadService(value['config'])
+    assert reads.get_review_context(child['packet_artifact_id'])
+    assert reads.get_processing_run(new_id).processing_run_id == new_id
+    assert reads.get_processing_run(value['child_id']).state == 'BLOCKED'
+    assert reads.get_source(value['source']['source_id']).latest_run.processing_run_id == new_id
+    assert not hasattr(reads.operations, 'replace_candidates')
     assert replacement(value)['run']['processing_run_id'] == new_id
     with pytest.raises(SourceOperationError, match='CANDIDATE_REPLACEMENT_LIMIT_REACHED'):
         replacement(value, idempotency_key='replacement-another-request-0001')
