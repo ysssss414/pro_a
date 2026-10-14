@@ -123,17 +123,13 @@ class Attribution:
         with self.store.connect() as connection:
             connection.execute('BEGIN')
             events, states, reviewer, sidecar = self.state(connection, handle, context)
-            package = connection.execute('SELECT body FROM operational_packages WHERE artifact_id=?', (handle,)).fetchone()
-            receipt = connection.execute('SELECT body FROM operational_receipts WHERE artifact_id=?', (handle,)).fetchone()
-        from pro_a.operational_qualification import package_projection
-        if receipt:
-            from pro_a.operational_qualification import reconcile_registered
-            reconcile_registered(self.config, handle, json.loads(receipt[0])['object_id'])
+        from pro_a.operational_qualification import registered_historical_read
+        history = registered_historical_read(self.config, handle)
         result = {'basis_id': context['basis_id'], 'binding': context['binding'], 'revision': len(events), 'reviewer': reviewer,
                   'status': 'SEALED' if sidecar else 'DRAFT', 'claims': list(context['claims'].values()), 'nodes': list(context['nodes'].values()),
                   'decisions': states, 'audit': events, 'roles': ROLE_SEMANTICS, 'required': len(context['claims']), 'completed': len(states),
-                  'sidecar': sidecar, 'qualification': package_projection(json.loads(package[0])) if package else None,
-                  'receipt': json.loads(receipt[0]) if receipt else None, 'production_authorized': False}
+                  'sidecar': sidecar, 'qualification': history['qualification'],
+                  'receipt': history['receipt'], 'production_authorized': False}
         require_safe_projection(result)
         return result
 

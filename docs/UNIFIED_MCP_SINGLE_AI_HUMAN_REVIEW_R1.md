@@ -201,3 +201,63 @@ this qualification are zero. The 15-candidate test uses fabricated evidence and
 synthetic model judgments with the specified three exact Node identities, not
 the real Tongfu statements. Live ChatGPT reconnection and real model-review
 quality remain post-release qualification steps.
+
+## Historical read compatibility repair (PR #129)
+
+A release audit found a gap in the original 165-test qualification: a historical
+Attribution with an already registered EXECUTED receipt failed to read after the
+runtime changed. The sealed Attribution itself was valid; its read path called
+`reconcile_registered` / `package_projection`, which reused the current-execution
+`verify_envelope` gate. The release was stopped; Stable was not changed.
+
+`registered_historical_read(config, artifact_id)` is now the explicit read-only
+entry. It accepts only an Artifact handle and loads the registered Envelope and
+Receipt itself. It verifies registration IDs, immutable hashes, adapter/contract,
+Native Seal, Attribution audit and bindings, source materialization and exact
+mutations. Registered receipts also require EXECUTED/COMMITTED, counts, touched
+keys, predicted diff, source bytes and the existing strict current post-state
+check. No caller-supplied runtime exemption is accepted. Original object bytes,
+Runtime fields, IDs and SHA values remain unchanged.
+
+Verified projections expose `historical_read_verified=true` and
+`executable_under_current_runtime=false`. A registered pending old Envelope is
+limited diagnostic history, never current execution eligibility. Corruption or
+binding drift fails closed. Native/Attribution HTTP reads, registered receipt
+verification and the MCP Shadow query use this route. Read verification creates
+no Grant, qualification, receipt registration or Canonical mutation.
+
+`verify_envelope`, `validate_package`, `qualify`, Operator registration, source
+preflight, execution and Operator reconciliation still require the current
+Runtime. The historical projection cannot be submitted as an executable Envelope.
+An old pending package requires the separately controlled requalification and
+Operator authorization process; this patch does not add an in-place replacement
+workflow. Existing strict post-state checks also still reject historical receipt
+verification if Canonical state has subsequently diverged. This patch does not
+promise a new historical snapshot/archive replay capability.
+
+### Private historical regression and HTTP preflight
+
+`tests/test_historical_operational_read.py` is an opt-in regression using a private
+isolated snapshot. Set `PRO_A_HISTORICAL_SNAPSHOT` to the snapshot's `config.json`,
+whose knowledge/state/artifact paths must all be under its directory. Copy the
+registered dependencies and materialized source bytes without changing their
+contents; adjust only the copied Workbench path metadata. Never point this at
+production. The tests make further disposable copies, preserve the snapshot,
+exercise tampered objects and receipts, and prove that old execution requests
+fail before Canonical changes. Without the private snapshot, these tests skip;
+a release must explicitly supply it and report their results, not infer success
+from public tests alone. Private data is never committed with the test.
+
+Compare Prior Stable, the frozen original PR Wheel and the repaired installed
+Wheel on that same snapshot. Record object IDs/hashes and sanitized stack traces,
+not evidence text. Run a real HTTP server on an unused loopback port with an
+isolated ephemeral login token; verify Native, Attribution and registered receipt
+reads, then stop that server. Do not trust the formal launcher's saved RUNNING
+status: check the real process and listening ports independently.
+
+No merge or activation is authorized by this repair task. After qualification,
+update the existing Draft PR and stop. A later release must still check its exact
+Head, official Workbench HTTP availability, 14-tool read-only production startup
+and separately authorized write enablement. Rollback retains all historical and
+single-review records and the newer read verifier; never rewrite a Runtime SHA
+or relabel single-review records to make old software accept them.

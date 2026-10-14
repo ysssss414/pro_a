@@ -175,23 +175,15 @@ class WriteService:
 
     @controlled
     def get_shadow_qualification(self, artifact_id: ArtifactId, limit: int = 25, cursor: int = 0) -> dict[str, object]:
-        from pro_a.operational_qualification import package_projection, validate_package
-        from pro_a.workbench.attribution import Attribution
+        from pro_a.operational_qualification import registered_historical_read
         require(type(limit) is int and 1 <= limit <= 50 and type(cursor) is int and cursor >= 0, 'INVALID_ARGUMENT')
-        context, sidecar = Attribution(self.config).sealed_context(artifact_id)
-        with self.batches.store.connect() as connection:
-            row = connection.execute('SELECT body FROM operational_packages WHERE artifact_id=?', (artifact_id,)).fetchone()
-            receipt = connection.execute('SELECT body FROM operational_receipts WHERE artifact_id=?', (artifact_id,)).fetchone()
-        require(row is not None, 'SHADOW_QUALIFICATION_REQUIRED')
-        envelope = json.loads(row[0])
-        validate_package(envelope, context, sidecar)
-        projected = package_projection(envelope)
+        projected = registered_historical_read(self.config, artifact_id)['qualification']
+        require(projected is not None, 'SHADOW_QUALIFICATION_REQUIRED')
         # Shadow diagnostics contain schema-wide internals; expose only the verified diff.
         projected.pop('shadow_validation', None)
         changes = projected.pop('changes')
         from collections import Counter
         projected.update(changes=changes[cursor:cursor + limit], total_changes=len(changes),
                          next_cursor=cursor + limit if cursor + limit < len(changes) else None,
-                         insert_counts=dict(Counter(i['table'] for i in changes if i['action'] == 'INSERT')),
-                         operator_status='RECEIPT_REGISTERED_UNVERIFIED' if receipt else 'AWAITING_OPERATOR_ACTION')
+                         insert_counts=dict(Counter(i['table'] for i in changes if i['action'] == 'INSERT')))
         return projected

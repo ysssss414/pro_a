@@ -121,9 +121,17 @@ def predicted_diff(connection, mutations):
 
 
 def verify_envelope(envelope):
+    _verify_envelope_integrity(envelope)
+    require(envelope.get('runtime_identity') == runtime_identity(), 'RUNTIME_IDENTITY_MISMATCH')
+
+
+def _verify_envelope_integrity(envelope):
+    """Object integrity only; callers must establish registration or current execution eligibility."""
     verify(envelope, 'OPERATIONAL')
     require(envelope.get('adapter_version') == VERSION and envelope.get('contract_sha256') == CONTRACT_SHA, 'ADAPTER_VERSION_MISMATCH')
-    require(envelope.get('runtime_identity') == runtime_identity(), 'RUNTIME_IDENTITY_MISMATCH')
+    digest = envelope.get('runtime_identity')
+    require(isinstance(digest, str) and len(digest) == 64 and all(c in '0123456789abcdef' for c in digest),
+            'RUNTIME_IDENTITY_INVALID')
     require(envelope.get('baseline', {}).get('schema_version') in ('0.2.3', '0.2.4'), 'SCHEMA_MISMATCH')
     verify(envelope['attribution'], 'ATTRIBUTION')
     verify(envelope['predicted_diff'], 'DIFF')
