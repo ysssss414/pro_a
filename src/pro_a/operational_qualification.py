@@ -7,7 +7,8 @@ import hashlib
 import json
 
 from .operational_contract import (CONTRACT_SHA, VERSION, identity, predicted_diff, readonly,
-                                   require, runtime_identity, sealed, snapshot, verify, verify_envelope)
+                                   require, runtime_identity, sealed, snapshot, verify, verify_envelope,
+                                   _verify_envelope_integrity)
 from .phase3f_operational_handoff import FULL_OPERATIONAL_POLICY, build_handoff_core, validate_handoff_payload
 from .phase3f_review_completion import validate_completed_review_packet
 from .production_promotion import canonical_sha256
@@ -63,6 +64,10 @@ def adapter_mutations(core, sidecar):
 
 def validate_package(envelope, context, sidecar):
     verify_envelope(envelope)
+    _validate_package_binding(envelope, context, sidecar)
+
+
+def _validate_package_binding(envelope, context, sidecar):
     require(envelope['binding'] == context['binding'] and envelope['attribution'] == sidecar, 'ATTRIBUTION_BASIS_MISMATCH')
     require(envelope['source_sha256'] == context['packet']['source']['source_sha256'], 'SOURCE_MATERIALIZATION_MISMATCH')
     materialized_source(context)
@@ -122,6 +127,10 @@ def qualify(config, handle, expected_sidecar_id):
 
 def package_projection(envelope):
     verify_envelope(envelope)
+    return _package_projection(envelope)
+
+
+def _package_projection(envelope):
     diff = envelope['predicted_diff']
     changes = []
     for action, entries in (('INSERT', diff['inserts']), ('UNCHANGED', diff['unchanged'])):
@@ -140,16 +149,43 @@ def package_projection(envelope):
             'production_authorized': False}
 
 
-def reconcile_registered(config, handle, receipt_id):
-    """HTTP can verify only a receipt previously registered by the external operator."""
+def registered_historical_read(config, handle):
+    """Verify only stored history. This result never grants current-runtime execution."""
     service = Attribution(config)
-    context, sidecar = service.sealed_context(handle)
     with service.store.connect() as connection:
-        row = connection.execute('SELECT body FROM operational_receipts WHERE artifact_id=? AND object_id=?', (handle, receipt_id)).fetchone()
-        package = connection.execute('SELECT body FROM operational_packages WHERE artifact_id=?', (handle,)).fetchone()
-    require(row is not None and package is not None, 'RECEIPT_NOT_REGISTERED')
-    receipt, envelope = json.loads(row[0]), json.loads(package[0])
-    verify(receipt, 'EXECUTION'); validate_package(envelope, context, sidecar)
+        connection.execute('BEGIN')
+        package = connection.execute('SELECT object_id,body FROM operational_packages WHERE artifact_id=?', (handle,)).fetchone()
+        row = connection.execute('SELECT object_id,body FROM operational_receipts WHERE artifact_id=?', (handle,)).fetchone()
+    require(package is not None or row is None, 'PACKAGE_NOT_REGISTERED')
+    if package is None:
+        return {'qualification': None, 'receipt': None}
+    context, sidecar = service.sealed_context(handle)
+    envelope = json.loads(package['body'])
+    require(envelope['object_id'] == package['object_id'], 'ARTIFACT_IDENTITY_MISMATCH')
+    _verify_envelope_integrity(envelope)
+    _validate_package_binding(envelope, context, sidecar)
+    receipt = json.loads(row['body']) if row else None
+    if receipt is not None:
+        _verify_registered_receipt(config, receipt, row['object_id'], envelope, sidecar)
+    projected = _package_projection(envelope)
+    projected.update(historical_read_verified=True, executable_under_current_runtime=False,
+                     original_runtime_identity=envelope['runtime_identity'],
+                     operator_status='EXECUTED_RECEIPT_VERIFIED' if receipt else 'AWAITING_OPERATOR_ACTION',
+                     operator_action='Read-only registered history; current qualification and independent Operator authorization are required before any execution.')
+    return {'qualification': projected, 'receipt': receipt}
+
+
+def reconcile_registered(config, handle, receipt_id):
+    """Read-only verification of a previously registered execution receipt."""
+    result = registered_historical_read(config, handle)
+    receipt = result['receipt']
+    require(receipt is not None and receipt['object_id'] == receipt_id, 'RECEIPT_NOT_REGISTERED')
+    return {'status': 'VERIFIED', 'receipt': receipt, 'historical_read_verified': True,
+            'executable_under_current_runtime': False}
+
+
+def _verify_registered_receipt(config, receipt, receipt_id, envelope, sidecar):
+    verify(receipt, 'EXECUTION')
     require(receipt['object_id'] == receipt_id and receipt['envelope_id'] == envelope['object_id'] and receipt['adapter_version'] == VERSION and
             receipt['binding'] == envelope['binding'] and receipt['attribution_id'] == sidecar['object_id'] and
             receipt['baseline_sha256'] == envelope['baseline']['sha256'] and receipt['predicted_diff_id'] == envelope['predicted_diff']['object_id'] and
@@ -162,4 +198,3 @@ def reconcile_registered(config, handle, receipt_id):
         require(receipt['post_state_sha256'] == canonical_sha256(snapshot(connection)) == envelope['predicted_diff']['post_state_sha256'], 'RECOVERY_REQUIRED')
     materialized = checked_path(config.knowledge_db.parent / 'operational_sources' / envelope['source_sha256'])
     require(hashlib.sha256(materialized.read_bytes()).hexdigest() == receipt['source_sha256'] == envelope['source_sha256'], 'SOURCE_MATERIALIZATION_MISMATCH')
-    return {'status': 'VERIFIED', 'receipt': receipt}
