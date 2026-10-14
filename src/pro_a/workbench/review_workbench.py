@@ -159,9 +159,13 @@ class ReviewWorkbench:
             raise ReviewError('RECOVERY_REQUIRED') from None
         if required_advice(blank):
             from .advisory_review import validate_promotable
+            from .review_policy import ReviewPolicy
+            policy = ReviewPolicy(self).read(handle, connection=connection)
             opinions = decoded['completion_receipt'].get('candidate_advisories', {})
-            validate_promotable(completed, opinions)
+            validate_promotable(completed, opinions, policy)
             validation['candidate_advisories'] = opinions
+            if policy:
+                validation['review_policy'] = policy
         if decoded['completion_receipt'] != validation:
             raise ReviewError('RECOVERY_REQUIRED')
         return {'objects': [{key: row[key] for key in ('kind', 'object_id', 'sha256')} for row in objects],
@@ -346,9 +350,13 @@ class ReviewWorkbench:
                     raise ReviewError('VALIDATION_ERROR', status=422, native_code=error.code) from None
                 if required_advice(blank):
                     from .advisory_review import AdvisoryReview
+                    from .review_policy import ReviewPolicy
+                    policy = ReviewPolicy(self).read(handle, connection=connection)
                     validation['candidate_advisories'] = AdvisoryReview(self).read(blank, handle=handle)
                     from .advisory_review import validate_promotable
-                    validate_promotable(completed, validation['candidate_advisories'])
+                    validate_promotable(completed, validation['candidate_advisories'], policy)
+                    if policy:
+                        validation['review_policy'] = policy
                 response['objects'] = [self._publish(connection, handle, 'completed_packet', completed),
                                        self._publish(connection, handle, 'completion_receipt', validation)]
                 response['production_authorized'] = False
@@ -387,7 +395,8 @@ class ReviewWorkbench:
                 if required_advice(blank):
                     from .advisory_review import AdvisoryReview, validate_promotable
                     opinions = AdvisoryReview(self).read(blank, handle=handle)
-                    validate_promotable(completed, opinions)
+                    from .review_policy import ReviewPolicy
+                    validate_promotable(completed, opinions, ReviewPolicy(self).read(handle, connection=connection))
             except ReviewCompletionError as error:
                 raise ReviewError('VALIDATION_ERROR', status=422, native_code=error.code) from None
         return {'revision': revision, 'validation': validation, 'production_authorized': False}

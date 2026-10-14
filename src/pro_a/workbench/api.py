@@ -93,6 +93,13 @@ class BatchApproval(BaseModel):
     confirm: bool
 
 
+class ReviewPolicySelection(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    mode: str = Field(pattern=r'^(SINGLE_MODEL_HUMAN|DUAL_MODEL_HUMAN)$')
+    binding: dict[str, str]
+    confirm: bool
+
+
 class ViewDraftSave(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     basis_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
@@ -399,6 +406,18 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def submit_candidate_advice(artifact_id: str, body: CandidateAdviceRequest):
         from .advisory_review import AdvisoryReview
         return AdvisoryReview(reviews).submit(artifact_id, body.model_dump())
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/policy')
+    def review_policy(artifact_id: str):
+        from .review_policy import ReviewPolicy
+        policy = ReviewPolicy(reviews)
+        return {'policy': policy.read(artifact_id), 'binding': policy.context(artifact_id),
+                'legacy_mode': 'DUAL_MODEL_HUMAN', 'recommended_mode': 'SINGLE_MODEL_HUMAN'}
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/policy')
+    def select_review_policy(artifact_id: str, body: ReviewPolicySelection, request: Request):
+        from .review_policy import ReviewPolicy
+        return ReviewPolicy(reviews).select(artifact_id, body.mode, body.binding, request.state.identity, confirm=body.confirm)
 
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):

@@ -6,26 +6,34 @@ from pro_a.evidence_binding import identity
 from .bounded_extraction_persistence import canonical, write_once
 from .config import BoundaryError, checked_path
 from .review import require_safe_projection
+from .review_policy import ReviewPolicy, slots
 
 
 def required(packet):
     return any(row['content'].get('candidate_origin') for row in packet['claims'])
 
 
-def validate_opinion(packet, opinion):
+def validate_opinion(packet, opinion, policy=None):
     """Validate one submitted opinion; never creates another reviewer's record."""
     fields = {'version', 'slot', 'packet_sha256', 'context_sha256', 'reviewer_type',
               'reviewer_id', 'items', 'sha256'}
     if 'reused_advice' in opinion:
         fields.add('reused_advice')
+    if policy:
+        fields.add('review_policy_sha256')
     body = {k: v for k, v in opinion.items() if k != 'sha256'}
     if (set(opinion) != fields or opinion['sha256'] != identity(body)
-            or opinion['version'] != 'native-advice-v1' or opinion['slot'] not in ('A', 'B')
+            or opinion['version'] != ('native-advice-v2' if policy else 'native-advice-v1')
+            or opinion['slot'] not in slots(policy)
             or opinion['packet_sha256'] != packet['immutable_packet_sha256']
             or opinion['reviewer_type'] not in ('MODEL', 'HUMAN_REVIEWER')
             or not isinstance(opinion['reviewer_id'], str) or not opinion['reviewer_id'].strip()
             or not re.fullmatch('[0-9a-f]{64}', str(opinion['context_sha256']))):
         raise BoundaryError('ADVICE_BINDING_INVALID')
+    if policy and (opinion['review_policy_sha256'] != policy['sha256']
+                   or opinion['context_sha256'] != policy['binding']['context_sha256']
+                   or opinion['reviewer_type'] != 'MODEL'):
+        raise BoundaryError('ADVICE_POLICY_MISMATCH')
     ids = {row['candidate_id']: row['content_sha256']
            for group in ('claims', 'nodes', 'relations') for row in packet[group]}
     items = opinion['items']
@@ -50,22 +58,22 @@ def validate_opinion(packet, opinion):
     return opinion
 
 
-def validate(packet, opinions):
-    """Seal gate: both actually submitted slots, distinct identities, same context."""
-    if set(opinions) != {'A', 'B'}:
-        raise BoundaryError('DUAL_ADVICE_REQUIRED')
+def validate(packet, opinions, policy=None):
+    """Seal gate: real complete opinions required by the bound policy."""
+    if set(opinions) != set(slots(policy)):
+        raise BoundaryError('SINGLE_ADVICE_REQUIRED' if len(slots(policy)) == 1 else 'DUAL_ADVICE_REQUIRED')
     for slot, opinion in opinions.items():
-        validate_opinion(packet, opinion)
+        validate_opinion(packet, opinion, policy)
         if opinion['slot'] != slot:
             raise BoundaryError('ADVICE_SLOT_INVALID')
-    if (opinions['A']['reviewer_id'] == opinions['B']['reviewer_id']
+    if len(slots(policy)) == 2 and (opinions['A']['reviewer_id'] == opinions['B']['reviewer_id']
             or opinions['A']['context_sha256'] != opinions['B']['context_sha256']):
         raise BoundaryError('INDEPENDENT_SAME_CONTEXT_ADVICE_REQUIRED')
     return opinions
 
 
-def validate_promotable(completed, opinions):
-    validate(completed, opinions)
+def validate_promotable(completed, opinions, policy=None):
+    validate(completed, opinions, policy)
     for group in ('claims', 'nodes', 'relations'):
         for row in completed[group]:
             if row['human_input']['decision'] not in ('KEEP', 'CREATE', 'REUSE'):
@@ -90,12 +98,16 @@ class AdvisoryReview:
         from pro_a.mcp.service import ReadService
         from pro_a.mcp.review_context import basis
         packet, _, _, _ = self.reviews._context(handle)
+        policy = ReviewPolicy(self.reviews).read(handle)
         if not required(packet):
             raise BoundaryError('CANDIDATE_REVIEW_REQUIRED')
         context, _, _ = basis(ReadService(self.reviews.config), handle, 'blind', opinion.get('context_sha256'))
         if opinion.get('context_sha256') != context.context_sha256:
             raise BoundaryError('ADVICE_CONTEXT_CHANGED')
-        value = {**opinion, 'version': 'native-advice-v1', 'packet_sha256': packet['immutable_packet_sha256']}
+        value = {**opinion, 'version': 'native-advice-v2' if policy else 'native-advice-v1',
+                 'packet_sha256': packet['immutable_packet_sha256']}
+        if policy:
+            value['review_policy_sha256'] = policy['sha256']
         previous_handle = value.pop('reuse_from', None)
         if 'reused_advice' in value:
             raise BoundaryError('ADVICE_REUSE_PROOF_SERVER_OWNED')
@@ -112,7 +124,7 @@ class AdvisoryReview:
                     or previous_context.run.frozen_context.runtime_sha256 != context.run.frozen_context.runtime_sha256):
                 raise BoundaryError('ADVICE_REUSE_CONTEXT_CHANGED')
             prior = json.loads(self._path(previous, value['slot']).read_text(encoding='utf-8'))
-            validate_opinion(previous, prior)
+            validate_opinion(previous, prior, ReviewPolicy(self.reviews).read(previous_handle))
             self._registered(previous, prior)
             if prior['context_sha256'] != previous_context.context_sha256:
                 raise BoundaryError('ADVICE_REUSE_CONTEXT_CHANGED')
@@ -131,9 +143,11 @@ class AdvisoryReview:
                         'content_sha256': item['content_sha256']}
         value.pop('sha256', None)
         value['sha256'] = identity(value)
-        validate_opinion(packet, value)
+        validate_opinion(packet, value, policy)
         with self.reviews.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            if ReviewPolicy(self.reviews).read(handle, connection=connection) != policy:
+                raise BoundaryError('REVIEW_POLICY_BINDING_DRIFT')
             draft = connection.execute('SELECT status FROM review_drafts WHERE artifact_id=?', (handle,)).fetchone()
             if draft and draft[0] == 'SEALED':
                 raise BoundaryError('ALREADY_SEALED')
@@ -160,13 +174,19 @@ class AdvisoryReview:
             raise BoundaryError('ADVICE_REGISTERED_IDENTITY_MISMATCH')
 
     def read(self, packet, *, handle=None):
+        if handle is None:
+            with self.reviews.store.connect() as connection:
+                row = connection.execute('SELECT artifact_id FROM registered_packets WHERE packet_id=?',
+                                         (packet['packet_id'],)).fetchone()
+            handle = row[0] if row else None
+        policy = ReviewPolicy(self.reviews).read(handle) if handle else None
         opinions = {}
         for slot in ('A', 'B'):
             path = self._path(packet, slot)
             if path.is_file():
                 opinions[slot] = json.loads(path.read_text(encoding='utf-8'))
                 self._registered(packet, opinions[slot])
-        validate(packet, opinions)
+        validate(packet, opinions, policy)
         if handle is not None:
             from pro_a.mcp.service import ReadService
             from pro_a.mcp.review_context import basis

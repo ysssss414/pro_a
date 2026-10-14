@@ -11,6 +11,7 @@ from .config import BoundaryError
 from .review import require_safe_projection
 from .review_workbench import ReviewWorkbench, compose, validate_partial
 from .source_operations import SourceOperations
+from .review_policy import ReviewPolicy, slots
 
 
 def require(condition, code):
@@ -43,7 +44,9 @@ class ReviewBatch:
             matches = [v for v in records if v['slot'] == slot and v['opinion_sha256'] == opinion['sha256']]
             require(len(matches) == 1, 'REVIEW_EXECUTION_UNVERIFIED')
             pair[slot] = matches[0]
-        require(pair['A']['execution_id'] != pair['B']['execution_id'], 'INDEPENDENT_REVIEW_REQUIRED')
+        policy = ReviewPolicy(self.reviews).read(handle)
+        if len(slots(policy)) == 2:
+            require(pair['A']['execution_id'] != pair['B']['execution_id'], 'INDEPENDENT_REVIEW_REQUIRED')
         return pair
 
     def snapshot(self, handle, kind):
@@ -60,6 +63,9 @@ class ReviewBatch:
                    'context_sha256': context.context_sha256, 'review_basis_id': review_basis,
                    'advice_sha256': {s: o['sha256'] for s, o in opinions.items()},
                    'review_executions': provenance}
+        policy = ReviewPolicy(self.reviews).read(handle)
+        if policy:
+            binding['review_policy'] = policy
         if kind == 'native':
             state = self.reviews.read(handle)['review']
             return binding, state, packet, run, opinions
@@ -93,7 +99,7 @@ class ReviewBatch:
             validate_partial(context, states, 'Pending human approval')
             completed = compose(context, states, 'Pending human approval')
             validate_completed_review_packet(completed, run)
-            validate_promotable(completed, opinions)
+            validate_promotable(completed, opinions, actual.get('review_policy'))
         else:
             indexed = {i['claim_id']: i for i in items}
             require(len(indexed) == len(items) == len(context['claims']) and set(indexed) == set(context['claims']), 'BATCH_UNIVERSE_INVALID')

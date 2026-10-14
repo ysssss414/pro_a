@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pro_a.workbench.advisory_review import AdvisoryReview, validate_opinion
 from pro_a.workbench.config import BoundaryError
 from pro_a.workbench.review_batch import ReviewBatch, require
+from pro_a.workbench.review_policy import ReviewPolicy, slots
 from .errors import BridgeError, check_payload
 from .service import ArtifactId, ContextHash, Identifier
 
@@ -68,6 +69,7 @@ class WritePolicy(BaseModel):
     execution_id: str = Field(min_length=1, max_length=200)
     model: str = Field(min_length=1, max_length=200)
     isolation_attested_by_operator: bool = False
+    review_mode: Literal['SINGLE_MODEL_HUMAN', 'DUAL_MODEL_HUMAN'] = 'DUAL_MODEL_HUMAN'
 
 
 def controlled(fn):
@@ -95,7 +97,9 @@ def controlled(fn):
 class WriteService:
     def __init__(self, config, policy: WritePolicy):
         self.config, self.policy = config, policy
-        require(policy.enabled and policy.isolation_attested_by_operator and policy.artifact_ids, 'MCP_WRITE_DISABLED')
+        require(policy.enabled and policy.artifact_ids and
+                (policy.isolation_attested_by_operator or policy.review_mode == 'SINGLE_MODEL_HUMAN'), 'MCP_WRITE_DISABLED')
+        require(policy.review_mode != 'SINGLE_MODEL_HUMAN' or policy.slot == 'A', 'REVIEWER_BINDING_MISMATCH')
         config.validate()
         self.batches = ReviewBatch(config)
         with self.batches.store.connect() as connection:
@@ -112,6 +116,9 @@ class WriteService:
                                items: list[AdviceItem]) -> dict[str, object]:
         require(slot == self.policy.slot and reviewer_id == self.policy.reviewer_id, 'REVIEWER_BINDING_MISMATCH')
         require(0 < len(items) <= 100, 'ADVICE_UNIVERSE_INVALID')
+        review_policy = ReviewPolicy(self.batches.reviews).read(artifact_id)
+        mode = review_policy['mode'] if review_policy else 'DUAL_MODEL_HUMAN'
+        require(mode == self.policy.review_mode and slot in slots(review_policy), 'ADVICE_POLICY_MISMATCH')
         with self.batches.store.connect() as connection:
             _, executions = self.batches.events(connection, artifact_id, 'MCP_ADVICE_CONTEXT')
         require(all(p['slot'] == slot or p['execution_id'] != self.policy.execution_id for p in executions),
@@ -124,12 +131,13 @@ class WriteService:
         packet = self.batches.reviews._context(artifact_id)[0]
         # Read the durable opinion and its native registration, including a first A-only submission.
         persisted = json.loads(service._path(packet, slot).read_text(encoding='utf-8'))
-        validate_opinion(packet, persisted)
+        validate_opinion(packet, persisted, review_policy)
         service._registered(packet, persisted)
         require(persisted == value, 'ADVICE_REGISTERED_IDENTITY_MISMATCH')
         provenance = {'slot': slot, 'opinion_sha256': value['sha256'], 'reviewer_id': reviewer_id,
                       'execution_id': self.policy.execution_id, 'model': self.policy.model,
-                      'independence_evidence': 'OPERATOR_ATTESTED_SEPARATE_SESSION_NOT_PLATFORM_PROVEN'}
+                      'independence_evidence': ('SINGLE_MODEL_OPERATOR_CONFIGURED_NOT_PLATFORM_PROVEN'
+                          if mode == 'SINGLE_MODEL_HUMAN' else 'OPERATOR_ATTESTED_SEPARATE_SESSION_NOT_PLATFORM_PROVEN')}
         with self.batches.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
             _, existing = self.batches.events(connection, artifact_id, 'MCP_ADVICE_CONTEXT')

@@ -47,6 +47,10 @@ class Attribution:
                 intent = read_bound(connection, source_run[0])
             else:
                 intent = None
+            stored = connection.execute('SELECT body FROM attribution_objects WHERE artifact_id=?', (handle,)).fetchone()
+            prior_seal = json.loads(stored[0]) if stored else None
+            if prior_seal:
+                verify(prior_seal, 'ATTRIBUTION')
         blank, run, _ = self.reviews.artifacts.native(handle)
         bundle = json.loads(checked_path(run / 'evidence/evidence_bound_extraction_bundle.json').read_text(encoding='utf-8'))
         bundle_claims = {c['claim_id']: c for c in bundle['claims']}
@@ -82,7 +86,9 @@ class Attribution:
         binding = {'artifact_id': handle, 'packet_id': packet['packet_id'], 'review_id': review['review']['review_id'],
                    'sealed_objects': review['review']['sealed']['objects'], 'source': review['source'],
                    'claims': sorted(claims), 'nodes': sorted(nodes), 'schema_version': packet['production_baseline']['schema_version'],
-                   'runtime_identity': runtime_identity()}
+                   # A sealed human decision retains its creation runtime. Operational
+                   # envelopes still independently require the current runtime before Apply.
+                   'runtime_identity': prior_seal['binding']['runtime_identity'] if prior_seal else runtime_identity()}
         if intent:
             binding['company_material_intent_sha256'] = intent['intent_sha256']
         return {'binding': binding, 'basis_id': canonical_sha256(binding), 'packet': packet, 'blank': blank, 'run': run,
