@@ -130,10 +130,10 @@ def test_receipt_identity_and_poststate_must_match(case):
     envelope=package(case);eid=envelope['object_id'];op=case['operator'];op.register(eid,confirm=eid);receipt=op.execute(eid,confirm=eid)
     with pytest.raises(BoundaryError,match='RECEIPT_NOT_REGISTERED'): reconcile_registered(case['config'],case['handle'],receipt['object_id'])
     op.reconcile(eid)
-    assert reconcile_registered(case['config'],case['handle'],receipt['object_id'])['status']=='VERIFIED'
+    assert reconcile_registered(case['config'],case['handle'],receipt['object_id'])['status']=='HISTORICAL_EXECUTION_CHAIN_VERIFIED'
     with closing(sqlite3.connect(case['config'].knowledge_db)) as c,c:
         c.execute("UPDATE claims SET statement='changed after commit' WHERE claim_id=?",(CLAIM,))
-    with pytest.raises(BoundaryError,match='RECOVERY_REQUIRED'): reconcile_registered(case['config'],case['handle'],receipt['object_id'])
+    with pytest.raises(BoundaryError,match='HISTORICAL_CANONICAL_OBJECT_MISMATCH'): reconcile_registered(case['config'],case['handle'],receipt['object_id'])
 
 
 def test_actual_process_crash_after_commit_keeps_consumption(case,tmp_path):

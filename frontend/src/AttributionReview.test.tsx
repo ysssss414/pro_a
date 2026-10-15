@@ -12,6 +12,21 @@ const state: AttributionState = { basis_id: "b".repeat(64), revision: 0, reviewe
     { node_id: "NODE_REUSE", candidate_id: "CAND_REUSE", decision: "REUSE", content: { proposed_name: "Synthetic existing Node" } }],
   decisions: {}, roles: { subject: "Factual subject", context: "Context", related: "Explicit related role" }, audit: [], sidecar: null, qualification: null, receipt: null };
 beforeEach(() => { vi.resetAllMocks(); vi.mocked(getAttribution).mockResolvedValue(state); vi.mocked(mutateAttribution).mockResolvedValue({}); });
+it.each([
+  ["HISTORICAL_EXECUTION_CHAIN_VERIFIED", "Historical execution chain verified against the current Canonical state. This does not authorize execution."],
+  ["HISTORICAL_STATE_PROOF_INCOMPLETE", "Receipt integrity verified; evidence of subsequent Canonical state continuity is incomplete. This does not authorize execution."],
+])("shows the actual historical verification scope: %s", async (status, message) => {
+  vi.mocked(getAttribution).mockResolvedValue({ ...state, status: "SEALED", receipt: { object_id: "EXECUTION_SYNTHETIC", status: "EXECUTED", actual_mutation_counts: { claims: 1 } },
+    qualification: { object_id: "OPERATIONAL_SYNTHETIC", adapter_version: "phase42-operational-v2", status: "AWAITING_OPERATOR_ACTION", baseline_sha256: "a".repeat(64), diff_id: "DIFF_SYNTHETIC",
+      changes: [], tables_touched: [], shadow_validation: {}, operator_action: "External operator inspection required.", history_verification: { status, receipt_integrity: "HISTORICAL_RECEIPT_INTEGRITY_VERIFIED" } } });
+  vi.mocked(mutateAttribution).mockResolvedValue({ status });
+  await mount();
+  expect(screen.getByText(message)).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Verified external execution receipt" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Verify registered execution receipt" }));
+  await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(message));
+  expect(screen.queryByText("VERIFIED — registered execution receipt and canonical post-state match.")).toBeNull();
+});
 async function mount() { render(<AttributionReview handle="ART_SYNTHETIC" csrf="synthetic-csrf" />); await screen.findByRole("region", { name: "Claim attribution editor" }); }
 function choose(outcome: string) {
   fireEvent.change(screen.getByLabelText("Attribution reviewer"), { target: { value: "Synthetic Human" } });

@@ -5,6 +5,11 @@ import { WorkbenchError } from "../api/workbench";
 import { showNative } from "./ReviewItemDetail";
 
 type Props = { handle: string; csrf: string };
+function historyMessage(status: unknown) {
+  if (status === "HISTORICAL_EXECUTION_CHAIN_VERIFIED") return "Historical execution chain verified against the current Canonical state. This does not authorize execution.";
+  if (status === "HISTORICAL_STATE_PROOF_INCOMPLETE") return "Receipt integrity verified; evidence of subsequent Canonical state continuity is incomplete. This does not authorize execution.";
+  return "Registered receipt available. Historical state verification scope is unavailable.";
+}
 function AttributionEditor({ handle, csrf, state, claim, refresh }: Props & { state: AttributionState;
   claim: AttributionState["claims"][number]; refresh: () => Promise<void> }) {
   const saved = state.decisions[claim.candidate_id];
@@ -88,9 +93,9 @@ export function AttributionReview({ handle, csrf }: Props) {
       if (name === "seal" && !pendingSeal.current) pendingSeal.current = { basis_id: state.basis_id, expected_revision: state.revision,
         operation_id: crypto.randomUUID(), reviewer: state.reviewer || emptyReviewer, reason: sealReason, confirm: confirmed };
       const body = name === "seal" ? pendingSeal.current! : { object_id: name === "qualify" ? state.sidecar?.object_id : receiptId || state.receipt?.object_id };
-      await mutateAttribution(handle, name, body, csrf, current.signal);
+      const result = await mutateAttribution(handle, name, body, csrf, current.signal);
       await refresh(); pendingSeal.current = null;
-      setMessage(name === "reconcile" ? "VERIFIED — registered execution receipt and canonical post-state match." : name === "qualify" ? "Qualified — External Operator Action Required. Qualification has not changed canonical knowledge." : "Attribution sidecar sealed. Production promotion remains separate.");
+      setMessage(name === "reconcile" ? historyMessage(result.status) : name === "qualify" ? "Qualified — External Operator Action Required. Qualification has not changed canonical knowledge." : "Attribution sidecar sealed. Production promotion remains separate.");
     } catch (error) {
       if (error instanceof WorkbenchError && error.status < 500) pendingSeal.current = null;
       setMessage(error instanceof Error ? error.message : "Operation unavailable.");
@@ -122,7 +127,7 @@ export function AttributionReview({ handle, csrf }: Props) {
         <details><summary>Generic shadow qualification</summary><pre>{showNative(state.qualification.shadow_validation)}</pre></details>
         <label>Registered execution receipt ID <input value={receiptId || state.receipt?.object_id || ""} onChange={e => setReceiptId(e.target.value)} /></label>
         <button type="button" disabled={busy || !(receiptId || state.receipt)} onClick={() => void action("reconcile")}>Verify registered execution receipt</button>
-        {state.receipt && <><h3>Verified external execution receipt</h3><pre>{showNative(state.receipt)}</pre></>}
+        {state.receipt && <><h3>Registered external execution receipt</h3><p>{historyMessage(state.qualification.history_verification?.status)}</p><pre>{showNative(state.receipt)}</pre></>}
       </section>}
     </>}
     {message && <p role="status">{message}</p>}
