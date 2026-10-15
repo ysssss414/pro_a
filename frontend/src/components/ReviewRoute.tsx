@@ -6,6 +6,7 @@ import { PersistentReview } from "./PersistentReview";
 import { AttributionReview } from "./AttributionReview";
 import { ReviewBatch } from "./ReviewBatch";
 import { UnifiedReview } from "./UnifiedReview";
+import { CanonicalAdmission } from "./CanonicalAdmission";
 import "./ReviewRoute.css";
 
 const show = (value: unknown) => value === undefined || value === null || value === "" ? "Not provided in native packet" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -21,6 +22,8 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [unified, setUnified] = useState(false);
+  const [admissionEpoch, setAdmissionEpoch] = useState(0);
+  const sealed = useCallback(() => setAdmissionEpoch(n => n + 1), []);
   const controller = useRef<AbortController | null>(null);
 
   const load = useCallback(async (credential?: string, handle?: string) => {
@@ -115,7 +118,8 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
         {Object.entries(packet.summary).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}
       </dl></section>
       <button onClick={() => setUnified(!unified)}>{unified ? "返回旧版分离审核" : "进入统一人工审核"}</button>
-      {unified ? <UnifiedReview key={packet.artifact_id + '-unified'} handle={packet.artifact_id} csrf={csrf} /> : <ReviewBatch key={packet.artifact_id + '-batch'} handle={packet.artifact_id} csrf={csrf} refresh={refresh} />}
+      {unified ? <UnifiedReview key={packet.artifact_id + '-unified'} handle={packet.artifact_id} csrf={csrf} onSealed={sealed} /> : <ReviewBatch key={packet.artifact_id + '-batch'} handle={packet.artifact_id} csrf={csrf} refresh={refresh} />}
+      <CanonicalAdmission key={packet.artifact_id + '-admission-' + admissionEpoch} handle={packet.artifact_id} csrf={csrf} />
       <section aria-label="Exclusions"><h2>Excluded / non-reviewable</h2>
         <p>{packet.excluded_relation_inventory.count} excluded functional relations · review reopened: {String(packet.excluded_relation_inventory.relation_review_reopened)}</p>
         <p>{packet.excluded_relation_inventory.policy}</p>

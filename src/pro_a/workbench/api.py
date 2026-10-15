@@ -93,6 +93,12 @@ class BatchApproval(BaseModel):
     confirm: bool
 
 
+class AdmissionApproval(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    proposal_id: str = Field(pattern=r'^ADMISSION_[0-9a-f]{64}$')
+    confirm: bool
+
+
 class ReviewPolicySelection(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     mode: str = Field(pattern=r'^(SINGLE_MODEL_HUMAN|DUAL_MODEL_HUMAN)$')
@@ -478,6 +484,21 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     def unified_approve(artifact_id: str, body: BatchApproval, request: Request):
         from .unified_review import UnifiedReview
         return UnifiedReview(config).approve(artifact_id, body.proposal_id, request.state.identity, confirm=body.confirm, max_steps=1)
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/admission')
+    def admission_read(artifact_id: str):
+        from .canonical_admission import CanonicalAdmission
+        return CanonicalAdmission(config).read(artifact_id)
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/admission/prepare')
+    def admission_prepare(artifact_id: str):
+        from .canonical_admission import CanonicalAdmission
+        return CanonicalAdmission(config).prepare(artifact_id)
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/admission/approval')
+    def admission_approve(artifact_id: str, body: AdmissionApproval, request: Request):
+        from .canonical_admission import CanonicalAdmission
+        return CanonicalAdmission(config).approve(artifact_id, body.proposal_id, request.state.identity, confirm=body.confirm)
 
     @app.get(PREFIX + '/reviews/{artifact_id}/batches/{proposal_id}')
     def review_batch(artifact_id: str, proposal_id: str):

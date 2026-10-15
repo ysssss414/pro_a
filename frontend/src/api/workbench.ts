@@ -55,6 +55,20 @@ export type ReviewOperation = { basis_id: string; expected_revision: number; ope
 export type DecisionOperation = ReviewOperation & { candidate_id: string; decision: string; target_node_id: string };
 
 const messages: Record<string, string> = {
+  P1_APPROVAL_REQUIRED: "先完成 P1 统一人工审核；历史独立审核记录保留原有只读回执。",
+  P1_COMPLETION_REQUIRED: "第一轮人工审核尚未完成两个 Seal，请先恢复原方案。",
+  P2_HUMAN_APPROVAL_REQUIRED: "缺少对精确入库计划的第二次人工批准，禁止注册 Grant。",
+  UNPRIVILEGED_PROCESS_REQUIRED: "Web 未运行在已验证的操作系统权限隔离环境中，正式入库批准已禁用。",
+  WINDOWS_INTEGRITY_BOUNDARY_REQUIRED: "当前平台尚未配置 P2 操作系统权限隔离，正式入库批准已禁用。",
+  CANONICAL_WRITE_BOUNDARY_MISSING: "Web 仍可能写入 Canonical 或执行代码，正式入库批准已禁用。",
+  BOUNDARY_ACCESS_CHECK_FAILED: "无法验证操作系统写入隔离，请由 Operator 检查部署权限。",
+  ADMISSION_RUNTIME_MISMATCH: "入库计划绑定的 Runtime 已变化，不能使用原批准继续执行。",
+  ADMISSION_PLAN_MISMATCH: "提交的 Plan SHA 与冻结计划不一致，未记录批准。",
+  ADMISSION_PLAN_CONFLICT: "已有不同的冻结入库计划，不得静默替换。",
+  ADMISSION_APPROVAL_CONFLICT: "已有另一份入库批准，请读取原批准和回执。",
+  APPROVAL_ACTOR_MISMATCH: "当前登录身份与原批准人不一致。",
+  TARGET_IDENTITY_MISMATCH: "Canonical 数据库文件身份已变化，禁止执行。",
+  OTHER_EXECUTION_RECOVERY_REQUIRED: "存在尚未完成的 Operator 执行；必须先恢复原任务。",
   UNIFIED_APPROVAL_LOCKED: "已有完整方案获批。只能恢复原方案，不能插入新的审核决定。",
   BATCH_APPROVAL_CONFLICT: "另一个审核方案已获批准；请读取并恢复原批准方案。",
   BATCH_BINDING_DRIFT: "Packet、Context、AI Advice 或依赖集合已变化，禁止执行当前方案。",

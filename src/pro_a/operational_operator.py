@@ -116,6 +116,8 @@ class Operator:
             row = connection.execute('SELECT artifact_id,body FROM operational_packages WHERE object_id=?', (envelope_id,)).fetchone()
         require(row is not None, 'PACKAGE_NOT_REGISTERED')
         artifact_id, envelope = row[0], json.loads(row[1])
+        from .workbench.canonical_admission import require_p2_if_unified
+        require_p2_if_unified(self.config.workbench, artifact_id, envelope_id)
         context, sidecar = Attribution(self.config.workbench).sealed_context(artifact_id)
         validate_package(envelope, context, sidecar)
         require(envelope['object_id'] == envelope_id, 'ARTIFACT_IDENTITY_MISMATCH')
@@ -164,6 +166,8 @@ class Operator:
                 require(grant is not None, 'GRANT_NOT_REGISTERED')
                 require(grant['status'] == 'READY', 'ALREADY_CONSUMED')
                 envelope = json.loads(grant['body']); verify_envelope(envelope)
+                from .workbench.canonical_admission import require_p2_if_unified
+                require_p2_if_unified(self.config.workbench, grant['artifact_id'], envelope_id)
                 info = target.stat()
                 require(grant['target_file_id'] == encode([info.st_dev, info.st_ino]), 'TARGET_IDENTITY_MISMATCH')
                 # The reservation lock holds the baseline stable while reads use a separate RO handle.

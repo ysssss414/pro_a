@@ -119,10 +119,10 @@ export function AttributionReview({ handle, csrf }: Props) {
         <label><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} /> I confirm immutable attribution sealing.</label>
         <button type="button" disabled={busy || !confirmed || !sealReason.trim() || !(state.reviewer || emptyReviewer).trim() || state.completed !== state.required} onClick={() => void action("seal")}>Seal attribution sidecar</button>
       </section>}
-      {state.sidecar && <><p>Attribution sidecar: {state.sidecar.object_id}</p><button type="button" disabled={busy} onClick={() => void action("qualify")}>Run shadow qualification</button></>}
-      {state.qualification && <section aria-label="Qualified operational handoff"><h3>Qualified — External Operator Action Required</h3>
+      {state.sidecar && <><p>Attribution sidecar: {state.sidecar.object_id}</p>{!state.receipt && <button type="button" disabled={busy} onClick={() => void action("qualify")}>Run shadow qualification</button>}</>}
+      {state.qualification && <section aria-label="Qualified operational handoff"><h3>{state.receipt ? "Execution receipt registered — historical verification" : "Qualified — External Operator Action Required"}</h3>
         <p>{state.qualification.adapter_version} · {state.qualification.object_id}</p><p>Baseline SHA-256: {state.qualification.baseline_sha256}</p>
-        <p>{state.qualification.operator_action}</p><p>Private Source metadata values are withheld here and bound by hashes; the external operator must inspect complete canonical rows before authorization.</p>
+        {!state.receipt && <p>{state.qualification.operator_action}</p>}<p>Private Source metadata values are withheld here and bound by hashes; the external operator must inspect complete canonical rows before authorization.</p>
         <details open><summary>Exact predicted changes · {state.qualification.diff_id}</summary><pre>{showNative(state.qualification.changes)}</pre></details>
         <details><summary>Generic shadow qualification</summary><pre>{showNative(state.qualification.shadow_validation)}</pre></details>
         <label>Registered execution receipt ID <input value={receiptId || state.receipt?.object_id || ""} onChange={e => setReceiptId(e.target.value)} /></label>

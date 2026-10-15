@@ -14,7 +14,7 @@ type Preview = { binding: Record<string, unknown>; revision: number; universe: U
 type Proposal = { proposal_id: string; approved: boolean; status: string; result: unknown; progress?: { stage: string; completed_steps: number; total_steps: number };
   proposal: { native_items: Native[]; attribution_items: Attribution[]; reason: string; universe: Universe; binding: Record<string, unknown>; expected_revision: number; universe_sha256: string } };
 
-export function UnifiedReview({ handle, csrf }: { handle: string; csrf: string }) {
+export function UnifiedReview({ handle, csrf, onSealed }: { handle: string; csrf: string; onSealed?: () => void }) {
   const [context, setContext] = useState<Context | null>(null);
   const [native, setNative] = useState<Native[]>([]);
   const [attrs, setAttrs] = useState<Attribution[]>([]);
@@ -25,6 +25,7 @@ export function UnifiedReview({ handle, csrf }: { handle: string; csrf: string }
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => { if (frozen?.status === "SEALED") onSealed?.(); }, [frozen?.status, onSealed]);
   const base = `/reviews/${encodeURIComponent(handle)}/unified`;
   const call = <T,>(suffix: string, body?: unknown) => request<T>(base + suffix, new AbortController().signal, body === undefined ? {} : {
     method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf }, body: JSON.stringify(body),
@@ -160,7 +161,7 @@ export function UnifiedReview({ handle, csrf }: { handle: string; csrf: string }
         </tr>; })}
       </tbody></table>
       <details><summary>完整冻结身份、AI 绑定与执行计划</summary><pre>{JSON.stringify(frozen.proposal, null, 2)}</pre></details>
-      {frozen.status === "SEALED" ? <><p role="status">一次人工批准已完成 Native Seal 与 Attribution Seal；Canonical 未变。</p><pre>{JSON.stringify(frozen.result, null, 2)}</pre></> : <>
+      {frozen.status === "SEALED" ? <><p role="status">一次人工批准已完成 Native Seal 与 Attribution Seal；该审核步骤不写入 Canonical。</p><pre>{JSON.stringify(frozen.result, null, 2)}</pre></> : <>
         {!frozen.approved && <label><input type="checkbox" checked={confirmed} disabled={busy} onChange={e => setConfirmed(e.target.checked)} />我已核对完整证据、AI 意见、Native 与 Attribution 决定，一次批准此完整方案及两阶段 Seal。</label>}
         <button disabled={busy || (!frozen.approved && !confirmed)} onClick={() => void approve()}>{frozen.approved ? "恢复同一已批准方案" : "一次批准 Native + Attribution"}</button>
       </>}
