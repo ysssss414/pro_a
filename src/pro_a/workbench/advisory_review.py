@@ -95,8 +95,8 @@ class AdvisoryReview:
                             packet['immutable_packet_sha256'] / (slot + '.json'), missing=True)
 
     def submit(self, handle, opinion):
-        from pro_a.mcp.service import ReadService
-        from pro_a.mcp.review_context import basis
+        from pro_a.read_model.service import ReadService
+        from pro_a.read_model.review_context import basis
         packet, _, _, _ = self.reviews._context(handle)
         policy = ReviewPolicy(self.reviews).read(handle)
         if not required(packet):
@@ -116,7 +116,7 @@ class AdvisoryReview:
             if any(previous[k] != packet[k] for k in ('source', 'production_baseline')):
                 raise BoundaryError('ADVICE_REUSE_CONTEXT_CHANGED')
             previous_context, _, _ = basis(ReadService(self.reviews.config), previous_handle, 'blind', None)
-            from pro_a.mcp.reads import DomainReads
+            from pro_a.read_model.reads import DomainReads
             domains = DomainReads(self.reviews.config)
             old_scope = domains.read(previous_context.run.processing_run_id)
             new_scope = domains.read(context.run.processing_run_id)
@@ -188,7 +188,7 @@ class AdvisoryReview:
                 self._registered(packet, opinions[slot])
         validate(packet, opinions, policy)
         if handle is not None:
-            from pro_a.mcp.service import ReadService
-            from pro_a.mcp.review_context import basis
+            from pro_a.read_model.service import ReadService
+            from pro_a.read_model.review_context import basis
             basis(ReadService(self.reviews.config), handle, 'blind', opinions['A']['context_sha256'])
         return opinions

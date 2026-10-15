@@ -50,8 +50,8 @@ class ReviewPolicy:
         return policy
 
     def context(self, handle):
-        from pro_a.mcp.review_context import basis
-        from pro_a.mcp.service import ReadService
+        from pro_a.read_model.review_context import basis
+        from pro_a.read_model.service import ReadService
         packet, _, dto, review_basis = self.reviews._context(handle)
         context, _, _ = basis(ReadService(self.reviews.config), handle, 'blind', None)
         return {'artifact_id': handle, 'packet_sha256': packet['immutable_packet_sha256'],

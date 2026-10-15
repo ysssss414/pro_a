@@ -1,28 +1,18 @@
 """Opt-in, artifact-scoped stdio advice/proposals; no human or Canonical authority."""
 from functools import wraps
-import json
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from pro_a.workbench.advisory_review import AdvisoryReview, validate_opinion
+from pro_a.review_engine import ReviewEngine, ReviewerConfig as WritePolicy, AdviceItem, plain
 from pro_a.workbench.config import BoundaryError
-from pro_a.workbench.review_batch import ReviewBatch, require
-from pro_a.workbench.review_policy import ReviewPolicy, slots
+from pro_a.workbench.review_batch import require
 from .errors import BridgeError, check_payload
 from .service import ArtifactId, ContextHash, Identifier
 
 
 WRITE_TOOLS = ('submit_reviewer_advice', 'prepare_human_review_batch', 'prepare_attribution_batch')
 EXTRA_READ_TOOLS = ('get_review_batch_context', 'get_shadow_qualification')
-
-
-class AdviceItem(BaseModel):
-    model_config = ConfigDict(extra='forbid', strict=True)
-    candidate_id: Identifier
-    content_sha256: ContextHash
-    judgment: Literal['SUPPORTED', 'UNSUPPORTED', 'UNCERTAIN']
-    reason: str = Field(min_length=1, max_length=8000)
 
 
 class HumanReviewItem(BaseModel):
@@ -50,28 +40,6 @@ class AttributionItem(BaseModel):
     links: list[AttributionLink] = Field(max_length=100)
 
 
-def plain(value):
-    if isinstance(value, BaseModel):
-        return value.model_dump(mode='json')
-    if isinstance(value, list):
-        return [plain(v) for v in value]
-    if isinstance(value, dict):
-        return {k: plain(v) for k, v in value.items()}
-    return value
-
-
-class WritePolicy(BaseModel):
-    model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
-    enabled: bool = False
-    artifact_ids: tuple[str, ...]
-    slot: Literal['A', 'B']
-    reviewer_id: str = Field(min_length=1, max_length=200)
-    execution_id: str = Field(min_length=1, max_length=200)
-    model: str = Field(min_length=1, max_length=200)
-    isolation_attested_by_operator: bool = False
-    review_mode: Literal['SINGLE_MODEL_HUMAN', 'DUAL_MODEL_HUMAN'] = 'DUAL_MODEL_HUMAN'
-
-
 def controlled(fn):
     @wraps(fn)
     def call(self, artifact_id, *args, **kwargs):
@@ -96,15 +64,8 @@ def controlled(fn):
 
 class WriteService:
     def __init__(self, config, policy: WritePolicy):
-        self.config, self.policy = config, policy
-        require(policy.enabled and policy.artifact_ids and
-                (policy.isolation_attested_by_operator or policy.review_mode == 'SINGLE_MODEL_HUMAN'), 'MCP_WRITE_DISABLED')
-        require(policy.review_mode != 'SINGLE_MODEL_HUMAN' or policy.slot == 'A', 'REVIEWER_BINDING_MISMATCH')
-        config.validate()
-        self.batches = ReviewBatch(config)
-        with self.batches.store.connect() as connection:
-            require(connection.execute("SELECT value FROM workbench_meta WHERE key='schema_version'").fetchone()[0] == '12', 'WORKBENCH_SCHEMA_REQUIRED')
-        check_payload(policy.model_dump(mode='json'))
+        self.engine = ReviewEngine(config, policy)
+        self.config, self.policy, self.batches = config, policy, self.engine.batches
 
     def guard(self, handle):
         require(self.policy.enabled and handle in self.policy.artifact_ids, 'MCP_WRITE_SCOPE_DENIED')
@@ -114,39 +75,7 @@ class WriteService:
     def submit_reviewer_advice(self, artifact_id: ArtifactId, slot: Literal['A', 'B'],
                                reviewer_id: Identifier, context_sha256: ContextHash,
                                items: list[AdviceItem]) -> dict[str, object]:
-        require(slot == self.policy.slot and reviewer_id == self.policy.reviewer_id, 'REVIEWER_BINDING_MISMATCH')
-        require(0 < len(items) <= 100, 'ADVICE_UNIVERSE_INVALID')
-        review_policy = ReviewPolicy(self.batches.reviews).read(artifact_id)
-        mode = review_policy['mode'] if review_policy else 'DUAL_MODEL_HUMAN'
-        require(mode == self.policy.review_mode and slot in slots(review_policy), 'ADVICE_POLICY_MISMATCH')
-        with self.batches.store.connect() as connection:
-            _, executions = self.batches.events(connection, artifact_id, 'MCP_ADVICE_CONTEXT')
-        require(all(p['slot'] == slot or p['execution_id'] != self.policy.execution_id for p in executions),
-                'INDEPENDENT_REVIEW_REQUIRED')
-        require(all(p['slot'] != slot or (p['execution_id'] == self.policy.execution_id and
-                    p['model'] == self.policy.model) for p in executions), 'REVIEW_EXECUTION_CONFLICT')
-        service = AdvisoryReview(self.batches.reviews)
-        value = service.submit(artifact_id, {'slot': slot, 'reviewer_type': 'MODEL',
-            'reviewer_id': reviewer_id, 'context_sha256': context_sha256, 'items': items})
-        packet = self.batches.reviews._context(artifact_id)[0]
-        # Read the durable opinion and its native registration, including a first A-only submission.
-        persisted = json.loads(service._path(packet, slot).read_text(encoding='utf-8'))
-        validate_opinion(packet, persisted, review_policy)
-        service._registered(packet, persisted)
-        require(persisted == value, 'ADVICE_REGISTERED_IDENTITY_MISMATCH')
-        provenance = {'slot': slot, 'opinion_sha256': value['sha256'], 'reviewer_id': reviewer_id,
-                      'execution_id': self.policy.execution_id, 'model': self.policy.model,
-                      'independence_evidence': ('SINGLE_MODEL_OPERATOR_CONFIGURED_NOT_PLATFORM_PROVEN'
-                          if mode == 'SINGLE_MODEL_HUMAN' else 'OPERATOR_ATTESTED_SEPARATE_SESSION_NOT_PLATFORM_PROVEN')}
-        with self.batches.store.connect(operator_write=True) as connection:
-            connection.execute('BEGIN IMMEDIATE')
-            _, existing = self.batches.events(connection, artifact_id, 'MCP_ADVICE_CONTEXT')
-            prior = [p for p in existing if p['slot'] == slot]
-            require(not prior or prior == [provenance], 'REVIEW_EXECUTION_CONFLICT')
-            if not prior:
-                require(all(p['execution_id'] != provenance['execution_id'] for p in existing), 'INDEPENDENT_REVIEW_REQUIRED')
-                self.batches.record(connection, artifact_id, 'MCP_ADVICE_CONTEXT', provenance)
-        return {'opinion': persisted, 'execution': provenance}
+        return self.engine.submit(artifact_id, slot, reviewer_id, context_sha256, items)
 
     @controlled
     def get_review_batch_context(self, artifact_id: ArtifactId, kind: Literal['native', 'attribution'] = 'native') -> dict[str, object]:
