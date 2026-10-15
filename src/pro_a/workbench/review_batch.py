@@ -75,6 +75,23 @@ class ReviewBatch:
         binding['attribution_binding'] = ctx['binding']
         return binding, state, ctx, run, opinions
 
+    def validate_native(self, context, run, opinions, policy, items):
+        rows = [r for group in ('claims', 'nodes', 'relations') for r in context[group]]
+        indexed = {i['candidate_id']: i for i in items}
+        require(len(indexed) == len(items) == len(rows) and set(indexed) == {r['candidate_id'] for r in rows}, 'BATCH_UNIVERSE_INVALID')
+        for row in rows:
+            item = indexed[row['candidate_id']]
+            require(set(item) == {'candidate_id', 'content_sha256', 'decision', 'reason', 'target_node_id'}, 'BATCH_ITEM_INVALID')
+            require(item['content_sha256'] == row['content_sha256'], 'CONTENT_DRIFT')
+            require(row['candidate_type'] == 'NODE' or item['target_node_id'] == '', 'BATCH_ITEM_INVALID')
+        items = [indexed[r['candidate_id']] for r in rows]
+        states = {i['candidate_id']: {**i, 'reviewer': 'Pending human approval'} for i in items}
+        validate_partial(context, states, 'Pending human approval')
+        completed = compose(context, states, 'Pending human approval')
+        validate_completed_review_packet(completed, run)
+        validate_promotable(completed, opinions, policy)
+        return items, completed
+
     def prepare(self, handle, kind, binding, expected_revision, items, reason):
         require(kind in ('native', 'attribution'), 'BATCH_KIND_INVALID')
         actual, state, context, run, opinions = self.snapshot(handle, kind)
@@ -86,20 +103,7 @@ class ReviewBatch:
         require_safe_projection({'items': items, 'reason': reason})
         # Validate before recording any proposal. The same native validators run again on approval.
         if kind == 'native':
-            rows = [r for group in ('claims', 'nodes', 'relations') for r in context[group]]
-            indexed = {i['candidate_id']: i for i in items}
-            require(len(indexed) == len(items) == len(rows) and set(indexed) == {r['candidate_id'] for r in rows}, 'BATCH_UNIVERSE_INVALID')
-            for row in rows:
-                item = indexed[row['candidate_id']]
-                require(set(item) == {'candidate_id', 'content_sha256', 'decision', 'reason', 'target_node_id'}, 'BATCH_ITEM_INVALID')
-                require(item['content_sha256'] == row['content_sha256'], 'CONTENT_DRIFT')
-                require(row['candidate_type'] == 'NODE' or item['target_node_id'] == '', 'BATCH_ITEM_INVALID')
-            items = [indexed[r['candidate_id']] for r in rows]
-            states = {i['candidate_id']: {**i, 'reviewer': 'Pending human approval'} for i in items}
-            validate_partial(context, states, 'Pending human approval')
-            completed = compose(context, states, 'Pending human approval')
-            validate_completed_review_packet(completed, run)
-            validate_promotable(completed, opinions, actual.get('review_policy'))
+            items, _ = self.validate_native(context, run, opinions, actual.get('review_policy'), items)
         else:
             indexed = {i['claim_id']: i for i in items}
             require(len(indexed) == len(items) == len(context['claims']) and set(indexed) == set(context['claims']), 'BATCH_UNIVERSE_INVALID')
@@ -158,6 +162,8 @@ class ReviewBatch:
         require(binding == proposal['binding'], 'BATCH_BINDING_DRIFT')
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .unified_review import records
+            require(not records(connection, handle, 'UNIFIED_REVIEW_APPROVED'), 'UNIFIED_APPROVAL_LOCKED')
             _, approvals = self.events(connection, handle, 'MCP_BATCH_APPROVED')
             _, prepared = self.events(connection, handle, 'MCP_BATCH_PREPARED')
             # Resolve legacy v1 approvals through their immutable proposals; no new schema.

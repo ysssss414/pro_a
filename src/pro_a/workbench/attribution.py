@@ -51,6 +51,19 @@ class Attribution:
             prior_seal = json.loads(stored[0]) if stored else None
             if prior_seal:
                 verify(prior_seal, 'ATTRIBUTION')
+        blank, run, bundle, claims, nodes = self.universe(handle, packet, intent)
+        binding = {'artifact_id': handle, 'packet_id': packet['packet_id'], 'review_id': review['review']['review_id'],
+                   'sealed_objects': review['review']['sealed']['objects'], 'source': review['source'],
+                   'claims': sorted(claims), 'nodes': sorted(nodes), 'schema_version': packet['production_baseline']['schema_version'],
+                   # A sealed human decision retains its creation runtime. Operational
+                   # envelopes still independently require the current runtime before Apply.
+                   'runtime_identity': prior_seal['binding']['runtime_identity'] if prior_seal else runtime_identity()}
+        if intent:
+            binding['company_material_intent_sha256'] = intent['intent_sha256']
+        return {'binding': binding, 'basis_id': canonical_sha256(binding), 'packet': packet, 'blank': blank, 'run': run,
+                'bundle': bundle, 'claims': claims, 'nodes': nodes, 'review': review}
+
+    def universe(self, handle, packet, intent):
         blank, run, _ = self.reviews.artifacts.native(handle)
         bundle = json.loads(checked_path(run / 'evidence/evidence_bound_extraction_bundle.json').read_text(encoding='utf-8'))
         bundle_claims = {c['claim_id']: c for c in bundle['claims']}
@@ -83,16 +96,7 @@ class Attribution:
                     'provenance': ['company_material_intent'],
                     'operator_routing_only': True,
                 }
-        binding = {'artifact_id': handle, 'packet_id': packet['packet_id'], 'review_id': review['review']['review_id'],
-                   'sealed_objects': review['review']['sealed']['objects'], 'source': review['source'],
-                   'claims': sorted(claims), 'nodes': sorted(nodes), 'schema_version': packet['production_baseline']['schema_version'],
-                   # A sealed human decision retains its creation runtime. Operational
-                   # envelopes still independently require the current runtime before Apply.
-                   'runtime_identity': prior_seal['binding']['runtime_identity'] if prior_seal else runtime_identity()}
-        if intent:
-            binding['company_material_intent_sha256'] = intent['intent_sha256']
-        return {'binding': binding, 'basis_id': canonical_sha256(binding), 'packet': packet, 'blank': blank, 'run': run,
-                'bundle': bundle, 'claims': claims, 'nodes': nodes, 'review': review}
+        return blank, run, bundle, claims, nodes
 
     def state(self, connection, handle, context):
         events, states, reviewer = [], {}, ''
@@ -145,6 +149,8 @@ class Attribution:
         fingerprint = canonical_sha256({'action': action, 'request': request, 'actor': identity['actor']})
         with self.store.connect(operator_write=True) as connection:
             connection.execute('PRAGMA synchronous=FULL'); connection.execute('BEGIN IMMEDIATE')
+            from .unified_review import guard_operation
+            guard_operation(connection, handle, 'attribution', action, request, identity)
             events, states, reviewer, sidecar = self.state(connection, handle, context)
             previous = connection.execute('SELECT * FROM attribution_events WHERE artifact_id=? AND operation_id=?', (handle, request['operation_id'])).fetchone()
             if previous:

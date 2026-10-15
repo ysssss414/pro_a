@@ -100,6 +100,37 @@ class ReviewPolicySelection(BaseModel):
     confirm: bool
 
 
+class UnifiedNativeItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    candidate_id: str = Field(min_length=1, max_length=200)
+    content_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    decision: str = Field(min_length=1, max_length=32)
+    reason: str = Field(min_length=1, max_length=8000)
+    target_node_id: str = Field(default='', max_length=200)
+
+
+class UnifiedAttributionItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    claim_id: str = Field(min_length=1, max_length=200)
+    content_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    outcome: str = Field(min_length=1, max_length=32)
+    scope: str = Field(max_length=8000)
+    links: list[AttributionLink] = Field(max_length=100)
+    reason: str = Field(min_length=1, max_length=8000)
+
+
+class UnifiedPreview(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True)
+    native_items: list[UnifiedNativeItem] = Field(max_length=100)
+
+
+class UnifiedProposal(UnifiedPreview):
+    binding: dict
+    expected_revision: int = Field(ge=0)
+    attribution_items: list[UnifiedAttributionItem] = Field(max_length=100)
+    reason: str = Field(min_length=1, max_length=8000)
+
+
 class ViewDraftSave(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     basis_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
@@ -422,6 +453,31 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
     @app.post(PREFIX + '/reviews/{artifact_id}/decisions')
     def decision(artifact_id: str, body: Decision, request: Request):
         return reviews.mutate(artifact_id, 'decision', body.model_dump(), request.state.identity)
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/unified')
+    def unified_context(artifact_id: str):
+        from .unified_review import UnifiedReview
+        return UnifiedReview(config).context(artifact_id)
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/unified/preview')
+    def unified_preview(artifact_id: str, body: UnifiedPreview):
+        from .unified_review import UnifiedReview
+        return UnifiedReview(config).preview(artifact_id, body.model_dump()['native_items'])
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/unified/proposals')
+    def unified_prepare(artifact_id: str, body: UnifiedProposal):
+        from .unified_review import UnifiedReview
+        return UnifiedReview(config).prepare(artifact_id, **body.model_dump())
+
+    @app.get(PREFIX + '/reviews/{artifact_id}/unified/proposals/{proposal_id}')
+    def unified_read(artifact_id: str, proposal_id: str):
+        from .unified_review import UnifiedReview
+        return UnifiedReview(config).read(artifact_id, proposal_id)
+
+    @app.post(PREFIX + '/reviews/{artifact_id}/unified/approval')
+    def unified_approve(artifact_id: str, body: BatchApproval, request: Request):
+        from .unified_review import UnifiedReview
+        return UnifiedReview(config).approve(artifact_id, body.proposal_id, request.state.identity, confirm=body.confirm, max_steps=1)
 
     @app.get(PREFIX + '/reviews/{artifact_id}/batches/{proposal_id}')
     def review_batch(artifact_id: str, proposal_id: str):

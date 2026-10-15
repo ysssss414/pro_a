@@ -22,4 +22,11 @@ body:has(.review-route) { overflow: auto; }
 .review-editor { padding: 12px; margin: 12px 0; background: #f3f7f5; border-left: 3px solid #175346; }
 .review-route button:disabled { cursor: default; opacity: .6; }
 .review-route li { margin-bottom: 12px; }
+.unified-review-grid { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.unified-review-grid nav button { display: block; width: 100%; text-align: left; overflow-wrap: anywhere; margin: 6px 0; }
+.unified-review-grid nav button[aria-pressed="true"] { background: #e5f3ee; border-color: #175346; }
+.unified-review-grid > nav, .unified-review-grid > div { max-height: 75vh; overflow: auto; min-width: 0; }
+.review-route table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.review-route th, .review-route td { text-align: left; vertical-align: top; border: 1px solid #d5dce3; padding: 10px; overflow-wrap: anywhere; }
+@media (max-width: 1000px) { .unified-review-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .review-items { grid-template-columns: 1fr; } .review-route { padding: 12px; } }

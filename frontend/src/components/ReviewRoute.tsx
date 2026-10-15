@@ -5,6 +5,7 @@ import { ReviewItemDetail } from "./ReviewItemDetail";
 import { PersistentReview } from "./PersistentReview";
 import { AttributionReview } from "./AttributionReview";
 import { ReviewBatch } from "./ReviewBatch";
+import { UnifiedReview } from "./UnifiedReview";
 import "./ReviewRoute.css";
 
 const show = (value: unknown) => value === undefined || value === null || value === "" ? "Not provided in native packet" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
@@ -19,6 +20,7 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
   const [selected, setSelected] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [unified, setUnified] = useState(false);
   const controller = useRef<AbortController | null>(null);
 
   const load = useCallback(async (credential?: string, handle?: string) => {
@@ -112,22 +114,23 @@ export function ReviewRoute({ onAuthenticated }: { onAuthenticated: () => void }
       <section aria-label="Native counts"><h2>Native item counts</h2><dl>
         {Object.entries(packet.summary).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}
       </dl></section>
-      <ReviewBatch key={packet.artifact_id + '-batch'} handle={packet.artifact_id} csrf={csrf} refresh={refresh} />
+      <button onClick={() => setUnified(!unified)}>{unified ? "返回旧版分离审核" : "进入统一人工审核"}</button>
+      {unified ? <UnifiedReview key={packet.artifact_id + '-unified'} handle={packet.artifact_id} csrf={csrf} /> : <ReviewBatch key={packet.artifact_id + '-batch'} handle={packet.artifact_id} csrf={csrf} refresh={refresh} />}
       <section aria-label="Exclusions"><h2>Excluded / non-reviewable</h2>
         <p>{packet.excluded_relation_inventory.count} excluded functional relations · review reopened: {String(packet.excluded_relation_inventory.relation_review_reopened)}</p>
         <p>{packet.excluded_relation_inventory.policy}</p>
         <pre>{show(packet.excluded_relation_inventory.candidate_ids)}</pre>
         <p>Aliases remain part of native Node identity; they have no separate decision controls.</p>
       </section>
-      {packet.review?.enabled ? <PersistentReview key={packet.artifact_id} packet={packet} review={packet.review} csrf={csrf} refresh={refresh} /> : <div className="review-items">
+      {!unified && (packet.review?.enabled ? <PersistentReview key={packet.artifact_id} packet={packet} review={packet.review} csrf={csrf} refresh={refresh} /> : <div className="review-items">
         <section aria-label="Review items"><h2>Native items ({packet.items.length})</h2>
           {packet.items.map((row) => <button type="button" key={row.candidate_id} aria-pressed={selected === row.candidate_id} onClick={() => setSelected(row.candidate_id)}>
             {row.candidate_type} · {row.candidate_id}
           </button>)}
         </section>
         {item && <ReviewItemDetail item={item} />}
-      </div>}
-      {packet.attribution_available && <AttributionReview key={packet.artifact_id + '-attribution'} handle={packet.artifact_id} csrf={csrf} />}
+      </div>)}
+      {!unified && packet.attribution_available && <AttributionReview key={packet.artifact_id + '-attribution'} handle={packet.artifact_id} csrf={csrf} />}
     </>}
   </main>;
 }
