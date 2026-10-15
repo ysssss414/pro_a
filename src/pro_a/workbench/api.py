@@ -395,8 +395,8 @@ def create_app(config: WorkbenchConfig | None = None, *, cloud_profile: CloudPro
 
     @app.get(PREFIX + '/reviews/{artifact_id}/advice-context')
     def candidate_advice_context(artifact_id: str):
-        from pro_a.mcp.service import ReadService
-        from pro_a.mcp.review_context import basis
+        from pro_a.read_model.service import ReadService
+        from pro_a.read_model.review_context import basis
         context, candidates, nodes = basis(ReadService(config), artifact_id, 'blind', None)
         return {'context': context.model_dump(mode='json'),
                 'candidates': [c.model_dump(mode='json') for c in candidates],

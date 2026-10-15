@@ -51,8 +51,8 @@ class ReviewBatch:
 
     def snapshot(self, handle, kind):
         require(kind in ('native', 'attribution'), 'BATCH_KIND_INVALID')
-        from pro_a.mcp.review_context import basis
-        from pro_a.mcp.service import ReadService
+        from pro_a.read_model.review_context import basis
+        from pro_a.read_model.service import ReadService
         packet, run, dto, review_basis = self.reviews._context(handle)
         context, _, _ = basis(ReadService(self.config), handle, 'blind', None)
         opinions = AdvisoryReview(self.reviews).read(packet, handle=handle)
