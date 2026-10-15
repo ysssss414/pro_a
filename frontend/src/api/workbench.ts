@@ -55,6 +55,12 @@ export type ReviewOperation = { basis_id: string; expected_revision: number; ope
 export type DecisionOperation = ReviewOperation & { candidate_id: string; decision: string; target_node_id: string };
 
 const messages: Record<string, string> = {
+  UNIFIED_APPROVAL_LOCKED: "已有完整方案获批。只能恢复原方案，不能插入新的审核决定。",
+  BATCH_APPROVAL_CONFLICT: "另一个审核方案已获批准；请读取并恢复原批准方案。",
+  BATCH_BINDING_DRIFT: "Packet、Context、AI Advice 或依赖集合已变化，禁止执行当前方案。",
+  BATCH_UNIVERSE_INVALID: "候选集合不完整或归属集合不等于本次 KEEP Claim 全集。",
+  BATCH_REASON_REQUIRED: "每项决定及完整方案均需要明确审核理由。",
+  RUNTIME_IDENTITY_MISMATCH: "运行版本已变化，冻结方案不能在当前版本继续执行。",
   REVISION_CONFLICT: "This review changed in another tab. Your attempted decision is preserved. Inspect the refreshed state and explicitly retry.",
   IDEMPOTENCY_CONFLICT: "This operation identity was already used for a different request. Refresh and reconcile before retrying.",
   VALIDATION_ERROR: "The native review rules reject this input. Check the decision, reason and exact target.",
