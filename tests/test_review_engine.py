@@ -126,14 +126,14 @@ def test_actual_compatible_http_transport(advice_case, monkeypatch):
             self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(response)));self.end_headers();self.wfile.write(response)
     server=ThreadingHTTPServer(('127.0.0.1',0),Handler);thread=Thread(target=server.serve_forever,daemon=True);thread.start()
     try:
-        url=f'http://127.0.0.1:{server.server_port}/v1'
+        endpoint=f'http://127.0.0.1:{server.server_port}/v1'
         monkeypatch.setenv('P0_SYNTHETIC_KEY','synthetic')
-        def only_local(self, method, target, **kwargs):
-            assert target==url+'/chat/completions'
-            return REAL_REQUEST(self, method, target, **kwargs)
+        def only_local(self, method, url, **kwargs):
+            assert url==endpoint+'/chat/completions'
+            return REAL_REQUEST(self, method, url, **kwargs)
         monkeypatch.setattr(http_requests.sessions.Session,'request',only_local)
         for backend_type in (CompatibleBackend,OllamaBackend):
-            backend=(backend_type(LLMConfig(enabled=True,base_url=url,model=FakeBackend.model,api_key_env='P0_SYNTHETIC_KEY')) if backend_type is CompatibleBackend else backend_type(FakeBackend.model,base_url=url))
+            backend=(backend_type(LLMConfig(enabled=True,base_url=endpoint,model=FakeBackend.model,api_key_env='P0_SYNTHETIC_KEY')) if backend_type is CompatibleBackend else backend_type(FakeBackend.model,base_url=endpoint))
             result=engine(v).run(v['handle'],answer['context_sha256'],backend,task_id=backend_type.__name__)
             assert result['status']=='SUCCEEDED' and result['provider_attempts']==1
             assert result['advice']['execution']['model']==FakeBackend.model
