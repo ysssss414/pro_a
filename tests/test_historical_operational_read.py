@@ -176,8 +176,11 @@ def test_unregistered_receipt_and_pending_old_package(history):
 def test_corrupt_history_fails_closed(history, fault):
     config, handle, envelope, receipt = history
     if fault == 'post_state':
+        # Corrupt an object covered by this receipt. An unrelated catalog change
+        # now has the distinct STATE_PROOF_INCOMPLETE result (continuity tests).
+        claim_id = next(r['key']['claim_id'] for r in envelope['predicted_diff']['inserts'] if r['table'] == 'claims')
         with sqlite3.connect(config.knowledge_db) as db:
-            db.execute("UPDATE nodes SET description='isolated corruption' WHERE node_id=(SELECT node_id FROM nodes LIMIT 1)")
+            db.execute("UPDATE claims SET statement='isolated corruption' WHERE claim_id=?", (claim_id,))
     elif fault == 'materialized_source':
         (config.knowledge_db.parent / 'operational_sources' / envelope['source_sha256']).write_bytes(b'corrupt')
     elif fault == 'receipt_hash':

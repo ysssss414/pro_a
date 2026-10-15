@@ -9,7 +9,8 @@ export type AttributionState = {
   decisions: Record<string, AttributionDecision>; roles: Record<string, string>; audit: Record<string, unknown>[];
   sidecar: { object_id: string } | null;
   qualification: { object_id: string; adapter_version: string; status: string; baseline_sha256: string; diff_id: string;
-    changes: Record<string, unknown>[]; tables_touched: string[]; shadow_validation: Record<string, unknown>; operator_action: string } | null;
+    changes: Record<string, unknown>[]; tables_touched: string[]; shadow_validation: Record<string, unknown>; operator_action: string;
+    history_verification?: { status: string; receipt_integrity: string } | null } | null;
   receipt: { object_id: string; status: string; actual_mutation_counts: Record<string, number> } | null;
 };
 export const getAttribution = (handle: string, signal: AbortSignal) => request<AttributionState>("/attribution/" + encodeURIComponent(handle), signal);
