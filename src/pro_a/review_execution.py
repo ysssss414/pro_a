@@ -119,8 +119,8 @@ def run(engine, artifact_id, context_sha256, backend, *, task_id):
                 raw = backend.infer(SYSTEM, canonical(inputs))
                 items = normalize_output(raw, inputs)
             except Exception as error:
-                code = ('MODEL_OUTPUT_INVALID' if isinstance(error, (ValidationError, ValueError)) else
-                        str(error) if isinstance(error, (BoundaryError, BridgeError)) else 'MODEL_REQUEST_FAILED')
+                code = (str(error) if isinstance(error, (BoundaryError, BridgeError)) else
+                        'MODEL_OUTPUT_INVALID' if isinstance(error, (ValidationError, ValueError)) else 'MODEL_REQUEST_FAILED')
                 if not re.fullmatch('[A-Z][A-Z0-9_]{1,80}', code):
                     code = 'MODEL_REQUEST_FAILED'
                 result = {'status':'FAILED','task_id':task_id,'error_code':code,

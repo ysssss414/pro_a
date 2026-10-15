@@ -3,7 +3,8 @@ from dataclasses import replace
 from urllib.parse import urlsplit
 
 from .config import LLMConfig
-from .llm import ChatLLM
+from .llm import ChatLLM, LLMError
+from .provider_diagnostics import _output_diagnostic, safe_identifier, safe_request_id
 from .workbench.config import BoundaryError
 
 
@@ -24,11 +25,26 @@ class CompatibleBackend:
                 'timeout_seconds': self.client.cfg.timeout_seconds}
 
     def infer(self, system, user):
-        return self.client.json(system, user)
+        try:
+            return self.client.json(system, user)
+        except LLMError:
+            attempts = self.metadata['attempts']
+            if attempts and attempts[-1]['failure_stage'] == 'MODEL_OUTPUT_PARSE':
+                raise BoundaryError('MODEL_OUTPUT_INVALID') from None
+            raise BoundaryError('MODEL_REQUEST_FAILED') from None
 
     @property
     def metadata(self):
-        return self.client.last_call_metadata
+        # ChatLLM also retains raw truncated content for other private workflows.
+        # This adapter exposes only existing content-free diagnostic projections.
+        attempts = [{**_output_diagnostic(event),
+                     'attempt_number':event['attempt_number'],
+                     'http_status':event.get('http_status'),
+                     'failure_stage':safe_identifier(event.get('failure_stage')),
+                     'error_class':safe_identifier(event.get('error_class')),
+                     'provider_request_id':safe_request_id(event.get('provider_request_id'))}
+                    for event in self.client.last_call_metadata['attempts']]
+        return {'attempts_used':len(attempts), 'max_attempts':1, 'attempts':attempts}
 
 
 class _LocalConfig(LLMConfig):

@@ -82,6 +82,10 @@ def test_failures_are_audited_without_advice(advice_case, fault):
     b=FakeBackend(answer);ctx=v['opinions']['A']['context_sha256']
     result=e.run(v['handle'],ctx,b,task_id='failure')
     assert result['status']=='FAILED' and not events(v)
+    expected={'missing':'ADVICE_UNIVERSE_INVALID','duplicate':'ADVICE_UNIVERSE_INVALID',
+              'id':'ADVICE_UNIVERSE_INVALID','sha':'ADVICE_REVISION_INVALID',
+              'context':'ADVICE_CONTEXT_CHANGED','timeout':'MODEL_REQUEST_FAILED'}
+    assert result['error_code']==expected.get(fault,'MODEL_OUTPUT_INVALID')
     assert 'secret' not in json.dumps(result)
     assert e.run(v['handle'],ctx,b,task_id='failure')==result and b.calls==1
     retry=FakeBackend(output(v));assert e.run(v['handle'],ctx,retry,task_id='explicit-retry')['status']=='SUCCEEDED'
@@ -162,6 +166,19 @@ assert not any(n == 'mcp' or n.startswith(('mcp.','pro_a.mcp')) for n in sys.mod
 '''
     subprocess.run([sys.executable,'-c',script],check=True,
                    env={**os.environ,'PYTHONPATH':str(Path(pro_a.__file__).parent.parent)})
+
+
+def test_adapter_parse_failure_keeps_only_content_free_diagnostics(monkeypatch):
+    from pro_a.llm import LLMError
+    backend=CompatibleBackend(LLMConfig())
+    backend.client._attempt_events=[{'attempt_number':1,'failure_stage':'MODEL_OUTPUT_PARSE',
+        'error_class':'OUTPUT_PARSE_ERROR','output_parse_kind':'MALFORMED_JSON',
+        'content_tail':'private material','response_model':'Bearer PRIVATE_TOKEN',
+        'provider_request_id':'secret'}]
+    monkeypatch.setattr(backend.client,'json',lambda *a:(_ for _ in ()).throw(LLMError('private raw response')))
+    with pytest.raises(BoundaryError,match='MODEL_OUTPUT_INVALID'):backend.infer('system','input')
+    assert 'private' not in json.dumps(backend.metadata) and 'PRIVATE_TOKEN' not in json.dumps(backend.metadata)
+    assert backend.metadata['attempts'][0]['output_parse_kind']=='MALFORMED_JSON'
 
 
 def test_response_checkpoint_recovers_without_inference(advice_case, monkeypatch):
