@@ -22,6 +22,9 @@ it.each([
   vi.mocked(mutateAttribution).mockResolvedValue({ status });
   await mount();
   expect(screen.getByText(message)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Execution receipt registered — historical verification" })).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Qualified — External Operator Action Required" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Run shadow qualification" })).toBeNull();
   expect(screen.queryByRole("heading", { name: "Verified external execution receipt" })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Verify registered execution receipt" }));
   await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(message));

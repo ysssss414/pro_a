@@ -141,7 +141,7 @@ def _package_projection(envelope):
             withheld = {key: canonical_sha256(value) for key, value in item['row'].items() if key not in values}
             # Column names are values; private metadata contents are never projected.
             changes.append({'action': action, 'table': item['table'], 'key': item['key'], 'values': values,
-                            'withheld_columns': [{'column': key, 'sha256': value} for key, value in withheld.items()]})
+                            'withheld_columns': [{'column': key, 'sha256': value} for key, value in sorted(withheld.items())]})
     return {'object_id': envelope['object_id'], 'adapter_version': VERSION, 'status': envelope['status'],
             'baseline_sha256': envelope['baseline']['sha256'], 'diff_id': diff['object_id'], 'changes': changes,
             'tables_touched': diff['tables_touched'], 'shadow_validation': envelope['shadow']['phase3d_validation'],
@@ -179,6 +179,8 @@ def registered_historical_read(config, handle):
                      original_runtime_identity=envelope['runtime_identity'],
                      operator_status=('EXECUTED_RECEIPT_VERIFIED' if complete else 'HISTORICAL_STATE_PROOF_INCOMPLETE') if receipt else 'AWAITING_OPERATOR_ACTION',
                      operator_action='Read-only registered history; current qualification and independent Operator authorization are required before any execution.')
+    if receipt:
+        projected['status'] = 'RECONCILED' if complete else 'HISTORICAL_STATE_PROOF_INCOMPLETE'
     return {'qualification': projected, 'receipt': receipt}
 
 
