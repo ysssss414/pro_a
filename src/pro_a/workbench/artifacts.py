@@ -75,7 +75,7 @@ class Artifacts:
             if manifest.get('candidate_origin'):
                 from .candidate_inputs import verify_documents
                 candidate = read_review_packet(run / 'extraction/candidate_input.json')
-                verify_documents(self.config, candidate['documents'])
+                verify_documents(self.config, candidate['documents'], candidate.get('selection'))
             validation = validate_blank_review_packet(packet, run_root=run)
             if self.config.mode == 'DEMO' and packet['source']['source_type'] != 'SYNTHETIC_TEXT':
                 raise BoundaryError('ARTIFACT_MODE_MISMATCH')

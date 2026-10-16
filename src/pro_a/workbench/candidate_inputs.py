@@ -29,7 +29,7 @@ class CandidateArchive:
         return {**dict(row), 'runtime_identity': json.loads(row['runtime_json'])}
 
 
-def verify_documents(config, documents):
+def verify_documents(config, documents, selection=None):
     archive = CandidateArchive(config)
     if not documents:
         raise BoundaryError('CANDIDATE_INPUT_REQUIRED')
@@ -37,6 +37,21 @@ def verify_documents(config, documents):
         scope = document['scope']
         if document != inspect_attempt(archive, scope['run_id'], scope['attempt_id'], document.get('revisions')):
             raise BoundaryError('CANDIDATE_ORIGIN_DRIFT')
+    if selection is not None:
+        candidate_origin.validate_selection(documents, selection)
+        from .domains import Domains
+        run_id = documents[0]['scope']['run_id']
+        frozen = Domains(config).read(run_id)
+        if (frozen is None or frozen['context_sha256'] != selection['frozen_context_sha256']
+                or any(d['scope']['runtime_identity'] != frozen['basis']['runtime'] for d in documents)):
+            raise BoundaryError('SELECTION_FROZEN_CONTEXT_DRIFT')
+        expected = {r['set_identity']:r['result_sha256'] for r in selection['accepted_results']}
+        with archive.store.connect() as db:
+            for document in documents:
+                row = db.execute('SELECT * FROM bounded_extraction_segment_results WHERE attempt_id=?',
+                    (document['scope']['attempt_id'],)).fetchone()
+                if row is None or _verified(row)['result_sha256'] != expected[document['identity']]:
+                    raise BoundaryError('SELECTION_ACCEPTED_RESULT_DRIFT')
     return documents
 
 
