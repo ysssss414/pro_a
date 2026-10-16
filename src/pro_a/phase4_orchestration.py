@@ -32,6 +32,7 @@ PROCESSING_MODULES = (
     "table_claim_safety", "corpus_pilot", "gate_c_quality_hardening",
     "production_authorization", "production_promotion", "phase3f_review_completion",
     "db", "ids", "storage", "relation_structure", "repository_identity",
+    "candidate_origin", "candidate_origin_v2",
 )
 CHECKPOINTS = {"SOURCE_READY", "SEMANTIC_INPUT_READY", "SEMANTIC_COMPLETE", "REVIEW_READY"}
 
@@ -200,7 +201,10 @@ def _review(root: Path) -> None:
     claims = read_json(native / "review/claim_review.json")["claims"]
     nodes = read_json(native / "review/node_operation_review.json")["records"]
     preview = read_json(native / "promotion/promotion_preview.json")
-    if not claims or not nodes:
+    from .candidate_origin_v2 import VERSION as V7_ORIGIN
+    manifest = read_json(native / 'run_manifest.json')
+    claim_only_v7 = (manifest.get('candidate_origin') or {}).get('version') == V7_ORIGIN
+    if not claims or (not nodes and not claim_only_v7):
         if preview.get("relations", {}).get("observations"):
             raise ExecutionBlocked("UNSUPPORTED_PACKET_CAPABILITY")
         raise ExecutionBlocked("BLOCKED_EMPTY_CANDIDATE_SET")
@@ -328,11 +332,11 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
         "replay_origin": capture["origin_manifest_sha256"] if capture else None,
     }
     if candidate_input_path is not None:
-        from .candidate_origin import VERSION, semantic_projection
+        from .candidate_origin import semantic_projection
         document = read_json(Path(candidate_input_path))
         semantic_projection(document['documents'], document.get('excluded_keys', ()))
         identity['mode'] = 'DURABLE_CANDIDATE_INPUT'
-        identity['candidate_origin'] = {'version': VERSION, 'sha256': sha256_file(Path(candidate_input_path))}
+        identity['candidate_origin'] = {'version': document['documents'][0]['version'], 'sha256': sha256_file(Path(candidate_input_path))}
     root.mkdir(parents=True)
     for name in ("commits", "inputs", "attempts"):
         (root / name).mkdir()

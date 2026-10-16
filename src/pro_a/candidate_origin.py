@@ -17,6 +17,7 @@ from .evidence_binding import (EVIDENCE_SELECTION_FIELDS, identity,
 from .research_quarantine import FAMILIES, parse_prefix
 
 VERSION = 'source-candidate-set-v1'
+VERSIONS = (VERSION, 'source-candidate-set-v2')
 POLICY = 'independent-candidate-isolation-v1'
 GOVERNANCE = {
     'admission_semantics': 'SOURCE_ASSERTION',
@@ -195,6 +196,7 @@ def semantic_projection(documents, excluded_keys=()):
     """Batch exact eligible observations without granting support or Node authority."""
     from .analyzer import SourceAnalysis
     require(bool(documents), 'CANDIDATE_INPUT_REQUIRED')
+    require(len({d.get('version') for d in documents}) == 1, 'CANDIDATE_VERSION_CONFLICT')
     sources = {(d['scope']['source_id'], d['scope']['source_sha256']) for d in documents}
     require(len(sources) == 1, 'CANDIDATE_SOURCE_CONFLICT')
     require(len({identity(d['source_metadata']) for d in documents}) == 1,
@@ -202,14 +204,18 @@ def semantic_projection(documents, excluded_keys=()):
     claims, matches, nodes, refs = [], [], [], []
     seen = {}
     for document in documents:
-        require(document.get('version') == VERSION and document.get('identity') == identity(
+        require(document.get('version') in VERSIONS and document.get('identity') == identity(
             {k: v for k, v in document.items() if k != 'identity'}), 'CANDIDATE_ORIGIN_DRIFT')
+        if document['version'] != VERSION:
+            from .candidate_origin_v2 import ENTRY_CONTRACT
+            require(document.get('entry_contract') == ENTRY_CONTRACT, 'CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
+            require(document.get('metadata_resolution') is not None, 'SOURCE_METADATA_AUTHORITY_REQUIRED')
         for obj in document['objects']:
             if obj['status'] != 'SEMANTIC_REVIEW_REQUIRED':
                 continue
             value = copy.deepcopy(obj['normalized'])
             value.pop('ownership_evidence_ref', None)
-            if obj['family'] in ('claims', 'node_matches'):
+            if obj['family'] in ('claims', 'node_matches') and obj['evidence']:
                 binding = obj['evidence'][0]
                 value = {k: v for k, v in value.items() if k not in EVIDENCE_SELECTION_FIELDS}
                 value.update(evidence_excerpt=binding['evidence_excerpt'],
@@ -228,10 +234,19 @@ def semantic_projection(documents, excluded_keys=()):
                     'publication_time': document['source_metadata'].get('publication_time') or '',
                     'evidence': [{k: b[k] for k in ('source_start', 'source_end', 'evidence_excerpt', 'source_locator')}
                                  for b in obj['evidence']]})
+                if document['version'] != VERSION:
+                    # One fact key, with all independent supporting observations retained.
+                    key = identity({'version': document['version'], 'source': list(sources)[0],
+                        'content': {k: v for k, v in value.items() if k not in
+                            ('confidence', 'evidence_validated', 'evidence_pointer', 'evidence_excerpt')},
+                        'publication_time': document['source_metadata'].get('publication_time') or ''})
                 if key in excluded_keys:
                     continue
                 observation = {'set_identity': document.get('original_identity', document['identity']), 'observation_id': obj['observation_id'],
                                'revision_sha256': obj['revision_sha256'], 'dependencies': obj['dependencies']}
+                if document['version'] != VERSION:
+                    from .candidate_origin_v2 import observation as v2_observation
+                    observation = v2_observation(document, obj)
                 if key in seen:
                     seen[key]['candidate_observations'].append(observation)
                 else:

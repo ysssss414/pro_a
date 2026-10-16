@@ -195,13 +195,14 @@ def _load_frozen_run(run_root: Path) -> dict[str, Any]:
     _require(manifest.get("document_type") == "phase3e_operational_ingestion_manifest", "MANIFEST_TYPE_INVALID")
     _require(manifest.get("schema_version") in ("1", "2"), "MANIFEST_VERSION_INVALID")
     if manifest.get('schema_version') == '2':
-        from .candidate_origin import VERSION, semantic_projection
+        from .candidate_origin import VERSIONS, semantic_projection
         origin = manifest.get('candidate_origin') or {}
         candidate_path = run_root / 'extraction/candidate_input.json'
-        _require(origin.get('version') == VERSION and candidate_path.is_file()
+        _require(origin.get('version') in VERSIONS and candidate_path.is_file()
                  and sha256_file(candidate_path) == origin.get('sha256'), 'CANDIDATE_ORIGIN_DRIFT')
         candidate_input = _read_json(candidate_path)
         documents = candidate_input['documents']
+        _require(all(d['version'] == origin['version'] for d in documents), 'CANDIDATE_ORIGIN_DRIFT')
         semantic_projection(documents, candidate_input.get('excluded_keys', ()))
         _require(origin['set_identities'] == [d['identity'] for d in documents], 'CANDIDATE_ORIGIN_DRIFT')
     else:

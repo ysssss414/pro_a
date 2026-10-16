@@ -778,10 +778,24 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_NO_COMPLETE_RESPONSES')
         return self.start_candidates(references, idempotency_key=idempotency_key)
 
-    def start_candidates(self, references, *, idempotency_key, _replacement=None):
+    def start_v7_review(self, references, *, idempotency_key, entry_contract):
+        """Explicit post-extraction review entry; never resumes qualification runs."""
+        from pro_a.candidate_origin_v2 import ENTRY_CONTRACT
+        if entry_contract != ENTRY_CONTRACT:
+            raise SourceOperationError('CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
+        return self.start_candidates(references, idempotency_key=idempotency_key, _v7_entry=entry_contract)
+
+    def start_candidates(self, references, *, idempotency_key, _replacement=None, _v7_entry=None):
         from .candidate_inputs import CandidateInputs
         from pro_a.candidate_origin import VERSION, semantic_projection
         documents = [CandidateInputs(self).read(ref) for ref in references]
+        from pro_a.candidate_origin_v2 import VERSION as V2, ENTRY_CONTRACT
+        version = documents[0]['version'] if documents else VERSION
+        if ((version == V2 and _v7_entry != ENTRY_CONTRACT) or
+                (version != V2 and _v7_entry is not None)):
+            raise SourceOperationError('CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
+        if version == V2 and any(d['metadata_resolution'] is None for d in documents):
+            raise SourceOperationError('SOURCE_METADATA_AUTHORITY_REQUIRED')
         from pro_a.operational_contract import readonly
         from pro_a.admission_schema import require_schema
         from pro_a.production_promotion import deterministic_id
@@ -821,6 +835,9 @@ class SourceOperations:
                             or prior['admission_semantics'] != 'SOURCE_ASSERTION'
                             or len(prior['admission_basis_sha256']) != 64):
                         raise SourceOperationError('CANONICAL_CANDIDATE_COLLISION')
+                    if version == V2 and any(o not in recorded.get('observations', [])
+                                             for o in claim['candidate_observations']):
+                        raise SourceOperationError('CANDIDATE_ADDITIONAL_SUPPORT_REVIEW_REQUIRED')
                     excluded.append(key)
                 elif key in rejected:
                     excluded.append(key)
@@ -831,7 +848,9 @@ class SourceOperations:
                     if set(excluded) & rejected else 'ALL_EXACT_CANDIDATES_ALREADY_ADMITTED'),
                     'rejected_count': len(set(excluded) & rejected),
                     'source_id': source_id, 'candidate_count': len(excluded), 'run': None, 'duplicate': True}
-        body = {'version': VERSION, 'references': list(references), 'excluded_keys': sorted(excluded)}
+        body = {'version': version, 'references': list(references), 'excluded_keys': sorted(excluded)}
+        if version == V2:
+            body['entry_contract'] = dict(ENTRY_CONTRACT)
         origin = {**body, 'identity': canonical_sha256(body)}
         from pro_a.company_material_intent import FIELDS, read_bound
         with self.store.connect() as connection:
