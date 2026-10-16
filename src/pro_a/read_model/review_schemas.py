@@ -94,6 +94,38 @@ class CandidateOrigin(BaseModel):
     proposed_governance: CandidateGovernance
 
 
+class CandidateLineageV2(BaseModel):
+    model_config = {'extra': 'forbid'}
+    scope: dict
+    acceptance: dict
+    entry_contract: dict
+    raw_sha256: str
+    raw_claim: dict
+    parent: dict | None
+    semantic_revision: dict | None
+    primary_evidence: list[dict]
+    context_dependencies: list[dict]
+    source_metadata: dict
+    provider_source_metadata: dict
+    metadata_resolution: dict | None
+    review_reasons: list[str]
+    semantic_status: Literal['NOT_ESTABLISHED']
+    canonical_permission: Literal[False]
+
+
+class CandidateObservationV2(CandidateObservation):
+    model_config = {'extra': 'forbid'}
+    lineage: CandidateLineageV2
+
+
+class CandidateOriginV2(BaseModel):
+    model_config = {'extra': 'forbid'}
+    version: Literal['source-candidate-set-v2']
+    candidate_key: str
+    observations: list[CandidateObservationV2]
+    proposed_governance: CandidateGovernance
+
+
 class CandidateSource(BaseModel):
     title: str
     publication_time: str
@@ -104,7 +136,7 @@ class CandidateSource(BaseModel):
 
 
 class CandidateContent(BaseModel):
-    candidate_origin: CandidateOrigin | None = None
+    candidate_origin: CandidateOrigin | CandidateOriginV2 | None = None
     source_metadata: CandidateSource | None = None
     ingestion_time: str | None = None
     assumption_text: str | None = None

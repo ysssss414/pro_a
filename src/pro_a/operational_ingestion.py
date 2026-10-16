@@ -538,9 +538,9 @@ def _build_live_extraction(
         if record is None:
             continue
         if candidate_documents is not None:
-            from .candidate_origin import GOVERNANCE, VERSION
+            from .candidate_origin import GOVERNANCE
             record['structured']['candidate_origin'] = {
-                'version': VERSION, 'candidate_key': claim['candidate_key'],
+                'version': candidate_documents[0]['version'], 'candidate_key': claim['candidate_key'],
                 'observations': copy.deepcopy(claim['candidate_observations']),
                 'proposed_governance': dict(GOVERNANCE),
             }
@@ -1844,7 +1844,7 @@ def _start_new_run(
         },
     }
     if candidate_input_path is not None:
-        from .candidate_origin import VERSION, semantic_projection
+        from .candidate_origin import semantic_projection
         if frozen_extraction_path is not None:
             raise OperationalIngestionError('CANDIDATE_FIXTURE_CONFLICT')
         candidate_input = _load_json(candidate_input_path)
@@ -1855,7 +1855,7 @@ def _start_new_run(
         target = paths.path('extraction/candidate_input.json')
         target.write_bytes(Path(candidate_input_path).read_bytes())
         manifest['schema_version'] = '2'
-        manifest['candidate_origin'] = {'version': VERSION, 'sha256': sha256_file(target),
+        manifest['candidate_origin'] = {'version': candidate_input['documents'][0]['version'], 'sha256': sha256_file(target),
                                         'set_identities': [d['identity'] for d in candidate_input['documents']]}
     _save_manifest(paths, manifest)
     _complete_stage(
