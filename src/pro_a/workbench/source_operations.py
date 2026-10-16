@@ -778,7 +778,7 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_NO_COMPLETE_RESPONSES')
         return self.start_candidates(references, idempotency_key=idempotency_key)
 
-    def start_candidates(self, references, *, idempotency_key, _replacement=None):
+    def start_candidates(self, references, *, idempotency_key, _replacement=None, selection=None):
         from .candidate_inputs import CandidateInputs
         from pro_a.candidate_origin import VERSION, semantic_projection
         documents = [CandidateInputs(self).read(ref) for ref in references]
@@ -786,7 +786,10 @@ class SourceOperations:
         from pro_a.admission_schema import require_schema
         from pro_a.production_promotion import deterministic_id
         from contextlib import closing
-        analysis = semantic_projection(documents)
+        if selection is not None:
+            from .candidate_inputs import verify_documents
+            verify_documents(self.config, documents, selection)
+        analysis = semantic_projection(documents, selection=selection)
         source_id = documents[0]['scope']['source_id']
         excluded = []
         rejected = set()
@@ -832,6 +835,8 @@ class SourceOperations:
                     'rejected_count': len(set(excluded) & rejected),
                     'source_id': source_id, 'candidate_count': len(excluded), 'run': None, 'duplicate': True}
         body = {'version': VERSION, 'references': list(references), 'excluded_keys': sorted(excluded)}
+        if selection is not None:
+            body['selection'] = selection
         origin = {**body, 'identity': canonical_sha256(body)}
         from pro_a.company_material_intent import FIELDS, read_bound
         with self.store.connect() as connection:
@@ -1374,7 +1379,8 @@ class SourceOperations:
             with self.store.connect(operator_write=True) as connection:
                 connection.execute('BEGIN IMMEDIATE')
                 write_once(candidate_path, _canonical({'documents': documents,
-                    'excluded_keys': candidate_origin['excluded_keys']}).encode('utf-8'))
+                    'excluded_keys': candidate_origin['excluded_keys'],
+                    **({'selection': candidate_origin['selection']} if 'selection' in candidate_origin else {})}).encode('utf-8'))
         if row["state"] == "QUEUED":
             self._transition(run_id, "PARSING", "NATIVE_SOURCE_REGISTRATION")
             stored_source = self.artifacts.resolve(source["storage_relative"])

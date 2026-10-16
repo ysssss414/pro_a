@@ -202,7 +202,7 @@ def _load_frozen_run(run_root: Path) -> dict[str, Any]:
                  and sha256_file(candidate_path) == origin.get('sha256'), 'CANDIDATE_ORIGIN_DRIFT')
         candidate_input = _read_json(candidate_path)
         documents = candidate_input['documents']
-        semantic_projection(documents, candidate_input.get('excluded_keys', ()))
+        semantic_projection(documents, candidate_input.get('excluded_keys', ()), candidate_input.get('selection'))
         _require(origin['set_identities'] == [d['identity'] for d in documents], 'CANDIDATE_ORIGIN_DRIFT')
     else:
         _require('candidate_origin' not in manifest, 'CANDIDATE_MANIFEST_VERSION_REQUIRED')

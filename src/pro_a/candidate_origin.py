@@ -191,20 +191,30 @@ def verify(document, raw, scope, segment, catalog, context):
     return document
 
 
-def semantic_projection(documents, excluded_keys=()):
+def semantic_projection(documents, excluded_keys=(), selection=None):
     """Batch exact eligible observations without granting support or Node authority."""
     from .analyzer import SourceAnalysis
     require(bool(documents), 'CANDIDATE_INPUT_REQUIRED')
     sources = {(d['scope']['source_id'], d['scope']['source_sha256']) for d in documents}
     require(len(sources) == 1, 'CANDIDATE_SOURCE_CONFLICT')
-    require(len({identity(d['source_metadata']) for d in documents}) == 1,
-            'CANDIDATE_SOURCE_METADATA_CONFLICT')
+    if selection is None:
+        require(len({identity(d['source_metadata']) for d in documents}) == 1,
+                'CANDIDATE_SOURCE_METADATA_CONFLICT')
+        metadata, selected, required_nodes = documents[0]['source_metadata'], None, set()
+    else:
+        metadata, selected, required_nodes = validate_selection(documents, selection)
     claims, matches, nodes, refs = [], [], [], []
     seen = {}
     for document in documents:
         require(document.get('version') == VERSION and document.get('identity') == identity(
             {k: v for k, v in document.items() if k != 'identity'}), 'CANDIDATE_ORIGIN_DRIFT')
+        local_nodes = {n for o in document['objects'] if selected is not None and o['observation_id'] in selected
+                       for f,n in o['dependencies'] if f == 'nodes'}
         for obj in document['objects']:
+            if selected is not None and not (obj['observation_id'] in selected or
+                    (obj['family'] == 'node_matches' and isinstance(obj['value'], dict)
+                     and obj['value'].get('node_id') in local_nodes)):
+                continue
             if obj['status'] != 'SEMANTIC_REVIEW_REQUIRED':
                 continue
             value = copy.deepcopy(obj['normalized'])
@@ -225,7 +235,7 @@ def semantic_projection(documents, excluded_keys=()):
                         if n['family'] == 'node_candidates' and n['status'] == 'SEMANTIC_REVIEW_REQUIRED'
                         and n['normalized']['canonical_name'] in value.get('related_candidate_names', [])],
                         key=lambda n: n['canonical_name']),
-                    'publication_time': document['source_metadata'].get('publication_time') or '',
+                    'publication_time': metadata.get('publication_time') or '',
                     'evidence': [{k: b[k] for k in ('source_start', 'source_end', 'evidence_excerpt', 'source_locator')}
                                  for b in obj['evidence']]})
                 if key in excluded_keys:
@@ -253,4 +263,72 @@ def semantic_projection(documents, excluded_keys=()):
         required_nodes = {name for c in claims for name in c.get('related_candidate_names', [])}
         nodes = [n for n in nodes if n['canonical_name'] in required_nodes]
     require(bool(claims), 'CANDIDATE_NO_ELIGIBLE_CLAIMS')
-    return SourceAnalysis(copy.deepcopy(documents[0]['source_metadata']), matches, nodes, claims, refs)
+    return SourceAnalysis(copy.deepcopy(metadata), matches, nodes, claims, refs)
+
+
+SELECTION_VERSION = 'source-candidate-selection-v1'
+
+
+def selection_scope(documents, accepted_results):
+    """An explicit subset is not a new Provider record or a Coverage repair."""
+    from .source_metadata_authority import scope
+    require(documents and len({(d['scope']['run_id'], d['scope']['source_id'],
+        d['scope']['source_sha256']) for d in documents}) == 1, 'SELECTION_SOURCE_CONFLICT')
+    require(len({d['identity'] for d in documents}) == len(documents), 'SELECTION_DUPLICATE_INPUT')
+    require(all(d['version'] == VERSION and d['scope']['provider_record_version'] == v4.VERSION
+        and d['identity'] == identity({k:v for k,v in d.items() if k != 'identity'}) for d in documents),
+        'SELECTION_INPUT_IDENTITY_INVALID')
+    require(len(accepted_results) == len(documents) and all(set(r) ==
+        {'set_identity', 'result_sha256'} and re.fullmatch('[0-9a-f]{64}', r['result_sha256'])
+        for r in accepted_results), 'SELECTION_ACCEPTED_RESULTS_INVALID')
+    require(sorted(r['set_identity'] for r in accepted_results) == sorted(d['identity'] for d in documents),
+        'SELECTION_ACCEPTED_RESULTS_INVALID')
+    pieces = {d['scope']['series_id']: {k:d['scope'][k] for k in
+        ('source_piece_id', 'series_id', 'series_sha256')} for d in documents}
+    s = documents[0]['scope']
+    return scope(s['run_id'], s['source_id'], s['source_sha256'],
+        [pieces[k] for k in sorted(pieces)],
+        [r['result_sha256'] for r in sorted(accepted_results, key=lambda r:r['set_identity'])])
+
+
+def make_selection(documents, observation_ids, accepted_results, frozen_context_sha256, resolution):
+    """Consume an externally obtained metadata decision; never grant Human authority."""
+    objects = {o['observation_id']:o for d in documents for o in d['objects']}
+    require(len(set(observation_ids)) == len(observation_ids) and set(observation_ids) <= set(objects),
+        'SELECTION_OBSERVATION_INVALID')
+    body = {'version': SELECTION_VERSION, 'document_identities': sorted(d['identity'] for d in documents),
+        'observations': [{'observation_id': oid, 'revision_sha256': objects[oid]['revision_sha256']}
+                         for oid in sorted(observation_ids)],
+        'accepted_results': copy.deepcopy(accepted_results), 'frozen_context_sha256': frozen_context_sha256,
+        'metadata_resolution': copy.deepcopy(resolution), 'coverage_authority': False, 'canonical_permission': False}
+    result = {**body, 'identity': identity(body)}
+    validate_selection(documents, result)
+    return result
+
+
+def validate_selection(documents, selection):
+    from .source_metadata_authority import validate_resolution
+    require(set(selection) == {'version', 'document_identities', 'observations', 'accepted_results',
+        'frozen_context_sha256', 'metadata_resolution', 'coverage_authority', 'canonical_permission', 'identity'}
+        and selection['version'] == SELECTION_VERSION and selection['coverage_authority'] is False
+        and selection['canonical_permission'] is False and selection['identity'] == identity(
+            {k:v for k,v in selection.items() if k != 'identity'}), 'SELECTION_IDENTITY_INVALID')
+    bound = selection_scope(documents, selection['accepted_results'])
+    require(selection['document_identities'] == sorted(d['identity'] for d in documents)
+        and re.fullmatch('[0-9a-f]{64}', selection['frozen_context_sha256']), 'SELECTION_INPUT_IDENTITY_INVALID')
+    objects = {o['observation_id']:o for d in documents for o in d['objects']}
+    selected = selection['observations']
+    require(5 <= len(selected) <= 10 and len({r['observation_id'] for r in selected}) == len(selected),
+        'SELECTION_SIZE_INVALID')
+    nodes = set()
+    for row in selected:
+        obj = objects.get(row['observation_id'])
+        require(set(row) == {'observation_id', 'revision_sha256'} and obj is not None and
+            row['revision_sha256'] == obj['revision_sha256'], 'SELECTION_OBSERVATION_INVALID')
+        require(obj['family'] == 'claims' and obj['status'] == 'SEMANTIC_REVIEW_REQUIRED'
+            and not obj['errors'] and obj['evidence'] and not obj['normalized'].get('related_candidate_names')
+            and all(f == 'nodes' for f, _ in obj['dependencies']), 'SELECTION_DEPENDENCY_UNSUPPORTED')
+        nodes.update(n for f,n in obj['dependencies'])
+    metadata = validate_resolution(selection['metadata_resolution'], bound_scope=bound)
+    v4.validate_shape(metadata, v4.record_schema()['properties']['source_metadata'])
+    return metadata, {r['observation_id'] for r in selected}, nodes

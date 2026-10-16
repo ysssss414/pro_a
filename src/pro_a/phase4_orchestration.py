@@ -330,7 +330,7 @@ def start_execution(source_path: Path, *, config_path: Path = Path("config.toml"
     if candidate_input_path is not None:
         from .candidate_origin import VERSION, semantic_projection
         document = read_json(Path(candidate_input_path))
-        semantic_projection(document['documents'], document.get('excluded_keys', ()))
+        semantic_projection(document['documents'], document.get('excluded_keys', ()), document.get('selection'))
         identity['mode'] = 'DURABLE_CANDIDATE_INPUT'
         identity['candidate_origin'] = {'version': VERSION, 'sha256': sha256_file(Path(candidate_input_path))}
     root.mkdir(parents=True)

@@ -482,6 +482,7 @@ def _build_live_extraction(
     llm_factory: Callable[[LLMConfig], ChatLLM] | None = None,
     candidate_documents: list[dict] | None = None,
     excluded_candidate_keys: list[str] | None = None,
+    candidate_selection: dict | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     semantic_text = semantic_eligible_source_text(parsed)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(production_path))
@@ -500,7 +501,7 @@ def _build_live_extraction(
         )
     else:
         from .candidate_origin import semantic_projection
-        analysis = semantic_projection(candidate_documents, excluded_candidate_keys or ())
+        analysis = semantic_projection(candidate_documents, excluded_candidate_keys or (), candidate_selection)
     raw_responses = copy.deepcopy(analyzer.last_piece_call_records)
     initial_plan = copy.deepcopy(analyzer.last_initial_extraction_plan)
 
@@ -709,7 +710,8 @@ def _run_extraction(
             cfg=cfg, manifest=manifest, parsed=parsed, production_path=production_path,
             layout_sidecar_relative='extraction/source_layout_sidecar.json',
             candidate_documents=candidate_input['documents'],
-            excluded_candidate_keys=candidate_input.get('excluded_keys', []))
+            excluded_candidate_keys=candidate_input.get('excluded_keys', []),
+            candidate_selection=candidate_input.get('selection'))
         bundle['candidate_origin'] = copy.deepcopy(manifest['candidate_origin'])
         _write_json(bundle_path, bundle)
         manifest['model']['extraction_mode'] = 'VERIFIED_CANDIDATE_ORIGIN'
@@ -1848,7 +1850,7 @@ def _start_new_run(
         if frozen_extraction_path is not None:
             raise OperationalIngestionError('CANDIDATE_FIXTURE_CONFLICT')
         candidate_input = _load_json(candidate_input_path)
-        semantic_projection(candidate_input['documents'], candidate_input.get('excluded_keys', ()))
+        semantic_projection(candidate_input['documents'], candidate_input.get('excluded_keys', ()), candidate_input.get('selection'))
         if any(d['scope']['source_sha256'] != source_sha or d['scope']['source_id'] != source_id
                for d in candidate_input['documents']):
             raise OperationalIngestionError('CANDIDATE_SOURCE_BINDING_MISMATCH')
