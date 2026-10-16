@@ -5,7 +5,7 @@
 ## Scope and interpretation
 
 - **S1:** an anonymized technical Q&A source used for extraction diagnostics and protocol comparisons.
-- **S2:** a distinct technical research source prepared for a later cross-source quality test; no model call has been made for S2.
+- **S2:** a distinct technical research source tested by one frozen B1 request; see the scoped result and limitations below.
 - Numbers below are the reported results of local qualification and controlled calls, not an external audit. "Evidence supported" means a source passage supports the **attributed source statement**; it does not establish independent real-world truth.
 - The historical extraction, later offline repairs, same-range comparisons, and newer paired experiment have different denominators. Do **not** merge their scores into a single success rate.
 
@@ -61,19 +61,46 @@ B2 introduced an extra, non-contract source-metadata field; strict local validat
 
 Both groups exposed limits around context-dependent meaning and compound Claims. No prompt revision, Schema relaxation, production integration, or further paid repeat has been authorized by this retrospective.
 
-## S2: cross-source B1 experiment preparation
+## S2: one cross-source B1 live validation
 
-A separate two-page high-density sample was selected. Its reference set contains **29 high-priority / 16 medium-priority** statements. The single frozen model request is scoped to **15 high-priority / 8 medium-priority** items; the rest are Context or not under test. Local full-request token preflight reported **9,877 input Tokens**. Offline checks passed; **real inference calls = 0** for S2.
+The separate two-page benchmark remains **29 high-priority / 16 medium-priority** items. Only the frozen single-request scope of **15 high-priority / 8 medium-priority** items was tested. Context-only items were not counted as omissions.
 
-These are readiness checks only; there is **no** cross-source quality outcome yet. External-processing permission, actual provider identity, bounded usage and requested user authorization remain dispatch prerequisites. Permission asserted in a local preparation record must not be represented as independent rights-holder verification.
+Exactly **one** authorized inference completed, with no retries. The unmodified v7 record passed strict Schema and native Binding validation; no forbidden fields, selectors or failed Claims were removed to obtain that result.
+
+| Frozen-scope metric | S2 B1 result |
+| --- | ---: |
+| All Raw Claims / semantic record groups | 13 / 13 |
+| Legal primary bindings / complete source-semantic support | 13/13 / 13/13 (100%) |
+| High-priority appearance / usable / metadata-conservative usable recall | 15/15 / 15/15 / 15/15 |
+| Medium-priority usable recall | 8/8 |
+| Wrong Primary Evidence / severe identity or ownership violations | 0 / 0 |
+| Attribution conflicts / question-only records | 0 / 0 |
+| Fully duplicate Claims | 0/13 |
+| Partial overlap | 1 pair, involving 2 Claims |
+| Clearly compound Claims | 8/13 (61.5%) |
+| WHOLE_UNIT / RAW_SUBSPAN primary selections | 13 / 0 |
+| Input / output / total Tokens | 9,919 / 4,169 / 14,088 |
+| Cached / uncached input Tokens | 6,400 / 3,519 |
+| Tokens per usable high-priority item | 939.2 |
+| Usage-based estimated charge | CNY 0.040646 |
+
+**CROSS_SOURCE_B1_PASS** applies to the frozen hard quality gates in this single scope. Atomicity had no numerical pass threshold and remains an explicit limitation, not a silently added or waived gate. Thirteen supported records cover **23 distinct frozen reference propositions**; these counts must not be confused with thirteen atomic propositions.
+
+The full local request count was 9,877; actual input was 42 Tokens higher and remained within the bound. Whole-unit references were individually checked for meaning, attribution, quantities, temporal and conditional qualifiers. They were not credited merely because their byte ranges resolved. Explicit question context was supported by answers, rather than promoted into facts on its own.
+
+No new fatal failure mode was observed relative to the prior B1 samples. The existing tendency to reproduce multiple independently reviewable propositions in one answer-unit Claim persisted: **8/13** clearly compound here versus **5/13** in the prior newer S1 B1 scope. Different source content and scope prevent interpreting this as a controlled regression estimate. Total usage was 309 Tokens lower than that S1 sample; estimated cost was CNY 0.007422 lower. Per-item efficiency also uses different Gold denominators and is not a causal strategy comparison.
+
+This is one model, one request and one scope, assessed non-blindly against a reference frozen before this source's model output. Source support is not independent factual verification. Source-specific external-processing permission was accepted from an explicit user affirmation; it was not represented as independent rights-holder verification. No formal Source Run, P0/P1/P2, semantic admission or canonical write was performed.
+
+**B1 remains experimental, not Production Ready.** Residual blockers are proposition atomicity, broader source/batch validation, and end-to-end qualification of metadata authority, review, provenance-preserving repetition handling and governed admission. An empty known-Node catalog in this pilot did not test canonical Node matching. No B2 revision, Schema relaxation, paid repeat or production integration followed this result.
 
 ## Project decisions and next acceptance steps
 
 1. **Do not pursue full repair of the legacy S1 Run as the principal roadmap.** Preserve all original evidence, failed coverage, immutable attempts and guard semantics.
 2. **Hold B2 development and repeat spending.** Do not delete forbidden output fields or dilute the native Schema to make B2 pass.
-3. **Keep B1 as the experimental quality baseline.** Before production integration, qualify it on a distinct source and evaluate full semantic support, useful high-priority recall, repetition, attribution, atomicity, native-record validity and actual usage.
+3. **Keep B1 as the experimental quality baseline.** The first distinct-source scope passed the frozen hard gates, but before production integration expand source/batch validation and address the documented atomicity and governed end-to-end qualification gaps.
 4. Source metadata authority must not be established by model voting. A valid Evidence span is insufficient without statement-level semantic support; compound and cross-context Claims require explicit scrutiny.
-5. Only after cross-source qualification should maintainers propose narrowly scoped integration into the governed Review/Admission workflow. P0/P1/P2 Human and independent-Operator boundaries remain authoritative.
+5. A single cross-source pass is insufficient for integration. Only after broader quality and end-to-end qualification should maintainers propose narrowly scoped integration into the governed Review/Admission workflow. P0/P1/P2 Human and independent-Operator boundaries remain authoritative.
 6. Draft PRs **#134** (forensic reader) and **#135** (selective candidate admission) are intentionally pending. Neither is a shortcut around quality or governance gates.
 
 **No merging, deployment, Production writing, release activation, or additional Provider call was performed by this document archive.**
