@@ -104,7 +104,7 @@ class OperatorHandoff:
                 code = str(error) if isinstance(error, BoundaryError) else 'HANDOFF_INTERRUPTED'
                 # Do not infer rollback from a timeout/exception. The next worker
                 # reads the durable grant before deciding which technical step remains.
-                status = 'BLOCKED' if code in ('STALE_BASELINE', 'TARGET_IDENTITY_MISMATCH', 'OTHER_EXECUTION_RECOVERY_REQUIRED',
+                status = 'BLOCKED' if code.startswith(('CANDIDATE_REVISION_', 'CANDIDATE_LIFECYCLE_')) or code in ('STALE_BASELINE', 'TARGET_IDENTITY_MISMATCH', 'OTHER_EXECUTION_RECOVERY_REQUIRED',
                     'ADMISSION_RUNTIME_MISMATCH', 'ADMISSION_BINDING_MISMATCH', 'RUNTIME_IDENTITY_MISMATCH',
                     'ADMISSION_APPROVAL_MISMATCH', 'ADMISSION_P1_MISMATCH') else 'RECOVERY_REQUIRED'
                 self.record(handle, plan, approval, status, error_code=code)

@@ -533,6 +533,11 @@ class SourceOperations:
                 raise SourceOperationError(str(error), error.status) from None
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
                      if schema_version(connection) in ("9", "10", "11", "12") else None)
+            if candidate_origin and candidate_origin['version'] == 'source-candidate-set-v2':
+                from .candidate_inputs import CandidateInputs
+                from .candidate_lifecycle import require_documents
+                require_documents(self.config, [CandidateInputs(self).read(ref) for ref in candidate_origin['references']],
+                    candidate_origin.get('lifecycle_binding'), candidate_origin['excluded_keys'], connection=connection)
             if candidate_replacement is not None:
                 self._validate_candidate_replacement(connection, source_id, candidate_origin,
                                                      candidate_replacement, basis)
@@ -851,6 +856,8 @@ class SourceOperations:
         body = {'version': version, 'references': list(references), 'excluded_keys': sorted(excluded)}
         if version == V2:
             body['entry_contract'] = dict(ENTRY_CONTRACT)
+            from .candidate_lifecycle import freeze
+            body['lifecycle_binding'] = freeze(self.config, documents, excluded)
         origin = {**body, 'identity': canonical_sha256(body)}
         from pro_a.company_material_intent import FIELDS, read_bound
         with self.store.connect() as connection:
@@ -1392,8 +1399,13 @@ class SourceOperations:
                                           (candidate_origin['identity'] + '.batch.json'), missing=True)
             with self.store.connect(operator_write=True) as connection:
                 connection.execute('BEGIN IMMEDIATE')
-                write_once(candidate_path, _canonical({'documents': documents,
-                    'excluded_keys': candidate_origin['excluded_keys']}).encode('utf-8'))
+                candidate_data = {'documents': documents, 'excluded_keys': candidate_origin['excluded_keys']}
+                if candidate_origin['version'] == 'source-candidate-set-v2':
+                    from .candidate_lifecycle import require_documents
+                    require_documents(self.config, documents, candidate_origin.get('lifecycle_binding'),
+                        candidate_origin['excluded_keys'], connection=connection)
+                    candidate_data['lifecycle_binding'] = candidate_origin['lifecycle_binding']
+                write_once(candidate_path, _canonical(candidate_data).encode('utf-8'))
         if row["state"] == "QUEUED":
             self._transition(run_id, "PARSING", "NATIVE_SOURCE_REGISTRATION")
             stored_source = self.artifacts.resolve(source["storage_relative"])

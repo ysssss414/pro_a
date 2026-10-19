@@ -1,5 +1,11 @@
 # Accepted v7 review bridge, R1
 
+Revision lifecycle addendum: new review entries use
+`accepted-v7-review-entry-v2`, with explicit selection, replacement and revocation
+under [candidate revision lifecycle v1](b1-revision-lifecycle-v1.md). The v1
+descriptor below remains part of immutable Origin/history reconstruction;
+legacy v2 packets without lifecycle bindings do not authorize new execution.
+
 This draft addresses the formal entry and review visibility gaps described in
 PR #137. It does not deploy a runtime, migrate historical experiments, or grant
 production admission. Existing v4 Origins and the v7 extraction-only qualification

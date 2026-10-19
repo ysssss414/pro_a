@@ -140,6 +140,8 @@ class CandidateInputs:
             relative = 'candidate-inputs/' + digest + '.json'
             path = checked_path(self.service.config.artifact_root / relative, missing=True)
             write_once(path, content)
+            from .candidate_lifecycle import register
+            register(document, connection)
         return {'version': document['version'], 'identity': document['identity'],
                 'artifact_relative': relative, 'artifact_sha256': digest}
 

@@ -16,9 +16,11 @@ from .research_quarantine import parse_prefix
 VERSION = 'source-candidate-set-v2'
 REVISION = 'controlled-claim-children-v1'
 ENTRY = 'accepted-v7-review-entry-v1'
-ENTRY_CONTRACT = {'version': ENTRY, 'origin_version': VERSION,
+ORIGIN_ENTRY_CONTRACT = {'version': ENTRY, 'origin_version': VERSION,
     'accepted_record_version': v7.VERSION, 'completion_boundary': 'HUMAN_REVIEW_REQUIRED',
     'semantic_review_required': True, 'canonical_permission': False}
+ENTRY_CONTRACT = {**ORIGIN_ENTRY_CONTRACT, 'version': 'accepted-v7-review-entry-v2',
+    'lifecycle_contract': 'candidate-revision-lifecycle-v1'}
 
 
 def build(raw, scope, segment, catalog, context, series, plan, acceptance, revisions=None, metadata_resolution=None):
@@ -108,7 +110,7 @@ def build(raw, scope, segment, catalog, context, series, plan, acceptance, revis
             [acceptance['result_sha256']])
         metadata = validate_resolution(metadata_resolution, bound_scope=bound)
     body = {'version': VERSION, 'scope': copy.deepcopy(scope), 'acceptance': copy.deepcopy(acceptance),
-        'entry_contract': copy.deepcopy(ENTRY_CONTRACT), 'raw_sha256': raw_sha,
+        'entry_contract': copy.deepcopy(ORIGIN_ENTRY_CONTRACT), 'raw_sha256': raw_sha,
         'catalog_sha256': identity(asdict(catalog)), 'research_review_sha256': identity(review),
         'source_metadata': metadata, 'provider_source_metadata': native['source_metadata'],
         'metadata_resolution': copy.deepcopy(metadata_resolution), 'objects': objects, 'revisions': revisions,

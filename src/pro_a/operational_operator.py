@@ -110,6 +110,12 @@ class Operator:
             connection.close(); raise
 
     def register(self, envelope_id, *, confirm):
+        require(not WEB_REQUEST.get(), 'WEB_APPLY_FORBIDDEN')
+        from .workbench.candidate_lifecycle import execution_guard
+        with execution_guard(self.config.workbench, envelope_id):
+            return self._register_locked(envelope_id, confirm=confirm)
+
+    def _register_locked(self, envelope_id, *, confirm):
         require(confirm == envelope_id, 'OPERATOR_CONFIRMATION_REQUIRED')
         target, _ = self.config.paths()
         with Store(self.config.workbench).connect() as connection:
@@ -152,8 +158,11 @@ class Operator:
 
     def execute(self, envelope_id, *, confirm, fault=None):
         """Consume a registered operator grant. There is no raw-mutations writer API."""
+        require(not WEB_REQUEST.get(), 'WEB_APPLY_FORBIDDEN')
         with _execution_lock(checked_path(self.config.ledger, missing=True)):
-            return self._execute_locked(envelope_id, confirm=confirm, fault=fault)
+            from .workbench.candidate_lifecycle import execution_guard
+            with execution_guard(self.config.workbench, envelope_id):
+                return self._execute_locked(envelope_id, confirm=confirm, fault=fault)
 
     def _execute_locked(self, envelope_id, *, confirm, fault=None):
         require(confirm == envelope_id, 'OPERATOR_CONFIRMATION_REQUIRED')

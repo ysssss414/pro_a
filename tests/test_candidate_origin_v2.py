@@ -182,6 +182,7 @@ def test_accepted_origin_revision_and_native_packet(tmp_path, monkeypatch):
         archive.publish(value['original_id'], value['attempt'], bad)
     with pytest.raises(SourceOperationError, match='CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED'):
         service.start_candidates([reference], idempotency_key='unversioned-entry-synthetic')
+    select_document(value, revised)
     run = service.start_v7_review([reference], idempotency_key='v7-review-synthetic-0001',
                                   entry_contract=bridge.ENTRY_CONTRACT)['run']
     rid = run['processing_run_id']
@@ -209,7 +210,7 @@ def test_accepted_origin_revision_and_native_packet(tmp_path, monkeypatch):
     isolated_review_chain(value, run, tmp_path, monkeypatch)
 
 
-def isolated_review_chain(value, run, root, monkeypatch):
+def isolated_review_chain(value, run, root, monkeypatch, before_execute=None):
     """Synthetic review authorities; actual existing services and SQLite writes."""
     from contextlib import closing
     from pro_a.workbench.review_workbench import ReviewWorkbench
@@ -289,6 +290,8 @@ def isolated_review_chain(value, run, root, monkeypatch):
             lambda _: {'scheme': 'WINDOWS_MANDATORY_INTEGRITY', 'web_integrity': 4096})
         patch.setattr('pro_a.operator_handoff.integrity_level', lambda: 8192)
         admission.approve(handle, plan['object_id'], human, confirm=True)
+        if before_execute is not None:
+            return before_execute(admission, worker, handle, plan, human)
         result = worker.run(handle)
         assert result['status'] == 'RECONCILED'
         before = cfg.knowledge_db.read_bytes()
@@ -309,3 +312,14 @@ def isolated_review_chain(value, run, root, monkeypatch):
         'duplicate_child_observations_retained': 6, 'repeat_increment': 0,
         'windows_integrity': 'SIMULATED_POSITIVE_WITH_NEGATIVE_GUARD_TEST',
         'real_b1_production_qualification': False})
+
+
+def select_document(value, document):
+    from pro_a.workbench.candidate_lifecycle import RevisionLifecycle, _required
+    lifecycle = RevisionLifecycle(value['config'])
+    for i, ref in enumerate(_required([document])):
+        state = lifecycle.read(ref)
+        if state['current_revision'] is None:
+            lifecycle.decide('SELECT', ref, expected_head=state['head_sha256'],
+                identity={'actor':'TEST_FIXTURE_HUMAN','session_id':'TEST_FIXTURE_SESSION','principal_type':'HUMAN_USER'},
+                reason='TEST FIXTURE explicit initial selection', idempotency_key='test-select-'+str(i).zfill(8), confirm=True)

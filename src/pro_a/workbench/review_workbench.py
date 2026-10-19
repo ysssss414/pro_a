@@ -286,6 +286,8 @@ class ReviewWorkbench:
             connection.execute('BEGIN IMMEDIATE')
             if schema_version(connection) not in ('2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'):
                 raise ReviewError('REVIEW_SCHEMA_REQUIRED')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             from .unified_review import guard_operation
             guard_operation(connection, handle, 'native', action, request, identity)
             draft, states, audit = self._state(connection, handle, basis)

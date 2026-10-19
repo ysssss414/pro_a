@@ -207,8 +207,8 @@ def semantic_projection(documents, excluded_keys=()):
         require(document.get('version') in VERSIONS and document.get('identity') == identity(
             {k: v for k, v in document.items() if k != 'identity'}), 'CANDIDATE_ORIGIN_DRIFT')
         if document['version'] != VERSION:
-            from .candidate_origin_v2 import ENTRY_CONTRACT
-            require(document.get('entry_contract') == ENTRY_CONTRACT, 'CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
+            from .candidate_origin_v2 import ORIGIN_ENTRY_CONTRACT
+            require(document.get('entry_contract') == ORIGIN_ENTRY_CONTRACT, 'CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
             require(document.get('metadata_resolution') is not None, 'SOURCE_METADATA_AUTHORITY_REQUIRED')
         for obj in document['objects']:
             if obj['status'] != 'SEMANTIC_REVIEW_REQUIRED':

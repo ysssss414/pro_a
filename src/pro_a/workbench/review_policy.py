@@ -68,6 +68,8 @@ class ReviewPolicy:
         require(required(packet), 'CANDIDATE_REVIEW_REQUIRED')
         with self.reviews.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.reviews.config, handle, connection=connection)
             require(connection.execute("SELECT value FROM workbench_meta WHERE key='schema_version'").fetchone()[0] == '12',
                     'WORKBENCH_SCHEMA_REQUIRED')
             previous = self.read(handle, connection=connection)

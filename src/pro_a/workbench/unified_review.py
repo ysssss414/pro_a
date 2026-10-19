@@ -131,6 +131,8 @@ class UnifiedReview:
         pid = digest(proposal)
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             require(not records(connection, handle, 'UNIFIED_REVIEW_APPROVED'), 'UNIFIED_APPROVAL_LOCKED')
             if not any(p['proposal_id'] == pid for p in records(connection, handle, 'UNIFIED_REVIEW_PREPARED')):
                 self.batch.record(connection, handle, 'UNIFIED_REVIEW_PREPARED', {'proposal_id': pid, 'proposal': proposal})
@@ -167,6 +169,8 @@ class UnifiedReview:
         self.check(handle, proposal)
         with self.store.connect(operator_write=True) as connection:
             connection.execute('PRAGMA synchronous=FULL'); connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             approvals = records(connection, handle, 'UNIFIED_REVIEW_APPROVED')
             require(len(approvals) <= 1, 'RECOVERY_REQUIRED')
             if approvals:
@@ -223,6 +227,8 @@ class UnifiedReview:
                   'attribution_id': sidecar['object_id'], 'attribution_sha256': sidecar['sha256'], 'production_authorized': False}
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             completed = records(connection, handle, 'UNIFIED_REVIEW_COMPLETED')
             require(not completed or completed == [result], 'RECOVERY_REQUIRED')
             if not completed:
