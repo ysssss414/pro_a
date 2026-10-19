@@ -63,6 +63,11 @@ the decision can succeed only afterwards. No replacement may commit between
 validation and Canonical commit. The lock is database-backed and cross-process;
 no UI flag, process cache or early-only validation establishes eligibility.
 
+Grant registration and receipt reconciliation take the same state-before-ledger
+order. Reconciliation verifies a CONSUMED grant and its committed receipt; it
+does not reauthorize execution or require the historical revision to remain
+active. This preserves completed history without introducing a reverse lock path.
+
 Review write transactions likewise recheck selections while holding their state
 reservation. Inference may finish after invalidation, but stale advice cannot be
 registered as executable authority. Rejection does not consume a READY Grant or

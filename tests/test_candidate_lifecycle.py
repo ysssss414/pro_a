@@ -204,6 +204,28 @@ def test_revoke_parent_dependency_blocks_whole_selection(tmp_path, monkeypatch):
     assert lifecycle.read(other)['versions'][other['revision_sha256']] == 'ACTIVE'
 
 
+def test_reconciliation_reserves_state_before_ledger(tmp_path, monkeypatch):
+    """A competing SQLite writer cannot enter before reconciliation takes ledger."""
+    import sqlite3
+    from pro_a.operational_operator import Operator, OperatorConfig
+    from pro_a.workbench.store import Store
+    value = accepted_case(tmp_path, monkeypatch)
+    worker = Operator(OperatorConfig(value['config'], tmp_path/'operator/ledger.db'))
+    worker.initialize()
+    original = worker.connect
+    before = value['config'].knowledge_db.read_bytes()
+    def contested_connection():
+        with Store(value['config']).connect(operator_write=True) as competitor:
+            competitor.execute('PRAGMA busy_timeout=0')
+            with pytest.raises(sqlite3.OperationalError, match='locked'):
+                competitor.execute('BEGIN IMMEDIATE')
+        return original()
+    monkeypatch.setattr(worker, 'connect', contested_connection)
+    with pytest.raises(BoundaryError, match='RECOVERY_REQUIRED'):
+        worker.reconcile('TEST_FIXTURE_MISSING_CONSUMED_RECEIPT')
+    assert value['config'].knowledge_db.read_bytes() == before
+
+
 @pytest.mark.parametrize('winner', ['execution', 'replacement'])
 def test_cross_process_execution_and_replacement_serial_order(tmp_path, monkeypatch, winner):
     """Pause real transactions, not a stand-in writer or an early UI check."""
