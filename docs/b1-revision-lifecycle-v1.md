@@ -59,9 +59,11 @@ Lifecycle decisions and execution use the same SQLite state database reservation
 Canonical/Grant transaction, rechecks frozen selections, and holds the reservation
 through the atomic Canonical and Grant commit. A decision that commits first
 blocks old execution. An execution that acquires the reservation first may commit;
-the decision can succeed only afterwards. No replacement may commit between
-validation and Canonical commit. The lock is database-backed and cross-process;
-no UI flag, process cache or early-only validation establishes eligibility.
+the concurrent decision receives `CANDIDATE_REVISION_CONCURRENT_WRITE` and the
+same exact idempotent request may be explicitly submitted after execution commits.
+There is no automatic retry. No replacement may commit between validation and
+Canonical commit. The lock is database-backed and cross-process; no UI flag,
+process cache or early-only validation establishes eligibility.
 
 Grant registration and receipt reconciliation take the same state-before-ledger
 order. Reconciliation verifies a CONSUMED grant and its committed receipt; it

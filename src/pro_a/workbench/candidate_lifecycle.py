@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import hashlib
 import json
 import re
+import sqlite3
 
 from pro_a.evidence_binding import identity as digest
 from .config import BoundaryError
@@ -152,7 +153,13 @@ class RevisionLifecycle:
         request = {'action':action, 'reference':ref, 'replacement':replacement, 'expected_head':expected_head,
                    'identity':dict(identity), 'reason':reason, 'idempotency_key':idempotency_key}
         with self.store.connect(operator_write=True) as db:
-            db.execute('PRAGMA synchronous=FULL'); db.execute('BEGIN IMMEDIATE')
+            db.execute('PRAGMA synchronous=FULL')
+            try:
+                db.execute('BEGIN IMMEDIATE')
+            except sqlite3.OperationalError as exc:
+                if getattr(exc, 'sqlite_errorcode', None) in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED):
+                    raise BoundaryError('CANDIDATE_REVISION_CONCURRENT_WRITE') from exc
+                raise
             states, registered, decisions = _read(db, ref['run_id'])
             prior = decisions.get(idempotency_key)
             if prior:

@@ -249,7 +249,7 @@ def test_cross_process_execution_and_replacement_serial_order(tmp_path, monkeypa
         done, committed = tmp_path/'done.json', tmp_path/'canonical-committed'
         script = '''import json,sys,time,sqlite3
 from pathlib import Path
-from pro_a.workbench.config import WorkbenchConfig
+from pro_a.workbench.config import WorkbenchConfig,BoundaryError
 from pro_a.workbench.candidate_lifecycle import RevisionLifecycle,DECISION
 from pro_a.workbench.source_operations import SourceOperations
 p=Path(sys.argv[1]); j=json.loads(p.read_text()); root=p.parent
@@ -266,21 +266,29 @@ if j['winner']=='replacement':
     time.sleep(.01)
  SourceOperations._event=staticmethod(pause)
 else: (root/'ready').write_text('ATTEMPTING_STATE_TRANSACTION')
-r=RevisionLifecycle(WorkbenchConfig(**j['config'])).decide('REPLACE',j['old'],replacement=j['new'],
- expected_head=j['head'],identity={'actor':'TEST_FIXTURE_HUMAN','session_id':'TEST_FIXTURE_SESSION','principal_type':'HUMAN_USER'},
- reason='TEST FIXTURE concurrent explicit replacement', idempotency_key='concurrent-replace-0001',confirm=True)
 if j['winner']=='execution':
- assert (root/'canonical-committed').exists()
- with sqlite3.connect(Path(j['ledger']).as_uri()+'?mode=ro',uri=True) as db:
-  assert db.execute('SELECT status FROM grants WHERE envelope_id=?',(j['envelope'],)).fetchone()[0]=='CONSUMED'
-(root/'done.json').write_text(json.dumps(r))
+ from pro_a.workbench import store as store_module
+ real_connect=sqlite3.connect
+ def no_wait(*args,**kwargs):
+  kwargs['timeout']=0
+  return real_connect(*args,**kwargs)
+ store_module.sqlite3.connect=no_wait
+try:
+ r=RevisionLifecycle(WorkbenchConfig(**j['config'])).decide('REPLACE',j['old'],replacement=j['new'],
+  expected_head=j['head'],identity={'actor':'TEST_FIXTURE_HUMAN','session_id':'TEST_FIXTURE_SESSION','principal_type':'HUMAN_USER'},
+  reason='TEST FIXTURE concurrent explicit replacement', idempotency_key='concurrent-replace-0001',confirm=True)
+except BoundaryError as exc:
+ assert j['winner']=='execution' and str(exc)=='CANDIDATE_REVISION_CONCURRENT_WRITE'
+ (root/'busy.json').write_text(json.dumps({'error':str(exc)}))
+else:
+ (root/'done.json').write_text(json.dumps(r))
 '''
         def spawn():
             return subprocess.Popen([sys.executable, '-B', '-c', script, str(job_path)],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                 env={**os.environ, 'PYTHONPATH': os.pathsep.join(sys.path)})
         def until_ready(child):
-            limit = time.monotonic()+10
+            limit = time.monotonic()+60
             while not ready.exists():
                 assert time.monotonic() < limit and child.poll() is None
                 time.sleep(.01)
@@ -299,6 +307,14 @@ if j['winner']=='execution':
             receipt = worker.operator.execute(plan['envelope_id'], confirm=plan['envelope_id'], fault=fault)
             stdout, stderr = child.communicate(timeout=15)
             assert child.returncode == 0, stderr.decode(errors='replace')
+            assert (tmp_path/'busy.json').read_text() == '{"error": "CANDIDATE_REVISION_CONCURRENT_WRITE"}'
+            assert committed.exists() and not done.exists()
+            result = lifecycle.decide('REPLACE', old, replacement=replacement,
+                expected_head=job['head'], identity={'actor':'TEST_FIXTURE_HUMAN',
+                'session_id':'TEST_FIXTURE_SESSION','principal_type':'HUMAN_USER'},
+                reason='TEST FIXTURE concurrent explicit replacement',
+                idempotency_key='concurrent-replace-0001', confirm=True)
+            done.write_text(json.dumps(result))
             assert done.exists()
             worker.operator.reconcile(plan['envelope_id'])
             # Replacement after execution cannot rewrite or block read-only history.
