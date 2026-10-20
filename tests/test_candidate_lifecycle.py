@@ -301,7 +301,11 @@ else:
                 if stage == 'before_commit':
                     child = spawn(); until_ready(child)
                     time.sleep(.1)
-                    assert child.poll() is None and not done.exists()
+                    # A zero-timeout SQLITE_BUSY rejection may complete before
+                    # this process is scheduled again.  Its persisted result,
+                    # rather than child liveness at an arbitrary instant, is
+                    # the concurrency contract.
+                    assert not done.exists()
                 elif stage == 'after_commit':
                     committed.write_text('CANONICAL_AND_GRANT_COMMITTED_BEFORE_STATE_RELEASE')
             receipt = worker.operator.execute(plan['envelope_id'], confirm=plan['envelope_id'], fault=fault)
