@@ -44,6 +44,8 @@ class CanonicalAdmission:
         self.check(handle, plan, before_execution=True)
         with self.store.connect(operator_write=True) as db:
             db.execute('PRAGMA synchronous=FULL'); db.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=db)
             prior = records(db, handle, PLAN)
             require(not prior or prior == [plan], 'ADMISSION_PLAN_CONFLICT')
             if not prior: self.batch.record(db, handle, PLAN, plan)
@@ -74,6 +76,8 @@ class CanonicalAdmission:
             'authorization_scope': 'ONE_EXACT_ENVELOPE_INSERT_OR_NOOP',
             'governance': 'SOURCE_ASSERTION / UNVERIFIED / CLUE_ONLY; no Official Current View change'}, 'ADMISSION')
     def check(self, handle, plan, *, before_execution):
+        from .candidate_lifecycle import require_handle
+        require_handle(self.config, handle)
         verify(plan, 'ADMISSION')
         require(plan['artifact_id'] == handle and plan['runtime_identity'] == runtime_identity() and
                 plan['contract_sha256'] == CONTRACT_SHA, 'ADMISSION_RUNTIME_MISMATCH')
@@ -113,6 +117,8 @@ class CanonicalAdmission:
         require(identity.get('principal_type') == 'HUMAN_USER' and identity.get('actor') and
                 identity.get('session_id') and confirm is True, 'HUMAN_USER_REQUIRED')
         boundary = require_readonly_boundary(self.config)
+        from .candidate_lifecycle import require_handle
+        require_handle(self.config, handle)
         with self.store.connect() as db:
             plans, approvals = records(db, handle, PLAN), records(db, handle, APPROVAL)
         require(len(plans) == 1 and plans[0]['object_id'] == plan_id, 'ADMISSION_PLAN_MISMATCH')
@@ -128,6 +134,8 @@ class CanonicalAdmission:
             'timestamp': datetime.now(timezone.utc).isoformat()}, 'PRODUCTION_APPROVAL')
         with self.store.connect(operator_write=True) as db:
             db.execute('PRAGMA synchronous=FULL'); db.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=db)
             prior = records(db, handle, APPROVAL)
             require(not prior or (len(prior) == 1 and prior[0]['plan_id'] == plan_id and
                     prior[0]['actor'] == identity['actor']), 'ADMISSION_APPROVAL_CONFLICT')

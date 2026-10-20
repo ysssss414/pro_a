@@ -267,9 +267,35 @@ def test_operator_rejects_invalid_ownership_without_acceptance(tmp_path, monkeyp
     fake = FakeTransport(mutation)
     fake.foreign = worker.output_batches.ledger.read(binding[3].series_id)[1].leaves[-1].assigned_evidence_refs[0]
     run = advance(value, rid, fake)
-    assert run['state'] == 'BLOCKED', run.get('error')
+    # independent-candidate-isolation-v1 continues only other frozen leaves.
+    # Transport success is not compiler acceptance or complete Source coverage.
+    assert run['state'] == 'EXTRACTION_PROCESSING', run.get('error')
+    assert run['coverage_status'] == 'PENDING'
     assert len(fake.calls) == 1 and not rows(value, 'bounded_extraction_segment_results')
-    assert len(rows(value, 'bounded_extraction_outcomes')) == 1
+    outcomes = rows(value, 'bounded_extraction_outcomes')
+    assert len(outcomes) == 1
+    ledger = worker.output_batches.ledger
+    _, plan, _, accounting = ledger.read(binding[3].series_id)
+    states = {r['segment_id']: r['state'] for r in rows(value, 'bounded_extraction_segments')}
+    failed = [leaf for leaf in plan.leaves if states[leaf.segment_id] == 'FAILED']
+    pending = [leaf for leaf in plan.leaves if states[leaf.segment_id] == 'PLANNED']
+    assert len(failed) == 1 and len(pending) == 1
+    failed_id = failed[0].segment_id
+    assert set(failed[0].assigned_evidence_refs).isdisjoint(pending[0].assigned_evidence_refs)
+    assert not rows(value, 'source_processing_jobs')
+    # Consume only the independent remaining leaf, never retry the rejected leaf.
+    valid = FakeTransport()
+    for _ in range(4):
+        run = advance(value, rid, valid)
+        if run['state'] == 'BLOCKED':
+            break
+    assert run['state'] == 'BLOCKED' and run['coverage_status'] == 'FAILED', run.get('error')
+    assert len(valid.calls) == 1
+    accepted = rows(value, 'bounded_extraction_segment_results')
+    assert len(accepted) == 1 and all(r['segment_id'] != failed_id for r in accepted)
+    assert all(r in rows(value, 'bounded_extraction_outcomes') for r in outcomes)
+    assert len(rows(value, 'bounded_extraction_attempts')) == 2
+    assert len(rows(value, 'bounded_extraction_outcomes')) == 2
     assert not rows(value, 'source_processing_jobs')
 
 

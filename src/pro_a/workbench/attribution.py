@@ -149,6 +149,8 @@ class Attribution:
         fingerprint = canonical_sha256({'action': action, 'request': request, 'actor': identity['actor']})
         with self.store.connect(operator_write=True) as connection:
             connection.execute('PRAGMA synchronous=FULL'); connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             from .unified_review import guard_operation
             guard_operation(connection, handle, 'attribution', action, request, identity)
             events, states, reviewer, sidecar = self.state(connection, handle, context)

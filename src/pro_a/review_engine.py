@@ -59,6 +59,8 @@ class ReviewEngine:
     def guard(self, handle):
         require(self.policy.enabled and handle in self.policy.artifact_ids, 'MCP_WRITE_SCOPE_DENIED')
         self.config.validate()
+        from pro_a.workbench.candidate_lifecycle import require_handle
+        require_handle(self.config, handle)
 
     def reviewer_binding(self, artifact_id, slot, reviewer_id):
         self.guard(artifact_id)
@@ -98,6 +100,8 @@ class ReviewEngine:
                           if mode == 'SINGLE_MODEL_HUMAN' else 'OPERATOR_ATTESTED_SEPARATE_SESSION_NOT_PLATFORM_PROVEN')}
         with self.batches.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from pro_a.workbench.candidate_lifecycle import require_handle
+            require_handle(self.config, artifact_id, connection=connection)
             _, existing = self.batches.events(connection, artifact_id, 'MCP_ADVICE_CONTEXT')
             prior = [p for p in existing if p['slot'] == slot]
             require(not prior or prior == [provenance], 'REVIEW_EXECUTION_CONFLICT')

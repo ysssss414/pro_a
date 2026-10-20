@@ -146,6 +146,8 @@ class AdvisoryReview:
         validate_opinion(packet, value, policy)
         with self.reviews.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.reviews.config, handle, connection=connection)
             if ReviewPolicy(self.reviews).read(handle, connection=connection) != policy:
                 raise BoundaryError('REVIEW_POLICY_BINDING_DRIFT')
             draft = connection.execute('SELECT status FROM review_drafts WHERE artifact_id=?', (handle,)).fetchone()

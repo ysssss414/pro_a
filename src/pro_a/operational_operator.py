@@ -110,6 +110,12 @@ class Operator:
             connection.close(); raise
 
     def register(self, envelope_id, *, confirm):
+        require(not WEB_REQUEST.get(), 'WEB_APPLY_FORBIDDEN')
+        from .workbench.candidate_lifecycle import execution_guard
+        with execution_guard(self.config.workbench, envelope_id):
+            return self._register_locked(envelope_id, confirm=confirm)
+
+    def _register_locked(self, envelope_id, *, confirm):
         require(confirm == envelope_id, 'OPERATOR_CONFIRMATION_REQUIRED')
         target, _ = self.config.paths()
         with Store(self.config.workbench).connect() as connection:
@@ -152,8 +158,11 @@ class Operator:
 
     def execute(self, envelope_id, *, confirm, fault=None):
         """Consume a registered operator grant. There is no raw-mutations writer API."""
+        require(not WEB_REQUEST.get(), 'WEB_APPLY_FORBIDDEN')
         with _execution_lock(checked_path(self.config.ledger, missing=True)):
-            return self._execute_locked(envelope_id, confirm=confirm, fault=fault)
+            from .workbench.candidate_lifecycle import execution_guard
+            with execution_guard(self.config.workbench, envelope_id):
+                return self._execute_locked(envelope_id, confirm=confirm, fault=fault)
 
     def _execute_locked(self, envelope_id, *, confirm, fault=None):
         require(confirm == envelope_id, 'OPERATOR_CONFIRMATION_REQUIRED')
@@ -226,23 +235,26 @@ class Operator:
     def reconcile(self, envelope_id):
         """Operator verifies durable ledger/post-state and registers an opaque receipt."""
         target, _ = self.config.paths()
-        with closing(self.connect()) as connection:
-            connection.execute('BEGIN IMMEDIATE')
-            grant = connection.execute('SELECT * FROM grants WHERE envelope_id=?', (envelope_id,)).fetchone()
-            require(grant is not None and grant['status'] == 'CONSUMED' and grant['receipt'], 'RECOVERY_REQUIRED')
-            envelope, receipt = json.loads(grant['body']), json.loads(grant['receipt'])
-            verify_envelope(envelope); verify(receipt, 'EXECUTION')
-            require(receipt['envelope_id'] == envelope_id and receipt['binding'] == envelope['binding'] and
-                    receipt['attribution_id'] == envelope['attribution']['object_id'] and receipt['baseline_sha256'] == envelope['baseline']['sha256'] and
-                    receipt['predicted_diff_id'] == envelope['predicted_diff']['object_id'] and receipt['adapter_version'] == VERSION and
-                    receipt['post_state_sha256'] == canonical_sha256(snapshot(connection, 'canonical')) == envelope['predicted_diff']['post_state_sha256'], 'RECOVERY_REQUIRED')
-            self.source(envelope, grant['artifact_id'])
-            self.export_receipt(receipt)
-            with Store(self.config.workbench).connect(operator_write=True) as workbench:
+        # Match register/execute's state -> Canonical/ledger lock order. This is
+        # committed history, so do not require a still-active revision selection.
+        with Store(self.config.workbench).connect(operator_write=True) as workbench:
+            workbench.execute('BEGIN IMMEDIATE')
+            with closing(self.connect()) as connection:
+                connection.execute('BEGIN IMMEDIATE')
+                grant = connection.execute('SELECT * FROM grants WHERE envelope_id=?', (envelope_id,)).fetchone()
+                require(grant is not None and grant['status'] == 'CONSUMED' and grant['receipt'], 'RECOVERY_REQUIRED')
+                envelope, receipt = json.loads(grant['body']), json.loads(grant['receipt'])
+                verify_envelope(envelope); verify(receipt, 'EXECUTION')
+                require(receipt['envelope_id'] == envelope_id and receipt['binding'] == envelope['binding'] and
+                        receipt['attribution_id'] == envelope['attribution']['object_id'] and receipt['baseline_sha256'] == envelope['baseline']['sha256'] and
+                        receipt['predicted_diff_id'] == envelope['predicted_diff']['object_id'] and receipt['adapter_version'] == VERSION and
+                        receipt['post_state_sha256'] == canonical_sha256(snapshot(connection, 'canonical')) == envelope['predicted_diff']['post_state_sha256'], 'RECOVERY_REQUIRED')
+                self.source(envelope, grant['artifact_id'])
+                self.export_receipt(receipt)
                 prior = workbench.execute('SELECT body FROM operational_receipts WHERE artifact_id=?', (grant['artifact_id'],)).fetchone()
                 if prior: require(json.loads(prior[0]) == receipt, 'RECEIPT_CONFLICT')
                 else: workbench.execute('INSERT INTO operational_receipts VALUES(?,?,?)', (grant['artifact_id'], receipt['object_id'], encode(receipt)))
-            return receipt
+                return receipt
 
 
 def _authorizer(action, table, column, database, trigger):

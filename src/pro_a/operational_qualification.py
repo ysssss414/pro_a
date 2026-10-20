@@ -46,9 +46,9 @@ def adapter_mutations(core, sidecar):
         if item['table'] == 'claims':
             candidate = json.loads(item['row']['structured_json']).get('candidate_origin')
             if candidate:
-                from .candidate_origin import GOVERNANCE, VERSION as ORIGIN_VERSION
+                from .candidate_origin import GOVERNANCE, VERSIONS
                 require(payload['metadata']['production_schema_version'] == '0.2.4', 'B_LITE_SCHEMA_REQUIRED')
-                require(candidate.get('version') == ORIGIN_VERSION and
+                require(candidate.get('version') in VERSIONS and
                         candidate.get('proposed_governance') == GOVERNANCE, 'CANDIDATE_GOVERNANCE_INVALID')
                 item['row'].update(GOVERNANCE)
                 item['row']['admission_basis_sha256'] = canonical_sha256({

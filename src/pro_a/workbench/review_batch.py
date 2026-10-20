@@ -121,6 +121,8 @@ class ReviewBatch:
         proposal_id = digest(proposal)
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             _, previous = self.events(connection, handle, 'MCP_BATCH_PREPARED')
             if not any(p['proposal_id'] == proposal_id for p in previous):
                 self.record(connection, handle, 'MCP_BATCH_PREPARED', {'proposal_id': proposal_id, 'proposal': proposal})
@@ -162,6 +164,8 @@ class ReviewBatch:
         require(binding == proposal['binding'], 'BATCH_BINDING_DRIFT')
         with self.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
+            from .candidate_lifecycle import require_handle
+            require_handle(self.config, handle, connection=connection)
             from .unified_review import records
             require(not records(connection, handle, 'UNIFIED_REVIEW_APPROVED'), 'UNIFIED_APPROVAL_LOCKED')
             _, approvals = self.events(connection, handle, 'MCP_BATCH_APPROVED')
