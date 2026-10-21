@@ -19,6 +19,10 @@ class OutputDecompositionRunner(BoundedSourceAnalysisRunner):
         self.binding_version = binding_version or contract.BINDING_VERSION
         self.provider_version = contract.contract(binding_version=self.binding_version)['provider_version']
         self.piece_input = partial(contract.piece_input, binding_version=self.binding_version)
+        if self.binding_version == contract.b1.BINDING:
+            frozen = service.jobs.current_runtime()['b1_request_settings']['context']
+            self.piece_input = partial(contract.piece_input, binding_version=self.binding_version,
+                                       b1_request_context=frozen)
 
     def inputs(self, run):
         bindings = super().inputs(run)
@@ -26,14 +30,20 @@ class OutputDecompositionRunner(BoundedSourceAnalysisRunner):
         if any(contract.contract(binding_version=value['binding_version']) != frozen
                for value, _, _, _ in bindings):
             raise ValueError('OUTPUT_RUN_BINDING_MISMATCH')
+        if frozen['binding_version'] == contract.b1.BINDING:
+            expected = run['runtime_identity']['b1_request_settings']['context']
+            if len(bindings) != 1 or bindings[0][0].get('b1_request_context') != expected:
+                raise ValueError('B1_CONTEXT_RUNTIME_MISMATCH')
         return bindings
 
     def projection(self, connection, run_id):
         result = BoundedSourceAnalysisRunner.projection(self, connection, run_id)
         rows = list(connection.execute('SELECT series_id FROM bounded_extraction_series WHERE processing_run_id=?', (run_id,)))
         roots = subdivisions = accepted = truncated = dispatched = unknown = 0
+        b1_scope = False
         for row in rows:
-            _, plan, _, _ = self.ledger.read(row['series_id'])
+            series, plan, _, _ = self.ledger.read(row['series_id'])
+            b1_scope = b1_scope or series.series_version == contract.b1.SERIES
             roots += sum(s.parent_segment_id is None for s in plan.segments)
             subdivisions += len(plan.superseded_segment_ids)
             accepted += connection.execute("SELECT count(*) FROM bounded_extraction_segments WHERE series_id=? AND state='SUCCEEDED_COMPLETE'", (row['series_id'],)).fetchone()[0]
@@ -47,4 +57,10 @@ class OutputDecompositionRunner(BoundedSourceAnalysisRunner):
             reserved_attempt_count=result['provider_segment_attempt_count'],
             provider_call_count=dispatched, confirmed_provider_call_count=dispatched-unknown,
             unknown_outcome_call_count=unknown)
+        if b1_scope:
+            result['assigned_coverage_status'] = result['coverage_status']
+            result['coverage_scope'] = 'B1_FROZEN_ASSIGNED_ONLY'
+            result['source_coverage_status'] = 'NOT_ESTABLISHED'
+            if result['coverage_status'] == 'COMPLETE':
+                result['coverage_status'] = 'PARTIAL'
         return result

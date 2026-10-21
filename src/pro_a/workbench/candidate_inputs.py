@@ -97,10 +97,12 @@ def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolu
                 raise BoundaryError('CANDIDATE_RUNTIME_IDENTITY_MISMATCH')
             scope['context_sha256'] = frozen['context_sha256']
             providers = build_source_providers(load_config(profile.phase4_config_path).llm, cloud,
-                                               output_binding_version=binding['binding_version'])
+                                               output_binding_version=binding['binding_version'],
+                                               b1_config_path=profile.phase4_config_path)
             if identity(providers[output_decomposition.OPERATION].configuration()) != attempt['configuration_sha256']:
                 raise BoundaryError('CANDIDATE_CONFIGURATION_MISMATCH')
             payload = output_decomposition.segment_payload(binding, context, catalog, series, segment)
+            payload = providers[output_decomposition.OPERATION].prepare_payload(payload)
             request = json.loads(attempt['request_json'])
             if request['payload_sha256'] != identity(payload):
                 raise BoundaryError('CANDIDATE_REQUEST_IDENTITY_MISMATCH')
@@ -114,6 +116,9 @@ def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolu
                 raise BoundaryError('CANDIDATE_ACCEPTED_RESULT_REQUIRED')
             accepted = _verified(accepted)
             result, review = v7.compile_result(raw.decode('utf-8'), series, segment, catalog, context, plan=plan)
+            from pro_a import b1_extraction as b1
+            if binding['binding_version'] == b1.BINDING:
+                b1.validate_record(raw.decode('utf-8'), binding['b1_request_context'], catalog, context, segment)
             stored = json.loads(ledger._read_artifact(series.series_id, segment.segment_id + '.result.json', accepted))
             attachment = stored.get('research_review_attachment')
             if (ledger._result(series.series_id, accepted) != result or attachment is None or

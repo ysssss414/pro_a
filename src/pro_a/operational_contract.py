@@ -46,6 +46,7 @@ def runtime_identity():
              'admission_schema.py', 'candidate_origin.py', 'candidate_origin_v2.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py',
              'workbench/advisory_review.py', 'workbench/review_policy.py', 'workbench/artifacts.py', 'workbench/review_workbench.py',
              'workbench/unified_review.py', 'workbench/canonical_admission.py', 'operator_handoff.py', 'process_boundary.py')
+    names += ('b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py')
     return canonical_sha256({name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names})
 
 

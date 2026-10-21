@@ -203,9 +203,17 @@ class BoundedSourceAnalysisRunner:
                              "BOUNDED_PROVIDER_CONTRACT_MISMATCH")
                     configuration = selected.configuration()
                     _require(configuration["timeout_seconds"] == self.service.jobs.profile.timeout_seconds, "BOUNDED_PROVIDER_CONFIGURATION_MISMATCH")
+                    from pro_a import b1_extraction as b1
+                    if series.series_version == b1.SERIES:
+                        _require(configuration.get('request_counter', {}).get('manifest_sha256') ==
+                            run['runtime_identity']['b1_request_settings']['counter_identity_sha256'],
+                            'B1_COUNTER_CONFIGURATION_MISMATCH')
                     payload = self.segment_payload(value, context, catalog, series, segment)
                     from .lossless_recovery import evidence_dispatch_payload as dispatch_payload
                     payload, prompt_name = dispatch_payload(self.ledger, segment.segment_id, payload)
+                    from pro_a.output_decomposition import OutputBatchProvider
+                    if isinstance(selected, OutputBatchProvider):
+                        payload = selected.prepare_payload(payload)
                     with self.ledger._connection(True) as c:
                         segment_row, _ = self.ledger._segment_row(c, segment.segment_id)
                         self.ledger._owned(segment_row, owner, fence)
@@ -247,6 +255,9 @@ class BoundedSourceAnalysisRunner:
                 return False
             code = "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY" if str(error) in (
                 "EXTRACTION_DENSITY_EXCEEDS_BOUNDED_POLICY", "SERIES_BUDGET_EXCEEDED") else "BOUNDED_EXTRACTION_FAILED"
+            from pro_a import b1_extraction as b1
+            if series.series_version == b1.SERIES and str(error) in ('B1_INPUT_PREFLIGHT_EXCEEDED', 'B1_COUNTER_CONFIGURATION_MISMATCH'):
+                code = str(error)
             if self.mode == 'WHOLE_PIECE_OUTPUT_DECOMPOSITION' and str(error) in (
                     'SOURCE_METADATA_CONFLICT', 'NODE_CANDIDATE_CONFLICT', 'OUTPUT_OWNERSHIP_VIOLATION'):
                 code = str(error)

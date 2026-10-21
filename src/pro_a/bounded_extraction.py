@@ -14,6 +14,7 @@ from .source_analysis_wire import (
     expand_source_analysis_wire_v2, validate_source_analysis_wire_v2,
 )
 from .analyzer import normalize_ws
+from .b1_extraction import SERIES as B1_OUTPUT_SERIES_VERSION, BATCH as B1_OUTPUT_BATCH_VERSION
 from .output_capacity import (SEGMENT_OUTPUT_CEILING, LEGACY_SEGMENT_OUTPUT_CEILING,
     SERIES_OUTPUT_LIABILITY_CEILING, OPERATION_OUTPUT_BUDGET_POLICY_VERSION)
 
@@ -36,7 +37,7 @@ OWNERSHIP_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v5"
 OWNERSHIP_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v5"
 EVIDENCE_INTENT_OUTPUT_SERIES_VERSION = "whole-piece-output-series-v6"
 EVIDENCE_INTENT_OUTPUT_BATCH_VERSION = "whole-piece-output-batch-v6"
-OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION, INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION, EVIDENCE_INTENT_OUTPUT_SERIES_VERSION)
+OUTPUT_SERIES_VERSIONS = (LEGACY_OUTPUT_SERIES_VERSION, V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION, INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION, EVIDENCE_INTENT_OUTPUT_SERIES_VERSION, B1_OUTPUT_SERIES_VERSION)
 OUTPUT_24K_SERIES_VERSIONS = (V2_OUTPUT_SERIES_VERSION, OUTPUT_SERIES_VERSION, INTENT_OUTPUT_SERIES_VERSION, OWNERSHIP_OUTPUT_SERIES_VERSION, EVIDENCE_INTENT_OUTPUT_SERIES_VERSION)
 OUTPUT_COVERAGE_VERSION = "whole-piece-output-coverage-v1"
 OUTPUT_SUBDIVISION_VERSION = "whole-piece-output-subdivision-v1"
@@ -92,20 +93,31 @@ class ExtractionSeries:
 
 def create_extraction_series(context: SourcePieceContext, catalog: SourceEvidenceCatalog,
                              processing_run_id: str, budget: SeriesBudget = SeriesBudget(), *,
-                             series_version: str = BOUNDED_EXTRACTION_SERIES_VERSION) -> ExtractionSeries:
+                             series_version: str = BOUNDED_EXTRACTION_SERIES_VERSION,
+                             eligible_evidence_refs=None) -> ExtractionSeries:
     validate_catalog(catalog, context)
     if not isinstance(processing_run_id, str) or not processing_run_id.strip() or not isinstance(budget, SeriesBudget):
         raise BoundedExtractionError("INVALID_SERIES_INPUT")
     universe = identity({"catalog": asdict(catalog), "known_node_ids": context.known_node_ids})
     if series_version not in (BOUNDED_EXTRACTION_SERIES_VERSION, *OUTPUT_SERIES_VERSIONS):
         raise BoundedExtractionError("INVALID_SERIES_VERSION")
+    refs = tuple(u.evidence_ref for u in catalog.units)
+    if eligible_evidence_refs is not None:
+        if (series_version != B1_OUTPUT_SERIES_VERSION or not eligible_evidence_refs
+                or tuple(r for r in refs if r in eligible_evidence_refs) != tuple(eligible_evidence_refs)):
+            raise BoundedExtractionError('INVALID_B1_ASSIGNMENT')
+        refs = tuple(eligible_evidence_refs)
+    if series_version == B1_OUTPUT_SERIES_VERSION and (len(refs) > 16 or budget != SeriesBudget(
+            max_leaf_segments=1, max_subdivision_depth=1, max_provider_calls=1, max_cumulative_output_tokens=12000)):
+        raise BoundedExtractionError('INVALID_B1_BUDGET')
     values = {"series_version": series_version, "processing_run_id": processing_run_id,
               "source_sha256": context.source_sha256, "source_piece_id": context.piece.piece_id,
               "source_piece_sha256": context.piece.source_sha256, "source_prompt_sha256": context.piece.prompt_sha256,
-              "evidence_universe_sha256": universe, "eligible_evidence_refs": tuple(u.evidence_ref for u in catalog.units),
+              "evidence_universe_sha256": universe, "eligible_evidence_refs": refs,
               "wire_contract_identity": SOURCE_ANALYSIS_WIRE_V3_VERSION,
               "task_policy_identity": OUTPUT_POLICY_VERSION if series_version in OUTPUT_SERIES_VERSIONS else BOUNDED_EXTRACTION_POLICY_VERSION,
-              "output_budget_identity": OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1",
+              "output_budget_identity": ('b1-operation-output-budget-v1' if series_version == B1_OUTPUT_SERIES_VERSION else
+                  OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1"),
               "budget": asdict(budget)}
     series_id = "SERIES_" + identity(values)[:32].upper()
     sha = identity({**values, "series_id": series_id})
@@ -121,12 +133,17 @@ def _series(series: ExtractionSeries) -> None:
     if (series.series_version not in (BOUNDED_EXTRACTION_SERIES_VERSION, *OUTPUT_SERIES_VERSIONS)
             or series.wire_contract_identity != SOURCE_ANALYSIS_WIRE_V3_VERSION
             or series.task_policy_identity != (OUTPUT_POLICY_VERSION if series.series_version in OUTPUT_SERIES_VERSIONS else BOUNDED_EXTRACTION_POLICY_VERSION)
-            or series.output_budget_identity != (OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series.series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1")
+            or series.output_budget_identity != ('b1-operation-output-budget-v1' if series.series_version == B1_OUTPUT_SERIES_VERSION else
+                OPERATION_OUTPUT_BUDGET_POLICY_VERSION if series.series_version in OUTPUT_24K_SERIES_VERSIONS else "operation-output-budget-v1")
             or len(set(series.eligible_evidence_refs)) != len(series.eligible_evidence_refs)
             or sid != "SERIES_" + identity(values)[:32].upper()
             or sha != identity({**values, "series_id": sid})):
         raise BoundedExtractionError("SERIES_IDENTITY_MISMATCH")
     SeriesBudget(**asdict(series.budget))
+    if series.series_version == B1_OUTPUT_SERIES_VERSION and (len(series.eligible_evidence_refs) > 16
+            or series.budget != SeriesBudget(max_leaf_segments=1, max_subdivision_depth=1,
+                max_provider_calls=1, max_cumulative_output_tokens=12000)):
+        raise BoundedExtractionError('INVALID_B1_BUDGET')
 
 
 @dataclass(frozen=True)
@@ -149,7 +166,8 @@ class ExtractionSegment:
 def _segment(series: ExtractionSeries, lo: int, hi: int, path: tuple[int, ...],
              parent: ExtractionSegment | None = None) -> ExtractionSegment:
     refs = series.eligible_evidence_refs[lo:hi]
-    values = {"segment_version": (EVIDENCE_INTENT_OUTPUT_BATCH_VERSION if series.series_version == EVIDENCE_INTENT_OUTPUT_SERIES_VERSION else
+    values = {"segment_version": (B1_OUTPUT_BATCH_VERSION if series.series_version == B1_OUTPUT_SERIES_VERSION else
+              EVIDENCE_INTENT_OUTPUT_BATCH_VERSION if series.series_version == EVIDENCE_INTENT_OUTPUT_SERIES_VERSION else
               OWNERSHIP_OUTPUT_BATCH_VERSION if series.series_version == OWNERSHIP_OUTPUT_SERIES_VERSION else
               INTENT_OUTPUT_BATCH_VERSION if series.series_version == INTENT_OUTPUT_SERIES_VERSION else
               OUTPUT_BATCH_VERSION if series.series_version == OUTPUT_SERIES_VERSION else
@@ -341,7 +359,8 @@ class SegmentWireResult:
 def create_segment_wire_result(series: ExtractionSeries, segment: ExtractionSegment, wire: dict,
                                dispositions: tuple[EvidenceDisposition, ...],
                                catalog: SourceEvidenceCatalog, context: SourcePieceContext) -> SegmentWireResult:
-    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version):
+    extra = {'eligible_evidence_refs': series.eligible_evidence_refs} if series.series_version == B1_OUTPUT_SERIES_VERSION else {}
+    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version, **extra):
         raise BoundedExtractionError("SERIES_INPUT_BINDING_MISMATCH")
     if segment.series_id != series.series_id:
         raise BoundedExtractionError("SEGMENT_SERIES_MISMATCH")
@@ -386,7 +405,8 @@ class SeriesCoverage:
 def series_coverage(series: ExtractionSeries, plan: ExtractionPlan, results: tuple[SegmentWireResult, ...],
                     catalog: SourceEvidenceCatalog, context: SourcePieceContext) -> SeriesCoverage:
     _plan(series, plan)
-    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version):
+    extra = {'eligible_evidence_refs': series.eligible_evidence_refs} if series.series_version == B1_OUTPUT_SERIES_VERSION else {}
+    if series != create_extraction_series(context, catalog, series.processing_run_id, series.budget, series_version=series.series_version, **extra):
         raise BoundedExtractionError("SERIES_INPUT_BINDING_MISMATCH")
     leaves = {s.segment_id: s for s in plan.leaves}
     accepted, closed = set(), set()

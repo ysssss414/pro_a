@@ -367,6 +367,8 @@ class BoundedExtractionStore:
             elif envelope['http_status'] != 200:
                 external = 'FAILED'
         usage = {k: envelope[k] for k in ("input_tokens", "output_tokens", "total_tokens", "cached_input_tokens")}
+        from pro_a import b1_extraction as b1
+        violation = b1.response_violation(envelope) if request.get('series_version') == b1.SERIES and external in ('SUCCEEDED', 'TRUNCATED') else None
         # Invalid reported usage remains private and auditable, but cannot release liability.
         ceiling = request['max_output_tokens']
         invalid = (usage["output_tokens"] is not None and usage["output_tokens"] > ceiling
@@ -380,7 +382,7 @@ class BoundedExtractionStore:
             # Hash SQLite's REAL representation, including its positive zero.
             "latency_ms": float(envelope["latency_ms"] or 0.0) if envelope["latency_ms"] is not None else None,
             "finish_reason": envelope["finish_reason"],
-            "classification": "INVALID_USAGE" if invalid else external, "created_at": _now()})
+            "classification": violation or ("INVALID_USAGE" if invalid else external), "created_at": _now()})
         actual = usage["output_tokens"] if usage["output_tokens"] is not None else ceiling
         connection.execute("UPDATE bounded_extraction_series SET output_liability=output_liability-?+?,updated_at=? WHERE series_id=?", (ceiling, actual, _now(), sid))
         _event(connection, sid, "PROVIDER_OUTCOME_DURABLE", attempt_id=attempt["attempt_id"], record_sha256=outcome["record_sha256"])
@@ -451,7 +453,8 @@ class BoundedExtractionStore:
             _require(row["state"] in ("RUNNING", "RECOVERY_REQUIRED"), "SEGMENT_NOT_ACCEPTABLE")
             outcome = connection.execute("SELECT * FROM bounded_extraction_outcomes WHERE attempt_id=?", (attempt_id,)).fetchone()
             _require(outcome is not None, "DURABLE_OUTCOME_REQUIRED")
-            if outcome["external_outcome"] != "SUCCEEDED" or outcome["classification"] == "INVALID_USAGE":
+            if (outcome["external_outcome"] != "SUCCEEDED" or outcome["classification"] == "INVALID_USAGE"
+                    or outcome['classification'] in ('B1_MODEL_IDENTITY_DRIFT', 'B1_USAGE_REQUIRED', 'B1_BUDGET_VIOLATION')):
                 failure = "RAW_OUTCOME_NOT_ACCEPTABLE"
             else:
                 content = self._read_artifact(series.series_id, attempt_id + ".raw.json", outcome)
@@ -474,6 +477,14 @@ class BoundedExtractionStore:
                             # the separate attachment. The compiler verifies active leaves.
                             from pro_a.output_decomposition import record_version_for_series
                             _require(version == record_version_for_series(series.series_version), 'PROVIDER_RECORD_SERIES_VERSION_MISMATCH')
+                            from pro_a import b1_extraction as b1
+                            if series.series_version == b1.SERIES:
+                                prompt = self._path(series.series_id, segment.segment_id + '.prompt.json').read_bytes()
+                                _require(hashlib.sha256(prompt).hexdigest() == request['payload_sha256'], 'B1_REQUEST_IDENTITY_MISMATCH')
+                                payload = json.loads(prompt)
+                                _require(payload['request_token_preflight']['request_sha256'] == identity(payload['request']),
+                                         'B1_REQUEST_PREFLIGHT_DRIFT')
+                                b1.validate_record(body.decode('utf-8'), payload['b1_request_context'], catalog, context, segment)
                             result, review = evidence_intent.compile_result(body.decode('utf-8'), series, segment, catalog, context, plan=plan)
                             provenance = review['candidate_ownership']
                         elif version == ownership.VERSION:
