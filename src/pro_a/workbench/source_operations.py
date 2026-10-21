@@ -318,6 +318,10 @@ class SourceOperations:
             if _output_binding_version == b1.BINDING:
                 from pro_a.cloud_contract import digest
                 self.jobs._runtime_override['b1_request_settings'] = b1.load_settings(self.profile.phase4_config_path)
+                if self.jobs._runtime_override['b1_request_settings'].get('counter_version'):
+                    from pro_a.output_decomposition import contract
+                    self.jobs._runtime_override['whole_piece_output_decomposition'] = contract(binding_version=b1.BINDING,
+                        counter_version=self.jobs._runtime_override['b1_request_settings']['counter_version'])
                 basis = {k: v for k, v in self.jobs._runtime_override.items() if k != 'runtime_sha256'}
                 self.jobs._runtime_override['runtime_sha256'] = digest(basis)
         from .bounded_source_analysis import BoundedSourceAnalysisRunner
@@ -1363,7 +1367,11 @@ class SourceOperations:
             row = connection.execute("SELECT * FROM source_processing_runs WHERE processing_run_id=?",
                                      (run_id,)).fetchone()
             from pro_a.output_decomposition import contract
-            if json.loads(row["runtime_json"]).get("whole_piece_output_decomposition") != contract(binding_version=self.output_batches.binding_version):
+            frozen_runtime = json.loads(row["runtime_json"])
+            from pro_a import b1_extraction as b1
+            if frozen_runtime.get("whole_piece_output_decomposition") != contract(
+                    binding_version=self.output_batches.binding_version,
+                    counter_version=frozen_runtime.get('b1_request_settings', {}).get('counter_version', b1.COUNTER)):
                 raise SourceOperationError("HISTORICAL_EXTRACTION_RUNTIME_INCOMPATIBLE")
             if schema_version(connection) != "12":
                 raise SourceOperationError("BOUNDED_SCHEMA_REQUIRED")
@@ -1442,7 +1450,9 @@ class SourceOperations:
             if candidate_origin:
                 return self.get_run(run_id)
             plan = plan_external_source_analysis(native_root / "engine",
-                                                 config_path=self.profile.phase4_config_path)
+                                                 config_path=self.profile.phase4_config_path,
+                **({'source_scope': json.loads(row['runtime_json'])['b1_request_settings']['source_scope']}
+                   if json.loads(row['runtime_json']).get('b1_request_settings', {}).get('source_scope') else {}))
             if not plan["pieces"]:
                 raise SourceOperationError("BLOCKED_EMPTY_EXTRACTION_PLAN")
             if len(plan["pieces"]) > min(self.profile.max_extraction_pieces, MAX_STAGE1_JOBS_PER_RUN):
@@ -1458,7 +1468,9 @@ class SourceOperations:
             native_root = self._native_root(row)
             if candidate_origin:
                 return self._candidate_semantic_input(run_id, row, native_root)
-            plan = plan_external_source_analysis(native_root / "engine", config_path=self.profile.phase4_config_path)
+            plan = plan_external_source_analysis(native_root / "engine", config_path=self.profile.phase4_config_path,
+                **({'source_scope': json.loads(row['runtime_json'])['b1_request_settings']['source_scope']}
+                   if json.loads(row['runtime_json']).get('b1_request_settings', {}).get('source_scope') else {}))
             checkpoint = {"native_state": "SOURCE_READY", "execution_id": row["native_execution_id"],
                           "run_id": plan["run_id"], "plan_sha256": plan["plan"]["initial_extraction_plan_sha256"],
                           "resume_semantics": "REFERENCE_EXISTING_NATIVE_CHECKPOINT_ONLY"}

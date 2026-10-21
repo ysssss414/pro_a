@@ -6,7 +6,7 @@ import hashlib
 import json
 import re
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
 from .config import AppConfig
@@ -213,6 +213,13 @@ class SourcePiece:
     split_depth: int
     source_text: str
     prompt_text: str
+    scope_identity: str = ''
+
+    def document(self) -> dict[str, Any]:
+        value = asdict(self)
+        if not self.scope_identity:
+            value.pop('scope_identity')
+        return value
 
     @property
     def source_sha256(self) -> str:
@@ -232,6 +239,7 @@ class SourcePiece:
                 "split_depth": self.split_depth,
                 "source_piece_sha256": self.source_sha256,
                 "prompt_piece_sha256": self.prompt_sha256,
+                **({'source_scope_sha256': self.scope_identity} if self.scope_identity else {}),
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -380,6 +388,7 @@ class Analyzer:
         mode: str,
         *,
         adaptive_retry_policy: str = "allow",
+        source_scope: dict[str, Any] | None = None,
     ) -> InitialExtractionPlan:
         """Freeze every enriched initial piece before the first model call."""
         if adaptive_retry_policy not in {"allow", "forbid"}:
@@ -392,7 +401,16 @@ class Analyzer:
             if adaptive_retry_policy == "forbid"
             else configured_max_chars
         )
+        original_start = 0
+        if source_scope is not None:
+            from .source_scope import slice_text
+            text = slice_text(text, source_scope)
+            original_start = source_scope['global_start']
+            if len(text) > effective_max_chars:
+                raise ValueError('SOURCE_SCOPE_EXCEEDS_PIECE_HARD_CAP')
         chunks = chunk_source_text(text, effective_max_chars)
+        if source_scope is not None and len(chunks) != 1:
+            raise ValueError('SOURCE_SCOPE_SINGLE_PIECE_REQUIRED')
         if "".join(chunks) != text:
             raise ValueError("initial extraction partition does not reconstruct Source")
         full_catalog_count, full_catalog_sha256 = self._catalog_inventory()
@@ -410,6 +428,7 @@ class Analyzer:
                 split_depth=0,
                 source_text=chunk,
                 prompt_text=prompt_piece_text,
+                **({'scope_identity': _canonical_sha256(source_scope)} if source_scope is not None else {}),
             )
             scoped_node_catalog = tuple(self._node_catalog_for_text(chunk))
             user_prompt = SOURCE_ANALYSIS_USER.format(
@@ -420,8 +439,8 @@ class Analyzer:
             )
             planned.append(PlannedExtractionPiece(
                 source_piece=source_piece,
-                source_start=source_start,
-                source_end=source_end,
+                source_start=original_start + source_start,
+                source_end=original_start + source_end,
                 locators=self._piece_locators(text, source_start, source_end),
                 scoped_node_catalog=scoped_node_catalog,
                 user_prompt=user_prompt,
@@ -498,6 +517,13 @@ class Analyzer:
             },
             "pieces": piece_artifacts,
         }
+        if source_scope is not None:
+            from .source_scope import PLANNER
+            body['planner_version'] = PLANNER
+            body['source_scope'] = copy.deepcopy(source_scope)
+            body['coverage'].update(scope='SELECTED_RANGE_ONLY', source_complete=False,
+                original_source_chars=source_scope['original_chars'],
+                outside_scope_chars=source_scope['original_chars'] - len(text))
         plan_sha256 = _canonical_sha256(body)
         artifact = {**body, "initial_extraction_plan_sha256": plan_sha256}
         return InitialExtractionPlan(

@@ -428,7 +428,7 @@ def _clean_pdf_checks(parsed: Any) -> dict[str, bool]:
 
 
 def plan_external_source_analysis(
-    run_dir: Path, *, config_path: Path = Path("config.toml")
+    run_dir: Path, *, config_path: Path = Path("config.toml"), source_scope=None
 ) -> dict[str, Any]:
     """Freeze the existing Analyzer plan without making a model call or changing the run."""
     cfg = load_config(config_path)
@@ -442,10 +442,14 @@ def plan_external_source_analysis(
     if not all(_clean_pdf_checks(parsed).values()):
         raise CleanSourceGateError("CLEAN_SOURCE_GATE_FAILED")
     semantic_text = semantic_eligible_source_text(parsed)
+    if source_scope is not None:
+        from .source_scope import validate_parsed
+        validate_parsed(parsed, manifest['source']['sha256'], source_scope)
     analyzer = Analyzer(cfg, _ReadOnlyAnalyzerDatabase(cfg.db_path.resolve()))
     plan = analyzer.plan_initial_extraction(
         manifest["source"]["filename"], semantic_text, "deep",
         adaptive_retry_policy="forbid",
+        **({'source_scope': source_scope} if source_scope is not None else {}),
     )
     return {
         "run_id": manifest["run_id"],
@@ -464,7 +468,8 @@ def plan_external_source_analysis(
                 analyzer_module.SOURCE_ANALYSIS_SYSTEM.encode("utf-8")
             ).hexdigest(),
             "initial_plan_sha256": plan.plan_sha256,
-            "source_piece": asdict(piece.source_piece),
+            "source_piece": piece.source_piece.document(),
+            **({'source_scope': copy.deepcopy(source_scope)} if source_scope is not None else {}),
             "scoped_node_catalog": copy.deepcopy(list(piece.scoped_node_catalog)),
         } for piece in plan.pieces],
     }

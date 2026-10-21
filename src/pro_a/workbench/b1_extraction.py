@@ -29,3 +29,8 @@ def providers(service, run_id):
 def advance(service, run_id, *, worker_id, provider=None):
     return frozen_worker(service, run_id).advance_once(worker_id=worker_id,
         processing_run_id=run_id, provider=provider)
+
+
+def prepare(service, run_id):
+    from .b1_preparation import prepare as prepare_request
+    return prepare_request(service, run_id)

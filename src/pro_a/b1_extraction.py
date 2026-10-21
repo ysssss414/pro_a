@@ -26,6 +26,9 @@ QUALIFIED_COMPONENTS = {
     'counter_lock': '4d35b6b866a554ca249b68d06437976b3ce062a6380155efae3f4ffe63b91ce2',
     'tokenizer': '81f64d1248a68ce3663e07ab3ee48b851e5df0e32d27cb98e4c9a268151e8d99'}
 
+COUNTER_V2 = 'deepseek-v41-complete-request-counter-v2'
+RECIPE_V2 = '935817c66f5d6e64838f419692545f06787e485f'
+QUALIFIED_V2 = {'counter_exe': '5e48ed653b9a6abf511e8121d4d1af1901c6d8c2f3b35f124a8d6986b06620a2', 'counter_source': '603da42c0348d513de3a4240333fc84529bb75a95e06a5d8290e203410aa9d22', 'counter_manifest': 'e03c2359f12eec7ac0e4a5e811e30cfa18bd898aa132ec37134678d963e6be24', 'counter_lock': '0bc4d70d37cb08267e5283ab06957dd6d06a35df50f06292cf69294606fdf83d', 'tokenizer': '81f64d1248a68ce3663e07ab3ee48b851e5df0e32d27cb98e4c9a268151e8d99', 'recipe_archive': '553459f80e2e55965d2089974f139b48c8e065d2011f176656c5b600920345d1'}
 
 def require(value, code):
     if not value:
@@ -42,10 +45,12 @@ def system():
     return data.decode('utf8')
 
 
-def policy():
+def policy(counter_version=COUNTER):
+    require(counter_version in (COUNTER, COUNTER_V2), 'B1_COUNTER_VERSION_UNSUPPORTED')
+    components = QUALIFIED_COMPONENTS if counter_version == COUNTER else QUALIFIED_V2
     return {'version': VERSION, 'system_prompt_sha256': SYSTEM_SHA256,
-        'context_version': CONTEXT, 'counter_version': COUNTER,
-        'counter_components_sha256': identity(QUALIFIED_COMPONENTS),
+        'context_version': CONTEXT, 'counter_version': counter_version,
+        'counter_components_sha256': identity(components),
         'max_input_tokens': 14000, 'local_input_ceiling': 13000,
         'max_output_tokens': 12000, 'max_total_tokens': 26000,
         'max_calls': 1, 'automatic_retry': False, 'automatic_subdivision': False,
@@ -70,8 +75,9 @@ def load_settings(config_path):
     root = Path(config_path).resolve().parent
     with Path(config_path).open('rb') as stream:
         value = tomllib.load(stream).get('b1', {})
-    require(set(value) == {'context_file', 'context_sha256', 'counter_identity_file',
-                          'counter_identity_sha256'}, 'B1_SETTINGS_REQUIRED')
+    required = {'context_file', 'context_sha256', 'counter_identity_file', 'counter_identity_sha256'}
+    optional = {'scope_file', 'scope_sha256'}
+    require(set(value) in (required, required | optional), 'B1_SETTINGS_REQUIRED')
     context_path = root / value['context_file']
     require(sha(context_path) == value['context_sha256'], 'B1_CONTEXT_FILE_DRIFT')
     counter_path = root / value['counter_identity_file']
@@ -81,8 +87,20 @@ def load_settings(config_path):
         'piece_sha256', 'assigned_evidence_refs', 'closure', 'source_metadata_reference'}
         and context['version'] == CONTEXT, 'B1_CONTEXT_INVALID')
     require(type(context['source_metadata_reference']) is dict, 'B1_METADATA_REFERENCE_REQUIRED')
-    return {'context': context, 'context_file_sha256': value['context_sha256'],
-            'counter_identity_sha256': value['counter_identity_sha256']}
+    result = {'context': context, 'context_file_sha256': value['context_sha256'],
+              'counter_identity_sha256': value['counter_identity_sha256']}
+    if optional <= set(value):
+        from .source_scope import VERSION as SCOPE
+        scope_path = root / value['scope_file']
+        require(sha(scope_path) == value['scope_sha256'], 'B1_SCOPE_FILE_DRIFT')
+        scope = json.loads(scope_path.read_text(encoding='utf-8-sig'))
+        require(scope['version'] == SCOPE and scope['source_sha256'] == context['source_sha256']
+                and scope['range_sha256'] == context['piece_sha256'], 'B1_SCOPE_CONTEXT_DRIFT')
+        counter = json.loads(counter_path.read_text(encoding='utf-8-sig'))
+        require(counter.get('version') == COUNTER_V2, 'B1_SCOPED_COUNTER_V2_REQUIRED')
+        result.update(source_scope=scope, scope_file_sha256=value['scope_sha256'],
+                      counter_version=COUNTER_V2, request_preparation_contract='b1-request-preparation-v1')
+    return result
 
 
 def validate_context(value, catalog, context):
@@ -127,6 +145,8 @@ def render(value, context, catalog, series, segment, payload):
             'source_piece_id': series.source_piece_id, 'series_sha256': series.series_sha256,
             'segment_sha256': segment.segment_sha256, 'request_contract_sha256': identity(target),
             'context_sha256': identity(frozen)}}
+    if context.piece.scope_identity:
+        user['formal_execution']['source_scope_sha256'] = context.piece.scope_identity
     payload['request']['messages'] = [{'role': 'system', 'content': system()},
         {'role': 'user', 'content': json.dumps(user, ensure_ascii=False)}]
     return payload
@@ -156,23 +176,36 @@ class LocalCounter:
         self.path = Path(config_path).resolve().parent / settings['counter_identity_file']
         self.expected_sha256 = settings['counter_identity_sha256']
         self.manifest = json.loads(self.path.read_text(encoding='utf-8-sig'))
-        require(self.manifest['recipe_commit'] == RECIPE_COMMIT
-            and {k: self.manifest[k]['sha256'] for k in COMPONENTS} == QUALIFIED_COMPONENTS,
+        self.version = self.manifest.get('version', COUNTER)
+        require(self.version in (COUNTER, COUNTER_V2), 'B1_COUNTER_NOT_QUALIFIED')
+        self.components = QUALIFIED_V2 if self.version == COUNTER_V2 else QUALIFIED_COMPONENTS
+        require(self.manifest['recipe_commit'] == (RECIPE_V2 if self.version == COUNTER_V2 else RECIPE_COMMIT)
+            and {k: self.manifest[k]['sha256'] for k in self.components} == self.components,
             'B1_COUNTER_NOT_QUALIFIED')
-        self.identity = {'version': COUNTER, 'manifest_sha256': self.expected_sha256,
-            'components': {k: self.manifest[k]['sha256'] for k in COMPONENTS},
+        self.identity = {'version': self.version, 'manifest_sha256': self.expected_sha256,
+            'components': {k: self.manifest[k]['sha256'] for k in self.components},
             'recipe_commit': self.manifest['recipe_commit'], 'server_exact_usage': False}
         self.verify()
 
     def verify(self):
         require(sha(self.path) == self.expected_sha256, 'B1_COUNTER_IDENTITY_DRIFT')
-        for key in COMPONENTS:
+        for key in self.components:
             require(sha(self.manifest[key]['path']) == self.manifest[key]['sha256'], 'B1_COUNTER_COMPONENT_DRIFT')
 
     def preflight(self, request):
         self.verify()
         require(request['model'] == 'deepseek-flash' and request['max_tokens'] == 12000,
                 'B1_REQUEST_BUDGET_DRIFT')
+        if self.version == COUNTER_V2:
+            require(set(request) == {'model', 'max_tokens', 'thinking', 'stream', 'temperature', 'tools', 'tool_choice', 'messages'}
+                and request['thinking'] == {'type': 'disabled'} and request['stream'] is False
+                and request['temperature'] == 0.1 and len(request['messages']) == 2
+                and [m['role'] for m in request['messages']] == ['system', 'user']
+                and all(set(m) == {'role', 'content'} and type(m['content']) is str for m in request['messages'])
+                and len(request['tools']) == 1 and request['tools'][0]['type'] == 'function'
+                and request['tools'][0]['function']['strict'] is True
+                and request['tool_choice'] == {'type':'function','function':{'name':request['tools'][0]['function']['name']}},
+                'B1_COUNTER_REQUEST_DOMAIN_UNSUPPORTED')
         executable = Path(self.manifest['counter_exe']['path'])
         runtime = executable.parents[3]
         env = {k: os.environ[k] for k in ('SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'PATH',
@@ -194,8 +227,20 @@ class LocalCounter:
             require(tool['parameters'] == request['tools'][0]['function']['parameters']
                 and tool['name'] == request['tools'][0]['function']['name'], 'B1_COUNTER_SCHEMA_MISMATCH')
             count = counted['input_tokens']
+            details = {}
+            if self.version == COUNTER_V2:
+                converted = json.loads((output/'converted.json').read_text(encoding='utf8'))
+                ids = json.loads((output/'token-ids.json').read_text(encoding='utf8'))
+                require(counted['recipe_commit'] == RECIPE_V2 and len(ids) == count
+                    and converted['tools'][0]['strict'] is True and converted['tool_choice'] == 'Required'
+                    and converted['messages'] == request['messages'] and converted['thinking_mode'] is False,
+                    'B1_COUNTER_CONVERSION_MISMATCH')
+                details = {'request_wire_sha256': hashlib.sha256(json.dumps(request, allow_nan=False).encode('utf8')).hexdigest(),
+                    **{n.replace('-', '_').replace('.', '_') + '_sha256': sha(output/n) for n in
+                       ('token-ids.json', 'rendered-prompt.txt', 'rendered-structure.json', 'converted.json')},
+                    'allocation': counted['allocation']}
         require(type(count) is int and 0 < count <= 13000, 'B1_INPUT_PREFLIGHT_EXCEEDED')
-        return {'version': COUNTER, 'request_sha256': identity(request),
+        return {'version': self.version, 'request_sha256': identity(request), **details,
             'counter_identity': copy.deepcopy(self.identity), 'input_tokens': count,
             'reserved_input_tokens': 14000, 'reserved_output_tokens': 12000,
             'reserved_total_tokens': 26000, 'server_exact_usage': False,

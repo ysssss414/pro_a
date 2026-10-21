@@ -22,18 +22,21 @@ class OutputDecompositionRunner(BoundedSourceAnalysisRunner):
         if self.binding_version == contract.b1.BINDING:
             frozen = service.jobs.current_runtime()['b1_request_settings']['context']
             self.piece_input = partial(contract.piece_input, binding_version=self.binding_version,
-                                       b1_request_context=frozen)
+                                       b1_request_context=frozen, b1_counter_version=service.jobs.current_runtime()['b1_request_settings'].get('counter_version'))
 
     def inputs(self, run):
         bindings = super().inputs(run)
         frozen = run['runtime_identity']['whole_piece_output_decomposition']
-        if any(contract.contract(binding_version=value['binding_version']) != frozen
+        if any(contract.contract(binding_version=value['binding_version'], counter_version=value.get('b1_counter_version', contract.b1.COUNTER)) != frozen
                for value, _, _, _ in bindings):
             raise ValueError('OUTPUT_RUN_BINDING_MISMATCH')
         if frozen['binding_version'] == contract.b1.BINDING:
             expected = run['runtime_identity']['b1_request_settings']['context']
             if len(bindings) != 1 or bindings[0][0].get('b1_request_context') != expected:
                 raise ValueError('B1_CONTEXT_RUNTIME_MISMATCH')
+            scope = run['runtime_identity']['b1_request_settings'].get('source_scope')
+            if bindings[0][0]['native'].get('source_scope') != scope:
+                raise ValueError('B1_SCOPE_RUNTIME_MISMATCH')
         return bindings
 
     def projection(self, connection, run_id):

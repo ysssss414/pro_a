@@ -392,7 +392,8 @@ print('B1_FROZEN_RECONSTRUCTED')
     assert value['config'].knowledge_db.read_bytes() == production_before
 
 
-@pytest.mark.parametrize('name', ['b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py'])
+@pytest.mark.parametrize('name', ['b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py',
+                                'source_scope.py', 'workbench/b1_preparation.py'])
 def test_b1_code_and_prompt_are_in_both_runtime_fingerprints(monkeypatch, name):
     from pro_a import operational_contract
     from pro_a.workbench import cloud_jobs

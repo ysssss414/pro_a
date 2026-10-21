@@ -27,7 +27,7 @@ CONTRACT_VERSION = "phase4-execution-v1"
 # Processing dependencies only: no environment dump or arbitrary package hashing.
 PROCESSING_MODULES = (
     "phase4_orchestration", "phase4_retry", "phase4_replay", "operational_ingestion",
-    "analyzer", "parsers", "pdf_layout", "pipeline", "llm", "config", "prompts",
+    "analyzer", "parsers", "pdf_layout", "source_scope", "pipeline", "llm", "config", "prompts",
     "constants", "proposition_ir", "semantic_decomposition", "semantic_admission",
     "table_claim_safety", "corpus_pilot", "gate_c_quality_hardening",
     "production_authorization", "production_promotion", "phase3f_review_completion",

@@ -47,6 +47,7 @@ def runtime_identity():
              'workbench/advisory_review.py', 'workbench/review_policy.py', 'workbench/artifacts.py', 'workbench/review_workbench.py',
              'workbench/unified_review.py', 'workbench/canonical_admission.py', 'operator_handoff.py', 'process_boundary.py')
     names += ('b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py')
+    names += ('source_scope.py', 'workbench/b1_preparation.py')
     return canonical_sha256({name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in names})
 
 
