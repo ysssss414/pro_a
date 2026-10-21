@@ -209,6 +209,9 @@ class BoundedSourceAnalysisRunner:
                             run['runtime_identity']['b1_request_settings']['counter_identity_sha256'],
                             'B1_COUNTER_CONFIGURATION_MISMATCH')
                     payload = self.segment_payload(value, context, catalog, series, segment)
+                    if value.get('native', {}).get('source_scope') is not None:
+                        from .b1_preparation import frozen_payload
+                        payload = frozen_payload(self.service, run, value, context, catalog, series, segment, selected)
                     from .lossless_recovery import evidence_dispatch_payload as dispatch_payload
                     payload, prompt_name = dispatch_payload(self.ledger, segment.segment_id, payload)
                     from pro_a.output_decomposition import OutputBatchProvider

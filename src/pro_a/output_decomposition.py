@@ -88,14 +88,14 @@ def record_schema(*, record_version=RECORD_VERSION):
     return schema
 
 
-def contract(*, binding_version=BINDING_VERSION):
+def contract(*, binding_version=BINDING_VERSION, counter_version=b1.COUNTER):
     if binding_version == b1.BINDING:
         return {**contract(binding_version=EVIDENCE_INTENT_BINDING_VERSION),
             'binding_version': b1.BINDING, 'adapter_version': 'b1-evidence-first-provider-v1',
             'provider_version': 'b1-evidence-first-provider-v1', 'prompt_version': b1.VERSION,
             'system_prompt_sha256': b1.SYSTEM_SHA256, 'series': b1.SERIES, 'batch': b1.BATCH,
             'max_output_tokens': 12000, 'output_budget_identity': 'b1-operation-output-budget-v1',
-            'semantic_context': b1.CONTEXT, 'request_policy': b1.policy(),
+            'semantic_context': b1.CONTEXT, 'request_policy': b1.policy(counter_version),
             'budget': asdict(SeriesBudget(max_leaf_segments=1, max_subdivision_depth=1,
                 max_provider_calls=1, max_cumulative_output_tokens=12000))}
     if binding_version == EVIDENCE_INTENT_BINDING_VERSION:
@@ -186,7 +186,7 @@ def record_version_for_series(series_version):
 
 
 def piece_input(native, source_sha256, processing_run_id, ordinal, *, binding_version=BINDING_VERSION,
-                b1_request_context=None):
+                b1_request_context=None, b1_counter_version=None):
     # Reuse historical immutable native-input validation without reusing its identity.
     old = historical.piece_input(native, source_sha256, processing_run_id, ordinal)
     context, catalog, _ = historical.restore_input(old, source_sha256, processing_run_id, ordinal)
@@ -194,21 +194,25 @@ def piece_input(native, source_sha256, processing_run_id, ordinal, *, binding_ve
     extra = {}
     if binding_version == b1.BINDING:
         b1.require(ordinal == 1 and b1_request_context is not None, 'B1_SINGLE_PIECE_REQUIRED')
+        b1.require((native.get('source_scope') is None and b1_counter_version is None)
+            or (native.get('source_scope') is not None and b1_counter_version == b1.COUNTER_V2),
+            'B1_SCOPE_COUNTER_SELECTION_MISMATCH')
         b1.validate_context(b1_request_context, catalog, context)
         extra = {'budget': SeriesBudget(**contract(binding_version=binding_version)['budget']),
                  'eligible_evidence_refs': b1_request_context['assigned_evidence_refs']}
-    elif b1_request_context is not None:
+    elif b1_request_context is not None or b1_counter_version is not None:
         raise ValueError('B1_CONTEXT_WITHOUT_SELECTION')
     series = create_extraction_series(context, catalog, processing_run_id, series_version=series_version, **extra)
     return {**old, 'binding_version': binding_version, 'series_id': series.series_id,
             'series_sha256': series.series_sha256,
-            **({'b1_request_context': copy.deepcopy(b1_request_context)} if binding_version == b1.BINDING else {})}
+            **({'b1_request_context': copy.deepcopy(b1_request_context)} if binding_version == b1.BINDING else {}),
+            **({'b1_counter_version': b1_counter_version} if b1_counter_version is not None else {})}
 
 
 def restore_input(value, source_sha256, processing_run_id, ordinal):
     binding_version = value['binding_version']
     expected = piece_input(value['native'], source_sha256, processing_run_id, ordinal, binding_version=binding_version,
-                           b1_request_context=value.get('b1_request_context'))
+                           b1_request_context=value.get('b1_request_context'), b1_counter_version=value.get('b1_counter_version'))
     if identity(value) != identity(expected):
         raise ValueError('OUTPUT_INPUT_IDENTITY_MISMATCH')
     native = value['native']
@@ -238,7 +242,8 @@ def segment_payload(value, context, catalog, series, segment):
     if series.series_version not in OUTPUT_SERIES_VERSIONS:
         raise ValueError('OUTPUT_SERIES_REQUIRED')
     _segment_contract(series, segment)
-    selected = contract(binding_version=binding_for_series(series.series_version))
+    selected = contract(binding_version=binding_for_series(series.series_version),
+                        counter_version=value.get('b1_counter_version', b1.COUNTER))
     target = {'series_id': series.series_id, 'segment_id': segment.segment_id,
         'segment_sha256': segment.segment_sha256, 'assigned_evidence_refs': list(segment.assigned_evidence_refs),
         **{k:v for k,v in selected.items() if k != 'tool_parameters'}}
@@ -336,7 +341,7 @@ class OutputBatchProvider(whole.WholePieceCompactProvider):
         return bool(self.cfg.enabled and self.cfg.api_key)
 
     def configuration(self):
-        return {'contract':contract(binding_version=self.binding_version), 'timeout_seconds':self.cfg.timeout_seconds,
+        return {'contract':contract(binding_version=self.binding_version, counter_version=self.b1_counter.identity['version'] if self.b1_counter else b1.COUNTER), 'timeout_seconds':self.cfg.timeout_seconds,
                 'base_url':whole.BETA_ENDPOINT, 'automatic_retry':False,
                 'qualified_output_capability_tokens':self.output_capability_tokens,
                 **({'request_counter': self.b1_counter.identity} if self.binding_version == b1.BINDING and self.b1_counter else {})}
@@ -354,7 +359,7 @@ class OutputBatchProvider(whole.WholePieceCompactProvider):
         if self.binding_version == b1.BINDING:
             payload = copy.deepcopy(payload)
         body, target = payload['request'], payload['target']
-        selected = contract(binding_version=self.binding_version)
+        selected = contract(binding_version=self.binding_version, counter_version=self.b1_counter.identity['version'] if self.b1_counter else b1.COUNTER)
         if (not self.available or any(identity(target.get(k)) != identity(v) for k,v in selected.items() if k != 'tool_parameters')
                 or identity(body.get('tools')) != identity([{'type':'function','function':{'name':lexical.TOOL_NAME,
                     'strict':True,'description':'读取完整SourcePiece，仅提交本批次归属单元的分析记录。','parameters':selected['tool_parameters']}}])
@@ -366,6 +371,9 @@ class OutputBatchProvider(whole.WholePieceCompactProvider):
         if self.binding_version == b1.BINDING:
             b1.require(body.get('temperature') == 0.1 and self.prepare_payload(payload) == payload,
                        'B1_REQUEST_PREFLIGHT_DRIFT')
+            if 'request_wire_json' in payload:
+                b1.require(payload['request_wire_json'] == json.dumps(body, allow_nan=False),
+                           'B1_PREPARED_WIRE_DRIFT')
         try:
             result = self._send(body, OPERATION, 1)
         except ProviderFailure as error:

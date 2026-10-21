@@ -1,0 +1,11 @@
+[package]
+name = "b1-complete-request-counter-v2"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+deepseek-recipe = { git = "https://github.com/deepseek-ai/deepseek-recipe", rev = "935817c66f5d6e64838f419692545f06787e485f" }
+deepseek-recipe-core = { git = "https://github.com/deepseek-ai/deepseek-recipe", rev = "935817c66f5d6e64838f419692545f06787e485f" }
+deepseek-recipe-encoding = { git = "https://github.com/deepseek-ai/deepseek-recipe", rev = "935817c66f5d6e64838f419692545f06787e485f" }
+tokenizers = "=0.23.2"
+serde_json = { version = "1.0.145", features = ["preserve_order"] }

@@ -77,12 +77,16 @@ def binding_contract():
 
 def piece_input(native, source_sha256, processing_run_id, ordinal):
     piece = SourcePiece(**native["source_piece"])
+    from .source_scope import validate_piece
+    validate_piece(native, source_sha256, piece)
     nodes = native["scoped_node_catalog"]
     context = SourcePieceContext(source_sha256, piece, tuple(n["node_id"] for n in nodes))
     catalog = build_source_evidence_catalog(context)
     series = create_extraction_series(context, catalog, processing_run_id)
+    serialized = asdict(context)
+    serialized['piece'] = piece.document()
     return {"binding_version": BOUNDED_SOURCE_ANALYSIS_BINDING_VERSION,
-            "ordinal": ordinal, "native": native, "context": asdict(context),
+            "ordinal": ordinal, "native": native, "context": serialized,
             "catalog": asdict(catalog), "series_id": series.series_id, "series_sha256": series.series_sha256}
 
 

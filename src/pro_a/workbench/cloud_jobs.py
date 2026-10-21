@@ -168,6 +168,7 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'output_provider_record_v4.py', 'output_provider_record_v5.py', 'node_candidate_intent.py',
                  'output_provider_record_v6.py', 'output_provider_record_v7.py', 'workbench/output_qualification.py',
                  'b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py',
+                 'source_scope.py', 'workbench/b1_preparation.py',
                  'workbench/bounded_resume.py', 'workbench/strict_recovery.py',
                  'candidate_origin.py', 'candidate_origin_v2.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py', 'workbench/advisory_review.py',
                  'admission_schema.py')
