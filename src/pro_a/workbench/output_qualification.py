@@ -12,6 +12,10 @@ VERSION = 'semantic-intent-operator-qualification-v1'
 
 
 def qualification_contract(binding_version):
+    from pro_a import b1_extraction as b1
+    if binding_version == b1.BINDING:
+        return {'version': 'b1-source-operations-extraction-entry-v1', 'binding_version': b1.BINDING,
+                'completion_boundary': 'STOP_AFTER_BOUNDED_EXTRACTION', 'semantic_registration_allowed': False}
     if binding_version not in (output.INTENT_BINDING_VERSION, output.OWNERSHIP_BINDING_VERSION, output.EVIDENCE_INTENT_BINDING_VERSION):
         raise SourceOperationError('UNSUPPORTED_OUTPUT_QUALIFICATION_BINDING')
     return {'version': 'evidence-intent-operator-qualification-v2' if binding_version == output.EVIDENCE_INTENT_BINDING_VERSION else VERSION, 'binding_version': binding_version,
@@ -59,7 +63,8 @@ def frozen_worker(service, run_id):
 def providers(service, run_id):
     worker = frozen_worker(service, run_id)
     return build_source_providers(load_config(worker.profile.phase4_config_path).llm, worker.jobs.profile,
-                                  output_binding_version=worker.output_batches.binding_version)
+                                  output_binding_version=worker.output_batches.binding_version,
+                                  b1_config_path=worker.profile.phase4_config_path)
 
 
 def advance(service, run_id, *, worker_id, provider=None):

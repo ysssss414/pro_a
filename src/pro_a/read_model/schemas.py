@@ -257,6 +257,9 @@ class OutputDecompositionStatus(BaseModel):
     truncated_parent_calls: int
     subdivision_count: int
     coverage_status: str
+    coverage_scope: Literal['B1_FROZEN_ASSIGNED_ONLY'] | None = Field(default=None, exclude_if=lambda v: v is None)
+    assigned_coverage_status: str | None = Field(default=None, exclude_if=lambda v: v is None)
+    source_coverage_status: Literal['NOT_ESTABLISHED'] | None = Field(default=None, exclude_if=lambda v: v is None)
     input_tokens: int | None
     cached_tokens: int | None
     output_tokens: int | None

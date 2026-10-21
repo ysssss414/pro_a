@@ -33,3 +33,6 @@ domains/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
 
 # Research navigation specs expose their exact UTF-8 file SHA256 through the API.
 research_navigation/*.json text eol=lf
+
+# The versioned B1 prompt binds exact UTF-8/LF bytes, including on Windows.
+src/pro_a/resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt text eol=lf

@@ -230,6 +230,8 @@ class ReadService:
                     'reserved_attempt_count','confirmed_provider_call_count','unknown_outcome_call_count',
                     'subdivision_count','coverage_status')}}
             decomposition['output_liability_tokens'] = decomposition.pop('output_token_liability')
+            if raw.get('coverage_scope') == 'B1_FROZEN_ASSIGNED_ONLY':
+                decomposition.update({k: raw[k] for k in ('coverage_scope', 'assigned_coverage_status', 'source_coverage_status')})
         return s.ProcessingRun.model_validate({**raw, 'output_decomposition': decomposition, "frozen_context": {
             "contract_version": context.get("contract_version"),
             "context_sha256": context.get("context_sha256"),

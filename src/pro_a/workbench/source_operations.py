@@ -77,7 +77,8 @@ class SourceProfile:
             raise SourceOperationError("SOURCE_PIECE_LIMIT_INVALID", 422)
 
 
-def build_source_providers(llm_config, cloud_profile: CloudProfile, *, output_binding_version=None) -> dict[str, Any]:
+def build_source_providers(llm_config, cloud_profile: CloudProfile, *, output_binding_version=None,
+                           b1_config_path=None) -> dict[str, Any]:
     """Construct the qualified operator worker adapters without reading credentials.
 
     Extraction and Semantic CloudJobs own their operation budgets and attempts.
@@ -86,6 +87,11 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile, *, output_bi
     from pro_a.cloud_contract import SemanticBackendProvider
     from pro_a.output_decomposition import OutputBatchProvider, OPERATION as OUTPUT_OPERATION
     from pro_a.output_capacity import SEGMENT_OUTPUT_CEILING
+    from pro_a import b1_extraction as b1
+    b1_options = {}
+    if output_binding_version == b1.BINDING:
+        b1.require(b1_config_path is not None, 'B1_COUNTER_CONFIG_REQUIRED')
+        b1_options['b1_counter'] = b1.LocalCounter(b1_config_path)
     from pro_a.llm import ChatLLM
     from pro_a.semantic_decomposition import ChatLLMSemanticBackend
 
@@ -104,8 +110,8 @@ def build_source_providers(llm_config, cloud_profile: CloudProfile, *, output_bi
                         max_retries=0)
     return {
         OUTPUT_OPERATION: OutputBatchProvider(
-            replace(effective, max_output_tokens=SEGMENT_OUTPUT_CEILING),
-            **({'binding_version': output_binding_version} if output_binding_version is not None else {})),
+            replace(effective, max_output_tokens=12000 if output_binding_version == b1.BINDING else SEGMENT_OUTPUT_CEILING),
+            **b1_options, **({'binding_version': output_binding_version} if output_binding_version is not None else {})),
         SEMANTIC_OPERATION: SemanticBackendProvider(
             ChatLLMSemanticBackend(ChatLLM(replace(effective, max_output_tokens=budget_for_operation(
                 SEMANTIC_OPERATION, cloud_profile.max_total_tokens)["max_output_tokens"]))),
@@ -308,6 +314,12 @@ class SourceOperations:
             self.jobs._runtime_override = dict(runtime_identity(
                 cloud_profile.provider_adapter_version, workbench_schema_version=version,
                 output_binding_version=_output_binding_version))
+            from pro_a import b1_extraction as b1
+            if _output_binding_version == b1.BINDING:
+                from pro_a.cloud_contract import digest
+                self.jobs._runtime_override['b1_request_settings'] = b1.load_settings(self.profile.phase4_config_path)
+                basis = {k: v for k, v in self.jobs._runtime_override.items() if k != 'runtime_sha256'}
+                self.jobs._runtime_override['runtime_sha256'] = digest(basis)
         from .bounded_source_analysis import BoundedSourceAnalysisRunner
         self.bounded = BoundedSourceAnalysisRunner(self)
         from .output_decomposition import OutputDecompositionRunner
