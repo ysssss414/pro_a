@@ -167,6 +167,9 @@ def test_trusted_archive_idempotent_restart_and_failed_accepted_entry(tmp_path,m
     with pytest.raises(BoundaryError,match='CANDIDATE_ATTEMPT_OUTSIDE_RUN'):
         archive.publish_recovered(value['original_id'],'ATTEMPT_FORGED',value['recovery_proposal'],value['revisions'])
     from pro_a.workbench.source_operations import SourceOperationError
+    from pro_a.candidate_origin_v2 import ENTRY_CONTRACT as ACCEPTED_ENTRY
+    with pytest.raises(SourceOperationError,match='CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED'):
+        value['service'].start_v7_review([value['reference']],idempotency_key='wrong-origin-entry-0001',entry_contract=ACCEPTED_ENTRY)
     with pytest.raises(SourceOperationError,match='SOURCE_METADATA_AUTHORITY_REQUIRED'):
         value['service'].start_recovered_review([value['reference']],idempotency_key='unselected-meta-0001',entry_contract=bridge.ENTRY_CONTRACT)
     job=tmp_path/'restart.json';job.write_text(json.dumps({'config':asdict(value['config']),'ref':value['reference']},default=str))

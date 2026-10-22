@@ -327,9 +327,13 @@ else:
             assert worker.run(handle)['receipt']['object_id'] == receipt['object_id']
             assert value['config'].knowledge_db.read_bytes() == after
             from pro_a.workbench.source_operations import SourceOperationError
+            from pro_a.recovered_candidate_origin import VERSION as RECOVERED, ENTRY_CONTRACT as RECOVERED_ENTRY
+            recovered = value['selected']['version'] == RECOVERED
+            start_review = (value['service'].start_recovered_review if recovered
+                            else value['service'].start_v7_review)
             with pytest.raises(SourceOperationError, match='CANDIDATE_ADDITIONAL_SUPPORT_REVIEW_REQUIRED'):
-                value['service'].start_v7_review([archive_ref],
-                    entry_contract=bridge.ENTRY_CONTRACT, idempotency_key='no-duplicate-claim-0001')
+                start_review([archive_ref], entry_contract=(RECOVERED_ENTRY if recovered else bridge.ENTRY_CONTRACT),
+                             idempotency_key='no-duplicate-claim-0001')
         else:
             child = spawn(); until_ready(child)
             with ThreadPoolExecutor(max_workers=1) as pool:
