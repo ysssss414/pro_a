@@ -549,7 +549,7 @@ class SourceOperations:
                 raise SourceOperationError(str(error), error.status) from None
             basis = (domains.basis(connection, source, runtime, self.profile, self.jobs.profile)
                      if schema_version(connection) in ("9", "10", "11", "12") else None)
-            if candidate_origin and candidate_origin['version'] == 'source-candidate-set-v2':
+            if candidate_origin and candidate_origin['version'] in ('source-candidate-set-v2','source-recovery-candidate-set-v1'):
                 from .candidate_inputs import CandidateInputs
                 from .candidate_lifecycle import require_documents
                 require_documents(self.config, [CandidateInputs(self).read(ref) for ref in candidate_origin['references']],
@@ -806,16 +806,25 @@ class SourceOperations:
             raise SourceOperationError('CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
         return self.start_candidates(references, idempotency_key=idempotency_key, _v7_entry=entry_contract)
 
+    def start_recovered_review(self, references, *, idempotency_key, entry_contract):
+        from pro_a.recovered_candidate_origin import ENTRY_CONTRACT
+        if entry_contract != ENTRY_CONTRACT:
+            raise SourceOperationError('CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
+        return self.start_candidates(references, idempotency_key=idempotency_key, _v7_entry=entry_contract)
+
     def start_candidates(self, references, *, idempotency_key, _replacement=None, _v7_entry=None):
         from .candidate_inputs import CandidateInputs
         from pro_a.candidate_origin import VERSION, semantic_projection
         documents = [CandidateInputs(self).read(ref) for ref in references]
         from pro_a.candidate_origin_v2 import VERSION as V2, ENTRY_CONTRACT
         version = documents[0]['version'] if documents else VERSION
-        if ((version == V2 and _v7_entry != ENTRY_CONTRACT) or
-                (version != V2 and _v7_entry is not None)):
+        from pro_a.recovered_candidate_origin import VERSION as RECOVERED, ENTRY_CONTRACT as RECOVERED_ENTRY
+        entry = RECOVERED_ENTRY if version == RECOVERED else ENTRY_CONTRACT
+        governed = version in (V2,RECOVERED)
+        if ((governed and _v7_entry != entry) or
+                (not governed and _v7_entry is not None)):
             raise SourceOperationError('CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
-        if version == V2 and any(d['metadata_resolution'] is None for d in documents):
+        if governed and any(d['metadata_resolution'] is None for d in documents):
             raise SourceOperationError('SOURCE_METADATA_AUTHORITY_REQUIRED')
         from pro_a.operational_contract import readonly
         from pro_a.admission_schema import require_schema
@@ -856,7 +865,7 @@ class SourceOperations:
                             or prior['admission_semantics'] != 'SOURCE_ASSERTION'
                             or len(prior['admission_basis_sha256']) != 64):
                         raise SourceOperationError('CANONICAL_CANDIDATE_COLLISION')
-                    if version == V2 and any(o not in recorded.get('observations', [])
+                    if governed and any(o not in recorded.get('observations', [])
                                              for o in claim['candidate_observations']):
                         raise SourceOperationError('CANDIDATE_ADDITIONAL_SUPPORT_REVIEW_REQUIRED')
                     excluded.append(key)
@@ -870,8 +879,8 @@ class SourceOperations:
                     'rejected_count': len(set(excluded) & rejected),
                     'source_id': source_id, 'candidate_count': len(excluded), 'run': None, 'duplicate': True}
         body = {'version': version, 'references': list(references), 'excluded_keys': sorted(excluded)}
-        if version == V2:
-            body['entry_contract'] = dict(ENTRY_CONTRACT)
+        if governed:
+            body['entry_contract'] = dict(entry)
             from .candidate_lifecycle import freeze
             body['lifecycle_binding'] = freeze(self.config, documents, excluded)
         origin = {**body, 'identity': canonical_sha256(body)}
@@ -1420,7 +1429,7 @@ class SourceOperations:
             with self.store.connect(operator_write=True) as connection:
                 connection.execute('BEGIN IMMEDIATE')
                 candidate_data = {'documents': documents, 'excluded_keys': candidate_origin['excluded_keys']}
-                if candidate_origin['version'] == 'source-candidate-set-v2':
+                if candidate_origin['version'] in ('source-candidate-set-v2','source-recovery-candidate-set-v1'):
                     from .candidate_lifecycle import require_documents
                     require_documents(self.config, documents, candidate_origin.get('lifecycle_binding'),
                         candidate_origin['excluded_keys'], connection=connection)

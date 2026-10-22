@@ -17,7 +17,7 @@ from .evidence_binding import (EVIDENCE_SELECTION_FIELDS, identity,
 from .research_quarantine import FAMILIES, parse_prefix
 
 VERSION = 'source-candidate-set-v1'
-VERSIONS = (VERSION, 'source-candidate-set-v2')
+VERSIONS = (VERSION, 'source-candidate-set-v2', 'source-recovery-candidate-set-v1')
 POLICY = 'independent-candidate-isolation-v1'
 GOVERNANCE = {
     'admission_semantics': 'SOURCE_ASSERTION',
@@ -207,7 +207,10 @@ def semantic_projection(documents, excluded_keys=()):
         require(document.get('version') in VERSIONS and document.get('identity') == identity(
             {k: v for k, v in document.items() if k != 'identity'}), 'CANDIDATE_ORIGIN_DRIFT')
         if document['version'] != VERSION:
-            from .candidate_origin_v2 import ORIGIN_ENTRY_CONTRACT
+            if document['version'] == 'source-recovery-candidate-set-v1':
+                from .recovered_candidate_origin import ORIGIN_ENTRY_CONTRACT
+            else:
+                from .candidate_origin_v2 import ORIGIN_ENTRY_CONTRACT
             require(document.get('entry_contract') == ORIGIN_ENTRY_CONTRACT, 'CANDIDATE_REVIEW_ENTRY_CONTRACT_REQUIRED')
             require(document.get('metadata_resolution') is not None, 'SOURCE_METADATA_AUTHORITY_REQUIRED')
         for obj in document['objects']:
@@ -245,7 +248,10 @@ def semantic_projection(documents, excluded_keys=()):
                 observation = {'set_identity': document.get('original_identity', document['identity']), 'observation_id': obj['observation_id'],
                                'revision_sha256': obj['revision_sha256'], 'dependencies': obj['dependencies']}
                 if document['version'] != VERSION:
-                    from .candidate_origin_v2 import observation as v2_observation
+                    if document['version'] == 'source-recovery-candidate-set-v1':
+                        from .recovered_candidate_origin import observation as v2_observation
+                    else:
+                        from .candidate_origin_v2 import observation as v2_observation
                     observation = v2_observation(document, obj)
                 if key in seen:
                     seen[key]['candidate_observations'].append(observation)

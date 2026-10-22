@@ -132,9 +132,11 @@ def observation(document, obj):
                  'relationship_status': d['relationship_authorization'],
                  'location': {'binding': copy.deepcopy(d['location']['binding']), 'role': 'CONTEXT'}}
                 for d in obj['context_dependencies']]
+    origin_basis = ({'acceptance': {k:v for k,v in document['acceptance'].items() if k!='artifact_relative'}}
+                    if 'acceptance' in document else {'recovery': copy.deepcopy(document['recovery'])})
     return {'set_identity': document['identity'], 'observation_id': obj['observation_id'],
         'revision_sha256': obj['revision_sha256'], 'dependencies': obj['dependencies'],
-        'lineage': {'scope': scope, 'acceptance': {k: v for k, v in document['acceptance'].items() if k != 'artifact_relative'},
+        'lineage': {'scope': scope, **origin_basis,
             'entry_contract': copy.deepcopy(document['entry_contract']),
             'raw_sha256': document['raw_sha256'], 'raw_claim': copy.deepcopy(obj['value']),
             'parent': copy.deepcopy(obj.get('parent')), 'semantic_revision': copy.deepcopy(obj.get('semantic_revision')),

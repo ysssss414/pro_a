@@ -43,7 +43,7 @@ def runtime_identity():
     names = ('operational_contract.py', 'operational_qualification.py', 'operational_operator.py',
              'workbench/attribution.py', 'phase3f_operational_handoff.py', 'phase3f_review_completion.py',
              'claim_attribution_semantics.py', 'foundation_schema_preparation.py', 'production_promotion.py',
-             'admission_schema.py', 'candidate_origin.py', 'candidate_origin_v2.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py',
+             'admission_schema.py', 'candidate_origin.py', 'candidate_origin_v2.py', 'recovered_candidate_origin.py', 'node_evidence_recovery.py', 'workbench/recovered_origin.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py',
              'workbench/advisory_review.py', 'workbench/review_policy.py', 'workbench/artifacts.py', 'workbench/review_workbench.py',
              'workbench/unified_review.py', 'workbench/canonical_admission.py', 'operator_handoff.py', 'process_boundary.py')
     names += ('b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py')

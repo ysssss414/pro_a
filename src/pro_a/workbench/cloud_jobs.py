@@ -170,7 +170,7 @@ def runtime_identity(adapter_version: str, *, workbench_schema_version: str = "7
                  'b1_extraction.py', 'resources/B1_EVIDENCE_FIRST_SYSTEM_V1.txt', 'workbench/b1_extraction.py',
                  'source_scope.py', 'workbench/b1_preparation.py',
                  'workbench/bounded_resume.py', 'workbench/strict_recovery.py',
-                 'candidate_origin.py', 'candidate_origin_v2.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py', 'workbench/advisory_review.py',
+                 'candidate_origin.py', 'candidate_origin_v2.py', 'recovered_candidate_origin.py', 'node_evidence_recovery.py', 'workbench/recovered_origin.py', 'workbench/candidate_lifecycle.py', 'workbench/candidate_inputs.py', 'workbench/advisory_review.py',
                  'admission_schema.py')
         value["domain_contract_version"] = "run-domain-context-v1"
         value["domain_code_sha256"] = digest({name: sha256_file(package / name) for name in names})

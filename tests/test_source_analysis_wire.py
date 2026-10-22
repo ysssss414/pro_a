@@ -412,7 +412,9 @@ def test_dense_fixture_existing_native_validation(tmp_path):
 
 
 def test_foundation_dormant_and_schema12_surfaces_fail_closed():
-    from pro_a.workbench.retry_compatibility import _execution_surface_comparison
+    from pro_a.workbench.retry_compatibility import (
+        _execution_surface_comparison, _execution_surface_sources,
+        _CLOUD_EXECUTION_SURFACE, _surface_manifest, RetryCompatibilityError)
     from pro_a.workbench.source_operations import MAX_STAGE1_JOBS_PER_RUN, SourceProfile
     from pro_a.cloud_contract import OPERATION_MAX_OUTPUT_TOKENS
     baseline = "27fd74d31bdf48f6684a71904b10de5d391820c3"
@@ -420,7 +422,13 @@ def test_foundation_dormant_and_schema12_surfaces_fail_closed():
     # remain incompatible; dormant Wire support does not authorize a retry.
     cloud = _execution_surface_comparison("cloud", baseline)
     native = _execution_surface_comparison("native", baseline)
-    assert not cloud["compatible"] and cloud["reason"] == "SEMANTIC_SURFACE_CHANGED"
+    # This historical commit predates the extracted _start method. Pin the
+    # actual missing selector instead of claiming a semantic comparison ran.
+    # The original assertion also fails on unchanged Stable; refusal is intact.
+    historical, _ = _execution_surface_sources(baseline, _CLOUD_EXECUTION_SURFACE)
+    with pytest.raises(RetryCompatibilityError, match=r'^EXECUTION_SURFACE_SELECTOR_MISSING:SourceOperations\._start$'):
+        _surface_manifest(historical, _CLOUD_EXECUTION_SURFACE)
+    assert not cloud["compatible"] and cloud["reason"] == "EXECUTION_SURFACE_UNAVAILABLE:RetryCompatibilityError"
     assert not native["compatible"] and native["reason"] == "SEMANTIC_SURFACE_CHANGED"
     assert MAX_STAGE1_JOBS_PER_RUN == 31
     assert SourceProfile.__dataclass_fields__["max_extraction_pieces"].default == 16

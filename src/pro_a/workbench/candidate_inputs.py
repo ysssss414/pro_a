@@ -35,12 +35,12 @@ def verify_documents(config, documents):
         raise BoundaryError('CANDIDATE_INPUT_REQUIRED')
     for document in documents:
         scope = document['scope']
-        if document != inspect_attempt(archive, scope['run_id'], scope['attempt_id'], document.get('revisions'), document.get('metadata_resolution')):
+        if document != inspect_attempt(archive, scope['run_id'], scope['attempt_id'], document.get('revisions'), document.get('metadata_resolution'), recovery=document.get('recovery_request')):
             raise BoundaryError('CANDIDATE_ORIGIN_DRIFT')
     return documents
 
 
-def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolution=None):
+def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolution=None, *, recovery=None):
     """Reconstruct an input only from the verified durable attempt and Source."""
     run = service.get_run(run_id)
     with service.store.connect() as connection:
@@ -102,10 +102,35 @@ def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolu
             if identity(providers[output_decomposition.OPERATION].configuration()) != attempt['configuration_sha256']:
                 raise BoundaryError('CANDIDATE_CONFIGURATION_MISMATCH')
             payload = output_decomposition.segment_payload(binding, context, catalog, series, segment)
-            payload = providers[output_decomposition.OPERATION].prepare_payload(payload)
+            from pro_a import b1_extraction as b1
+            if recovery is not None and binding['binding_version'] == b1.BINDING:
+                from .b1_preparation import frozen_payload
+                payload = frozen_payload(service, run, binding, context, catalog, series, segment,
+                                         providers[output_decomposition.OPERATION])
+            else:
+                payload = providers[output_decomposition.OPERATION].prepare_payload(payload)
             request = json.loads(attempt['request_json'])
             if request['payload_sha256'] != identity(payload):
                 raise BoundaryError('CANDIDATE_REQUEST_IDENTITY_MISMATCH')
+            if recovery is not None:
+                from pro_a import recovered_candidate_origin
+                # read() above verifies ledger records and their request chain.
+                # No Accepted row is produced, required or relabelled here.
+                with service.store.connect() as connection:
+                    accepted = connection.execute('SELECT 1 FROM bounded_extraction_segment_results WHERE segment_id=?',
+                                                  (segment.segment_id,)).fetchone()
+                if (accepted is not None or row['state'] != 'BLOCKED'
+                        or outcome['external_outcome'] != 'SUCCEEDED' or outcome['finish_reason'] != 'tool_calls'):
+                    raise BoundaryError('RECOVERY_FAILED_ATTEMPT_REQUIRED')
+                try:
+                    v7.compile_result(raw.decode('utf-8'), series, segment, catalog, context, plan=plan)
+                except ValueError as error:
+                    if str(error) != 'DUPLICATE_NODE_INTENT_PROPERTY:evidence_ref':
+                        raise BoundaryError('RECOVERY_FAILURE_NOT_SUPPORTED') from error
+                else:
+                    raise BoundaryError('RECOVERY_ORIGINAL_FAILURE_REQUIRED')
+                return recovered_candidate_origin.build(raw, scope, segment, catalog, context, series, plan,
+                    recovery, revisions, metadata_resolution, b1_context=binding.get('b1_request_context'))
             with ledger._connection() as connection:
                 accepted = connection.execute('SELECT * FROM bounded_extraction_segment_results WHERE segment_id=?',
                                               (segment.segment_id,)).fetchone()
@@ -125,7 +150,7 @@ def inspect_attempt(service, run_id, attempt_id, revisions=None, metadata_resolu
                     json.loads(ledger._read_artifact(series.series_id, segment.segment_id + '.review.json', attachment)) != review):
                 raise BoundaryError('CANDIDATE_ACCEPTED_RESULT_DRIFT')
             return candidate_origin_v2.build(raw, scope, segment, catalog, context, series, plan, accepted, revisions, metadata_resolution)
-        if metadata_resolution is not None:
+        if metadata_resolution is not None or recovery is not None:
             raise BoundaryError('CANDIDATE_PROTOCOL_UNSUPPORTED')
         return candidate_origin.build(raw, scope, segment, catalog, context, revisions)
     raise BoundaryError('CANDIDATE_ATTEMPT_OUTSIDE_RUN')
@@ -136,10 +161,22 @@ class CandidateInputs:
         self.service = service
 
     def publish(self, run_id, attempt_id, revisions=None, *, metadata_resolution=None):
+        return self._publish(run_id, attempt_id, revisions, metadata_resolution=metadata_resolution)
+
+    def publish_recovered(self, run_id, attempt_id, recovery, revisions, *, metadata_resolution=None, expected_identity=None):
+        """Operator registration only. Authorship strings are not Human decisions."""
+        if type(recovery) is not dict:
+            raise BoundaryError('RECOVERY_PLAN_REQUIRED')
+        return self._publish(run_id, attempt_id, revisions, metadata_resolution=metadata_resolution,
+                             recovery=recovery, expected_identity=expected_identity)
+
+    def _publish(self, run_id, attempt_id, revisions, *, metadata_resolution=None, recovery=None, expected_identity=None):
         # Independent immutable input artifacts cannot alter Accepted/Coverage.
         with self.service.store.connect(operator_write=True) as connection:
             connection.execute('BEGIN IMMEDIATE')
-            document = inspect_attempt(self.service, run_id, attempt_id, revisions, metadata_resolution)
+            document = inspect_attempt(self.service, run_id, attempt_id, revisions, metadata_resolution, recovery=recovery)
+            if expected_identity is not None and document['identity'] != expected_identity:
+                raise BoundaryError('RECOVERED_EXPECTED_IDENTITY_MISMATCH')
             content = canonical(document).encode('utf-8')
             digest = hashlib.sha256(content).hexdigest()
             relative = 'candidate-inputs/' + digest + '.json'
@@ -161,7 +198,7 @@ class CandidateInputs:
         document = json.loads(content)
         scope = document['scope']
         if (document.get('version') != reference['version'] or document.get('identity') != reference['identity'] or document != inspect_attempt(
-                self.service, scope['run_id'], scope['attempt_id'], document.get('revisions'), document.get('metadata_resolution'))):
+                self.service, scope['run_id'], scope['attempt_id'], document.get('revisions'), document.get('metadata_resolution'), recovery=document.get('recovery_request'))):
             raise BoundaryError('CANDIDATE_ORIGIN_DRIFT')
         return document
 
