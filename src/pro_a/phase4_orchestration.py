@@ -32,7 +32,7 @@ PROCESSING_MODULES = (
     "table_claim_safety", "corpus_pilot", "gate_c_quality_hardening",
     "production_authorization", "production_promotion", "phase3f_review_completion",
     "db", "ids", "storage", "relation_structure", "repository_identity",
-    "candidate_origin", "candidate_origin_v2",
+    "candidate_origin", "candidate_origin_v2", "recovered_candidate_origin", "node_evidence_recovery",
 )
 CHECKPOINTS = {"SOURCE_READY", "SEMANTIC_INPUT_READY", "SEMANTIC_COMPLETE", "REVIEW_READY"}
 
@@ -203,7 +203,7 @@ def _review(root: Path) -> None:
     preview = read_json(native / "promotion/promotion_preview.json")
     from .candidate_origin_v2 import VERSION as V7_ORIGIN
     manifest = read_json(native / 'run_manifest.json')
-    claim_only_v7 = (manifest.get('candidate_origin') or {}).get('version') == V7_ORIGIN
+    claim_only_v7 = (manifest.get('candidate_origin') or {}).get('version') in (V7_ORIGIN,'source-recovery-candidate-set-v1')
     if not claims or (not nodes and not claim_only_v7):
         if preview.get("relations", {}).get("observations"):
             raise ExecutionBlocked("UNSUPPORTED_PACKET_CAPABILITY")

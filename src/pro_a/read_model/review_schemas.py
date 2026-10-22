@@ -126,6 +126,38 @@ class CandidateOriginV2(BaseModel):
     proposed_governance: CandidateGovernance
 
 
+class RecoveredCandidateLineage(BaseModel):
+    model_config = {'extra': 'forbid'}
+    scope: dict
+    recovery: dict
+    entry_contract: dict
+    raw_sha256: str
+    raw_claim: dict
+    parent: dict | None
+    semantic_revision: dict | None
+    primary_evidence: list[dict]
+    context_dependencies: list[dict]
+    source_metadata: dict
+    provider_source_metadata: dict
+    metadata_resolution: dict | None
+    review_reasons: list[str]
+    semantic_status: Literal['NOT_ESTABLISHED']
+    canonical_permission: Literal[False]
+
+
+class RecoveredCandidateObservation(CandidateObservation):
+    model_config = {'extra': 'forbid'}
+    lineage: RecoveredCandidateLineage
+
+
+class RecoveredCandidateOrigin(BaseModel):
+    model_config = {'extra': 'forbid'}
+    version: Literal['source-recovery-candidate-set-v1']
+    candidate_key: str
+    observations: list[RecoveredCandidateObservation]
+    proposed_governance: CandidateGovernance
+
+
 class CandidateSource(BaseModel):
     title: str
     publication_time: str
@@ -136,7 +168,7 @@ class CandidateSource(BaseModel):
 
 
 class CandidateContent(BaseModel):
-    candidate_origin: CandidateOrigin | CandidateOriginV2 | None = None
+    candidate_origin: CandidateOrigin | CandidateOriginV2 | RecoveredCandidateOrigin | None = None
     source_metadata: CandidateSource | None = None
     ingestion_time: str | None = None
     assumption_text: str | None = None

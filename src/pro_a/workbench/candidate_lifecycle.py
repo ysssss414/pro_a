@@ -31,7 +31,7 @@ def reference(document, obj):
 
 
 def register(document, connection):
-    if document['version'] != 'source-candidate-set-v2':
+    if document['version'] not in ('source-candidate-set-v2','source-recovery-candidate-set-v1'):
         return
     from .source_operations import SourceOperations
     body = {'version': VERSION, 'origin_identity': document['identity'],
@@ -230,7 +230,7 @@ def require_handle(config, handle, *, connection=None):
     if manifest_path not in inventory:
         return  # Legacy foundation packets have no Candidate Origin manifest.
     manifest = read(manifest_path)
-    if (manifest.get('candidate_origin') or {}).get('version') != 'source-candidate-set-v2':
+    if (manifest.get('candidate_origin') or {}).get('version') not in ('source-candidate-set-v2','source-recovery-candidate-set-v1'):
         return
     data = read(row['run_relative']+'/extraction/candidate_input.json')
     require_documents(config,data['documents'],data.get('lifecycle_binding'),data.get('excluded_keys',()),connection=connection)

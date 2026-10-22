@@ -119,7 +119,7 @@ def build_source_evidence_catalog(context: SourcePieceContext) -> SourceEvidence
             cuts = [0]
             for match in _SENTENCE_END.finditer(block):
                 if match.group() == ".":
-                    word = re.search(r"([A-Za-z.]+)$", block[:match.start()])
+                    word = re.search(r"(?<![A-Za-z.])([A-Za-z.]+)$", block[:match.start()])
                     if word and (word[1].lower() in _ABBREVIATIONS or len(word[1]) == 1
                                  or re.fullmatch(r"(?:[A-Za-z]\.)+[A-Za-z]", word[1])):
                         continue
